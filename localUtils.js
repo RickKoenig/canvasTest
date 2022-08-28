@@ -1,16 +1,5 @@
-console.log("local utils!");
 // hi there
-function range(a,b,c) {
-	if (b<a)
-		return a;
-	if (b>c)
-		return c;
-	return b;
-}
-
-function lerp(a, b, t) {
-	return a + t * (b - a);
-}
+console.log("local utils!");
 
 // running average class
 function Runavg(nele) {
@@ -37,6 +26,18 @@ Runavg.prototype.add = function(num) {
 	}
 	return this.sum/this.arr.length;
 };
+
+function range(a,b,c) {
+	if (b<a)
+		return a;
+	if (b>c)
+		return c;
+	return b;
+}
+
+function lerp(a, b, t) {
+	return a + t * (b - a);
+}
 
 // deep copy of object, includes it's constructor too
 function clone(obj) {
