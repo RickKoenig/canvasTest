@@ -1,98 +1,330 @@
 'use strict';
 
-// elements
+// handle the html elements, do the UI on verticalButtons, and init and proc the other classes
+// TODO: for now assume 60hz refresh rate
+class MainApp {
+	static #instances = 0; // test static members
 
-// input log
-const textInputLog = document.getElementById("textInputLog");
+	constructor() {
+		console.log("creating mainApp");
+		++MainApp.#instances;
 
-// main canvas
-const drawarea = document.getElementById("drawarea");
-const mycanvas2 = document.getElementById("mycanvas2");
-const mycanvas2Ctx = mycanvas2.getContext("2d");
-const canvasDimTxt = document.getElementById("canvasDimTxt"); // where to update text for canvas dimensions
+		// get all the elements, clean this up, make an array/list/object of all this stuff
 
-// Parametric checkbox
-const checkboxParametric = document.getElementById("checkboxParametric");
+		// input log
+		this.textInputLog = document.getElementById("textInputLog");
 
-// slider phase
-const sliderPhase = document.getElementById("sliderPhase");
-const textPhase = document.getElementById("textPhase");
+		// main canvas
+		this.drawarea = document.getElementById("drawarea");
+		this.mycanvas2 = document.getElementById("mycanvas2");
+		this.mycanvas2Ctx = mycanvas2.getContext("2d");
+		this.canvasDimTxt = document.getElementById("canvasDimTxt"); // where to update text for canvas dimensions
 
-// slider freq
-const sliderFreq = document.getElementById("sliderFreq");
-const textFreq = document.getElementById("textFreq");
+		// Parametric checkbox
+		this.checkboxParametric = document.getElementById("checkboxParametric");
 
-// number of line steps
-const sliderLineStep = document.getElementById("sliderLineStep");
-const textLineStep = document.getElementById("textLineStep");
+		// slider phase
+		this.sliderPhase = document.getElementById("sliderPhase");
+		this.textPhase = document.getElementById("textPhase");
+		this.buttonPhase = document.getElementById("buttonPhase");
 
-// scale camera
-const textSclCam = document.getElementById("textSclCam");
+		// slider freq
+		this.sliderFreq = document.getElementById("sliderFreq");
+		this.textFreq = document.getElementById("textFreq");
+		this.buttonFreq = document.getElementById("buttonFreq");
 
-// x trans camera
-const sliderXTransCam = document.getElementById("sliderXTransCam");
-const textXTransCam = document.getElementById("textXTransCam");
+		// number of line steps
+		this.sliderLineStep = document.getElementById("sliderLineStep");
+		this.textLineStep = document.getElementById("textLineStep");
+		this.buttonLineStep = document.getElementById("buttonLineStep");
 
-// y trans camera
-const sliderYTransCam = document.getElementById("sliderYTransCam");
-const textYTransCam = document.getElementById("textYTransCam");
+		// scale camera
+		this.textSclCam = document.getElementById("textSclCam");
 
-// user functions
-const labelFunctionF1 = document.getElementById("labelFunctionF1");
-const labelFunctionF2 = document.getElementById("labelFunctionF2");
-const editFunctionF = document.getElementById("editFunctionF");
-const editFunctionG = document.getElementById("editFunctionG");
-const textFunctionF = document.getElementById("textFunctionF");
-const textFunctionG = document.getElementById("textFunctionG");
+		// x trans camera
+		this.textXTransCam = document.getElementById("textXTransCam");
 
-let startTextFunctionF = "t";
-let startTextFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+		// y trans camera
+		this.textYTransCam = document.getElementById("textYTransCam");
 
-// some SWITCHES
-// show a lot of messages, input, dimensions etc.
-const verboseDebug = false;
+		// user functions
+		this.labelFunctionF1 = document.getElementById("labelFunctionF1");
+		this.labelFunctionF2 = document.getElementById("labelFunctionF2");
+		this.editFunctionF = document.getElementById("editFunctionF");
+		this.editFunctionG = document.getElementById("editFunctionG");
+		this.textFunctionF = document.getElementById("textFunctionF");
+		this.textFunctionG = document.getElementById("textFunctionG");
 
-let doParametric = checkboxParametric.checked; // UI checkbox toggle
-// end some SWITCHES
+		this.startTextFunctionF = "t";
+		this.startTextFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 
-// for sine wave
-let phase = 0; // [0 to 2 * PI)
-let freq = 0;
+		// some SWITCHES
+		this.verboseDebug = false; // show a lot of messages, input, dimensions etc.
+		this.doParametric = true; // normal or parametric function(s)
+		// end some SWITCHES
 
-let drawFunctionF;
-let drawFunctionG;
+		// for sine wave like functions, add a phase to the input of the function(s)
+		this.phase = 0; // [0 to 2 * PI)
+		this.minPhase = 0;
+		this.maxPhase = Math.PI * 2;
+		this.stepPhase = .0005;
 
-let fps;
-let avgFps = 0;
-let oldTime;
+		this.freq = 0;
+		this.minFreq = -2;
+		this.maxFreq = 2;
+		this.stepFreq = .01;
 
-// speed of update
-let num = 1;
-let den = 1;
-let cur = 0;
-let avgFpsObj = new Runavg(500);
-// end speed of update
+		// linestep, for plotter2 function drawer
+		this.startLineStep = 150;
+		this.lineStep = this.startLineStep;
+		this.maxLineStep = 500;
+		this.minLineStep = 1;
 
-// function edit box
-editFunctionF.addEventListener("keyup", ({key}) => {
-	if (key === "Enter") {
-		submitFunctionF();
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.avgFps = 0;
+		this.fpsScreen = 60; // TODO: make work with different refresh rates
+
+		// speed of update
+		this.num = 1;
+		this.den = 1;
+		this.cur = 0;
+		this.avgFpsObj = new Runavg(500);
+		// end speed of update
+
+
+		// add all the event listeners and initialize elements
+
+		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
+		this.checkboxParametric.addEventListener('change', () => {
+			console.log("parametric changed to " + this.checkboxParametric.checked);
+			this.doParametric = this.checkboxParametric.checked;
+		});
+		this.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
+
+		// phase
+		// phase slider
+		this.sliderPhase.min = this.minPhase;
+		this.sliderPhase.max = this.maxPhase;
+		this.sliderPhase.step = this.stepPhase;
+		this.sliderPhase.value = this.phase;
+		this.sliderPhase.addEventListener('input', () => {
+			console.log("sliderPhase input, this = " + this.sliderPhase.value);
+			this.phase = parseFloat(this.sliderPhase.value);
+		});
+		// phase reset button
+		this.buttonPhase.addEventListener('click', () => {
+			console.log("buttonPhase reset");
+			this.#buttonPhaseReset();
+		});
+
+		// freq
+		// freq slider
+		this.sliderFreq.min = this.minFreq;
+		this.sliderFreq.max = this.maxFreq;
+		this.sliderFreq.step = this.stepFreq;
+		this.sliderFreq.value = this.freq;
+		this.sliderFreq.addEventListener('input', () => {
+			console.log("sliderFreq input, this = " + this.sliderFreq.value);
+			this.freq = parseFloat(this.sliderFreq.value);
+		});
+		// freq reset button
+		this.buttonFreq.addEventListener('click', () => {
+			console.log("buttonFreq reset");
+			this.#buttonFreqReset();
+		});
+
+		// line step
+		// linestep slider
+		this.sliderLineStep.min = this.minLineStep;
+		this.sliderLineStep.max = this.maxLineStep;
+		//this.sliderLineStep.step = this.stepFreq;
+		this.sliderLineStep.value = this.startLineStep;
+		this.sliderLineStep.addEventListener('input', () => {
+			console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
+			this.lineStep = parseFloat(this.sliderLineStep.value);
+		});
+		// linestep reset button
+		this.buttonLineStep.addEventListener('click', () => {
+			console.log("buttonLineStep reset");
+			this.#buttonLineStepReset();
+		});
+
+/*
+		<pre class="noMargins"><span id="textLineStep">hum0</span></pre>
+		<input type="range" min="1" max="500" value="0" 
+			class="slider" id="sliderLineStep"
+			oninput="lineStepChange(this)" onchange="lineStepChange(this)">
+		<button onclick="lineStepReset()">Line Step Reset</button>
+		<hr>
+ */
+
+		/*
+		// function edit box
+		this.editFunctionF.addEventListener("keyup", ({key}) => {
+			if (key === "Enter") {
+				this.submitFunctionF();
+			}
+		}); */
+/*
+		this.editFunctionF.innerHTML = this.startTextFunctionF;
+
+		this.editFunctionG.addEventListener("keyup", ({key}) => {
+			if (key === "Enter") {
+				this.submitFunctionG();
+			}
+		});
+		this.editFunctionG.innerHTML = this.startTextFunctionG;
+*/
+
+
+//submitFunctions();
+
+		//initinput();
+		this.#animate();
+	};
+
+	// phase
+	/*
+	sliderPhaseChange(id) {
+		let flt = parseFloat(id.value);
+		this.textPhase.innerHTML = "sliderPhase (p) = " + flt.toFixed(2);
+		this.phase = flt;
 	}
-});
-editFunctionF.innerHTML = startTextFunctionF;
-
-editFunctionG.addEventListener("keyup", ({key}) => {
-	if (key === "Enter") {
-		submitFunctionG();
+*/
+	#buttonPhaseReset() {
+		console.log("button phase reset");
+		this.phase = 0;
 	}
-});
-editFunctionG.innerHTML = startTextFunctionG;
 
-submitFunctions();
+	// freq
+	/*
+	sliderFreqChange(id) {
+		let flt = parseFloat(id.value);
+		this.textFreq.innerHTML = "sliderFreq = " + flt.toFixed(2);
+		this.freq = flt;
+	}
+*/
+	#buttonFreqReset() {
+		console.log("button freq reset");
+		this.freq = 0;
+	}
 
-initinput();
-animate();
+	#buttonLineStepReset() {
+		console.log("button lineStep reset");
+		this.lineStep = this.startLineStep;
+	}
 
+static getInstances() { // test static methods
+		return MainApp.#instances;
+	};
+
+	// update some of the UI
+	#updateUI() {
+		
+		const plotHeader = "<pre>Move sliders, Press buttons<br> Enter functions<br>";
+
+		const plotMouse =  "plotMouse"; /*"<br>plot MX = " + plot[0].toFixed(2) 
+						+ ", plot MY = " + plot[1].toFixed(2);*/
+		const fpsStr = "<br>FPS " + this.avgFps.toFixed(2);
+		//avgFps = 0;
+		if (false/*this.verboseDebug*/) {
+			const plotterDebugInfo = "plotterDebugInfo";/*"<br>Screen draw dim = (" + W[0] + " , " + W[1] + ")"
+			+ "<br><br>ndcMin[0] = " + ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + ndcMin[1].toFixed(2)
+			+ "<br>ndcMax[0] = " + ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + ndcMax[1].toFixed(2)
+			+ "<br><br>camMin[0] = " + camMin[0].toFixed(2) + ", camMin[1] = "  + camMin[1].toFixed(2)
+			+ "<br>camMax[0] = " + camMax[0].toFixed(2) + ", camMax[1] = "  + camMax[1].toFixed(2)
+			+ "<br>";*/
+			this.canvasDimTxt.innerHTML = plotHeader + plotterDebugInfo + plotMouse + fpsStr;
+		} else {
+			let useInfo = this.doParametric
+						? "YES x = F(t),  y = G(t + p)<br>0 <= t < 2*PI" 
+						: "NO<br>NO"/*  y = G(t + p)<br>" + camMin[0].toFixed(2) 
+							+ " <= t < " + camMax[0].toFixed(2);*/;
+			useInfo += "<br>0 <= p < 2*PI";
+			this.canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
+		}
+		/*
+		textSclCam.innerHTML = "zoomCam = " + zoom.toFixed(4) + ", logZoomCam = " + lzoom.toFixed(3);
+		*/
+		const vis = this.doParametric ? "" : "none";
+		labelFunctionF1.style.display = vis;
+		editFunctionF.style.display = vis;
+		labelFunctionF2.style.display = vis;
+		textFunctionF.style.display = vis;
+/*
+		textXTransCam.innerHTML = "center[0] = " + center[0].toFixed(2);
+		textYTransCam.innerHTML = "center[1] = " + center[1].toFixed(2);
+
+		// show inputEventsStats
+		if (verboseDebug) {
+			textInputLog.innerHTML = "INPUT LOG<br><br>Mstat: " + mouseStats + "<br><br>"
+				+ "Kstat:" + keyboardStats + "<br><br>"
+				+ "Input event: " + inputEventsStats;
+		}
+		*/
+
+		// update sliders
+		this.sliderPhase.value = this.phase;
+		this.sliderFreq.value = this.freq;
+		this.sliderLineStep.value = this.lineStep;
+
+		this.textPhase.innerHTML = "sliderPhase (p) = " + this.phase.toFixed(2);
+		this.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
+		this.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
+		
+	} 
+	// slower rate of speed, skip sometimes, depends on num and den
+	#proc() {
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+	
+		//inputproc();
+		//plotter2dproc();
+		//calcNdcAndCam();
+		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
+		let twoPI = 2 * Math.PI;
+		if (this.phase >= twoPI) {
+			this.phase -= twoPI;
+		} else if (this.phase < 0) {
+			this.phase += twoPI;
+		}
+	
+		this.#updateUI();
+	
+		// draw everything to canvas
+		//draw(mycanvas2Ctx);
+	}
+
+	#animate() {
+		// speed of update
+		this.cur += this.num;
+		if (this.cur >= this.num) {
+			this.cur -= this.den;
+			this.#proc();
+		}
+		// end speed of update
+	
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
+	}
+}
+
+let mainApp = new MainApp();
+console.log("instances of MainApp = " + MainApp.getInstances()); // test static methods
+
+/*
 // functions
 
 sclCamReset();
@@ -102,123 +334,4 @@ lineStepReset();
 xTransCamReset();
 yTransCamReset();
 
-// Parametric check box
-checkboxParametric.addEventListener('change', () => {
-	doParametric = checkboxParametric.checked;
-});
-// events
-
-// phase
-function sliderPhaseChange(id) {
-	let flt = parseFloat(id.value);
-	textPhase.innerHTML = "sliderPhase (p) = " + flt.toFixed(2);
-	phase = flt;
-}
-
-function buttonPhaseReset() {
-	phase = 0;
-	updateUI();
-}
-
-// frequency
-function sliderFreqChange(id) {
-	let flt = parseFloat(id.value);
-	textFreq.innerHTML = "sliderFreq = " + flt.toFixed(2);
-	freq = flt / 100; // slow it down
-}
-
-function buttonFreqReset() {
-	freq = 0;
-	sliderFreq.value = 0;
-	sliderFreqChange(sliderFreq);
-}
-
-// update some of the UI
-function updateUI() {
-	const plotHeader = "<pre>Move sliders, Press buttons<br> Enter functions<br>";
-
-	const plotMouse =  "<br>plot MX = " + plot[0].toFixed(2) 
-					+ ", plot MY = " + plot[1].toFixed(2);
-	const fpsStr = "<br>FPS " + avgFps.toFixed(2);
-	if (verboseDebug) {
-		const plotterDebugInfo = "<br>Screen draw dim = (" + W[0] + " , " + W[1] + ")"
-		+ "<br><br>ndcMin[0] = " + ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + ndcMin[1].toFixed(2)
-		+ "<br>ndcMax[0] = " + ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + ndcMax[1].toFixed(2)
-		+ "<br><br>camMin[0] = " + camMin[0].toFixed(2) + ", camMin[1] = "  + camMin[1].toFixed(2)
-		+ "<br>camMax[0] = " + camMax[0].toFixed(2) + ", camMax[1] = "  + camMax[1].toFixed(2)
-		+ "<br>";
-		canvasDimTxt.innerHTML = plotHeader + plotterDebugInfo + plotMouse + fpsStr;
-	} else {
-		let useInfo = doParametric 
-					? "x = F(t),  y = G(t + p)<br>0 <= t < 2*PI" 
-					: "y = G(t + p)<br>" + camMin[0].toFixed(2) 
-						+ " <= t < " + camMax[0].toFixed(2);
-		useInfo += "<br>0 <= p < 2*PI";
-		canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
-	}
-	textSclCam.innerHTML = "zoomCam = " + zoom.toFixed(4) + ", logZoomCam = " + lzoom.toFixed(3);
-	const vis = doParametric ? "" : "none";
-	labelFunctionF1.style.display = vis;
-	editFunctionF.style.display = vis;
-	labelFunctionF2.style.display = vis;
-	textFunctionF.style.display = vis;
-
-	textXTransCam.innerHTML = "center[0] = " + center[0].toFixed(2);
-	textYTransCam.innerHTML = "center[1] = " + center[1].toFixed(2);
-
-	// show inputEventsStats
-	if (verboseDebug) {
-		textInputLog.innerHTML = "INPUT LOG<br><br>Mstat: " + mouseStats + "<br><br>"
-			+ "Kstat:" + keyboardStats + "<br><br>"
-			+ "Input event: " + inputEventsStats;
-	}
-	// update sliders
-	sliderPhase.value = phase;
-	sliderPhaseChange(sliderPhase);
-}
-
-// proc 
-
-function slowAnimate() {
-	inputproc();
-	plotter2dproc();
-	calcNdcAndCam();
-
-	phase += freq;
-	let twoPI = 2 * Math.PI;
-	if (phase >= twoPI) {
-		phase -= twoPI;
-	} else if (phase < 0) {
-		phase += twoPI;
-	}
-
-	updateUI();
-
-	// draw everything to canvas
-	draw(mycanvas2Ctx);
-}
-
-function animate() {
-	// update FPS
-	if (oldTime === undefined) {
-		oldTime = performance.now();
-		fps = 0;
-	} else {
-		const newTime = performance.now();
-		const delTime =  newTime - oldTime;
-		oldTime = newTime;
-		fps = 1000 / delTime;
-	}
-	avgFps = avgFpsObj.add(fps);
-
-	// speed of update
-	cur += num;
-	if (cur >= num) {
-		cur -= den;
-		slowAnimate();
-	}
-	// end speed of update
-
-	// keep animation going
-	requestAnimationFrame(animate);
-}
+*/

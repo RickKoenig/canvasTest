@@ -11,49 +11,52 @@
 	<div id="verticalButtons">
 		<p id="linkback">Go back to <a href="../index.html"> Main page.</a></p>
 		<!-- TODO: set these programmatically -->
+
 		<pre><span id="canvasDimTxt">canvasDimTxt</span></pre>
+		
 		<p>Parametric
-			<input type="checkbox" id="checkboxParametric" checkedNO/>
+			<input type="checkbox" id="checkboxParametric"/>
 		</p>
 		<hr>
+
 		<pre class="noMargins"><span id="textPhase">hi</span></pre>
-		<input type="range" min="0" max="6.283" value="0" 
-			class="slider" id="sliderPhase" step=".0005"
-			oninput="sliderPhaseChange(this)" onchange="sliderPhaseChange(this)">
-		<button onclick="buttonPhaseReset()">Phase Reset</button>
-
+		<input type="range"	class="slider" id="sliderPhase">
+		<button id="buttonPhase">Phase Reset</button>
 		<hr>
+
 		<pre class="noMargins"><span id="textFreq">ho</span></pre>
-		<input type="range" min="-5" max="5" value="0" 
-			class="slider" id="sliderFreq" step=".05"
-			oninput="sliderFreqChange(this)" onchange="sliderFreqChange(this)">
-		<button onclick="buttonFreqReset()">Freq Reset</button>
-
+		<input type="range"	class="slider" id="sliderFreq">
+		<button id="buttonFreq">Freq Reset</button>
 		<hr>
+
 		<pre class="noMargins"><span id="textLineStep">hum0</span></pre>
-		<input type="range" min="1" max="500" value="0" 
-			class="slider" id="sliderLineStep"
-			oninput="lineStepChange(this)" onchange="lineStepChange(this)">
-		<button onclick="lineStepReset()">Line Step Reset</button>
-
+		<input type="range" class="slider" id="sliderLineStep">
+		<button id="buttonLineStep">Line Step Reset</button>
 		<hr>
-		<pre class="noMargins" id="labelFunctionF1">F</pre>
+
+
+		<pre class="noMargins" id="labelFunctionF1">F1</pre>
 		<textarea id="editFunctionF"
 			class="editbox" spellcheck="false">
 		</textarea>
 
-		<pre class="noMargins">G</pre>
+		<pre class="noMargins">G1</pre>
 		<textarea id="editFunctionG"
 			class="editbox" spellcheck="false">
 		</textarea>
 
+
 		<button onclick="submitFunctions()">Submit Functions</button>
 
-		<pre class="noMargins" id="labelFunctionF2">F</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionF"></span></pre>
+
+		<pre class="noMargins" id="labelFunctionF2">F2</pre>
+		<pre class="noMargins textFunction"><span id="textFunctionF">function F</span></pre>
 		
-		<pre class="noMargins">G</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionG">hi</span></pre>
+		<pre class="noMargins">G2</pre>
+		<pre class="noMargins textFunction"><span id="textFunctionG">function G</span></pre>
+
+
+
 
 		<hr>
 		<pre class="noMargins"><span id="textXTransCam">hum1</span></pre>
@@ -71,6 +74,7 @@
 		<pre><span id="textInputLog"></span></pre>
 
 	</div>
+
 	<div class="centerg" id="drawarea" tabindex='0'>
 		<canvas class="inside" id="mycanvas2"></canvas>
 	</div>
@@ -83,7 +87,6 @@
 	<script src="input2_map.js"></script>
 
 	<script src="input2.js"></script>
-	
 
 	<script src='canvasSpaces.js'></script>
 	<script src='graphPaper.js'></script>
