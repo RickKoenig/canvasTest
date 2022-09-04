@@ -1,3 +1,5 @@
+'use strict';
+
 // hi there
 console.log("local utils!");
 

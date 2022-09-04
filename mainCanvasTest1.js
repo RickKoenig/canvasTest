@@ -39,13 +39,16 @@ class MainApp {
 		this.buttonLineStep = document.getElementById("buttonLineStep");
 
 		// scale camera
-		this.textSclCam = document.getElementById("textSclCam");
+		this.textScalelCam = document.getElementById("textScaleCam");
+		this.buttonScaleCam = document.getElementById("buttonScaleCam");
 
 		// x trans camera
 		this.textXTransCam = document.getElementById("textXTransCam");
+		this.buttonXTransCam = document.getElementById("buttonXTransCam");
 
 		// y trans camera
 		this.textYTransCam = document.getElementById("textYTransCam");
+		this.buttonYTransCam = document.getElementById("buttonYTransCam");
 
 		// user functions
 		this.labelFunctionF1 = document.getElementById("labelFunctionF1");
@@ -54,14 +57,15 @@ class MainApp {
 		this.editFunctionG = document.getElementById("editFunctionG");
 		this.textFunctionF = document.getElementById("textFunctionF");
 		this.textFunctionG = document.getElementById("textFunctionG");
-
-		this.startTextFunctionF = "t";
-		this.startTextFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+		this.buttonSubmitFunctions = document.getElementById("submitFunctions");
 
 		// some SWITCHES
-		this.verboseDebug = false; // show a lot of messages, input, dimensions etc.
+		this.verboseDebug = true; // show a lot of messages, input, dimensions etc.
 		this.doParametric = true; // normal or parametric function(s)
 		// end some SWITCHES
+		this.mouseStats = "MS";
+		this.keyboardStats = "KBS";
+		this.inputEventsStats = "IES";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.phase = 0; // [0 to 2 * PI)
@@ -140,7 +144,6 @@ class MainApp {
 		// linestep slider
 		this.sliderLineStep.min = this.minLineStep;
 		this.sliderLineStep.max = this.maxLineStep;
-		//this.sliderLineStep.step = this.stepFreq;
 		this.sliderLineStep.value = this.startLineStep;
 		this.sliderLineStep.addEventListener('input', () => {
 			console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
@@ -152,61 +155,116 @@ class MainApp {
 			this.#buttonLineStepReset();
 		});
 
-/*
-		<pre class="noMargins"><span id="textLineStep">hum0</span></pre>
-		<input type="range" min="1" max="500" value="0" 
-			class="slider" id="sliderLineStep"
-			oninput="lineStepChange(this)" onchange="lineStepChange(this)">
-		<button onclick="lineStepReset()">Line Step Reset</button>
-		<hr>
- */
-
-		/*
+		this.textStartFunctionF = "t";
+		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+		this.#resetFunctions();
+		this.#submitFunctions();
+		this.buttonSubmitFunctions.addEventListener('click', () => {
+			console.log("button submitFunctions");
+			this.#submitFunctions();
+		});
+		
 		// function edit box
 		this.editFunctionF.addEventListener("keyup", ({key}) => {
 			if (key === "Enter") {
-				this.submitFunctionF();
-			}
-		}); */
-/*
-		this.editFunctionF.innerHTML = this.startTextFunctionF;
-
-		this.editFunctionG.addEventListener("keyup", ({key}) => {
-			if (key === "Enter") {
-				this.submitFunctionG();
+				this.#submitFunctionF();
 			}
 		});
-		this.editFunctionG.innerHTML = this.startTextFunctionG;
-*/
+		// function edit box
+		this.editFunctionG.addEventListener("keyup", ({key}) => {
+			if (key === "Enter") {
+				this.#submitFunctionG();
+			}
+		});
 
+		// scale reset button
+		this.buttonScaleCam.addEventListener('click', () => {
+			console.log("scale camera reset");
+			this.#buttonScaleCamReset();
+		});
+		// x trans reset button
+		this.buttonXTransCam.addEventListener('click', () => {
+			console.log("X trans camera reset");
+			this.#buttonXTransCamReset();
+		});
+		// y trans reset button
+		this.buttonYTransCam.addEventListener('click', () => {
+			console.log("Y trans camera reset");
+			this.#buttonYTransCamReset();
+		});
 
-//submitFunctions();
+		// TODO: move this to canvasSpaces.js
+		this.startZoom = 1;//.25;
+		this.startLZoom = 5;
+		this.zoom = this.startZoom;
+		this.lzoom = Math.log(this.zoom);
+		this.invZoom = 1 / this.zoom;
+		this.center = [.1,.3];
 
+		this.input = new Input;
 		//initinput();
+
 		this.#animate();
 	};
 
-	// phase
-	/*
-	sliderPhaseChange(id) {
-		let flt = parseFloat(id.value);
-		this.textPhase.innerHTML = "sliderPhase (p) = " + flt.toFixed(2);
-		this.phase = flt;
+	#buttonScaleCamReset() {
+		this.zoom = .1;
+		this.lzoom = .2;
 	}
-*/
+
+	#buttonXTransCamReset() {
+		this.center[0] = 0;
+	}
+
+	#buttonYTransCamReset() {
+		this.center[1] = 0;
+	}
+
+	#resetFunctions() {
+		this.editFunctionF.value = this.textStartFunctionF;
+		this.editFunctionG.value = this.textStartFunctionG;
+	}
+	#submitFunctions() {
+		this.#submitFunctionF();
+		this.#submitFunctionG();
+	}
+
+	#stripNewlinesAtEnd(funStr) {
+		// remove newlines at end of function string if there from a submit by hitting CR
+		while(true) {
+			let lenMinus1 = funStr.length - 1;
+			if (funStr[lenMinus1] == '\n') {
+				funStr = funStr.substring(0,lenMinus1);
+			} else {
+				break;
+			}
+		}
+		return funStr;
+	}
+
+	#submitFunctionF() {
+		let extra = 4; // ???
+		this.textFunctionF.innerHTML 
+			= this.editFunctionF.value
+			= this.#stripNewlinesAtEnd(this.editFunctionF.value);
+			editFunctionF.style.height 
+			= editFunctionF.scrollHeight - extra + 'px'; // make editbox bigger, noscroll
+		// strToFunctionF(funStr);
+		}
+	#submitFunctionG() {
+		let extra = 4; // ???
+		this.textFunctionG.innerHTML 
+			= this.editFunctionG.value
+			= this.#stripNewlinesAtEnd(this.editFunctionG.value);
+		editFunctionG.style.height 
+			= editFunctionG.scrollHeight - extra + 'px'; // make editbox bigger, noscroll
+		// strToFunctionF(funStr);
+		}
+
 	#buttonPhaseReset() {
 		console.log("button phase reset");
 		this.phase = 0;
 	}
-
-	// freq
-	/*
-	sliderFreqChange(id) {
-		let flt = parseFloat(id.value);
-		this.textFreq.innerHTML = "sliderFreq = " + flt.toFixed(2);
-		this.freq = flt;
-	}
-*/
 	#buttonFreqReset() {
 		console.log("button freq reset");
 		this.freq = 0;
@@ -217,7 +275,7 @@ class MainApp {
 		this.lineStep = this.startLineStep;
 	}
 
-static getInstances() { // test static methods
+	static getInstances() { // test static methods
 		return MainApp.#instances;
 	};
 
@@ -246,25 +304,24 @@ static getInstances() { // test static methods
 			useInfo += "<br>0 <= p < 2*PI";
 			this.canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
 		}
-		/*
-		textSclCam.innerHTML = "zoomCam = " + zoom.toFixed(4) + ", logZoomCam = " + lzoom.toFixed(3);
-		*/
+		
+		textScaleCam.innerHTML = "zoom = " + this.zoom.toFixed(4) + ", logZoom = " + this.lzoom.toFixed(3);
+		
 		const vis = this.doParametric ? "" : "none";
 		labelFunctionF1.style.display = vis;
 		editFunctionF.style.display = vis;
 		labelFunctionF2.style.display = vis;
 		textFunctionF.style.display = vis;
-/*
-		textXTransCam.innerHTML = "center[0] = " + center[0].toFixed(2);
-		textYTransCam.innerHTML = "center[1] = " + center[1].toFixed(2);
+
+		textXTransCam.innerHTML = "center[0] = " + this.center[0].toFixed(2);
+		textYTransCam.innerHTML = "center[1] = " + this.center[1].toFixed(2);
 
 		// show inputEventsStats
-		if (verboseDebug) {
-			textInputLog.innerHTML = "INPUT LOG<br><br>Mstat: " + mouseStats + "<br><br>"
-				+ "Kstat:" + keyboardStats + "<br><br>"
-				+ "Input event: " + inputEventsStats;
+		if (this.verboseDebug) {
+			textInputLog.innerHTML = "INPUT LOG<br><br>Mstat: " + this.mouseStats + "<br><br>"
+				+ "Kstat:" + this.keyboardStats + "<br><br>"
+				+ "Input event: " + this.inputEventsStats;
 		}
-		*/
 
 		// update sliders
 		this.sliderPhase.value = this.phase;
@@ -274,7 +331,6 @@ static getInstances() { // test static methods
 		this.textPhase.innerHTML = "sliderPhase (p) = " + this.phase.toFixed(2);
 		this.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
 		this.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
-		
 	} 
 	// slower rate of speed, skip sometimes, depends on num and den
 	#proc() {
@@ -323,15 +379,3 @@ static getInstances() { // test static methods
 
 let mainApp = new MainApp();
 console.log("instances of MainApp = " + MainApp.getInstances()); // test static methods
-
-/*
-// functions
-
-sclCamReset();
-sliderPhaseChange(sliderPhase);
-sliderFreqChange(sliderFreq);
-lineStepReset();
-xTransCamReset();
-yTransCamReset();
-
-*/

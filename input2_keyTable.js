@@ -1,3 +1,5 @@
+'use strict';
+
 // some conversion tables
 
 // standard keys mostly ascii
