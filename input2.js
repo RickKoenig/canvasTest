@@ -3,15 +3,13 @@
 //let input; // object that has all input in it
 
 // input
-let inputEventsStats = "";
-let keyboardStats = "";
-let mouseStats = "";
+////let inputEventsStats = "";
+//let keyboardStats = "";
+//let mouseStats = "";
 
 class Input {
-    constructor() {
-        this.keybuff = new Array(); // unicode keys pressed
-        this.keystate = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
-        this.key = 0;
+    constructor(divDraw) {
+        /*
         this.mx = 0;
         this.my = 0;
         this.lmx = 0;
@@ -25,23 +23,17 @@ class Input {
         this.mclick = [0, 0, 0];
         this.wheelPos = 0;
         this.wheelDelta = 0;
+*/
+        this.keyboard = new Keyboard(divDraw);
+        this.mouse = new Mouse(divDraw);
+    }
+
+    proc() {
+        this.keyboard.proc();
+        this.mouse.proc();
     }
 }
 
-Input.MLEFT = 0;
-Input.MMIDDLE = 1;
-Input.MRIGHT = 2;
-
-function initinput() {
-	input = new Input();
-	keyinit();
-	mapinit();
-}
-
-function inputproc() {
-	keyproc();
-	mapproc();
-}
 
 function showInputEventStats(eventStr) {
 	inputEventsStats = eventStr + inputEventsStats;

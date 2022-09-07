@@ -4,7 +4,6 @@
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	static #instances = 0; // test static members
-
 	constructor() {
 		console.log("creating mainApp");
 		++MainApp.#instances;
@@ -61,11 +60,12 @@ class MainApp {
 
 		// some SWITCHES
 		this.verboseDebug = true; // show a lot of messages, input, dimensions etc.
+		this.testText = "test text";
 		this.doParametric = true; // normal or parametric function(s)
 		// end some SWITCHES
-		this.mouseStats = "MS";
-		this.keyboardStats = "KBS";
-		this.inputEventsStats = "IES";
+		//this.mouseStats = "MS";
+		//this.keyboardStats = "KBS";
+		//this.inputEventsStats = "IES";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.phase = 0; // [0 to 2 * PI)
@@ -93,7 +93,7 @@ class MainApp {
 
 		// speed of update
 		this.num = 1;
-		this.den = 1;
+		this.den = 60;
 		this.cur = 0;
 		this.avgFpsObj = new Runavg(500);
 		// end speed of update
@@ -155,8 +155,8 @@ class MainApp {
 			this.#buttonLineStepReset();
 		});
 
-		this.textStartFunctionF = "t";
-		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+		this.textStartFunctionF = "cos(t)";//"t";
+		this.textStartFunctionG = "sin(t)";//"sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 		this.#resetFunctions();
 		this.#submitFunctions();
 		this.buttonSubmitFunctions.addEventListener('click', () => {
@@ -201,8 +201,7 @@ class MainApp {
 		this.invZoom = 1 / this.zoom;
 		this.center = [.1,.3];
 
-		this.input = new Input;
-		//initinput();
+		this.input = new Input(this.drawarea);
 
 		this.#animate();
 	};
@@ -318,9 +317,12 @@ class MainApp {
 
 		// show inputEventsStats
 		if (this.verboseDebug) {
-			textInputLog.innerHTML = "INPUT LOG<br><br>Mstat: " + this.mouseStats + "<br><br>"
-				+ "Kstat:" + this.keyboardStats + "<br><br>"
-				+ "Input event: " + this.inputEventsStats;
+			textInputLog.innerHTML 
+				= "Text:'" + this.testText + "'<br>"
+				+ "Mstat:" + this.input.mouse.stats + "<br>"
+				+ "Kstat:" + this.input.keyboard.stats + "<br>"
+				+ "Mevent: " + this.input.mouse.events + "<br>"
+				+ "Kevent: " + this.input.keyboard.events;
 		}
 
 		// update sliders
@@ -346,9 +348,14 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
-		//inputproc();
+		// update input system
+		this.input.proc();
+
+		// update graph paper
 		//plotter2dproc();
 		//calcNdcAndCam();
+
+		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
 		let twoPI = 2 * Math.PI;
 		if (this.phase >= twoPI) {
@@ -357,9 +364,20 @@ class MainApp {
 			this.phase += twoPI;
 		}
 	
+		// test keyboard type a string
+		let key = this.input.keyboard.key;
+		if (key) {
+			if (key == keyTable.keycodes.BACKSPACE) {
+				this.testText = this.testText.slice(0,this.testText.length - 1);
+			} else {
+				this.testText += String.fromCharCode(this.input.keyboard.key);
+			}
+		}
+
+		// update text and sliders
 		this.#updateUI();
 	
-		// draw everything to canvas
+		// draw user everything to canvas
 		//draw(mycanvas2Ctx);
 	}
 

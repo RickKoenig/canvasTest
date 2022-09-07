@@ -1,104 +1,128 @@
 'use strict';
 
-let keystatecur;
-let keystatehold;
+class Keyboard {
+    constructor(divDrawArea) {
+        this.ele = divDrawArea;
 
-function isbrowserdebugkey(k) {
-    return k == keycodes.F12;
-}
+        // public
+        this.key = 0; // current key click from buffer, 0 if no key pressed
+        this.keybuff = new Array(); // unicode keys pressed
+        this.keystate = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.events = "";
+        this.stats = "";
 
-function getkey() {
-    const ret = input.keybuff.shift();
-    if (!ret) {
-        return 0;
+        // private
+        this.keystatecur = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.keystatehold = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
+
+
+        divDrawArea.focus();
+        divDrawArea.addEventListener("keydown", (e) => {
+            this.#bkeyd(e);
+        });
+        divDrawArea.addEventListener("keypress", (e) => {
+            this.#bkeyp(e);
+        });
+        divDrawArea.addEventListener("keyup", (e) => {
+            this.#bkeyu(e);
+        });
     }
-    return ret;
-}
 
-function getkeycode(e) {
-    if (e.keyCode) {
-        return e.keyCode;
+    #getkey() {
+        const ret = this.keybuff.shift();
+        if (!ret) {
+            return 0;
+        }
+        return ret;
     }
-    return e.charCode;
-}
+    
+    proc() {
+        // buffered keyboard input
+        this.key = this.#getkey();
+        // keystate, allow for nudges
+        this.keystate = this.keystatecur;
+        this.keystatecur = this.keystatehold.slice(); // copy array
+        this.#updateKeyboardStats();
+    }
 
-// event
-function bkeyp(e) { // press
-    showInputEventStats("(KP " + getkeycode(e).toString(16) + ") ");
-}
-
-// event
-function bkeyd(e) { // down
-    const maxbuflen = 4;
-    let val = getkeycode(e);
-    showInputEventStats("(KD " + val.toString(16) + ") ");
-    val = kukd2ascii[val];
-    if (val) {
-        keystatecur[val] = 1;
-        keystatehold[val] = 1;
-        if (input.keybuff.length < maxbuflen) {
-            if (keystatehold[keycodes.SHIFT]) { // no nudges for SHIFT
-                val = noshift2shift[val];
+    #isbrowserdebugkey(k) {
+        return k == keyTable.keycodes.F12;
+    }
+    // event
+    #bkeyu(e) { // up
+        let val = this.#getkeycode(e);
+        console.log("up " + val);
+        this.#updateEventInfo("(KU " + val.toString(16) + ") ");
+        val = keyTable.kukd2ascii[val];
+        if (val) {
+            this.keystatehold[val] = 0;
+            if (this.#isbrowserdebugkey(val)) {
+                return;
             }
-            if (val != keycodes.SHIFT) { // don't push SHIFT
-                input.keybuff.push(val);
+        }
+        e.returnValue = false;
+        if (e.preventDefault) {
+            e.preventDefault();
+        }
+    }
+
+    // event
+    #bkeyp(e) { // press
+        console.log("pressed " + this.#getkeycode(e));
+        this.#updateEventInfo("(KP " + this.#getkeycode(e).toString(16) + ") ");
+    }
+    
+    // event
+    #bkeyd(e) { // down
+        let val = this.#getkeycode(e);
+        console.log("down " + val);
+        const maxbuflen = 16;
+        this.#updateEventInfo("(KD " + val.toString(16) + ") ");
+        val = keyTable.kukd2ascii[val];
+        if (val) {
+            this.keystatecur[val] = 1;
+            this.keystatehold[val] = 1;
+            if (this.keybuff.length < maxbuflen) {
+                if (this.keystatehold[keyTable.keycodes.SHIFT]) { // no nudges for SHIFT
+                    val = keyTable.noshift2shift[val];
+                }
+                if (val != keyTable.keycodes.SHIFT) { // don't push SHIFT
+                    this.keybuff.push(val);
+                }
+            }
+            if (this.#isbrowserdebugkey(val)) {
+                return;
             }
         }
-        if (isbrowserdebugkey(val)) {
-            return;
+        e.returnValue = false;
+        if (e.preventDefault) {
+            e.preventDefault();
         }
     }
-    e.returnValue = false;
-    if (e.preventDefault) {
-        e.preventDefault();
-    }
-}
 
-// event
-function bkeyu(e) { // up
-    let val = getkeycode(e);
-    showInputEventStats("(KU " + val.toString(16) + ") ");
-    val = kukd2ascii[val];
-    if (val) {
-        keystatehold[val] = 0;
-        if (isbrowserdebugkey(val)) {
-            return;
+    #updateEventInfo(eventStr) {
+        this.events = eventStr + this.events;
+        const maxSize = 80;
+        this.events = this.events.substring(0,maxSize);
+    }
+    
+    // process keyboard events
+    #getkeycode(e) {
+        if (e.keyCode) {
+            return e.keyCode;
         }
+        return e.charCode;
     }
-    e.returnValue = false;
-    if (e.preventDefault) {
-        e.preventDefault();
+    
+    #updateKeyboardStats() {
+        // show keystate
+        this.stats = "keyState [";
+        let len = this.keystate.length;
+        for (let i = 0; i < len; ++i) {
+            if (this.keystate[i])
+                this.stats += i.toString(16) + " ";
+        }
+        this.stats += "]<br>key " + this.key.toString(16) + 
+        " keybufflen " + this.keybuff.length;
     }
-}
-
-function keyinit() {
-    keystatecur = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
-    keystatehold = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
-    let keyarea = document.getElementById('drawarea');
-    keyarea.focus();
-    keyarea.addEventListener('keydown',bkeyd,false);
-    keyarea.addEventListener('keypress',bkeyp,false);
-    keyarea.addEventListener('keyup',bkeyu,false);
-}
-
-function keyproc()
-{
-    // buffered keyboard input
-    input.key = getkey();
-    // keystate, allow for nudges
-    input.keystate = keystatecur;
-    keystatecur = keystatehold.slice(0); // copy array
-}
-
-function updateKeyboardStats() {
-    // show keystate
-    keyboardStats = "keyState [";
-    let len = input.keystate.length;
-    let i;
-    for (i=0;i<len;++i) {
-        if (input.keystate[i])
-            keyboardStats += i.toString(16) + " ";
-    }
-    keyboardStats += "]<br>key " + input.key.toString(16) + 
-    " keybufflen " + input.keybuff.length;
 }
