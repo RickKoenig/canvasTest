@@ -5,7 +5,7 @@
 class MainApp {
 	static #instances = 0; // test static members
 	constructor() {
-		console.log("creating mainApp");
+		console.log("creating instance of MainApp");
 		++MainApp.#instances;
 
 		// get all the elements, clean this up, make an array/list/object of all this stuff
@@ -63,9 +63,6 @@ class MainApp {
 		this.testText = "test text";
 		this.doParametric = true; // normal or parametric function(s)
 		// end some SWITCHES
-		//this.mouseStats = "MS";
-		//this.keyboardStats = "KBS";
-		//this.inputEventsStats = "IES";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.phase = 0; // [0 to 2 * PI)
@@ -78,7 +75,7 @@ class MainApp {
 		this.maxFreq = 2;
 		this.stepFreq = .01;
 
-		// linestep, for plotter2 function drawer
+		// TODO: move to fundraw,    linestep, for plotter2 function drawer
 		this.startLineStep = 150;
 		this.lineStep = this.startLineStep;
 		this.maxLineStep = 500;
@@ -103,7 +100,7 @@ class MainApp {
 
 		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
 		this.checkboxParametric.addEventListener('change', () => {
-			console.log("parametric changed to " + this.checkboxParametric.checked);
+			//console.log("parametric changed to " + this.checkboxParametric.checked);
 			this.doParametric = this.checkboxParametric.checked;
 		});
 		this.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
@@ -115,12 +112,12 @@ class MainApp {
 		this.sliderPhase.step = this.stepPhase;
 		this.sliderPhase.value = this.phase;
 		this.sliderPhase.addEventListener('input', () => {
-			console.log("sliderPhase input, this = " + this.sliderPhase.value);
+			//console.log("sliderPhase input, this = " + this.sliderPhase.value);
 			this.phase = parseFloat(this.sliderPhase.value);
 		});
 		// phase reset button
 		this.buttonPhase.addEventListener('click', () => {
-			console.log("buttonPhase reset");
+			//console.log("buttonPhase reset");
 			this.#buttonPhaseReset();
 		});
 
@@ -131,12 +128,12 @@ class MainApp {
 		this.sliderFreq.step = this.stepFreq;
 		this.sliderFreq.value = this.freq;
 		this.sliderFreq.addEventListener('input', () => {
-			console.log("sliderFreq input, this = " + this.sliderFreq.value);
+			//console.log("sliderFreq input, this = " + this.sliderFreq.value);
 			this.freq = parseFloat(this.sliderFreq.value);
 		});
 		// freq reset button
 		this.buttonFreq.addEventListener('click', () => {
-			console.log("buttonFreq reset");
+			//console.log("buttonFreq reset");
 			this.#buttonFreqReset();
 		});
 
@@ -146,12 +143,12 @@ class MainApp {
 		this.sliderLineStep.max = this.maxLineStep;
 		this.sliderLineStep.value = this.startLineStep;
 		this.sliderLineStep.addEventListener('input', () => {
-			console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
+			//console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
 			this.lineStep = parseFloat(this.sliderLineStep.value);
 		});
 		// linestep reset button
 		this.buttonLineStep.addEventListener('click', () => {
-			console.log("buttonLineStep reset");
+			//console.log("buttonLineStep reset");
 			this.#buttonLineStepReset();
 		});
 
@@ -160,7 +157,7 @@ class MainApp {
 		this.#resetFunctions();
 		this.#submitFunctions();
 		this.buttonSubmitFunctions.addEventListener('click', () => {
-			console.log("button submitFunctions");
+			//console.log("button submitFunctions");
 			this.#submitFunctions();
 		});
 		
@@ -179,17 +176,17 @@ class MainApp {
 
 		// scale reset button
 		this.buttonScaleCam.addEventListener('click', () => {
-			console.log("scale camera reset");
+			//console.log("scale camera reset");
 			this.#buttonScaleCamReset();
 		});
 		// x trans reset button
 		this.buttonXTransCam.addEventListener('click', () => {
-			console.log("X trans camera reset");
+			//console.log("X trans camera reset");
 			this.#buttonXTransCamReset();
 		});
 		// y trans reset button
 		this.buttonYTransCam.addEventListener('click', () => {
-			console.log("Y trans camera reset");
+			//console.log("Y trans camera reset");
 			this.#buttonYTransCamReset();
 		});
 
@@ -204,7 +201,7 @@ class MainApp {
 		this.input = new Input(this.drawarea);
 
 		this.#animate();
-	};
+	}
 
 	#buttonScaleCamReset() {
 		this.zoom = .1;
@@ -223,6 +220,7 @@ class MainApp {
 		this.editFunctionF.value = this.textStartFunctionF;
 		this.editFunctionG.value = this.textStartFunctionG;
 	}
+
 	#submitFunctions() {
 		this.#submitFunctionF();
 		this.#submitFunctionG();
@@ -242,41 +240,43 @@ class MainApp {
 	}
 
 	#submitFunctionF() {
-		let extra = 4; // ???
+		let extraHeight = -4; // ???
 		this.textFunctionF.innerHTML 
 			= this.editFunctionF.value
 			= this.#stripNewlinesAtEnd(this.editFunctionF.value);
 			editFunctionF.style.height 
-			= editFunctionF.scrollHeight - extra + 'px'; // make editbox bigger, noscroll
+			= editFunctionF.scrollHeight + extraHeight + 'px'; // make editbox bigger, noscroll
 		// strToFunctionF(funStr);
-		}
+	}
+
 	#submitFunctionG() {
-		let extra = 4; // ???
+		let extraHeight = -4; // ???
 		this.textFunctionG.innerHTML 
 			= this.editFunctionG.value
 			= this.#stripNewlinesAtEnd(this.editFunctionG.value);
 		editFunctionG.style.height 
-			= editFunctionG.scrollHeight - extra + 'px'; // make editbox bigger, noscroll
+			= editFunctionG.scrollHeight + extraHeight + 'px'; // make editbox bigger, noscroll
 		// strToFunctionF(funStr);
-		}
+	}
 
 	#buttonPhaseReset() {
-		console.log("button phase reset");
+		//console.log("button phase reset");
 		this.phase = 0;
 	}
+
 	#buttonFreqReset() {
-		console.log("button freq reset");
+		//console.log("button freq reset");
 		this.freq = 0;
 	}
 
 	#buttonLineStepReset() {
-		console.log("button lineStep reset");
+		//console.log("button lineStep reset");
 		this.lineStep = this.startLineStep;
 	}
 
 	static getInstances() { // test static methods
 		return MainApp.#instances;
-	};
+	}
 
 	// update some of the UI
 	#updateUI() {
@@ -318,7 +318,7 @@ class MainApp {
 		// show inputEventsStats
 		if (this.verboseDebug) {
 			textInputLog.innerHTML 
-				= "Text:'" + this.testText + "'<br>"
+				= "TestText:'" + this.testText + "'<br>"
 				+ "Mstat:" + this.input.mouse.stats + "<br>"
 				+ "Kstat:" + this.input.keyboard.stats + "<br>"
 				+ "Mevent: " + this.input.mouse.events + "<br>"
@@ -333,7 +333,8 @@ class MainApp {
 		this.textPhase.innerHTML = "sliderPhase (p) = " + this.phase.toFixed(2);
 		this.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
 		this.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
-	} 
+	}
+
 	// slower rate of speed, skip sometimes, depends on num and den
 	#proc() {
 		// update FPS
@@ -351,10 +352,9 @@ class MainApp {
 		// update input system
 		this.input.proc();
 
-		// update graph paper
-		//plotter2dproc();
-		//calcNdcAndCam();
-
+		// update text and sliders
+		this.#updateUI();
+	
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
 		let twoPI = 2 * Math.PI;
@@ -374,9 +374,10 @@ class MainApp {
 			}
 		}
 
-		// update text and sliders
-		this.#updateUI();
-	
+		// update graph paper
+		//plotter2dproc();
+		//calcNdcAndCam();
+
 		// draw user everything to canvas
 		//draw(mycanvas2Ctx);
 	}
@@ -396,4 +397,4 @@ class MainApp {
 }
 
 let mainApp = new MainApp();
-console.log("instances of MainApp = " + MainApp.getInstances()); // test static methods
+console.log("instances of MainApp = " + MainApp.getInstances()); // and test static methods

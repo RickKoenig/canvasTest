@@ -28,30 +28,14 @@ class Keyboard {
         });
     }
 
-    #getkey() {
-        const ret = this.keybuff.shift();
-        if (!ret) {
-            return 0;
-        }
-        return ret;
-    }
-    
-    proc() {
-        // buffered keyboard input
-        this.key = this.#getkey();
-        // keystate, allow for nudges
-        this.keystate = this.keystatecur;
-        this.keystatecur = this.keystatehold.slice(); // copy array
-        this.#updateKeyboardStats();
-    }
-
     #isbrowserdebugkey(k) {
         return k == keyTable.keycodes.F12;
     }
+
     // event
     #bkeyu(e) { // up
         let val = this.#getkeycode(e);
-        console.log("up " + val);
+        //console.log("up " + val);
         this.#updateEventInfo("(KU " + val.toString(16) + ") ");
         val = keyTable.kukd2ascii[val];
         if (val) {
@@ -68,14 +52,14 @@ class Keyboard {
 
     // event
     #bkeyp(e) { // press
-        console.log("pressed " + this.#getkeycode(e));
+        //console.log("pressed " + this.#getkeycode(e));
         this.#updateEventInfo("(KP " + this.#getkeycode(e).toString(16) + ") ");
     }
     
     // event
     #bkeyd(e) { // down
         let val = this.#getkeycode(e);
-        console.log("down " + val);
+        //console.log("down " + val);
         const maxbuflen = 16;
         this.#updateEventInfo("(KD " + val.toString(16) + ") ");
         val = keyTable.kukd2ascii[val];
@@ -114,6 +98,14 @@ class Keyboard {
         return e.charCode;
     }
     
+    #getkey() {
+        const ret = this.keybuff.shift();
+        if (!ret) {
+            return 0;
+        }
+        return ret;
+    }
+    
     #updateKeyboardStats() {
         // show keystate
         this.stats = "keyState [";
@@ -124,5 +116,14 @@ class Keyboard {
         }
         this.stats += "]<br>key " + this.key.toString(16) + 
         " keybufflen " + this.keybuff.length;
+    }
+
+    proc() {
+        // buffered keyboard input
+        this.key = this.#getkey();
+        // keystate, allow for nudges
+        this.keystate = this.keystatecur;
+        this.keystatecur = this.keystatehold.slice(); // copy array
+        this.#updateKeyboardStats();
     }
 }

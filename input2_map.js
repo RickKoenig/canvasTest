@@ -6,7 +6,6 @@ class Mouse {
 	static MRIGHT = 2;
 	
 	constructor(divDrawArea) {
-		//this.infullscreen = false;
 		this.ele = divDrawArea;
 		this.mclickhold = [0,0,0];
 		this.mbutcur = [0,0,0];
@@ -19,27 +18,22 @@ class Mouse {
         this.lmy = 0;
         this.dmx = 0;
         this.dmy = 0;
-        this.fmx = 0; // -1 to 1, more for asp
-        this.fmy = 0; //
         this.mbut = [0, 0, 0];
         this.lmbut = [0, 0, 0];
         this.mclick = [0, 0, 0];
         this.wheelPos = 0;
         this.wheelDelta = 0;
-		//this.maparea = null;
 		this.rawwheeldelta = 0;
-		//this.infullscreen = null;
 		this.lastinside = [0,0,0];
 
-		this.mapAreaFocus = false;
+		this.mapAreaFocus = false; // if mouse moves over 'div' get focus
         this.events = "";
         this.stats = "";
 
 		// setup event listeners
 		// kill right click save image
 		this.ele.addEventListener('contextmenu', function (e) {
-			//document.body.innerHTML += '<p>Right-click is disabled</p>'
-			console.log("prevent right click image save");
+			//console.log("prevent right click image save");
 			e.preventDefault();
 		});
 		this.ele.addEventListener("mousedown", (e) => {
@@ -57,7 +51,7 @@ class Mouse {
 		this.ele.addEventListener("mouseenter", (e) => {
 			this.bmouseenter(e);
 		});
-		this.ele.addEventListener("mousewheel", (e) => {
+		this.ele.addEventListener("wheel", (e) => {
 			this.bmousewheel(e);
 		});
 		this.ele.addEventListener("mousemove", (e) => {
@@ -69,19 +63,11 @@ class Mouse {
     }
 
 	getxcode(e) {
-		//if (this.infullscreen) {
-		//	return e.clientX;
-		//} else {
-			return e.clientX - e.currentTarget.offsetLeft;
-		//}
+		return e.clientX - e.currentTarget.offsetLeft;
 	}
 	
 	getycode(e) {
-		//if (this.infullscreen) {
-		//	return e.clientY;
-		//} else {
-			return e.clientY - e.currentTarget.offsetTop;
-		//}
+		return e.clientY - e.currentTarget.offsetTop;
 	}
 	
 	// event mouse down
@@ -117,12 +103,11 @@ class Mouse {
 		this.#updateEventInfo("(Mout " + this.getxcode(e) + " " + this.getycode(e) + ") ");
 	}
 	
-	
 	// event mouse enter
 	bmouseenter(e) {
-		//if (mapAreaFocus) {
-			//maparea.focus(); // get keyboard working on maparea
-		//}
+		if (this.mapAreaFocus) {
+			this.ele.focus(); // get keyboard working on maparea
+		}
 		this.mbutcur[0] = this.lastinside[0];
 		this.mbutcur[1] = this.lastinside[1];
 		this.mbutcur[2] = this.lastinside[2];
@@ -156,15 +141,8 @@ class Mouse {
 	
 	// event mouse wheel changed
 	bmousewheel(e) {
-	
-		if (e.wheelDelta) {
-			this.rawwheeldelta += e.wheelDelta/120;
-		} else if (e.detail) { /** Mozilla case. */
-					/** In Mozilla, sign of delta is different than in IE.
-					 * Also, delta is multiple of 3.
-					 */
-			 this.rawwheeldelta += -e.detail/3;
-		}
+		const del = Math.sign(e.deltaY);
+		this.rawwheeldelta -= del;
 		if (e.preventDefault) {
 			e.preventDefault();
 		}
@@ -218,56 +196,3 @@ class Mouse {
 		this.updateMouseStats();
    	}
 }
-/*
-function mapinit() {
-	maparea = document.getElementById('drawarea');
-	// kill right click save image
-	maparea.addEventListener('contextmenu', function (e) {
-		//document.body.innerHTML += '<p>Right-click is disabled</p>'
-		e.preventDefault();
-	  });
-
-	maparea.onclick = bmousec;
-	maparea.onmousedown = bmoused;
-	maparea.onmouseup = bmouseu;
-	maparea.onmousemove = bmousem;
-	maparea.onmouseover = bmouseov;
-	maparea.onmouseout = bmouseou;
-	maparea.onmouseenter = bmouseenter;
-	maparea.onmousewheel = bmousewheel; 
-	maparea.addEventListener('DOMMouseScroll', bmousewheel);
-}
-*/
-/*
-function mapproc()
-{
-	// mouse clicks in current frame
-	input.mclick[0] = mclickhold[0];
-	input.mclick[1] = mclickhold[1];
-	input.mclick[2] = mclickhold[2];
-	mclickhold[0] = mclickhold[1] = mclickhold[2] = 0;
-
-	// mouse button: 1 down, 0 up
-	input.mbut[0] = mbutcur[0]; // allow for nudges
-	input.mbut[1] = mbutcur[1]; // allow for nudges
-	input.mbut[2] = mbutcur[2]; // allow for nudges
-	input.lmbut[0] = mbutlast[0]; // allow for nudges
-	input.lmbut[1] = mbutlast[1]; // allow for nudges
-	input.lmbut[2] = mbutlast[2]; // allow for nudges
-	mbutlast[0] = mbutcur[0];
-	mbutlast[1] = mbutcur[1];
-	mbutlast[2] = mbutcur[2];
-	mbutcur[0] = mbuthold[0];
-	mbutcur[1] = mbuthold[1];
-	mbutcur[2] = mbuthold[2];
-	input.wheelDelta = rawwheeldelta;
-	if (rawwheeldelta) {
-		input.wheelPos += rawwheeldelta;
-	}
-	rawwheeldelta = 0;
-	input.dmx = input.mx - input.lmx;
-	input.dmy = input.my - input.lmy;
-	input.lmx = input.mx;
-	input.lmy = input.my;
-	updateMouseStats();
-}*/

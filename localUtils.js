@@ -1,8 +1,5 @@
 'use strict';
 
-// hi there
-console.log("local utils!");
-
 // running average class
 function Runavg(nele) {
 	this.nele = nele;
