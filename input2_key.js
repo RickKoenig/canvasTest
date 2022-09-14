@@ -86,7 +86,7 @@ class Keyboard {
 
     #updateEventInfo(eventStr) {
         this.events = eventStr + this.events;
-        const maxSize = 80;
+        const maxSize = 60;
         this.events = this.events.substring(0,maxSize);
     }
     

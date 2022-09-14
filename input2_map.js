@@ -4,7 +4,7 @@ class Mouse {
 	static MLEFT = 0;
 	static MMIDDLE = 1;
 	static MRIGHT = 2;
-	
+
 	constructor(divDrawArea) {
 		this.ele = divDrawArea;
 		this.mclickhold = [0,0,0];
@@ -129,6 +129,12 @@ class Mouse {
 		if (this.my < 0) {
 			this.my = 0;
 		}
+		if (this.mx >= this.maxX) {
+			this.mx = this.maxX - 1;
+		}
+		if (this.my >= this.maxY) {
+			this.my = this.maxY - 1;
+		}
 	}
 	
 	// event mouse click, doesn't seem to work if you click on an image on the map, and you click on it, implement with bmoused and bmouseu
@@ -150,7 +156,7 @@ class Mouse {
 	
     #updateEventInfo(eventStr) {
         this.events = eventStr + this.events;
-        const maxSize = 80;
+        const maxSize = 60;
         this.events = this.events.substring(0,maxSize);
     }
     
@@ -164,7 +170,9 @@ class Mouse {
 		", mclick [" + this.mclick + "]";
 	}
 	
-	proc() {
+	proc(canvas) {
+		this.maxX = canvas.width;
+		this.maxY = canvas.height;
 		// mouse clicks in current frame
 		this.mclick[0] = this.mclickhold[0];
 		this.mclick[1] = this.mclickhold[1];
