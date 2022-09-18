@@ -64,6 +64,7 @@ class MainApp {
 
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
+		this.userCircleTest = false;
 		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
 		// end some SWITCHES
@@ -212,6 +213,7 @@ class MainApp {
 		this.input = new Input(this.drawarea, this.mycanvas2);
 		this.plotter2d = new Plotter2d(this.ctx);
 		this.graphPaper = new GraphPaper(this.ctx, this.plotter2d);
+		this.drawFun = new DrawFun(this.ctx, this.plotter2d);
 
 		this.#animate();
 	}
@@ -298,16 +300,7 @@ class MainApp {
 	// update some of the UI
 	#updateUI() {
 		const plotHeader = "Move sliders, Press buttons<br> Enter functions<br>";
-/*
-		// TODO: MOCK, move to other modules
-		const plot = [Math.PI, Math.E];
-		const W = [512, 384];
-		const ndcMin = [10, 20];
-		const ndcMax = [30, 40];
-		const camMin = [50, 60];
-		const camMax = [70, 80];
-		// end MOCK
-*/
+
 		let p = this.plotter2d.params;
 		const plotMouse =  "<br>plot MX = " + p.plot[0].toFixed(2) 
 						+ ", plot MY = " + p.plot[1].toFixed(2);
@@ -363,7 +356,6 @@ class MainApp {
 
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
-		//return;
 		const fixedDim = false;
 		 // TODO: no magic numbers
 		if (fixedDim) {
@@ -407,7 +399,7 @@ class MainApp {
 		if (this.phase >= twoPI) {
 			this.phase -= twoPI;
 		} else if (this.phase < 0) {
-			this.phase += twoPI;h
+			this.phase += twoPI;
 		}
 	
 		// test keyboard type a string
@@ -425,21 +417,24 @@ class MainApp {
 		// re-adjust canvas size depending on the window resize
 		this.#calcCanvasSize();
 
-		// first user test canvas before calling plotter2d proc, screen space
-		// draw a circle at some coords, use the mouse or canvas size
-		this.ctx.beginPath();
-		this.ctx.lineWidth = 10;
-		this.ctx.arc(this.input.mouse.mx, this.input.mouse.my, 30, 0, Math.PI * 2);
-		this.ctx.strokeStyle = "green";
-		this.ctx.stroke();
-		this.ctx.beginPath();
-		this.ctx.lineWidth = 10;
-		this.ctx.arc(this.mycanvas2.width / 2, this.mycanvas2.height / 2, 30, 0, Math.PI * 2);
-		this.ctx.strokeStyle = "green";
-		this.ctx.stroke();
+		if (this.userCircleTest) {
+			// first user test canvas before calling plotter2d proc, screen space
+			// draw a circle at some coords, use the mouse or canvas size
+			this.ctx.beginPath();
+			this.ctx.lineWidth = 10;
+			this.ctx.arc(this.input.mouse.mx, this.input.mouse.my, 30, 0, Math.PI * 2);
+			this.ctx.strokeStyle = "green";
+			this.ctx.stroke();
+			this.ctx.beginPath();
+			this.ctx.lineWidth = 10;
+			this.ctx.arc(this.mycanvas2.width / 2, this.mycanvas2.height / 2, 30, 0, Math.PI * 2);
+			this.ctx.strokeStyle = "green";
+			this.ctx.stroke();
+		}
 	
 		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse);
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		this.drawFun.draw(this.lineStep, this.phase, this.graphPaper.minGrid[0], this.graphPaper.maxGrid[0]);
 		// update graph paper
 		//plotter2dproc();
 		//calcNdcAndCam();

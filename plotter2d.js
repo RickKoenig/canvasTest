@@ -6,14 +6,14 @@ class Plotter2d {
 
         // some SWITCHES
         // test screen space
-        this.screenSpaceTests = true;
+        this.screenSpaceTests = false;
 
         // test NDC space
-        this.NDCSpaceTests = true;
+        this.NDCSpaceTests = false;
 
         // test user/cam space
-        this.textTests = true;
-        this.circleTest = true;
+        this.textTests = false;
+        this.circleTest = false;
         // end some SWITCHES
 
         this.params = {
@@ -57,6 +57,14 @@ class Plotter2d {
         p.lzoom = Math.log(p.zoom);
     }
 
+    #newcenter(i, pnt) {
+        const p = this.params;
+        let nc = Array(2);
+        nc[0] = pnt[0] - (i[0] - p.W[0] / 2) / (p.zoom * p.WMin / 2);
+        nc[1] = pnt[1] - (i[1] - p.W[1] / 2) / (-p.zoom * p.WMin / 2);
+        return nc;
+    }
+        
     calcCanvasSpacesUI(wid, hit, mouse) {
         const p = this.params;
         let pnt = [mouse.mx, mouse.my];
@@ -86,11 +94,39 @@ class Plotter2d {
             p.trans[1] = -p.ndcMax[1];
         }
 
+        
+
+        if (mouse.wheelDelta) { // wheel mouse
+            let m = mouse.wheelDelta > 0 ? 1 : -1;
+            let lzoomspeed = 1/16;
+            if (mouse.mbut[Mouse.MMIDDLE]) { // faster wheel mouse when middle button held down
+                lzoomspeed *= 4;
+            }
+            p.lzoom += m * lzoomspeed;
+            p.lzoom = range(-5, p.lzoom, 5);
+        }
+
+        p.zoom = Math.exp(p.lzoom);
+        p.invZoom = 1 / p.zoom;
+        
+        
+        if (mouse.wheelDelta) { // zoom where the mouse is
+            p.center = this.#newcenter(pnt, p.plot);
+        }
+        if (mouse.mbut[0]) {
+            const f = 1 / (p.zoom * p.WMin / 2);
+            // where is the mouse in float coords
+            p.center[0] -= mouse.dmx*f;
+            p.center[1] += mouse.dmy*f;
+        }
+
+    
+
         p.camMin[0] = p.ndcMin[0] * p.invZoom + p.center[0];
         p.camMin[1] = p.ndcMin[1] * p.invZoom + p.center[1];
         p.camMax[0] = p.ndcMax[0] * p.invZoom + p.center[0];
         p.camMax[1] = p.ndcMax[1] * p.invZoom + p.center[1];
-        }
+    }
 
     // screen space circle
     #drawACircleScreen(pnt, rad) {
