@@ -12,45 +12,109 @@ class DrawFun {
         return Math.cos(t);
     }
 */
-    functionG(t) {
-        return Math.sin(t); // default function
-    }
+functionF(t) {
+	return Math.cos(t); // default function
+}
 
-    draw(lineStep, phase, minH, maxH) {
-        //minGridH = -10;
-        //maxGridH = 10;
-        const p = this.plot.params;
-	    const maxXY = 250; // don't draw super big numbers
-		if (!this.functionG) {
-			console.log("no draw functionG !!!");
+functionG(t) {
+	return Math.sin(t); // default function
+}
+
+	changeFunctionF(g) {
+		this.functionF = g;
+	}
+
+	changeFunctionG(g) {
+		this.functionG = g;
+	}
+
+	#drawParametric(lineStep, phase, graphPaper) {
+		if (!this.functionF) {
+			//console.log("no draw functionF !!!");
+			return;
 		}
-		if (this.functionG) {
-			// draw a user defined function, default is a sine wave
-			this.ctx.beginPath();
-			const margin = 0; //.25; // test min and max range, user/cam space
-			const minX = Math.max(p.camMin[0], minH) + margin;
-			const maxX = Math.min(p.camMax[0], maxH) - margin;
-			for (let s = 0; s <= lineStep; ++s) {
-				let t = s / lineStep; //  t goes from [0 to 1]
-				t = lerp(minX, maxX, t); // t goes from [minX to maxX]
-				let y;
-				try { // drawFunction might be defined, but if you run it, it might generate an error
-					y = this.functionG(t + phase);
-				} catch (err) {
-					console.error("Error drawing function: <<< " + err + " >>>");
-				}
-				if (Math.abs(y) <= maxXY) { 
-					this.ctx.lineTo(t, y);
+		if (!this.functionG) {
+			//console.log("no draw functionG !!!");
+			return;
+		}
+		// draw a user defined function, default is a sine wave
+		this.ctx.beginPath();
+		for (let s = 0; s <= lineStep; ++s) {
+			let t = s / lineStep; // t goes from [0 to 1]
+			t *= Math.PI * 2; // t goes from [0 to 2 * PI]
+			let x;
+			try { // drawFunction might be defined, but if you run it, it might generate an error
+				x = this.functionF(t);
+			} catch (err) {
+				//console.error("Error drawing function: <<< " + err + " >>>");
+			}
+			let y;
+			try { // drawFunction might be defined, but if you run it, it might generate an error
+				y = this.functionG(t + phase);
+			} catch (err) {
+				//console.error("Error drawing function: <<< " + err + " >>>");
+			}
+			//if (Math.abs(x) <= maxXY && Math.abs(y) <= maxXY) {
+			if (x >= graphPaper.minGrid[0] && x <= graphPaper.maxGrid[0]) { 
+				if (y >= graphPaper.minGrid[1] && y <= graphPaper.maxGrid[1]) { 
+					this.ctx.lineTo(x, y);
 				}
 			}
-			this.ctx.strokeStyle = "blue";
-			this.ctx.lineWidth = .01;
-			this.ctx.stroke();
 		}
+		this.ctx.strokeStyle = "blue";
+		this.ctx.lineWidth = .01;
+		this.ctx.stroke();
+	}
 
+	#drawNormal(lineStep, phase, graphPaper) {
+        const p = this.plot.params;
+		if (!this.functionG) {
+			//console.log("no draw functionG !!!");
+			return;
+		}
+		// draw a user defined function, default is a sine wave
+		this.ctx.beginPath();
+		const margin = 0; // .125; // test min and max range, user/cam space
+		const minX = Math.max(p.camMin[0], graphPaper.minGrid[0]) + margin;
+		const maxX = Math.min(p.camMax[0], graphPaper.maxGrid[0]) - margin;
+		for (let s = 0; s <= lineStep; ++s) {
+			let t = s / lineStep; //  t goes from [0 to 1]
+			t = lerp(minX, maxX, t); // t goes from [minX to maxX]
+			let y;
+			try { // drawFunction might be defined, but if you run it, it might generate an error
+				y = this.functionG(t + phase);
+			} catch (err) {
+				//console.error("Error drawing function: <<< " + err + " >>>");
+				y = t + phase;
+			}
+			if (y >= graphPaper.minGrid[1] && y <= graphPaper.maxGrid[1]) { 
+				this.ctx.lineTo(t, y);
+			}
+		}
+		this.ctx.strokeStyle = "blue";
+		this.ctx.lineWidth = .01;
+		this.ctx.stroke();
     }
 
+	// 'graphPaper' is used for constraining the function to the size of the graph paper
+    draw(doParametric, lineStep, phase, graphPaper) {
+		if (doParametric) {
+			this.#drawParametric(lineStep, phase, graphPaper);
+		} else {
+			this.#drawNormal(lineStep, phase, graphPaper);
+		}
+	}
+
 }
+
+
+
+
+
+
+
+
+
 /*
 // line steps
 const startLineStep = 150;
