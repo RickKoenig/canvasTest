@@ -67,6 +67,7 @@ class MainApp {
 		this.userCircleTest = false;
 		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
+		this.runFunGenTests = false; // test function generator
 		// end some SWITCHES
 
 		// for sine wave like functions, add a phase to the input of the function(s)
@@ -80,10 +81,9 @@ class MainApp {
 		this.maxFreq = 2;
 		this.stepFreq = .01;
 
-		// TODO: move to fundraw,    linestep, for plotter2 function drawer
 		this.startLineStep = 150;
 		this.lineStep = this.startLineStep;
-		this.maxLineStep = 500;
+		this.maxLineStep = 1500;
 		this.minLineStep = 1;
 
 		// measure frame rate
@@ -99,6 +99,7 @@ class MainApp {
 		this.cur = 0;
 		this.avgFpsObj = new Runavg(500);
 		// end speed of update
+
 
 
 		// add all the event listeners and initialize elements
@@ -164,8 +165,18 @@ class MainApp {
 			this.#buttonLineStepReset();
 		});
 
-		this.textStartFunctionF = "cos(t)";//"t";
-		this.textStartFunctionG = "sin(t)";//"sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+		this.input = new Input(this.drawarea, this.mycanvas2);
+		this.plotter2d = new Plotter2d(this.ctx);
+		this.graphPaper = new GraphPaper(this.ctx, this.plotter2d);
+		this.drawFun = new DrawFun(this.ctx, this.plotter2d);
+
+		if (this.runFunGenTests) {
+			FunGen.runTests();
+		}
+
+
+		this.textStartFunctionF = "t";
+		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 		this.#resetFunctions();
 		this.#submitFunctions();
 		this.buttonSubmitFunctions.addEventListener('click', () => {
@@ -201,22 +212,11 @@ class MainApp {
 			this.#buttonYTransCamReset();
 		});
 
-		/*
-		// TODO: move this to canvasSpaces.js
-		this.startZoom = 1;//.25;
-		this.startLZoom = 5;
-		this.zoom = this.startZoom;
-		this.lzoom = Math.log(this.zoom);
-		this.invZoom = 1 / this.zoom;
-		this.center = [.1,.3];
-		*/
-		this.input = new Input(this.drawarea, this.mycanvas2);
-		this.plotter2d = new Plotter2d(this.ctx);
-		this.graphPaper = new GraphPaper(this.ctx, this.plotter2d);
-		this.drawFun = new DrawFun(this.ctx, this.plotter2d);
 
 		this.#animate();
 	}
+
+
 
 	#buttonScaleCamReset() {
 		//const p = this.plotter2d.params;
@@ -259,23 +259,29 @@ class MainApp {
 	}
 
 	#submitFunctionF() {
-		let extraHeight = -4; // ???
-		this.textFunctionF.innerHTML 
-			= this.editFunctionF.value
-			= this.#stripNewlinesAtEnd(this.editFunctionF.value);
-			editFunctionF.style.height 
-			= editFunctionF.scrollHeight + extraHeight + 'px'; // make editbox bigger, noscroll
-		// strToFunctionF(funStr);
+		const funStr = this.#stripNewlinesAtEnd(this.editFunctionF.value);
+		this.editFunctionF.value = funStr;
+ 		// make UI editbox bigger, noscroll
+		const extraHeight = -4; // ???
+ 		editFunctionF.style.height = editFunctionF.scrollHeight + extraHeight + 'px';
+		const subFun = FunGen.stringToFunction(funStr);
+		if (subFun) {
+			this.drawFun.changeFunctionF(subFun);
+			this.textFunctionF.innerHTML = funStr;
+		}
 	}
 
 	#submitFunctionG() {
-		let extraHeight = -4; // ???
-		this.textFunctionG.innerHTML 
-			= this.editFunctionG.value
-			= this.#stripNewlinesAtEnd(this.editFunctionG.value);
-		editFunctionG.style.height 
-			= editFunctionG.scrollHeight + extraHeight + 'px'; // make editbox bigger, noscroll
-		// strToFunctionF(funStr);
+		const funStr = this.#stripNewlinesAtEnd(this.editFunctionG.value);
+		this.editFunctionG.value = funStr;
+ 		// make UI editbox bigger, noscroll
+		const extraHeight = -4; // ???
+ 		editFunctionG.style.height = editFunctionG.scrollHeight + extraHeight + 'px';
+		const subFun = FunGen.stringToFunction(funStr);
+		if (subFun) {
+			this.drawFun.changeFunctionG(subFun);
+			this.textFunctionG.innerHTML = funStr;
+		}
 	}
 
 	#buttonPhaseReset() {
@@ -434,13 +440,7 @@ class MainApp {
 	
 		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse);
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-		this.drawFun.draw(this.lineStep, this.phase, this.graphPaper.minGrid[0], this.graphPaper.maxGrid[0]);
-		// update graph paper
-		//plotter2dproc();
-		//calcNdcAndCam();
-
-		// draw user everything to canvas
-		//draw(ctx);
+		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 	}
 
 	#animate() {

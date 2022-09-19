@@ -97,6 +97,8 @@ class Mouse {
 	
 	// event mouse exit
 	bmouseou(e) {
+		this.mbutcur[0] = this.mbutcur[1] = this.mbutcur[2] = 0;
+		this.mbuthold[0] = this.mbuthold[1] = this.mbuthold[2] = 0;
 		this.lastinside[0] = this.mbutcur[0];
 		this.lastinside[1] = this.mbutcur[1];
 		this.lastinside[2] = this.mbutcur[2];
