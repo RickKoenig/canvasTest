@@ -218,7 +218,7 @@ class MainApp {
 
 
 	#buttonScaleCamReset() {
-		this.plotter2d.scaleReset();
+		this.plotter2d.params.scaleReset();
 	}
 
 	#buttonXTransCamReset() {
@@ -304,8 +304,8 @@ class MainApp {
 		const plotHeader = "Move sliders, Press buttons<br> Enter functions<br>";
 
 		let p = this.plotter2d.params;
-		const plotMouse =  "<br>plot MX = " + p.plot[0].toFixed(2) 
-						+ ", plot MY = " + p.plot[1].toFixed(2);
+		const plotMouse =  "<br>plot MX = " + p.userMouse[0].toFixed(2) 
+						+ ", plot MY = " + p.userMouse[1].toFixed(2);
 
 		const fpsStr = "<br>FPS " + this.avgFps.toFixed(2);
 		if (this.doDebug) {
