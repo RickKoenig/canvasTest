@@ -101,7 +101,6 @@ class MainApp {
 		// end speed of update
 
 
-
 		// add all the event listeners and initialize elements
 
 		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
@@ -165,7 +164,8 @@ class MainApp {
 			this.#buttonLineStepReset();
 		});
 
-		this.input = new Input(this.drawarea, this.mycanvas2);
+		this.input = new Input(this.drawarea);
+		//this.input = new Input(this.drawarea, this.mycanvas2);
 		this.plotter2d = new Plotter2d(this.ctx);
 		this.drawPrim = new DrawPrimitives(this.ctx, this.plotter2d);
 		this.graphPaper = new GraphPaper(this.ctx, this.drawPrim);
@@ -174,7 +174,6 @@ class MainApp {
 		if (this.runFunGenTests) {
 			FunGen.runTests();
 		}
-
 
 		this.textStartFunctionF = "t";
 		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
@@ -213,16 +212,12 @@ class MainApp {
 			this.#buttonYTransCamReset();
 		});
 
-
 		this.#animate();
 	}
 
 
 
 	#buttonScaleCamReset() {
-		//const p = this.plotter2d.params;
-		//p.zoom = .1;
-		//p.lzoom = .2;
 		this.plotter2d.scaleReset();
 	}
 
@@ -330,7 +325,7 @@ class MainApp {
 			this.canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
 		}
 		
-		textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.lzoom.toFixed(3);
+		textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
 		
 		const vis = this.doParametric ? "" : "none";
 		labelFunctionF1.style.display = vis;
@@ -364,7 +359,6 @@ class MainApp {
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
 		const fixedDim = false;
-		 // TODO: no magic numbers
 		if (fixedDim) {
 			const fixedSize = [800, 600];
 			// set canvas size to a fixed size
@@ -395,7 +389,8 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		this.input.proc(this.mycanvas2);
+		//this.input.proc(this.mycanvas2); // this
+		this.input.proc(this.drawarea); // or this
 
 		// update text and sliders
 		this.#updateUI();
@@ -409,7 +404,7 @@ class MainApp {
 			this.phase += twoPI;
 		}
 	
-		// test keyboard type a string
+		// test keyboard, edit a string
 		if (this.doDebug) {
 			let key = this.input.keyboard.key;
 			if (key) {
@@ -424,6 +419,7 @@ class MainApp {
 		// re-adjust canvas size depending on the window resize
 		this.#calcCanvasSize();
 
+		// in screen space
 		if (this.userCircleTest) {
 			// first user test canvas before calling plotter2d proc, screen space
 			// draw a circle at some coords, use the mouse or canvas size
@@ -432,6 +428,7 @@ class MainApp {
 			this.ctx.arc(this.input.mouse.mx, this.input.mouse.my, 30, 0, Math.PI * 2);
 			this.ctx.strokeStyle = "green";
 			this.ctx.stroke();
+
 			this.ctx.beginPath();
 			this.ctx.lineWidth = 10;
 			this.ctx.arc(this.mycanvas2.width / 2, this.mycanvas2.height / 2, 30, 0, Math.PI * 2);
@@ -440,6 +437,8 @@ class MainApp {
 		}
 	
 		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse);
+
+		// now in user/cam space
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 
@@ -454,9 +453,6 @@ class MainApp {
 		let g = 255;
 		let b = 0;
 		let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
-		//let a = .35;
-		//let colStrGen = "rgba(" + r + "," +  g + "," +  b + "," + a + ")";
-		//let colStr = "green";
 		this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen);
 		this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green");
 		this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true);

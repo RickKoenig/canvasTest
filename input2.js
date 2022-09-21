@@ -2,13 +2,13 @@
 
 // combine Keyboard and Mouse in this Input class
 class Input {
-    constructor(divDraw, canvasDraw) {
+    constructor(divDraw) {
         this.keyboard = new Keyboard(divDraw);
-        this.mouse = new Mouse(divDraw, canvasDraw);
+        this.mouse = new Mouse(divDraw);
     }
 
-    proc(canvas) {
+    proc(area) { // either a <div> or a <canvas>
         this.keyboard.proc();
-        this.mouse.proc(canvas);
+        this.mouse.proc(area); // just for size
     }
 }

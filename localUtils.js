@@ -1,30 +1,32 @@
 'use strict';
 
 // running average class
-function Runavg(nele) {
-	this.nele = nele;
-	this.arr = [];
-	this.idx = 0;
-	this.sum = 0;
-}
-
-Runavg.prototype.add = function(num) {
-	if (this.arr.length == this.nele) { // array filled up
-		this.sum -= this.arr[this.idx];
-		this.arr[this.idx] = num;
-		this.sum += num;
-		++this.idx;
-		if (this.idx == this.nele)
-			this.idx = 0;
-	} else { // building up array
-		this.arr[this.idx] = num;
-		this.sum += num;
-		++this.idx;
-		if (this.idx == this.nele)
-			this.idx = 0;
+class Runavg {
+	constructor(nele) {
+		this.nele = nele;
+		this.arr = [];
+		this.idx = 0;
+		this.sum = 0;
 	}
-	return this.sum/this.arr.length;
-};
+
+	add(num) {
+		if (this.arr.length == this.nele) { // array filled up
+			this.sum -= this.arr[this.idx];
+			this.arr[this.idx] = num;
+			this.sum += num;
+			++this.idx;
+			if (this.idx == this.nele)
+				this.idx = 0;
+		} else { // building up array
+			this.arr[this.idx] = num;
+			this.sum += num;
+			++this.idx;
+			if (this.idx == this.nele)
+				this.idx = 0;
+		}
+		return this.sum/this.arr.length;
+	}
+}
 
 function range(a,b,c) {
 	if (b<a)

@@ -2,11 +2,13 @@
 
 class GraphPaper {
     constructor(ctx, drawPrims) {
+        // one SWITCH
         this.showGrid = true;
+        // end SWITCH
 
         this.ctx = ctx;
-        //this.plot = plot;
         this.dp = drawPrims;
+
         this.minGrid = [-100, -100];
         this.maxGrid = [100, 100];
         this.shrink = .05; // clip a little in NDC space to add axis labels X and Y
@@ -107,7 +109,6 @@ class GraphPaper {
             );
         }
     }
-    //this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
 
     #drawAxisNames(hAxis, vAxis) {
         let p = this.dp.plot.params;

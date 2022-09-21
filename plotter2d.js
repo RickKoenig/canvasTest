@@ -3,59 +3,43 @@
 class Plotter2d {
     constructor(ctx) {
         this.ctx = ctx;
-        //this.dp = drawPrim;
 
         // some SWITCHES
         // test screen space
-        this.screenSpaceTests = false;
-
-        // test NDC space
-        this.NDCSpaceTests = false;
-
-        // test user/cam space
-        this.textTests = false;
-        this.circleTest = false;
+        this.screenSpaceTests = true;
         // end some SWITCHES
 
         this.params = {
             // mouse in user/cam space
             plot : [0, 0],
 
-            // screen space
+            // screen space dimensions of <canvas> / <div>
             W : [0, 0],
             WMin : 0,
 
-            // NDC space
+            // screen to NDC space
             trans : [0, 0],
             scl : 0,
             ndcMin: [0, 0],
             ndcMax: [0, 0],
 
-            // user/cam space
+            // NDC to  user/cam space
             camMin: [0, 0],
             camMax: [0, 0],
             center: [0, 0],
             startZoom: 1,
             zoom: 1,
             invZoom: 1,
-            lzoom: 0
-
+            logZoom: 0
         };
-
         this.scaleReset();
-
-        // drawing user/cam space grid and function
-        //this.showGrid = true;
-        //this.showFunction = true;
-        // end some SWITCHES
-
     }
 
 	scaleReset() {
         const p = this.params;
         p.zoom = p.startZoom;
 		p.invZoom = 1 / p.zoom;
-        p.lzoom = Math.log(p.zoom);
+        p.logZoom = Math.log(p.zoom);
     }
 
     #newcenter(i, pnt) {
@@ -103,11 +87,11 @@ class Plotter2d {
             if (mouse.mbut[Mouse.MMIDDLE]) { // faster wheel mouse when middle button held down
                 lzoomspeed *= 4;
             }
-            p.lzoom += m * lzoomspeed;
-            p.lzoom = range(-5, p.lzoom, 5);
+            p.logZoom += m * lzoomspeed;
+            p.logZoom = range(-5, p.logZoom, 5);
         }
 
-        p.zoom = Math.exp(p.lzoom);
+        p.zoom = Math.exp(p.logZoom);
         p.invZoom = 1 / p.zoom;
         
         
@@ -120,8 +104,6 @@ class Plotter2d {
             p.center[0] -= mouse.dmx*f;
             p.center[1] += mouse.dmy*f;
         }
-
-    
 
         p.camMin[0] = p.ndcMin[0] * p.invZoom + p.center[0];
         p.camMin[1] = p.ndcMin[1] * p.invZoom + p.center[1];
@@ -137,53 +119,7 @@ class Plotter2d {
         this.ctx.strokeStyle = "red";
         this.ctx.stroke();
     }
-/*
-    // test user space limits
-    drawACircleO(pnt, NDC, rad = .05) {
-        const p = this.params;
-        this.ctx.beginPath();
-        const zm = NDC ? p.invZoom : 1;
-        this.ctx.lineWidth = .005 * zm;
-        this.ctx.arc(pnt[0], pnt[1], rad * zm, 0, Math.PI * 2);
-        this.ctx.strokeStyle = "green";
-        this.ctx.stroke();
-    }
 
-    drawAText(center, size, txt, NDC, background) {
-        const p = this.params;
-        let textYSize = 1;
-        if (background) {
-            this.drawARectangle(center,[size[0], size[1]],NDC,background);
-        }
-        this.ctx.save();
-        this.ctx.textAlign = 'center';
-        this.ctx.translate(center[0], center[1]);
-        const zm = NDC ? p.invZoom : 1;
-        let sy = size[1] * zm;
-        this.ctx.scale(sy, -sy);
-        this.ctx.translate(-center[0], -center[1] + .33); // TODO: no magic numbers, comes from font
-        this.ctx.font = 'bold ' + textYSize + 'px serif';
-        this.ctx.fillStyle = "blue"; 
-        let text = txt;
-        
-        this.ctx.fillText(text, center[0], center[1]);
-        this.ctx.restore();
-    }
-
-    drawARectangle(center, size, NDC, background) {
-        const p = this.params;
-        const zm = NDC ? p.invZoom : 1;
-        this.ctx.lineWidth = .02 * zm;
-        let sx = size[0] * zm;
-        let sy = size[1] * zm;
-        this.ctx.fillStyle = background;
-        this.ctx.fillRect(center[0] - sx / 2
-            , center[1] - sy / 2
-            , sx
-            , sy);
-    
-    }
-*/
     #screen2math(i) {
         let p = this.params;
         let r = Array(2);
@@ -222,37 +158,10 @@ class Plotter2d {
         this.ctx.scale(p.scl, -p.scl); // math to screen space
         this.ctx.translate(p.trans[0], p.trans[1]);
 
-        // ###### NDC space
-        if (this.NDCSpaceTests) {
-            let p = this.params;
-            this.dp.drawAText([p.ndcMin[0] + .25 , p.ndcMin[1] + .125], [.25, .25], "NDC");
-            this.drawAText([p.ndcMax[0] - .25 , p.ndcMax[1] - .125], [.25, .25], "NDC");
-            this.drawACircleO([0, 0], false, .125);
-            this.drawACircleO([-1, -1], false, .125);
-            this.drawACircleO([1, -1], false, .125);
-            this.drawACircleO([-1, 1], false, .125);
-            this.drawACircleO([1, 1], false, .125);  
-        }
-        
         // to user/cam space
         this.ctx.save(); // NDC space saved
         this.ctx.scale(p.zoom, p.zoom);
         this.ctx.translate(-p.center[0], -p.center[1]);
         // ###### user/cam space
-        if (this.textTests) {
-            this.drawAText([.5, 0], [.125 * 7, .125], "User Text", false, "darkgray");
-            this.drawAText([-.5, 0], [.125 * 7, .125], "User Text NDC", true, "darkgray");
-        }
-
-        if (this.circleTest) {
-            this.drawACircleO([.25, 0], false);
-            this.drawACircleO([-.25, 0], false);
-            this.drawACircleO([0, .25], false);
-            this.drawACircleO([0, -.25], false);
-            this.drawACircleO([.5, 0], true);
-            this.drawACircleO([-.5, 0], true);
-            this.drawACircleO([0, .5], true);
-            this.drawACircleO([0, -.5], true);
-        }
     }
 }

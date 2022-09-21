@@ -93,7 +93,7 @@ class FunGen {
 			return null;
 		let pos = 0; // in f
 		let offsetSpace = 17; // approx length of 'input function '
-		let log = " ".repeat(offsetSpace);
+		let log = " ".repeat(offsetSpace); // keep for now
 		let g = "";
 		while(pos < f.length) {
 			let step = 1;

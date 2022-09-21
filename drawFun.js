@@ -49,7 +49,6 @@ class DrawFun {
 			} catch (err) {
 				//console.error("Error drawing function: <<< " + err + " >>>");
 			}
-			//if (Math.abs(x) <= maxXY && Math.abs(y) <= maxXY) {
 			if (x >= graphPaper.minGrid[0] && x <= graphPaper.maxGrid[0]) { 
 				if (y >= graphPaper.minGrid[1] && y <= graphPaper.maxGrid[1]) { 
 					this.ctx.lineTo(x, y);
