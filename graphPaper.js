@@ -1,11 +1,12 @@
 'use strict';
 
 class GraphPaper {
-    constructor(ctx, plot) {
+    constructor(ctx, drawPrims) {
         this.showGrid = true;
 
         this.ctx = ctx;
-        this.plot = plot;
+        //this.plot = plot;
+        this.dp = drawPrims;
         this.minGrid = [-100, -100];
         this.maxGrid = [100, 100];
         this.shrink = .05; // clip a little in NDC space to add axis labels X and Y
@@ -13,7 +14,7 @@ class GraphPaper {
 
 // draw
     #drawOneGrid(spacing, lineWidth, color) {
-        let p = this.plot.params;
+        let p = this.dp.plot.params;
         this.ctx.beginPath();
         // horizontal lines
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += spacing) {
@@ -57,7 +58,7 @@ class GraphPaper {
     }
 
     #drawAxis(ctx) {
-        let p = this.plot.params;
+        let p = this.dp.plot.params;
         // axis
         this.ctx.beginPath();
         this.ctx.lineTo(this.minGrid[0] * 2, 0);
@@ -86,28 +87,33 @@ class GraphPaper {
         level = levels[i];
 
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += level.step) {
-            this.plot.drawAText(
+            this.dp.drawAText(
                   [i + tensSize * p.invZoom * level.xGap, -tensSize * p.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , i.toFixed(level.fix)
+                , "blue"
+                , undefined
                 , true
             );
         }
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += level.step) {
-            this.plot.drawAText(
+            this.dp.drawAText(
                   [ tensSize * p.invZoom * level.xGap, j - tensSize * p.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , j.toFixed(level.fix)
+                , "blue"
+                , undefined
                 , true
             );
         }
     }
+    //this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
 
     #drawAxisNames(hAxis, vAxis) {
-        let p = this.plot.params;
+        let p = this.dp.plot.params;
         let size = .05;
-        this.plot.drawAText([p.camMax[0] - this.shrink * p.invZoom/ 2, 0], [size, size], hAxis, true, "white");
-        this.plot.drawAText([0, p.camMax[1] - this.shrink * p.invZoom/ 2, 0], [size, size], vAxis, true, "white");
+        this.dp.drawAText([p.camMax[0] - this.shrink * p.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
+        this.dp.drawAText([0, p.camMax[1] - this.shrink * p.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
     }
 
     draw(axisH, axisV) {

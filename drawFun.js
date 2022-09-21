@@ -1,24 +1,19 @@
 'use strict';
 
 class DrawFun {
-    constructor(ctx, plot) {
+    constructor(ctx, drawPrims) {
         this.showGrid = true;
-
         this.ctx = ctx; // canvas 2D context
-        this.plot = plot; // state of 
+        this.dp = drawPrims; // state of user/cam space
     }
- /*   
-    functionF(t) {
-        return Math.cos(t);
-    }
-*/
-functionF(t) {
-	return Math.cos(t); // default function
-}
 
-functionG(t) {
-	return Math.sin(t); // default function
-}
+	functionF(t) {
+		return Math.cos(t); // default function
+	}
+
+	functionG(t) {
+		return Math.sin(t); // default function
+	}
 
 	changeFunctionF(g) {
 		this.functionF = g;
@@ -67,7 +62,7 @@ functionG(t) {
 	}
 
 	#drawNormal(lineStep, phase, graphPaper) {
-        const p = this.plot.params;
+        const p = this.dp.plot.params;
 		if (!this.functionG) {
 			//console.log("no draw functionG !!!");
 			return;

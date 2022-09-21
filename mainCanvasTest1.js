@@ -64,7 +64,7 @@ class MainApp {
 
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
-		this.userCircleTest = false;
+		this.userCircleTest = true;
 		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
 		this.runFunGenTests = false; // test function generator
@@ -167,8 +167,9 @@ class MainApp {
 
 		this.input = new Input(this.drawarea, this.mycanvas2);
 		this.plotter2d = new Plotter2d(this.ctx);
-		this.graphPaper = new GraphPaper(this.ctx, this.plotter2d);
-		this.drawFun = new DrawFun(this.ctx, this.plotter2d);
+		this.drawPrim = new DrawPrimitives(this.ctx, this.plotter2d);
+		this.graphPaper = new GraphPaper(this.ctx, this.drawPrim);
+		this.drawFun = new DrawFun(this.ctx, this.drawPrim);
 
 		if (this.runFunGenTests) {
 			FunGen.runTests();
@@ -441,6 +442,28 @@ class MainApp {
 		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse);
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
+
+
+		// test new drawPrimitives class
+		const lineWidth = undefined;
+		const NDC = true;
+		this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan");
+		this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC);
+
+		let r = 255;
+		let g = 255;
+		let b = 0;
+		let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
+		//let a = .35;
+		//let colStrGen = "rgba(" + r + "," +  g + "," +  b + "," + a + ")";
+		//let colStr = "green";
+		this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen);
+		this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green");
+		this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true);
+		this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true);
+		
+		this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen);
+		this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
 	}
 
 	#animate() {

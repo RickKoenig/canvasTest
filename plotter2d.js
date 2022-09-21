@@ -3,6 +3,7 @@
 class Plotter2d {
     constructor(ctx) {
         this.ctx = ctx;
+        //this.dp = drawPrim;
 
         // some SWITCHES
         // test screen space
@@ -65,10 +66,10 @@ class Plotter2d {
         return nc;
     }
         
-    calcCanvasSpacesUI(wid, hit, mouse) {
+    #calcCanvasSpacesUI(wid, hit, mouse) {
         const p = this.params;
         let pnt = [mouse.mx, mouse.my];
-        p.plot = this.screen2math(pnt);
+        p.plot = this.#screen2math(pnt);
         p.W[0] = wid;
         p.W[1] = hit;
 
@@ -129,16 +130,16 @@ class Plotter2d {
     }
 
     // screen space circle
-    #drawACircleScreen(pnt, rad) {
+    #drawACircleOScreen(pnt, rad) {
         this.ctx.beginPath();
         this.ctx.lineWidth = 2.5;
         this.ctx.arc(pnt[0], pnt[1], rad, 0, Math.PI * 2);
         this.ctx.strokeStyle = "red";
         this.ctx.stroke();
     }
-
+/*
     // test user space limits
-    drawACircle(pnt, NDC, rad = .05) {
+    drawACircleO(pnt, NDC, rad = .05) {
         const p = this.params;
         this.ctx.beginPath();
         const zm = NDC ? p.invZoom : 1;
@@ -182,8 +183,8 @@ class Plotter2d {
             , sy);
     
     }
-
-    screen2math(i) {
+*/
+    #screen2math(i) {
         let p = this.params;
         let r = Array(2);
         r[0] = p.center[0] + (i[0] - p.W[0]/2)/(p.zoom*p.WMin/2);
@@ -205,15 +206,15 @@ class Plotter2d {
 
         //this.ctx.save(); // save all the defaults
 
-        this.calcCanvasSpacesUI(wid, hit, input);
+        this.#calcCanvasSpacesUI(wid, hit, input);
 
         // ###### canvas/screen space
         if (this.screenSpaceTests) {
-            this.#drawACircleScreen([0, 0], 20);
-            this.#drawACircleScreen([p.W[0], 0], 20);
-            this.#drawACircleScreen([0, p.W[1]], 20);
-            this.#drawACircleScreen([p.W[0], p.W[1]], 20);
-            this.#drawACircleScreen([p.W[0] * .5, p.W[1] * .5], 20);
+            this.#drawACircleOScreen([0, 0], 20);
+            this.#drawACircleOScreen([p.W[0], 0], 20);
+            this.#drawACircleOScreen([0, p.W[1]], 20);
+            this.#drawACircleOScreen([p.W[0], p.W[1]], 20);
+            this.#drawACircleOScreen([p.W[0] * .5, p.W[1] * .5], 20);
         }
 
         // to NDC space
@@ -224,13 +225,13 @@ class Plotter2d {
         // ###### NDC space
         if (this.NDCSpaceTests) {
             let p = this.params;
-            this.drawAText([p.ndcMin[0] + .25 , p.ndcMin[1] + .125], [.25, .25], "NDC");
+            this.dp.drawAText([p.ndcMin[0] + .25 , p.ndcMin[1] + .125], [.25, .25], "NDC");
             this.drawAText([p.ndcMax[0] - .25 , p.ndcMax[1] - .125], [.25, .25], "NDC");
-            this.drawACircle([0, 0], false, .125);
-            this.drawACircle([-1, -1], false, .125);
-            this.drawACircle([1, -1], false, .125);
-            this.drawACircle([-1, 1], false, .125);
-            this.drawACircle([1, 1], false, .125);  
+            this.drawACircleO([0, 0], false, .125);
+            this.drawACircleO([-1, -1], false, .125);
+            this.drawACircleO([1, -1], false, .125);
+            this.drawACircleO([-1, 1], false, .125);
+            this.drawACircleO([1, 1], false, .125);  
         }
         
         // to user/cam space
@@ -244,14 +245,14 @@ class Plotter2d {
         }
 
         if (this.circleTest) {
-            this.drawACircle([.25, 0], false);
-            this.drawACircle([-.25, 0], false);
-            this.drawACircle([0, .25], false);
-            this.drawACircle([0, -.25], false);
-            this.drawACircle([.5, 0], true);
-            this.drawACircle([-.5, 0], true);
-            this.drawACircle([0, .5], true);
-            this.drawACircle([0, -.5], true);
+            this.drawACircleO([.25, 0], false);
+            this.drawACircleO([-.25, 0], false);
+            this.drawACircleO([0, .25], false);
+            this.drawACircleO([0, -.25], false);
+            this.drawACircleO([.5, 0], true);
+            this.drawACircleO([-.5, 0], true);
+            this.drawACircleO([0, .5], true);
+            this.drawACircleO([0, -.5], true);
         }
     }
 }
