@@ -166,6 +166,7 @@ class MainApp {
 
 		this.input = new Input(this.drawarea);
 		//this.input = new Input(this.drawarea, this.mycanvas2);
+		this.params = new Params();
 		this.plotter2d = new Plotter2d(this.ctx);
 		this.drawPrim = new DrawPrimitives(this.ctx, this.plotter2d);
 		this.graphPaper = new GraphPaper(this.ctx, this.drawPrim);
@@ -218,16 +219,16 @@ class MainApp {
 
 
 	#buttonScaleCamReset() {
-		this.plotter2d.params.scaleReset();
+		this.params.scaleReset();
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.plotter2d.params;
+		const p = this.params;
 		p.center[0] = 0;
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.plotter2d.params;
+		const p = this.params;
 		p.center[1] = 0;
 	}
 
@@ -303,7 +304,7 @@ class MainApp {
 	#updateUI() {
 		const plotHeader = "Move sliders, Press buttons<br> Enter functions<br>";
 
-		let p = this.plotter2d.params;
+		let p = this.params;
 		const plotMouse =  "<br>plot MX = " + p.userMouse[0].toFixed(2) 
 						+ ", plot MY = " + p.userMouse[1].toFixed(2);
 
@@ -389,12 +390,9 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		//this.input.proc(this.mycanvas2); // this
-		this.input.proc(this.drawarea); // or this
+		this.input.proc(this.mycanvas2); // this
+		//this.input.proc(this.drawarea); // or this
 
-		// update text and sliders
-		this.#updateUI();
-	
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
 		let twoPI = 2 * Math.PI;
@@ -436,30 +434,36 @@ class MainApp {
 			this.ctx.stroke();
 		}
 	
-		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse);
+		const wid = this.mycanvas2.width;
+		const hit = this.mycanvas2.height;
+        this.params.proc(wid, hit, this.input.mouse);
+		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse, this.params);
 
 		// now in user/cam space
-		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
+		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y", this.params);
+		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper, this.params);
 
 
 		// test new drawPrimitives class
 		const lineWidth = undefined;
 		const NDC = true;
-		this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan");
-		this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC);
+		this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan", false, this.params);
+		this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC, this.params);
 
 		let r = 255;
 		let g = 255;
 		let b = 0;
 		let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
-		this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen);
-		this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green");
-		this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true);
-		this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true);
+		this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen, false, this.params);
+		this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green", false, this.params);
+		this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true, this.params);
+		this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true, this.params);
 		
-		this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen);
-		this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
+		this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen, false, this.params);
+		this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true, this.params);
+
+		// update text and sliders
+		this.#updateUI();
 	}
 
 	#animate() {

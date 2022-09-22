@@ -50,7 +50,7 @@ class Params {
         //return r;
     }
 
-    calcCanvasSpacesUI(wid, hit, mouse) {
+    proc(wid, hit, mouse) {
         //const p = this.params;
         let pnt = [mouse.mx, mouse.my];
         this.#screen2math(pnt);

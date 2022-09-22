@@ -1,7 +1,7 @@
 'use strict';
 
 class GraphPaper {
-    constructor(ctx, drawPrims) {
+    constructor(ctx, drawPrims, p) {
         // one SWITCH
         this.showGrid = true;
         // end SWITCH
@@ -15,8 +15,8 @@ class GraphPaper {
     }
 
 // draw
-    #drawOneGrid(spacing, lineWidth, color) {
-        let p = this.dp.plot.params;
+    #drawOneGrid(spacing, lineWidth, color, p) {
+        //let p = this.dp.plot.params;
         this.ctx.beginPath();
         // horizontal lines
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += spacing) {
@@ -37,17 +37,17 @@ class GraphPaper {
         this.ctx.stroke();
     }
 
-    #drawGrid(ctx) {
+    #drawGrid(p) {
         // in ctx clip
         let fine = .25;
         let med = 1;
         let larger = 10;
         // fine grid
-        this.#drawOneGrid(fine, .005, "rgb(133, 216, 252)");
+        this.#drawOneGrid(fine, .005, "rgb(133, 216, 252)", p);
         // medium grid
-        this.#drawOneGrid(med, .0075, "rgb(96,204,252)");
+        this.#drawOneGrid(med, .0075, "rgb(96,204,252)", p);
         // larger grid
-        this.#drawOneGrid(larger, .01, "rgb(74, 184, 231)");
+        this.#drawOneGrid(larger, .01, "rgb(74, 184, 231)", p);
         // axis
         this.ctx.beginPath();
         this.ctx.lineTo(this.minGrid[0], 0);
@@ -59,8 +59,8 @@ class GraphPaper {
         this.ctx.stroke();
     }
 
-    #drawAxis(ctx) {
-        let p = this.dp.plot.params;
+    #drawAxis(p) {
+        //let p = this.dp.plot.params;
         // axis
         this.ctx.beginPath();
         this.ctx.lineTo(this.minGrid[0] * 2, 0);
@@ -96,6 +96,7 @@ class GraphPaper {
                 , "blue"
                 , undefined
                 , true
+                , p
             );
         }
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += level.step) {
@@ -106,23 +107,24 @@ class GraphPaper {
                 , "blue"
                 , undefined
                 , true
+                , p
             );
         }
     }
 
-    #drawAxisNames(hAxis, vAxis) {
-        let p = this.dp.plot.params;
+    #drawAxisNames(hAxis, vAxis, p) {
+        //let p = this.dp.plot.params;
         let size = .05;
-        this.dp.drawAText([p.camMax[0] - this.shrink * p.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
-        this.dp.drawAText([0, p.camMax[1] - this.shrink * p.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
+        this.dp.drawAText([p.camMax[0] - this.shrink * p.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true, p);
+        this.dp.drawAText([0, p.camMax[1] - this.shrink * p.invZoom/ 2], [size, size], vAxis, undefined, "white", true, p);
     }
 
-    draw(axisH, axisV) {
+    draw(axisH, axisV, p) {
         // grid lines
         if (this.showGrid) {
-            this.#drawGrid();
-            this.#drawAxis();
-            this.#drawAxisNames(axisH, axisV);
+            this.#drawGrid(p);
+            this.#drawAxis(p);
+            this.#drawAxisNames(axisH, axisV, p);
         }
     }
 }

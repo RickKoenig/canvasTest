@@ -3,14 +3,14 @@
 'use strict';
 
 class DrawPrimitives {
-    constructor(ctx, plot) {
+    constructor(ctx, p) {
         this.ctx = ctx; // canvas 2D context
-        this.plot = plot; // state of user/cam space
+        this.p = p; // state of user/cam space
     }
 
     // test user space limits
-    drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
-        const p = this.plot.params;
+    drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false, p) {
+        //const p = this.plot.params;
         this.ctx.beginPath();
         const zm = ndcScale ? p.invZoom : 1;
         this.ctx.lineWidth = lineWidth * zm;
@@ -19,8 +19,8 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
-    drawARectangle(center, size, color, ndcScale = false) {
-        const p = this.plot.params;
+    drawARectangle(center, size, color, ndcScale = false, p) {
+        //const p = this.plot.params;
         const zm = ndcScale ? p.invZoom : 1;
         this.ctx.lineWidth = .02 * zm;
         let sx = size[0] * zm;
@@ -33,11 +33,11 @@ class DrawPrimitives {
     
     }
 
-    drawAText(center, size, txt, fore = "black", back = undefined, NDC) {
-        const p = this.plot.params;
+    drawAText(center, size, txt, fore = "black", back = undefined, NDC, p) {
+        //const p = this.plot.params;
         let textYSize = 1;
         if (back) {
-            this.drawARectangle(center, [size[0], size[1]], back, NDC);
+            this.drawARectangle(center, [size[0], size[1]], back, NDC, p);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';

@@ -11,7 +11,7 @@ class Plotter2d {
         // end some SWITCHES
 
         // control the zoom and pan
-        this.params = new Params();
+        //this.params = new Params();
     }
 
     // screen space circle
@@ -23,8 +23,7 @@ class Plotter2d {
         this.ctx.stroke();
     }
 
-    proc(wid, hit, input) {
-        let p = this.params;
+    proc(wid, hit, input, p) {
         // these 'restore's do nothing the first time thru
         // but it eliminates calling a cleanup funciton
         // back to NDC space
@@ -37,7 +36,6 @@ class Plotter2d {
 
         //this.ctx.save(); // save all the defaults
 
-        this.params.calcCanvasSpacesUI(wid, hit, input);
 
         // ###### canvas/screen space
         if (this.screenSpaceTests) {
