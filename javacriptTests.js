@@ -2,4 +2,4 @@
 
 // test out features of javascript here
 
-//console.log("javacript tests!");
+console.log("javacript tests!");

@@ -1,27 +1,23 @@
 'use strict';
 
-'use strict';
-
 class DrawPrimitives {
-    constructor(ctx, p) {
+    constructor(ctx, params) {
         this.ctx = ctx; // canvas 2D context
-        this.p = p; // state of user/cam space
+        this.params = params // state of user/cam space
     }
 
     // test user space limits
-    drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false, p) {
-        //const p = this.plot.params;
+    drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
-        const zm = ndcScale ? p.invZoom : 1;
+        const zm = ndcScale ? this.params.invZoom : 1;
         this.ctx.lineWidth = lineWidth * zm;
         this.ctx.arc(pnt[0], pnt[1], rad * zm, 0, Math.PI * 2);
         this.ctx.strokeStyle = color;
         this.ctx.stroke();
     }
 
-    drawARectangle(center, size, color, ndcScale = false, p) {
-        //const p = this.plot.params;
-        const zm = ndcScale ? p.invZoom : 1;
+    drawARectangle(center, size, color = "black", ndcScale = false) {
+        const zm = ndcScale ? this.params.invZoom : 1;
         this.ctx.lineWidth = .02 * zm;
         let sx = size[0] * zm;
         let sy = size[1] * zm;
@@ -33,16 +29,15 @@ class DrawPrimitives {
     
     }
 
-    drawAText(center, size, txt, fore = "black", back = undefined, NDC, p) {
-        //const p = this.plot.params;
+    drawAText(center, size, txt, fore = "black", back = undefined, NDC = false) {
         let textYSize = 1;
         if (back) {
-            this.drawARectangle(center, [size[0], size[1]], back, NDC, p);
+            this.drawARectangle(center, [size[0], size[1]], back, NDC);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';
         this.ctx.translate(center[0], center[1]);
-        const zm = NDC ? p.invZoom : 1;
+        const zm = NDC ? this.params.invZoom : 1;
         let sy = size[1] * zm;
         this.ctx.scale(sy, -sy);
         const adjCenter = .33; // TODO: no magic numbers, comes from font

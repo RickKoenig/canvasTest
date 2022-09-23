@@ -1,13 +1,10 @@
 'use strict';
 
 class GraphPaper {
-    constructor(ctx, drawPrims, p) {
-        // one SWITCH
-        this.showGrid = true;
-        // end SWITCH
-
-        this.ctx = ctx;
+    constructor(drawPrims) {
+        this.ctx = drawPrims.ctx;
         this.dp = drawPrims;
+        this.params = drawPrims.params;
 
         this.minGrid = [-100, -100];
         this.maxGrid = [100, 100];
@@ -15,19 +12,18 @@ class GraphPaper {
     }
 
 // draw
-    #drawOneGrid(spacing, lineWidth, color, p) {
-        //let p = this.dp.plot.params;
+    #drawOneGrid(spacing, lineWidth, color) {
         this.ctx.beginPath();
         // horizontal lines
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += spacing) {
-            if (j >= p.camMin[1] && j <= p.camMax[1]) {
+            if (j >= this.params.camMin[1] && j <= this.params.camMax[1]) {
                 this.ctx.moveTo(this.minGrid[0], j);
                 this.ctx.lineTo(this.maxGrid[0], j);
             }
         }
         // vertical lines
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += spacing) {
-            if (i >= p.camMin[0] && i <= p.camMax[0]) {
+            if (i >= this.params.camMin[0] && i <= this.params.camMax[0]) {
                 this.ctx.moveTo(i, this.minGrid[1]);
                 this.ctx.lineTo(i, this.maxGrid[1]);
             }
@@ -37,17 +33,17 @@ class GraphPaper {
         this.ctx.stroke();
     }
 
-    #drawGrid(p) {
+    #drawGrid() {
         // in ctx clip
         let fine = .25;
         let med = 1;
         let larger = 10;
         // fine grid
-        this.#drawOneGrid(fine, .005, "rgb(133, 216, 252)", p);
+        this.#drawOneGrid(fine, .005, "rgb(133, 216, 252)");
         // medium grid
-        this.#drawOneGrid(med, .0075, "rgb(96,204,252)", p);
+        this.#drawOneGrid(med, .0075, "rgb(96,204,252)");
         // larger grid
-        this.#drawOneGrid(larger, .01, "rgb(74, 184, 231)", p);
+        this.#drawOneGrid(larger, .01, "rgb(74, 184, 231)");
         // axis
         this.ctx.beginPath();
         this.ctx.lineTo(this.minGrid[0], 0);
@@ -59,8 +55,7 @@ class GraphPaper {
         this.ctx.stroke();
     }
 
-    #drawAxis(p) {
-        //let p = this.dp.plot.params;
+    #drawAxis() {
         // axis
         this.ctx.beginPath();
         this.ctx.lineTo(this.minGrid[0] * 2, 0);
@@ -82,7 +77,7 @@ class GraphPaper {
         let i;
         for (i = 0; i < levels.length - 1; ++i) {
             level = levels[i];
-            if (p.zoom < level.lessZoom) {
+            if (this.params.zoom < level.lessZoom) {
                 break;
             }
         }
@@ -90,42 +85,39 @@ class GraphPaper {
 
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += level.step) {
             this.dp.drawAText(
-                  [i + tensSize * p.invZoom * level.xGap, -tensSize * p.invZoom * level.yGap] // offset away slightly from grid
+                  [i + tensSize * this.params.invZoom * level.xGap, -tensSize * this.params.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , i.toFixed(level.fix)
                 , "blue"
                 , undefined
                 , true
-                , p
             );
         }
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += level.step) {
             this.dp.drawAText(
-                  [ tensSize * p.invZoom * level.xGap, j - tensSize * p.invZoom * level.yGap] // offset away slightly from grid
+                  [ tensSize * this.params.invZoom * level.xGap, j - tensSize * this.params.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , j.toFixed(level.fix)
                 , "blue"
                 , undefined
                 , true
-                , p
             );
         }
     }
 
-    #drawAxisNames(hAxis, vAxis, p) {
-        //let p = this.dp.plot.params;
+    #drawAxisNames(hAxis, vAxis) {
         let size = .05;
-        this.dp.drawAText([p.camMax[0] - this.shrink * p.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true, p);
-        this.dp.drawAText([0, p.camMax[1] - this.shrink * p.invZoom/ 2], [size, size], vAxis, undefined, "white", true, p);
+        this.dp.drawAText([this.params.camMax[0] - this.shrink * this.params.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
+        this.dp.drawAText([0, this.params.camMax[1] - this.shrink * this.params.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
     }
 
-    draw(axisH, axisV, p) {
+    draw(axisH, axisV) {
         // grid lines
-        if (this.showGrid) {
-            this.#drawGrid(p);
-            this.#drawAxis(p);
-            this.#drawAxisNames(axisH, axisV, p);
-        }
+        this.#drawGrid();
+        // axis lines and text numbers
+        this.#drawAxis();
+        // names of axes
+        this.#drawAxisNames(axisH, axisV);
     }
 }
 

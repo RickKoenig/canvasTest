@@ -1,10 +1,10 @@
 'use strict';
 
 class DrawFun {
-    constructor(ctx, drawPrims) {
-        this.showGrid = true;
-        this.ctx = ctx; // canvas 2D context
-        this.dp = drawPrims; // state of user/cam space
+    constructor(graphPaper) {
+        this.ctx = graphPaper.dp.ctx; // canvas 2D context
+        this.dp = graphPaper.dp;
+		this.params = graphPaper.dp.params;
     }
 
 	functionF(t) {
@@ -60,8 +60,8 @@ class DrawFun {
 		this.ctx.stroke();
 	}
 
-	#drawNormal(lineStep, phase, graphPaper, p) {
-        //const p = this.dp.plot.params;
+	#drawNormal(lineStep, phase, graphPaper) {
+        const p = this.params;
 		if (!this.functionG) {
 			//console.log("no draw functionG !!!");
 			return;

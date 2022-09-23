@@ -13,6 +13,7 @@ class MainApp {
 		// input log
 		this.textInputLog = document.getElementById("textInputLog");
 
+		// TODO: automate getElementById, maybe generate html
 		// main canvas
 		this.drawarea = document.getElementById("drawarea");
 		this.mycanvas2 = document.getElementById("mycanvas2");
@@ -64,10 +65,11 @@ class MainApp {
 
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
-		this.userCircleTest = true;
+		this.userCircleTest = false;
 		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
 		this.runFunGenTests = false; // test function generator
+		this.testDrawPrims = true;
 		// end some SWITCHES
 
 		// for sine wave like functions, add a phase to the input of the function(s)
@@ -166,11 +168,11 @@ class MainApp {
 
 		this.input = new Input(this.drawarea);
 		//this.input = new Input(this.drawarea, this.mycanvas2);
-		this.params = new Params();
-		this.plotter2d = new Plotter2d(this.ctx);
+		this.plotter2d = new Plotter2d();
+		//this.plotter2d = new Plotter2d(this.ctx);
 		this.drawPrim = new DrawPrimitives(this.ctx, this.plotter2d);
-		this.graphPaper = new GraphPaper(this.ctx, this.drawPrim);
-		this.drawFun = new DrawFun(this.ctx, this.drawPrim);
+		this.graphPaper = new GraphPaper(this.drawPrim);
+		this.drawFun = new DrawFun(this.graphPaper);
 
 		if (this.runFunGenTests) {
 			FunGen.runTests();
@@ -304,7 +306,7 @@ class MainApp {
 	#updateUI() {
 		const plotHeader = "Move sliders, Press buttons<br> Enter functions<br>";
 
-		let p = this.params;
+		let p = this.plotter2d;
 		const plotMouse =  "<br>plot MX = " + p.userMouse[0].toFixed(2) 
 						+ ", plot MY = " + p.userMouse[1].toFixed(2);
 
@@ -390,8 +392,8 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		this.input.proc(this.mycanvas2); // this
-		//this.input.proc(this.drawarea); // or this
+		//this.input.proc(this.mycanvas2); // this
+		this.input.proc(this.drawarea); // or this
 
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
@@ -434,34 +436,35 @@ class MainApp {
 			this.ctx.stroke();
 		}
 	
+		// proc/draw all the classes
 		const wid = this.mycanvas2.width;
 		const hit = this.mycanvas2.height;
-        this.params.proc(wid, hit, this.input.mouse);
-		this.plotter2d.proc(this.mycanvas2.width, this.mycanvas2.height, this.input.mouse, this.params);
-
+        this.plotter2d.proc(wid, hit, this.input.mouse, this.ctx);
+		//this.plotter2d.proc(this.params);
 		// now in user/cam space
-		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y", this.params);
-		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper, this.params);
+		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper/*, this.plotter2d*/);
 
 
-		// test new drawPrimitives class
-		const lineWidth = undefined;
-		const NDC = true;
-		this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan", false, this.params);
-		this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC, this.params);
+		if (this.testDrawPrims) {
+			// test new drawPrimitives class
+			const lineWidth = undefined;
+			const NDC = true;
+			this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan");
+			this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC);
 
-		let r = 255;
-		let g = 255;
-		let b = 0;
-		let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
-		this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen, false, this.params);
-		this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green", false, this.params);
-		this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true, this.params);
-		this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true, this.params);
-		
-		this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen, false, this.params);
-		this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true, this.params);
-
+			let r = 255;
+			let g = 255;
+			let b = 0;
+			let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
+			this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen);
+			this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green");
+			this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true);
+			this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true);
+			
+			this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen);
+			this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
+		}
 		// update text and sliders
 		this.#updateUI();
 	}
