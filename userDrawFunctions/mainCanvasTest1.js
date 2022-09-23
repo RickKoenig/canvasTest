@@ -221,16 +221,16 @@ class MainApp {
 
 
 	#buttonScaleCamReset() {
-		this.params.scaleReset();
+		this.plotter2d.scaleReset();
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.params;
+		const p = this.plotter2d;
 		p.center[0] = 0;
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.params;
+		const p = this.plotter2d;
 		p.center[1] = 0;
 	}
 
@@ -443,7 +443,7 @@ class MainApp {
 		//this.plotter2d.proc(this.params);
 		// now in user/cam space
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper/*, this.plotter2d*/);
+		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 
 
 		if (this.testDrawPrims) {
