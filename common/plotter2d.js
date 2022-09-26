@@ -5,7 +5,11 @@
 // handle screen, NFC, user/cam spaces,    allow mouse to UI control the user/cam space
 class Plotter2d {
 
-    constructor() {
+    // enum spaces
+    static spaces = makeEnum(["SCREEN", "NDC", "USER"]);
+
+    constructor(ctx) {
+        this.ctx = ctx; // only used for trans and scale, save and restore
         // mouse in user/cam space
         this.userMouse = [0, 0];
     
@@ -27,9 +31,12 @@ class Plotter2d {
         this.startZoom= 1;
         this.zoom= 1;
         this.invZoom= 1;
-        this.logZoom= 0
+        this.logZoom= 0;
 
         this.scaleReset();
+        // good state is one ctx.default in the stack and some active current state
+        this.ctx.save();
+        this.curSpace = Plotter2d.spaces.SCREEN;
     }
 
 	scaleReset() {
@@ -45,52 +52,30 @@ class Plotter2d {
         this.center = nc;
     }
 
-    #screen2math(i) {
+    #screen2userCam(i) {
         let r = Array(2);
         r[0] = this.center[0] + (i[0] - this.W[0]/2)/(this.zoom*this.WMin/2);
         r[1] = this.center[1] + (i[1] - this.W[1]/2)/(-this.zoom*this.WMin/2);
         this.userMouse = r;
     }
 
-    #setCtxTransScaleUserCam(ctx) {
-        // these 'restore's do nothing the first time thru
-        // but it eliminates calling a cleanup funciton
-        // back to NDC space
-        ctx.restore();
-        // back to canvas/screen space
-        ctx.restore();
-        // back to all defaults
-        //ctx.restore(); // they cancel (restore, save)
-        // all restored
-
-        //ctx.save(); // save all the defaults
-
-/*
-        // ###### canvas/screen space
-        if (this.screenSpaceTests) {
-            this.#drawACircleOScreen([0, 0], 20);
-            this.#drawACircleOScreen([params.W[0], 0], 20);
-            this.#drawACircleOScreen([0, params.W[1]], 20);
-            this.#drawACircleOScreen([params.W[0], params.W[1]], 20);
-            this.#drawACircleOScreen([params.W[0] * .5, params.W[1] * .5], 20);
+    getZoom(ndcScale) {
+        if (this.curSpace != Plotter2d.spaces.USER) {
+            return 1;
         }
-*/
-        // to NDC space
-        ctx.save(); // screen space saved
-        ctx.scale(this.scl, -this.scl); // math to screen space
-        ctx.translate(this.trans[0], this.trans[1]);
-
-        // to user/cam space
-        ctx.save(); // NDC space saved
-        ctx.scale(this.zoom, this.zoom);
-        ctx.translate(-this.center[0], -this.center[1]);
-        // ###### user/cam space
+        // only in user space
+        const zoom = ndcScale ? this.invZoom : 1;
+        return zoom;
     }
+/*
+    const zm = this.plotter2d.getZoom();
+    const zm = ndcScale ? this.plotter2d.invZoom : 1;
+*/
 
-    #procUserCamUI(wid, hit, mouse) {
+    proc(wid, hit, mouse) {
         // use the mouse to navigate the user/cam space
         let pnt = [mouse.mx, mouse.my];
-        this.#screen2math(pnt);
+        this.#screen2userCam(pnt);
         this.W[0] = wid;
         this.W[1] = hit;
 
@@ -146,74 +131,34 @@ class Plotter2d {
         this.camMax[1] = this.ndcMax[1] * this.invZoom + this.center[1];
     }
 
-    proc(wid, hit, mouse, ctx) {
-        // run interactive user/cam space navigation
-        this.#procUserCamUI(wid, hit, mouse);
-        // set ctx to user/cam space
-        this.#setCtxTransScaleUserCam(ctx);
-    }
-
-}
-
-
-
-/*
-// setup different spaces and UI the user/cam space with the mouse
-class Plotter2d {
-    constructor(ctx) {
-        this.ctx = ctx;
-
-        // some SWITCHES
-        // test screen space
-        this.screenSpaceTests = false;
-        // end some SWITCHES
-
-        // control the zoom and pan
-        //this.params = new Params();
-    }
-
-    // screen space circle
-    #drawACircleOScreen(pnt, rad) {
-        this.ctx.beginPath();
-        this.ctx.lineWidth = 2.5;
-        this.ctx.arc(pnt[0], pnt[1], rad, 0, Math.PI * 2);
-        this.ctx.strokeStyle = "red";
-        this.ctx.stroke();
-    }
-
-    proc(params) {
-        // these 'restore's do nothing the first time thru
-        // but it eliminates calling a cleanup funciton
-        // back to NDC space
-        this.ctx.restore();
+    setSpace(space) {
+        // canvas stack set to default every frame maybe TODO: verify
         // back to canvas/screen space
-        this.ctx.restore();
-        // back to all defaults
-        //this.ctx.restore(); // they cancel (restore, save)
-        // all restored
-
-        //this.ctx.save(); // save all the defaults
-
-
-        // ###### canvas/screen space
-        if (this.screenSpaceTests) {
-            this.#drawACircleOScreen([0, 0], 20);
-            this.#drawACircleOScreen([params.W[0], 0], 20);
-            this.#drawACircleOScreen([0, params.W[1]], 20);
-            this.#drawACircleOScreen([params.W[0], params.W[1]], 20);
-            this.#drawACircleOScreen([params.W[0] * .5, params.W[1] * .5], 20);
+        this.ctx.restore(); // stack now empty and ctx set back to defaults
+        this.ctx.save(); // screen space/defaults saved on stack
+        
+        switch(space) {
+        case Plotter2d.spaces.SCREEN:
+            // ###### already in screen/canvas space
+            // do nothing
+            break;
+        case Plotter2d.spaces.NDC:
+            // toco NDC space
+            this.ctx.scale(this.scl, -this.scl); // math to screen space
+            this.ctx.translate(this.trans[0], this.trans[1]);
+            // ###### now in NDC space
+            break;
+        case Plotter2d.spaces.USER:
+            // to NDC space
+            this.ctx.scale(this.scl, -this.scl); // math to screen space
+            this.ctx.translate(this.trans[0], this.trans[1]);
+            // to user/cam space
+            this.ctx.scale(this.zoom, this.zoom);
+            this.ctx.translate(-this.center[0], -this.center[1]);
+            // ###### now in user/cam space
+            break;
         }
-
-        // to NDC space
-        this.ctx.save(); // screen space saved
-        this.ctx.scale(params.scl, -params.scl); // math to screen space
-        this.ctx.translate(params.trans[0], params.trans[1]);
-
-        // to user/cam space
-        this.ctx.save(); // NDC space saved
-        this.ctx.scale(params.zoom, params.zoom);
-        this.ctx.translate(-params.center[0], -params.center[1]);
-        // ###### user/cam space
+        this.curSpace = space;
     }
+
 }
-*/

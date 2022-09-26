@@ -65,7 +65,6 @@ class MainApp {
 
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
-		this.userCircleTest = false;
 		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
 		this.runFunGenTests = false; // test function generator
@@ -167,10 +166,8 @@ class MainApp {
 		});
 
 		this.input = new Input(this.drawarea);
-		//this.input = new Input(this.drawarea, this.mycanvas2);
-		this.plotter2d = new Plotter2d();
-		//this.plotter2d = new Plotter2d(this.ctx);
-		this.drawPrim = new DrawPrimitives(this.ctx, this.plotter2d);
+		this.plotter2d = new Plotter2d(this.ctx);
+		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 		this.drawFun = new DrawFun(this.graphPaper);
 
@@ -392,8 +389,7 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		//this.input.proc(this.mycanvas2); // this
-		this.input.proc(this.drawarea); // or this
+		this.input.proc(this.drawarea);
 
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
@@ -415,39 +411,31 @@ class MainApp {
 				}
 			}
 		}
+		
+		// update text and sliders
+		this.#updateUI();
 
 		// re-adjust canvas size depending on the window resize
 		this.#calcCanvasSize();
 
-		// in screen space
-		if (this.userCircleTest) {
-			// first user test canvas before calling plotter2d proc, screen space
-			// draw a circle at some coords, use the mouse or canvas size
-			this.ctx.beginPath();
-			this.ctx.lineWidth = 10;
-			this.ctx.arc(this.input.mouse.mx, this.input.mouse.my, 30, 0, Math.PI * 2);
-			this.ctx.strokeStyle = "green";
-			this.ctx.stroke();
-
-			this.ctx.beginPath();
-			this.ctx.lineWidth = 10;
-			this.ctx.arc(this.mycanvas2.width / 2, this.mycanvas2.height / 2, 30, 0, Math.PI * 2);
-			this.ctx.strokeStyle = "green";
-			this.ctx.stroke();
-		}
-	
 		// proc/draw all the classes
 		const wid = this.mycanvas2.width;
 		const hit = this.mycanvas2.height;
-        this.plotter2d.proc(wid, hit, this.input.mouse, this.ctx);
-		//this.plotter2d.proc(this.params);
+
+		// interact with mouse, calc all spaces
+        this.plotter2d.proc(wid, hit, this.input.mouse);
+
+		
+		// goto user/cam space
+		this.plotter2d.setSpace(Plotter2d.spaces.USER);
+
 		// now in user/cam space
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 
-
 		if (this.testDrawPrims) {
-			// test new drawPrimitives class
+			// test new drawPrimitives class in user/cam space
+			// user space
 			const lineWidth = undefined;
 			const NDC = true;
 			this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan");
@@ -464,9 +452,18 @@ class MainApp {
 			
 			this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen);
 			this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
+		
+		
+			// NDC space
+			this.plotter2d.setSpace(Plotter2d.spaces.NDC);
+			this.drawPrim.drawACircleO([.875, .25], .125, .01, "pink");
+			this.drawPrim.drawARectangle([.5, .25], [.5, .25], "lightgreen");
+		
+			// screen space
+			this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
+			this.drawPrim.drawACircleO([200, 150], 40, 5, "blue", true);
+		
 		}
-		// update text and sliders
-		this.#updateUI();
 	}
 
 	#animate() {

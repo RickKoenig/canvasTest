@@ -4,7 +4,7 @@ class DrawFun {
     constructor(graphPaper) {
         this.ctx = graphPaper.dp.ctx; // canvas 2D context
         this.dp = graphPaper.dp;
-		this.params = graphPaper.dp.params;
+		this.plotter2d = graphPaper.dp.plotter2d;
     }
 
 	functionF(t) {
@@ -61,7 +61,7 @@ class DrawFun {
 	}
 
 	#drawNormal(lineStep, phase, graphPaper) {
-        const p = this.params;
+        const p = this.plotter2d;
 		if (!this.functionG) {
 			//console.log("no draw functionG !!!");
 			return;
