@@ -389,7 +389,7 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		this.input.proc(this.drawarea);
+		this.input.proc(this.mycanvas2);
 
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
@@ -435,33 +435,47 @@ class MainApp {
 
 		if (this.testDrawPrims) {
 			// test new drawPrimitives class in user/cam space
-			// user space
-			const lineWidth = undefined;
-			const NDC = true;
-			this.drawPrim.drawACircleO([.25, .5], .125, lineWidth, "cyan");
-			this.drawPrim.drawACircleO([-.25, -.5], .125, lineWidth, "brown", NDC);
-
 			let r = 255;
 			let g = 255;
 			let b = 0;
 			let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
-			this.drawPrim.drawARectangle([.5, 1.25], [.5, .25], colStrGen);
-			this.drawPrim.drawARectangle([-.5, 1.25], [.25, .5], "green");
-			this.drawPrim.drawARectangle([.5, -1.25], [.5, .25], "blue" ,true);
-			this.drawPrim.drawARectangle([-.5, -1.25], [.25, .5], "red" ,true);
-			
-			this.drawPrim.drawAText([1, .5], [.45, .125], "HI HO", "green", colStrGen);
-			this.drawPrim.drawAText([-1, -.5], [.45, .125], "HI HO", "green", colStrGen, true);
-		
-		
+			const NDC = true; // just to show that the argument is NDC true/false
+
+			// USER space
+			// circles
+			const lineWidth = undefined;
+			this.drawPrim.drawACircleO([.5, .525], .125, lineWidth, "cyan");
+			this.drawPrim.drawACircleO([.5, .475], .125, lineWidth, "brown", NDC);
+			// rectangles
+			this.drawPrim.drawARectangle([.5, .25], [.25, .125], "blue");
+			this.drawPrim.drawARectangle([.5, 0], [.25, .125], "red", NDC);
+			// text
+			this.drawPrim.drawAText([.5, .875], [.255, .0625], "USER", "green", colStrGen);
+			this.drawPrim.drawAText([.5, .75], [.55, .0625], "USER NDCSCALE", "green", colStrGen, NDC);
+
 			// NDC space
 			this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-			this.drawPrim.drawACircleO([.875, .25], .125, .01, "pink");
-			this.drawPrim.drawARectangle([.5, .25], [.5, .25], "lightgreen");
+			// circles
+			this.drawPrim.drawACircleO([-.5, .525], .125, .01, "pink");
+			this.drawPrim.drawACircleO([-.5, .475], .125, .01, "pink", NDC);
+			// rectangles
+			this.drawPrim.drawARectangle([-.5, .25], [.25, .125], "lightgreen");
+			this.drawPrim.drawARectangle([-.5, 0], [.25, .125], "lightgreen", NDC);
+			// text
+			this.drawPrim.drawAText([-.5, .875], [.25, .0625], "NDC", "green", colStrGen);
+			this.drawPrim.drawAText([-.5, .75], [.5, .0625], "NDC NDCSCL", "green", colStrGen, NDC);
 		
-			// screen space
+			// SCREEN space
 			this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
-			this.drawPrim.drawACircleO([200, 150], 40, 5, "blue", true);
+			// circles
+			this.drawPrim.drawACircleO([120, 180], 40, 5, "blue");
+			this.drawPrim.drawACircleO([120, 200], 40, 5, "blue", NDC);
+			// rectangles
+			this.drawPrim.drawARectangle([120, 300], [80, 50], "purple");
+			this.drawPrim.drawARectangle([120, 400], [80, 50], "purple", NDC);
+			// text
+			this.drawPrim.drawAText([120, 50], [160, 30], "SCN", "white", "blue");
+			this.drawPrim.drawAText([120, 100], [200, 30], "SCN NDCSCL", "white", "blue", NDC);
 		
 		}
 	}

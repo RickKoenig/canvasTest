@@ -9,7 +9,6 @@ class DrawPrimitives {
     drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
-        //const zm = ndcScale ? this.plotter2d.invZoom : 1;
         this.ctx.lineWidth = lineWidth * ndcZoom;
         this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, Math.PI * 2);
         this.ctx.strokeStyle = color;
@@ -18,8 +17,6 @@ class DrawPrimitives {
 
     drawARectangle(center, size, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
-        //const zm = ndcScale ? this.plotter2d.invZoom : 1;
-        //this.ctx.lineWidth = .02 * ndcZoom;
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
         this.ctx.fillStyle = color;
@@ -38,9 +35,10 @@ class DrawPrimitives {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         this.ctx.translate(center[0], center[1]);
-        const zm = ndcScale ? this.plotter2d.invZoom : 1;
-        let sy = size[1] * zm;
-        this.ctx.scale(sy, -sy);
+        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        let sy = size[1] * ndcZoom;
+        // invert the font scale y for NDC and USER spaces for they run y from bottom to top
+        this.ctx.scale(sy, this.plotter2d.curSpace == Plotter2d.spaces.SCREEN ? sy : -sy);
         const adjCenter = .33; // TODO: no magic numbers, comes from font
         this.ctx.translate(-center[0], -center[1] + adjCenter);
         this.ctx.font = 'bold ' + textYSize + 'px serif';
