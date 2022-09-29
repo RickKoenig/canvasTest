@@ -14,8 +14,15 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
-            "url": "http://localhost:88/plotter2d/userDrawFunctions/index.html",
+            "name": "Launch Chrome against localhost, plotFunctions",
+            "url": "http://localhost:88/plotter2d/plotFunctions/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, simple",
+            "url": "http://localhost:88/plotter2d/simple/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
