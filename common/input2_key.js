@@ -1,8 +1,7 @@
 'use strict';
 
 class Keyboard {
-    constructor(divDrawArea) {
-        this.ele = divDrawArea;
+    constructor(div) {
 
         // public
         this.key = 0; // current key click from buffer, 0 if no key pressed
@@ -16,14 +15,14 @@ class Keyboard {
         this.keystatehold = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
 
 
-        divDrawArea.focus();
-        divDrawArea.addEventListener("keydown", (e) => {
+        div.focus();
+        div.addEventListener("keydown", (e) => {
             this.#bkeyd(e);
         });
-        divDrawArea.addEventListener("keypress", (e) => {
+        div.addEventListener("keypress", (e) => {
             this.#bkeyp(e);
         });
-        divDrawArea.addEventListener("keyup", (e) => {
+        div.addEventListener("keyup", (e) => {
             this.#bkeyu(e);
         });
     }

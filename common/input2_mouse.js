@@ -5,8 +5,9 @@ class Mouse {
 	static MMIDDLE = 1;
 	static MRIGHT = 2;
 
-	constructor(divDrawArea) {
-		this.ele = divDrawArea;
+	constructor(div, canvas) {
+		this.div = div;
+		this.canvas = canvas;
 		this.mclickhold = [0,0,0];
 		this.mbutcur = [0,0,0];
 		this.mbutlast = [0,0,0];
@@ -32,32 +33,32 @@ class Mouse {
 
 		// setup event listeners
 		// kill right click save image
-		this.ele.addEventListener('contextmenu', function (e) {
+		this.div.addEventListener('contextmenu', function (e) {
 			//console.log("prevent right click image save");
 			e.preventDefault();
 		});
-		this.ele.addEventListener("mousedown", (e) => {
+		this.div.addEventListener("mousedown", (e) => {
 			this.bmoused(e);
 		});
-		this.ele.addEventListener("mouseup", (e) => {
+		this.div.addEventListener("mouseup", (e) => {
 			this.bmouseu(e);
 		});
-		this.ele.addEventListener("mouseover", (e) => {
+		this.div.addEventListener("mouseover", (e) => {
 			this.bmouseov(e);
 		});
-		this.ele.addEventListener("mouseout", (e) => {
+		this.div.addEventListener("mouseout", (e) => {
 			this.bmouseou(e);
 		});
-		this.ele.addEventListener("mouseenter", (e) => {
+		this.div.addEventListener("mouseenter", (e) => {
 			this.bmouseenter(e);
 		});
-		this.ele.addEventListener("wheel", (e) => {
+		this.div.addEventListener("wheel", (e) => {
 			this.bmousewheel(e);
 		});
-		this.ele.addEventListener("mousemove", (e) => {
+		this.div.addEventListener("mousemove", (e) => {
 			this.bmousem(e);
 		});
-		this.ele.addEventListener("click", (e) => {
+		this.div.addEventListener("click", (e) => {
 			this.bmousec(e);
 		});
     }
@@ -72,7 +73,7 @@ class Mouse {
 	
 	// event mouse down
 	bmoused(e) {
-		this.ele.focus(); // get keyboard working on maparea
+		this.div.focus(); // get keyboard working on maparea
 		this.mbutcur[e.button] = 1;
 		this.mbuthold[e.button] = 1;
 		this.#updateEventInfo("(M down[" + e.button + "] " + this.getxcode(e) + " " + this.getycode(e) + ") ");
@@ -108,7 +109,7 @@ class Mouse {
 	// event mouse enter
 	bmouseenter(e) {
 		if (this.mapAreaFocus) {
-			this.ele.focus(); // get keyboard working on maparea
+			this.div.focus(); // get keyboard working on maparea
 		}
 		this.mbutcur[0] = this.lastinside[0];
 		this.mbutcur[1] = this.lastinside[1];
@@ -172,9 +173,9 @@ class Mouse {
 		", mclick [" + this.mclick + "]";
 	}
 	
-	proc(canvas) {
-		this.maxX = canvas.width;
-		this.maxY = canvas.height;
+	proc() {
+		this.maxX = this.canvas.width;
+		this.maxY = this.canvas.height;
 		// mouse clicks in current frame
 		this.mclick[0] = this.mclickhold[0];
 		this.mclick[1] = this.mclickhold[1];

@@ -93,7 +93,7 @@ button:hover{
 	background:rgb(204, 196, 175);
 }
 
-#drawarea{
+#plotter2dDiv{
 	background: rgba(0,0,0,0);
 	margin: 50px;
 }

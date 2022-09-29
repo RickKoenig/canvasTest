@@ -3,73 +3,39 @@
 // handle the html elements, do the UI on verticalButtons, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static #instances = 0; // test static members
+	static #numInstances = 0; // test static members
 	constructor() {
 		console.log("creating instance of MainApp");
-		++MainApp.#instances;
+		++MainApp.#numInstances;
 
-		// get all the elements, clean this up, make an array/list/object of all this stuff
 
-		// input log
-		this.textInputLog = document.getElementById("textInputLog");
+		//const iter = true;
+		//if (iter) {
+			// get all the elements automatically
+			// children of verticalButtons
 
-		// TODO: automate getElementById, maybe generate html
-		// main canvas
-		this.drawarea = document.getElementById("drawarea");
-		this.mycanvas2 = document.getElementById("mycanvas2");
-		this.ctx = mycanvas2.getContext("2d");
-		this.canvasDimTxt = document.getElementById("canvasDimTxt"); // where to update text for canvas dimensions
+			console.log("ids of verticalButtons");
+			const vb = document.getElementById("verticalButtons");
+			const vba = vb.getElementsByTagName("*");
+			for (const htmle of vba) {
+				if (htmle.id.length) {
+					this[htmle.id] = document.getElementById(htmle.id);
+				}
+			}
 
-		// Parametric checkbox
-		this.checkboxParametric = document.getElementById("checkboxParametric");
-		// debug checkbox
-		this.checkboxDebug = document.getElementById("checkboxDebug");
-
-		// slider phase
-		this.sliderPhase = document.getElementById("sliderPhase");
-		this.textPhase = document.getElementById("textPhase");
-		this.buttonPhase = document.getElementById("buttonPhase");
-
-		// slider freq
-		this.sliderFreq = document.getElementById("sliderFreq");
-		this.textFreq = document.getElementById("textFreq");
-		this.buttonFreq = document.getElementById("buttonFreq");
-
-		// number of line steps
-		this.sliderLineStep = document.getElementById("sliderLineStep");
-		this.textLineStep = document.getElementById("textLineStep");
-		this.buttonLineStep = document.getElementById("buttonLineStep");
-
-		// scale camera
-		this.textScalelCam = document.getElementById("textScaleCam");
-		this.buttonScaleCam = document.getElementById("buttonScaleCam");
-
-		// x trans camera
-		this.textXTransCam = document.getElementById("textXTransCam");
-		this.buttonXTransCam = document.getElementById("buttonXTransCam");
-
-		// y trans camera
-		this.textYTransCam = document.getElementById("textYTransCam");
-		this.buttonYTransCam = document.getElementById("buttonYTransCam");
-
-		// user functions
-		this.labelFunctionF1 = document.getElementById("labelFunctionF1");
-		this.labelFunctionF2 = document.getElementById("labelFunctionF2");
-		this.editFunctionF = document.getElementById("editFunctionF");
-		this.editFunctionF.style="height:20px"; // make smaller than default
-		this.editFunctionG = document.getElementById("editFunctionG");
-		this.editFunctionG.style="height:20px"; // make smaller than default		
-		this.textFunctionF = document.getElementById("textFunctionF");
-		this.textFunctionG = document.getElementById("textFunctionG");
-		this.buttonSubmitFunctions = document.getElementById("submitFunctions");
+		// setup 2D drawing environment
+		this.plotter2dDiv = document.getElementById("plotter2dDiv");
+		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
+		this.ctx = this.plotter2dCanvas.getContext("2d");
 
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
-		this.testText = "test text";
 		this.doParametric = false; // normal or parametric function(s)
 		this.runFunGenTests = false; // test function generator
-		this.testDrawPrims = true;
 		// end some SWITCHES
+
+		// test keyboard normal typing
+		this.testText = "";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.phase = 0; // [0 to 2 * PI)
@@ -100,6 +66,7 @@ class MainApp {
 		this.cur = 0;
 		this.avgFpsObj = new Runavg(500);
 		// end speed of update
+
 
 
 		// add all the event listeners and initialize elements
@@ -165,7 +132,8 @@ class MainApp {
 			this.#buttonLineStepReset();
 		});
 
-		this.input = new Input(this.drawarea);
+		// fire up all instances of the classes that are needed
+		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.plotter2d = new Plotter2d(this.ctx);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -179,7 +147,7 @@ class MainApp {
 		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 		this.#resetFunctions();
 		this.#submitFunctions();
-		this.buttonSubmitFunctions.addEventListener('click', () => {
+		this.submitFunctions.addEventListener('click', () => {
 			//console.log("button submitFunctions");
 			this.#submitFunctions();
 		});
@@ -195,6 +163,7 @@ class MainApp {
 				this.#submitFunctionG();
 			}
 		});
+
 
 		// scale reset button
 		this.buttonScaleCam.addEventListener('click', () => {
@@ -212,6 +181,7 @@ class MainApp {
 			this.#buttonYTransCamReset();
 		});
 
+		// start it off
 		this.#animate();
 	}
 
@@ -244,7 +214,7 @@ class MainApp {
 	#stripNewlinesAtEnd(funStr) {
 		// remove newlines at end of function string if there from a submit by hitting CR
 		while(true) {
-			let lenMinus1 = funStr.length - 1;
+			const lenMinus1 = funStr.length - 1;
 			if (funStr[lenMinus1] == '\n') {
 				funStr = funStr.substring(0,lenMinus1);
 			} else {
@@ -259,7 +229,7 @@ class MainApp {
 		this.editFunctionF.value = funStr;
  		// make UI editbox bigger, noscroll
 		const extraHeight = -4; // ???
- 		editFunctionF.style.height = editFunctionF.scrollHeight + extraHeight + 'px';
+ 		this.editFunctionF.style.height = this.editFunctionF.scrollHeight + extraHeight + 'px';
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionF(subFun);
@@ -272,7 +242,7 @@ class MainApp {
 		this.editFunctionG.value = funStr;
  		// make UI editbox bigger, noscroll
 		const extraHeight = -4; // ???
- 		editFunctionG.style.height = editFunctionG.scrollHeight + extraHeight + 'px';
+		this.editFunctionG.style.height = this.editFunctionG.scrollHeight + extraHeight + 'px';
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionG(subFun);
@@ -295,19 +265,19 @@ class MainApp {
 		this.lineStep = this.startLineStep;
 	}
 
-	static getInstances() { // test static methods
-		return MainApp.#instances;
+	static getNumInstances() { // test static methods
+		return MainApp.#numInstances;
 	}
 
 	// update some of the UI
 	#updateUI() {
 		const plotHeader = "Move sliders, Press buttons<br> Enter functions<br>";
 
-		let p = this.plotter2d;
+		const p = this.plotter2d;
 		const plotMouse =  "<br>plot MX = " + p.userMouse[0].toFixed(2) 
 						+ ", plot MY = " + p.userMouse[1].toFixed(2);
 
-		const fpsStr = "<br>FPS " + this.avgFps.toFixed(2);
+		const fpsStr = "<br>FPS " + this.avgFps.toFixed(2); // update average frame rate
 		if (this.doDebug) {
 			const plotterDebugInfo = "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"
 			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
@@ -325,19 +295,19 @@ class MainApp {
 			this.canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
 		}
 		
-		textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
+		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
 		
 		const vis = this.doParametric ? "" : "none";
-		labelFunctionF1.style.display = vis;
-		editFunctionF.style.display = vis;
-		labelFunctionF2.style.display = vis;
-		textFunctionF.style.display = vis;
+		this.labelFunctionF1.style.display = vis;
+		this.editFunctionF.style.display = vis;
+		this.labelFunctionF2.style.display = vis;
+		this.textFunctionF.style.display = vis;
 
-		textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
-		textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
+		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
+		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
 
 		// show inputEventsStats
-		textInputLog.innerHTML = this.doDebug
+		this.textInputLog.innerHTML = this.doDebug
 			? "TestText:'" + this.testText + "'<br>"
 			+ "Mstat:" + this.input.mouse.stats + "<br>"
 			+ "Kstat:" + this.input.keyboard.stats + "<br>"
@@ -362,15 +332,15 @@ class MainApp {
 		if (fixedDim) {
 			const fixedSize = [800, 600];
 			// set canvas size to a fixed size
-			this.mycanvas2.width = fixedSize[0];
-			this.mycanvas2.height = fixedSize[1];
+			this.plotter2dCanvas.width = fixedSize[0];
+			this.plotter2dCanvas.height = fixedSize[1];
 		} else {
 			// set canvas size depending on window size
 			// TODO: get rid of magic numbers
-			let wid = window.innerWidth - 450;
-			let hit = window.innerHeight - 100;
-			this.mycanvas2.width = Math.max(200, wid);
-			this.mycanvas2.height = Math.max(750, hit);
+			const wid = window.innerWidth - 450;
+			const hit = window.innerHeight - 100;
+			this.plotter2dCanvas.width = Math.max(200, wid);
+			this.plotter2dCanvas.height = Math.max(750, hit);
 		}
 	}
 
@@ -389,11 +359,11 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 	
 		// update input system
-		this.input.proc(this.mycanvas2);
+		this.input.proc();
 
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
-		let twoPI = 2 * Math.PI;
+		const twoPI = 2 * Math.PI;
 		if (this.phase >= twoPI) {
 			this.phase -= twoPI;
 		} else if (this.phase < 0) {
@@ -402,7 +372,7 @@ class MainApp {
 	
 		// test keyboard, edit a string
 		if (this.doDebug) {
-			let key = this.input.keyboard.key;
+			const key = this.input.keyboard.key;
 			if (key) {
 				if (key == keyTable.keycodes.BACKSPACE) {
 					this.testText = this.testText.slice(0,this.testText.length - 1);
@@ -419,8 +389,8 @@ class MainApp {
 		this.#calcCanvasSize();
 
 		// proc/draw all the classes
-		const wid = this.mycanvas2.width;
-		const hit = this.mycanvas2.height;
+		const wid = this.plotter2dCanvas.width;
+		const hit = this.plotter2dCanvas.height;
 
 		// interact with mouse, calc all spaces
         this.plotter2d.proc(wid, hit, this.input.mouse);
@@ -433,50 +403,91 @@ class MainApp {
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 
-		if (this.testDrawPrims) {
+		if (this.doDebug) {
+		//if (this.testDrawPrims) {
 			// test new drawPrimitives class in user/cam space
-			let r = 255;
-			let g = 255;
-			let b = 0;
-			let colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
-			const NDC = true; // just to show that the argument is NDC true/false
+			const r = 255;
+			const g = 255;
+			const b = 0;
+			const colStrGen = "rgb(" + r + "," +  g + "," +  b + ")";
+			const ndcScale = true; // just to show that the argument is ndcScale true/false
 
 			// USER space
-			// circles
+			// circles outline
 			const lineWidth = undefined;
 			this.drawPrim.drawACircleO([.5, .525], .125, lineWidth, "cyan");
-			this.drawPrim.drawACircleO([.5, .475], .125, lineWidth, "brown", NDC);
-			// rectangles
-			this.drawPrim.drawARectangle([.5, .25], [.25, .125], "blue");
-			this.drawPrim.drawARectangle([.5, 0], [.25, .125], "red", NDC);
+			this.drawPrim.drawACircleO([.5, .475], .125, lineWidth, "brown", ndcScale);
+			// rectangles outline
+			this.drawPrim.drawARectangleO([.5, .25], [.25, .125], lineWidth, "blue");
+			this.drawPrim.drawARectangleO([.5, 0], [.25, .125], lineWidth, "red", ndcScale);
+			// circles fill
+			this.drawPrim.drawACircle([.5, -.25], .0625, "cyan");
+			this.drawPrim.drawACircle([.5, -.3], .0625, "brown", ndcScale);
+			// rectangles fill
+			this.drawPrim.drawARectangle([.5, -.52], [.25, .125], "blue");
+			this.drawPrim.drawARectangle([.5, -.72], [.25, .125], "red", ndcScale);
+			// lines
+			this.drawPrim.drawALine([.375, -.9125], [.625, -.7875], lineWidth, "red");
+			this.drawPrim.drawALine([.375, -1.0125], [.625, -.8875], lineWidth, "red", ndcScale);
 			// text
 			this.drawPrim.drawAText([.5, .875], [.255, .0625], "USER", "green", colStrGen);
-			this.drawPrim.drawAText([.5, .75], [.55, .0625], "USER NDCSCALE", "green", colStrGen, NDC);
+			this.drawPrim.drawAText([.5, .75], [.55, .0625], "USER NDCSCALE", "green", colStrGen, ndcScale);
 
-			// NDC space
+			// draw a pentagram
+			{
+				const pentPoints = [];
+				for (let i = 0; i < 5; ++i) {
+					const ang = i * 2 * Math.PI * 2 / 5 + Math.PI / 2;
+					const pnt = [.5 * Math.cos(ang), .5 * Math.sin(ang)];
+					pentPoints.push(pnt);
+				}
+				for (let i = 0; i < 5; ++i) {
+					const j = (i + 1) % 5;
+					this.drawPrim.drawALine(pentPoints[i], pentPoints[j], .01, "rgb(160, 90, 250)", ndcScale);
+				}
+			}
+
+			// ndc space
 			this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-			// circles
-			this.drawPrim.drawACircleO([-.5, .525], .125, .01, "pink");
-			this.drawPrim.drawACircleO([-.5, .475], .125, .01, "pink", NDC);
-			// rectangles
-			this.drawPrim.drawARectangle([-.5, .25], [.25, .125], "lightgreen");
-			this.drawPrim.drawARectangle([-.5, 0], [.25, .125], "lightgreen", NDC);
+			// circles outline
+			this.drawPrim.drawACircleO([-.5, .525], .125, lineWidth, "brown");
+			this.drawPrim.drawACircleO([-.5, .475], .125, lineWidth, "brown", ndcScale);
+			// rectangles outline
+			this.drawPrim.drawARectangleO([-.5, .25], [.25, .125], lineWidth, "green");
+			this.drawPrim.drawARectangleO([-.5, 0], [.25, .125], lineWidth, "green", ndcScale);
+			// circles fill
+			this.drawPrim.drawACircle([-.5, -.25], .0625, "brown");
+			this.drawPrim.drawACircle([-.5, -.3], .0625, "brown", ndcScale);
+			// rectangles fill
+			this.drawPrim.drawARectangle([-.5, -.52], [.25, .125], "green");
+			this.drawPrim.drawARectangle([-.5, -.72], [.25, .125], "green", ndcScale);
+			// lines
+			this.drawPrim.drawALine([-.625, -.9125], [-.375, -.7875], lineWidth, "red");
+			this.drawPrim.drawALine([-.625, -1.0125], [-.375, -.8875], lineWidth, "red", ndcScale);
 			// text
 			this.drawPrim.drawAText([-.5, .875], [.25, .0625], "NDC", "green", colStrGen);
-			this.drawPrim.drawAText([-.5, .75], [.5, .0625], "NDC NDCSCL", "green", colStrGen, NDC);
+			this.drawPrim.drawAText([-.5, .75], [.5, .0625], "NDC NDCSCL", "green", colStrGen, ndcScale);
 		
 			// SCREEN space
 			this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
-			// circles
+			// circles outline
 			this.drawPrim.drawACircleO([120, 180], 40, 5, "blue");
-			this.drawPrim.drawACircleO([120, 200], 40, 5, "blue", NDC);
-			// rectangles
-			this.drawPrim.drawARectangle([120, 300], [80, 50], "purple");
-			this.drawPrim.drawARectangle([120, 400], [80, 50], "purple", NDC);
+			this.drawPrim.drawACircleO([120, 200], 40, 5, "blue", ndcScale);
+			// rectangles outline
+			this.drawPrim.drawARectangleO([120, 300], [80, 50], 5, "purple");
+			this.drawPrim.drawARectangleO([120, 370], [80, 50], 5, "purple", ndcScale);
+			// circles fill
+			this.drawPrim.drawACircle([120, 480], 20, "blue");
+			this.drawPrim.drawACircle([120, 500], 20, "blue", ndcScale);
+			// rectangles fill
+			this.drawPrim.drawARectangle([120, 600], [80, 50], "purple");
+			this.drawPrim.drawARectangle([120, 670], [80, 50], "purple", ndcScale);
+			// lines
+			this.drawPrim.drawALine([70, 720], [170, 780], 5, "red");
+			this.drawPrim.drawALine([70, 760], [170, 820], 5, "red", ndcScale);
 			// text
 			this.drawPrim.drawAText([120, 50], [160, 30], "SCN", "white", "blue");
-			this.drawPrim.drawAText([120, 100], [200, 30], "SCN NDCSCL", "white", "blue", NDC);
-		
+			this.drawPrim.drawAText([120, 100], [200, 30], "SCN NDCSCL", "white", "blue", ndcScale);
 		}
 	}
 
@@ -494,5 +505,5 @@ class MainApp {
 	}
 }
 
-let mainApp = new MainApp();
-console.log("instances of MainApp = " + MainApp.getInstances()); // and test static methods
+const mainApp = new MainApp();
+console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods

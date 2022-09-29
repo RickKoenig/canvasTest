@@ -2,8 +2,8 @@
 
 class GraphPaper {
     constructor(drawPrims) {
-        this.ctx = drawPrims.ctx;
         this.dp = drawPrims;
+        this.ctx = drawPrims.ctx;
         this.plotter2d = drawPrims.plotter2d;
 
         this.minGrid = [-100, -100];
