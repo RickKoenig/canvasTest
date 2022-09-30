@@ -8,20 +8,17 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		// get all the elements automatically
+		// children of verticalButtons
 
-		//const iter = true;
-		//if (iter) {
-			// get all the elements automatically
-			// children of verticalButtons
-
-			console.log("ids of verticalButtons");
-			const vb = document.getElementById("verticalButtons");
-			const vba = vb.getElementsByTagName("*");
-			for (const htmle of vba) {
-				if (htmle.id.length) {
-					this[htmle.id] = document.getElementById(htmle.id);
-				}
+		console.log("ids of verticalButtons");
+		const vb = document.getElementById("verticalButtons");
+		const vba = vb.getElementsByTagName("*");
+		for (const htmle of vba) {
+			if (htmle.id.length) {
+				this[htmle.id] = document.getElementById(htmle.id);
 			}
+		}
 
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
@@ -285,14 +282,14 @@ class MainApp {
 			+ "<br><br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)
 			+ "<br>camMax[0] = " + p.camMax[0].toFixed(2) + ", camMax[1] = "  + p.camMax[1].toFixed(2)
 			+ "<br>";
-			this.canvasDimTxt.innerHTML = plotterDebugInfo + plotMouse + fpsStr;
+			this.title.innerHTML = plotterDebugInfo + plotMouse + fpsStr;
 		} else {
 			let useInfo = this.doParametric
 						? "x = F(t),  y = G(t + p)<br>0 <= t < 2*PI" 
 						: "y = G(t + p)<br>" + p.camMin[0].toFixed(2) 
 							+ " <= t < " + p.camMax[0].toFixed(2);
 			useInfo += "<br>0 <= p < 2*PI";
-			this.canvasDimTxt.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
+			this.title.innerHTML = plotHeader + useInfo + plotMouse + fpsStr;
 		}
 		
 		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
@@ -377,7 +374,7 @@ class MainApp {
 				if (key == keyTable.keycodes.BACKSPACE) {
 					this.testText = this.testText.slice(0,this.testText.length - 1);
 				} else {
-					this.testText += String.fromCharCode(this.input.keyboard.key);
+					this.testText += String.fromCharCode(key);
 				}
 			}
 		}
@@ -415,23 +412,23 @@ class MainApp {
 			// USER space
 			// circles outline
 			const lineWidth = undefined;
-			this.drawPrim.drawACircleO([.5, .525], .125, lineWidth, "cyan");
-			this.drawPrim.drawACircleO([.5, .475], .125, lineWidth, "brown", ndcScale);
+			this.drawPrim.drawCircleO([.5, .525], .125, lineWidth, "cyan");
+			this.drawPrim.drawCircleO([.5, .475], .125, lineWidth, "brown", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawARectangleO([.5, .25], [.25, .125], lineWidth, "blue");
-			this.drawPrim.drawARectangleO([.5, 0], [.25, .125], lineWidth, "red", ndcScale);
+			this.drawPrim.drawRectangleO([.5, .25], [.25, .125], lineWidth, "blue");
+			this.drawPrim.drawRectangleO([.5, 0], [.25, .125], lineWidth, "red", ndcScale);
 			// circles fill
-			this.drawPrim.drawACircle([.5, -.25], .0625, "cyan");
-			this.drawPrim.drawACircle([.5, -.3], .0625, "brown", ndcScale);
+			this.drawPrim.drawCircle([.5, -.25], .0625, "cyan");
+			this.drawPrim.drawCircle([.5, -.3], .0625, "brown", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawARectangle([.5, -.52], [.25, .125], "blue");
-			this.drawPrim.drawARectangle([.5, -.72], [.25, .125], "red", ndcScale);
+			this.drawPrim.drawRectangle([.5, -.52], [.25, .125], "blue");
+			this.drawPrim.drawRectangle([.5, -.72], [.25, .125], "red", ndcScale);
 			// lines
-			this.drawPrim.drawALine([.375, -.9125], [.625, -.7875], lineWidth, "red");
-			this.drawPrim.drawALine([.375, -1.0125], [.625, -.8875], lineWidth, "red", ndcScale);
+			this.drawPrim.drawLine([.375, -.9125], [.625, -.7875], lineWidth, "red");
+			this.drawPrim.drawLine([.375, -1.0125], [.625, -.8875], lineWidth, "red", ndcScale);
 			// text
-			this.drawPrim.drawAText([.5, .875], [.255, .0625], "USER", "green", colStrGen);
-			this.drawPrim.drawAText([.5, .75], [.55, .0625], "USER NDCSCALE", "green", colStrGen, ndcScale);
+			this.drawPrim.drawText([.5, .875], [.255, .0625], "USER", "green", colStrGen);
+			this.drawPrim.drawText([.5, .75], [.55, .0625], "USER NDCSCALE", "green", colStrGen, ndcScale);
 
 			// draw a pentagram
 			{
@@ -443,51 +440,51 @@ class MainApp {
 				}
 				for (let i = 0; i < 5; ++i) {
 					const j = (i + 1) % 5;
-					this.drawPrim.drawALine(pentPoints[i], pentPoints[j], .01, "rgb(160, 90, 250)", ndcScale);
+					this.drawPrim.drawLine(pentPoints[i], pentPoints[j], .01, "rgb(160, 90, 250)", ndcScale);
 				}
 			}
 
 			// ndc space
 			this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 			// circles outline
-			this.drawPrim.drawACircleO([-.5, .525], .125, lineWidth, "brown");
-			this.drawPrim.drawACircleO([-.5, .475], .125, lineWidth, "brown", ndcScale);
+			this.drawPrim.drawCircleO([-.5, .525], .125, lineWidth, "brown");
+			this.drawPrim.drawCircleO([-.5, .475], .125, lineWidth, "brown", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawARectangleO([-.5, .25], [.25, .125], lineWidth, "green");
-			this.drawPrim.drawARectangleO([-.5, 0], [.25, .125], lineWidth, "green", ndcScale);
+			this.drawPrim.drawRectangleO([-.5, .25], [.25, .125], lineWidth, "green");
+			this.drawPrim.drawRectangleO([-.5, 0], [.25, .125], lineWidth, "green", ndcScale);
 			// circles fill
-			this.drawPrim.drawACircle([-.5, -.25], .0625, "brown");
-			this.drawPrim.drawACircle([-.5, -.3], .0625, "brown", ndcScale);
+			this.drawPrim.drawCircle([-.5, -.25], .0625, "brown");
+			this.drawPrim.drawCircle([-.5, -.3], .0625, "brown", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawARectangle([-.5, -.52], [.25, .125], "green");
-			this.drawPrim.drawARectangle([-.5, -.72], [.25, .125], "green", ndcScale);
+			this.drawPrim.drawRectangle([-.5, -.52], [.25, .125], "green");
+			this.drawPrim.drawRectangle([-.5, -.72], [.25, .125], "green", ndcScale);
 			// lines
-			this.drawPrim.drawALine([-.625, -.9125], [-.375, -.7875], lineWidth, "red");
-			this.drawPrim.drawALine([-.625, -1.0125], [-.375, -.8875], lineWidth, "red", ndcScale);
+			this.drawPrim.drawLine([-.625, -.9125], [-.375, -.7875], lineWidth, "red");
+			this.drawPrim.drawLine([-.625, -1.0125], [-.375, -.8875], lineWidth, "red", ndcScale);
 			// text
-			this.drawPrim.drawAText([-.5, .875], [.25, .0625], "NDC", "green", colStrGen);
-			this.drawPrim.drawAText([-.5, .75], [.5, .0625], "NDC NDCSCL", "green", colStrGen, ndcScale);
+			this.drawPrim.drawText([-.5, .875], [.25, .0625], "NDC", "green", colStrGen);
+			this.drawPrim.drawText([-.5, .75], [.5, .0625], "NDC NDCSCL", "green", colStrGen, ndcScale);
 		
 			// SCREEN space
 			this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
 			// circles outline
-			this.drawPrim.drawACircleO([120, 180], 40, 5, "blue");
-			this.drawPrim.drawACircleO([120, 200], 40, 5, "blue", ndcScale);
+			this.drawPrim.drawCircleO([120, 180], 40, 5, "blue");
+			this.drawPrim.drawCircleO([120, 200], 40, 5, "blue", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawARectangleO([120, 300], [80, 50], 5, "purple");
-			this.drawPrim.drawARectangleO([120, 370], [80, 50], 5, "purple", ndcScale);
+			this.drawPrim.drawRectangleO([120, 300], [80, 50], 5, "purple");
+			this.drawPrim.drawRectangleO([120, 370], [80, 50], 5, "purple", ndcScale);
 			// circles fill
-			this.drawPrim.drawACircle([120, 480], 20, "blue");
-			this.drawPrim.drawACircle([120, 500], 20, "blue", ndcScale);
+			this.drawPrim.drawCircle([120, 480], 20, "blue");
+			this.drawPrim.drawCircle([120, 500], 20, "blue", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawARectangle([120, 600], [80, 50], "purple");
-			this.drawPrim.drawARectangle([120, 670], [80, 50], "purple", ndcScale);
+			this.drawPrim.drawRectangle([120, 600], [80, 50], "purple");
+			this.drawPrim.drawRectangle([120, 670], [80, 50], "purple", ndcScale);
 			// lines
-			this.drawPrim.drawALine([70, 720], [170, 780], 5, "red");
-			this.drawPrim.drawALine([70, 760], [170, 820], 5, "red", ndcScale);
+			this.drawPrim.drawLine([70, 720], [170, 780], 5, "red");
+			this.drawPrim.drawLine([70, 760], [170, 820], 5, "red", ndcScale);
 			// text
-			this.drawPrim.drawAText([120, 50], [160, 30], "SCN", "white", "blue");
-			this.drawPrim.drawAText([120, 100], [200, 30], "SCN NDCSCL", "white", "blue", ndcScale);
+			this.drawPrim.drawText([120, 50], [160, 30], "SCN", "white", "blue");
+			this.drawPrim.drawText([120, 100], [200, 30], "SCN NDCSCL", "white", "blue", ndcScale);
 		}
 	}
 

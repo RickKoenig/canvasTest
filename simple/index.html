@@ -9,57 +9,14 @@
 
 <body>
 
-
 	<div id="verticalButtons">
-		<p id="linkback">Go back to <a href="../../index.html"> Main page.</a></p>
+		<p id="linkback">Go back to <a href="../../index.html"> The Main page.</a></p>
 
-		<span>Parametric
-			<input type="checkbox" id="checkboxParametric"/>
-		</span>
-		<span>&nbsp;&nbsp;Debug
-			<input type="checkbox" id="checkboxDebug"/>
-		</span>
-		<pre><span id="canvasDimTxt">canvasDimTxt</span></pre>
+		<span><pre >MODE</pre></span>
+		<span><input type="checkbox" id="checkboxMapMode"/></span>
+		<span><pre id="mode">mode</pre></span>
+		<pre id="title">title</pre>
 		
-		<hr>
-
-		<pre class="noMargins"><span id="textPhase">hi</span></pre>
-		<input type="range"	class="slider" id="sliderPhase">
-		<button id="buttonPhase">Phase Reset</button>
-		<hr>
-
-		<pre class="noMargins"><span id="textFreq">ho</span></pre>
-		<input type="range"	class="slider" id="sliderFreq">
-		<button id="buttonFreq">Freq Reset</button>
-		<hr>
-
-		<pre class="noMargins"><span id="textLineStep">hum0</span></pre>
-		<input type="range" class="slider" id="sliderLineStep">
-		<button id="buttonLineStep">Line Step Reset</button>
-		<hr>
-
-
-		<pre class="noMargins" id="labelFunctionF1">Enter F(t)</pre>
-		<textarea id="editFunctionF"
-			class="editbox" spellcheck="false">
-		</textarea>
-
-		<pre class="noMargins">Enter G(t)</pre>
-		<textarea id="editFunctionG"
-			class="editbox" spellcheck="false">
-		</textarea>
-
-
-		<button id="submitFunctions">Submit Function(s)</button>
-
-
-		<pre class="noMargins" id="labelFunctionF2">Parsed F(t)</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionF">function F</span></pre>
-		
-		<pre class="noMargins">Parsed G(t)</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionG">function G</span></pre>
-
-
 		<hr>
 		<pre class="noMargins"><span id="textXTransCam">hum1</span></pre>
 		<button id="buttonXTransCam">X Trans Camera Reset</button>
@@ -71,9 +28,7 @@
 		<hr>
 		<pre class="noMargins"><span id="textScaleCam">hum3</span></pre>
 		<button id="buttonScaleCam">Scale Camera Reset</button>
-
 		<hr>
-		<pre><span id="textInputLog"></span></pre>
 
 	</div>
 
@@ -101,10 +56,7 @@
 
 
 	<script src='../common/graphPaper.js'></script>
-	<script src='../common/funGen.js'></script>
-	<script src='../common/drawFun.js'></script>
 
-	<script src="javacriptTests.js"></script>
 	<script src='mainApp.js'></script>
 
 </body>

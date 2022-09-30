@@ -84,7 +84,7 @@ class GraphPaper {
         level = levels[i];
 
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += level.step) {
-            this.dp.drawAText(
+            this.dp.drawText(
                   [i + tensSize * this.plotter2d.invZoom * level.xGap, -tensSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , i.toFixed(level.fix)
@@ -94,7 +94,7 @@ class GraphPaper {
             );
         }
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += level.step) {
-            this.dp.drawAText(
+            this.dp.drawText(
                   [ tensSize * this.plotter2d.invZoom * level.xGap, j - tensSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
                 , [tensSize, tensSize]
                 , j.toFixed(level.fix)
@@ -107,8 +107,8 @@ class GraphPaper {
 
     #drawAxisNames(hAxis, vAxis) {
         let size = .05;
-        this.dp.drawAText([this.plotter2d.camMax[0] - this.shrink * this.plotter2d.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
-        this.dp.drawAText([0, this.plotter2d.camMax[1] - this.shrink * this.plotter2d.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
+        this.dp.drawText([this.plotter2d.camMax[0] - this.shrink * this.plotter2d.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
+        this.dp.drawText([0, this.plotter2d.camMax[1] - this.shrink * this.plotter2d.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
     }
 
     draw(axisH, axisV) {

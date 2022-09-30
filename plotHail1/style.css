@@ -28,6 +28,7 @@ hr{
 
 span{
 	margin:0;
+	display: inline-block;
 }
 
 .noMargins{
@@ -64,6 +65,7 @@ canvas{
 }
 
 #verticalButtons{
+	width: 250px;
 	text-align: center;
 	margin-left: 10px;
 	margin-top: 5px;

@@ -100,11 +100,11 @@ function createArray(length) {
     return arr;
 }
 
-// fill an n dimensional array with a value
 function isArray(obj) {
     return obj instanceof Array || obj instanceof Int32Array || obj instanceof Int8Array || obj instanceof Float32Array;
 }
 
+// fill an n dimensional array with a value
 function fillArray(arr, val) {
     if (isArray(arr) && arr.length > 0) {
 		for (var ele of arr) {

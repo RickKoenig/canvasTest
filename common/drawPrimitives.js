@@ -6,7 +6,7 @@ class DrawPrimitives {
         this.ctx = plotter2d.ctx;
     }
 
-    drawACircle(pnt, rad, color = "magenta", ndcScale = false) {
+    drawCircle(pnt, rad, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         //this.ctx.lineWidth = lineWidth * ndcZoom;
@@ -15,7 +15,7 @@ class DrawPrimitives {
         this.ctx.fill();
     }
 
-    drawACircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
+    drawCircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
@@ -24,7 +24,7 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
-    drawARectangle(center, size, color = "black", ndcScale = false) {
+    drawRectangle(center, size, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
@@ -36,7 +36,7 @@ class DrawPrimitives {
     
     }
 
-    drawARectangleO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
+    drawRectangleO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         let sx = size[0] * ndcZoom;
@@ -50,7 +50,7 @@ class DrawPrimitives {
     }
 
     //drawALine(center, size, lineWidth = .01, color = "black", ndcScale = false) {
-    drawALine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
+    drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         //const p0 = [center[0] + size[0] / 2,center[1] + size[1] / 2];
         //const p1 = [center[0] - size[0] / 2,center[1] - size[1] / 2];
@@ -71,10 +71,10 @@ class DrawPrimitives {
     */
     }
 
-    drawAText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {
+    drawText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {
         let textYSize = 1;
         if (back) {
-            this.drawARectangle(center, [size[0], size[1]], back, ndcScale);
+            this.drawRectangle(center, [size[0], size[1]], back, ndcScale);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';

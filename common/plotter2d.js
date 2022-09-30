@@ -72,14 +72,14 @@ class Plotter2d {
     const zm = ndcScale ? this.plotter2d.invZoom : 1;
 */
 
-    proc(wid, hit, mouse) {
-        // use the mouse to navigate the user/cam space
-        let pnt = [mouse.mx, mouse.my];
-        this.#screen2userCam(pnt);
+    proc(wid, hit, mouse, doNav = true) {
         this.W[0] = wid;
         this.W[1] = hit;
 
         this.WMin = Math.min(this.W[0], this.W[1]);
+        // use the mouse to navigate the user/cam space
+        let pnt = [mouse.mx, mouse.my];
+        this.#screen2userCam(pnt);
         // calc min and max of NDC space and scale and translate
         if (this.W[0] >= this.W[1]) { // landscape
             this.ndcMax[0] = this.W[0] / this.W[1];
@@ -101,29 +101,29 @@ class Plotter2d {
             this.trans[1] = -this.ndcMax[1];
         }
 
-        if (mouse.wheelDelta) { // wheel mouse
-            let m = mouse.wheelDelta > 0 ? 1 : -1;
-            let lzoomspeed = 1/16;
-            if (mouse.mbut[Mouse.MMIDDLE]) { // faster wheel mouse when middle button held down
-                lzoomspeed *= 4;
+        if (doNav) {
+            if (mouse.wheelDelta) { // wheel mouse
+                let m = mouse.wheelDelta > 0 ? 1 : -1;
+                let lzoomspeed = 1/16;
+                if (mouse.mbut[Mouse.MMIDDLE]) { // faster wheel mouse when middle button held down
+                    lzoomspeed *= 4;
+                }
+                this.logZoom += m * lzoomspeed;
+                this.logZoom = range(-5, this.logZoom, 5);
+                this.zoom = Math.exp(this.logZoom);
+                this.invZoom = 1 / this.zoom;
+    
+                // zoom to where the mouse is
+                this.#newcenter(pnt, this.userMouse);
             }
-            this.logZoom += m * lzoomspeed;
-            this.logZoom = range(-5, this.logZoom, 5);
-        }
-
-        this.zoom = Math.exp(this.logZoom);
-        this.invZoom = 1 / this.zoom;
-        
-        
-        if (mouse.wheelDelta) { // zoom where the mouse is
-            this.#newcenter(pnt, this.userMouse);
-        }
-        if (mouse.mbut[0]) {
-            const f = 1 / (this.zoom * this.WMin / 2);
-            // where is the mouse in float coords
-            this.center[0] -= mouse.dmx*f;
-            this.center[1] += mouse.dmy*f;
-        }
+    
+            if (mouse.mbut[0]) {
+                const f = 1 / (this.zoom * this.WMin / 2);
+                // where is the mouse in float coords
+                this.center[0] -= mouse.dmx*f;
+                this.center[1] += mouse.dmy*f;
+            }
+        } 
 
         this.camMin[0] = this.ndcMin[0] * this.invZoom + this.center[0];
         this.camMin[1] = this.ndcMin[1] * this.invZoom + this.center[1];
