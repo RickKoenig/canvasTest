@@ -8,6 +8,7 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		// connect all the getElementById's into the main class
 		console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
@@ -53,21 +54,21 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.ctx);
+		this.plotter2d = new Plotter2d(this.ctx, [1, 1], .5);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
-		
-
 		// user init section
 		this.numPnts = 5;
-		this.pntRad = .03125;
-		this.threshRad = .0625;
-		this.pnts = createArray(this.numPnts, 2);
-		fillArray(this.pnts, 0);
+		this.pntRad = .02; // size of point
+		this.threshRad = .06; // size of when can select a point
+		this.pnts = createArray(this.numPnts, 2); // array of 'two' dimensional points
+		for (let i = 0; i < this.numPnts; ++i) {
+			this.pnts[i] = [.25 + .5 * i, .5 + .25 * i];
+		}
+		//fillArray(this.pnts, 0); // all points start at 0
 
-
-		// start it off
+		// start off the repeated calls to #animate
 		this.#animate();
 	}
 
@@ -76,13 +77,15 @@ class MainApp {
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.plotter2d;
-		p.center[0] = 0;
+		this.plotter2d.xTransReset();
+		//const p = this.plotter2d;
+		//p.center[0] = 0;
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.plotter2d;
-		p.center[1] = 0;
+		this.plotter2d.yTransReset();
+		//const p = this.plotter2d;
+		//p.center[1] = 0;
 	}
 
 	static getNumInstances() { // test static methods
@@ -129,7 +132,7 @@ class MainApp {
 	// user section
 	#proc() {
 		const key = this.input.keyboard.key;
-		// 'm' keyboard shortcut
+		// 'm' doMapMode, keyboard shortcut
 		if (key) {
 			switch(key) {
 			case 'm'.charCodeAt(0) :
@@ -144,10 +147,12 @@ class MainApp {
 			if (butDown) {
 				this.pnts[0] = this.plotter2d.userMouse;
 			}
+			const inside = this.#dist2dsq(this.pnts[0], this.plotter2d.userMouse) < this.threshRad * this.threshRad;
+			this.drawPrim.drawCircleO(this.pnts[0], this.threshRad, .005, inside ? "yellow" : "blue");
 		}
-		this.drawPrim.drawCircle(this.pnts[0], this.pntRad, "green");
-		const inside = this.#dist2dsq(this.pnts[0], this.plotter2d.userMouse) < this.threshRad * this.threshRad;
-		this.drawPrim.drawCircleO(this.pnts[0], this.threshRad, .0025, inside ? "magenta" : "brown");
+		for (let i = 0; i < this.numPnts; ++i) {
+			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
+		}
 	}
 
 	// process every frame
@@ -162,7 +167,7 @@ class MainApp {
 		const wid = this.plotter2dCanvas.width;
 		const hit = this.plotter2dCanvas.height;
 
-		// interact with mouse, calc all spaces
+		// calc all spaces, interact with mouse if doMapMode is enabled
 		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode);
 
 		// goto user/cam space

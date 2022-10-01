@@ -8,7 +8,7 @@ class Plotter2d {
     // enum spaces
     static spaces = makeEnum(["SCREEN", "NDC", "USER"]);
 
-    constructor(ctx) {
+    constructor(ctx, startCenter = [0,0], startZoom = 1) {
         this.ctx = ctx; // only used for trans and scale, save and restore
         // mouse in user/cam space
         this.userMouse = [0, 0];
@@ -26,9 +26,10 @@ class Plotter2d {
         // NDC to  user/cam space
         this.camMin= [0, 0];
         this.camMax= [0, 0];
-        this.center= [0, 0];
+        this.center= clone(startCenter);
+        this.startCenter= clone(startCenter);
 
-        this.startZoom= 1;
+        this.startZoom= startZoom;
         this.zoom= 1;
         this.invZoom= 1;
         this.logZoom= 0;
@@ -44,8 +45,21 @@ class Plotter2d {
 		this.invZoom = 1 / this.zoom;
         this.logZoom = Math.log(this.zoom);
     }
+/*
+    centerReset() {
+        this.center = clone(this.startCenter);
+    }
+*/
 
-    #newcenter(i, pnt) {
+xTransReset() {
+    this.center[0] = this.startCenter[0];
+}
+
+yTransReset() {
+    this.center[1] = this.startCenter[1];
+}
+
+#newcenter(i, pnt) {
         let nc = Array(2);
         nc[0] = pnt[0] - (i[0] - this.W[0] / 2) / (this.zoom * this.WMin / 2);
         nc[1] = pnt[1] - (i[1] - this.W[1] / 2) / (-this.zoom * this.WMin / 2);
