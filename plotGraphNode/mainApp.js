@@ -26,11 +26,6 @@ class MainApp {
 		this.doMapMode = false; // show a lot of messages, input, dimensions etc.
 		// end some SWITCHES
 
-		// speed of update
-		this.num = 1;
-		this.den = 1;
-		this.cur = 0;
-
 		// add all the event listeners and initialize elements
 
 		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
@@ -118,7 +113,6 @@ class MainApp {
 		}
 	}
 
-	// slower rate of speed, skip sometimes, depends on num and den
 	#animate() {
 		// update input system
 		this.input.proc();
@@ -131,7 +125,7 @@ class MainApp {
 		const hit = this.plotter2dCanvas.height;
 
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode);
+		this.plotter2d.proc(wid, hit, this.input.mouse);
 		this.oneShotMapMode = false;
 
 		// update UI, text

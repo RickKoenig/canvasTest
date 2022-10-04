@@ -216,8 +216,8 @@ class EditPnts {
 	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
-		let butDown = mouse.mbut[Mouse.MLEFT];
-		let lastButDown = mouse.lmbut[Mouse.MLEFT];
+		let butDown = mouse.mbut[Mouse.LEFT];
+		let lastButDown = mouse.lmbut[Mouse.LEFT];
 
 		// hilit hover
 		// check topmost points first

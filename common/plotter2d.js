@@ -1,7 +1,5 @@
 'use strict';
 
-'use strict';
-
 // handle screen, NFC, user/cam spaces,    allow mouse to UI control the user/cam space
 class Plotter2d {
 
@@ -46,15 +44,15 @@ class Plotter2d {
         this.logZoom = Math.log(this.zoom);
     }
 
-xTransReset() {
-    this.center[0] = this.startCenter[0];
-}
+    xTransReset() {
+        this.center[0] = this.startCenter[0];
+    }
 
-yTransReset() {
-    this.center[1] = this.startCenter[1];
-}
+    yTransReset() {
+        this.center[1] = this.startCenter[1];
+    }
 
-#newcenter(i, pnt) {
+    #newcenter(i, pnt) {
         let nc = Array(2);
         nc[0] = pnt[0] - (i[0] - this.W[0] / 2) / (this.zoom * this.WMin / 2);
         nc[1] = pnt[1] - (i[1] - this.W[1] / 2) / (-this.zoom * this.WMin / 2);
@@ -76,12 +74,8 @@ yTransReset() {
         const zoom = ndcScale ? this.invZoom : 1;
         return zoom;
     }
-/*
-    const zm = this.plotter2d.getZoom();
-    const zm = ndcScale ? this.plotter2d.invZoom : 1;
-*/
 
-    proc(wid, hit, mouse, doNav = true) {
+    proc(wid, hit, mouse, whichBut = Mouse.LEFT) {
         this.W[0] = wid;
         this.W[1] = hit;
 
@@ -110,11 +104,11 @@ yTransReset() {
             this.trans[1] = -this.ndcMax[1];
         }
 
-        if (doNav) {
+        if (whichBut >= 0) {
             if (mouse.wheelDelta) { // wheel mouse
                 let m = mouse.wheelDelta > 0 ? 1 : -1;
                 let lzoomspeed = 1/16;
-                if (mouse.mbut[Mouse.MMIDDLE]) { // faster wheel mouse when middle button held down
+                if (mouse.mbut[Mouse.MIDDLE]) { // faster wheel mouse when middle button held down
                     lzoomspeed *= 4;
                 }
                 this.logZoom += m * lzoomspeed;
@@ -126,7 +120,7 @@ yTransReset() {
                 this.#newcenter(pnt, this.userMouse);
             }
     
-            if (mouse.mbut[Mouse.MLEFT]) {
+            if (mouse.mbut[whichBut]) {
                 const f = 1 / (this.zoom * this.WMin / 2);
                 // where is the mouse in float coords
                 this.center[0] -= mouse.dmx*f;
@@ -152,13 +146,13 @@ yTransReset() {
             // do nothing
             break;
         case Plotter2d.spaces.NDC:
-            // toco NDC space
+            // to NDC space
             this.ctx.scale(this.scl, -this.scl); // math to screen space
             this.ctx.translate(this.trans[0], this.trans[1]);
             // ###### now in NDC space
             break;
         case Plotter2d.spaces.USER:
-            // to NDC space
+            // to USER space
             this.ctx.scale(this.scl, -this.scl); // math to screen space
             this.ctx.translate(this.trans[0], this.trans[1]);
             // to user/cam space

@@ -91,7 +91,7 @@ class DrawFun {
     }
 
 	// 'graphPaper' is used for constraining the function to the size of the graph paper
-    draw(doParametric, lineStep, phase, graphPaper, p) {
+    draw(doParametric, lineStep = 500, phase, graphPaper, p) {
 		if (doParametric) {
 			this.#drawParametric(lineStep, phase, graphPaper, p);
 		} else {

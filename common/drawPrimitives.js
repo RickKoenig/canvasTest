@@ -52,23 +52,12 @@ class DrawPrimitives {
     //drawALine(center, size, lineWidth = .01, color = "black", ndcScale = false) {
     drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
-        //const p0 = [center[0] + size[0] / 2,center[1] + size[1] / 2];
-        //const p1 = [center[0] - size[0] / 2,center[1] - size[1] / 2];
         this.ctx.beginPath();
         this.ctx.moveTo(p0[0], p0[1]);
         this.ctx.lineTo(p1[0], p1[1]);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         this.ctx.strokeStyle = color;
         this.ctx.stroke();
-        /*
-        let sx = size[0] * ndcZoom;
-        let sy = size[1] * ndcZoom;
-        this.ctx.strokeStyle = color;
-        this.ctx.strokeRect(center[0] - sx / 2
-            , center[1] - sy / 2
-            , sx
-            , sy);
-    */
     }
 
     drawText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {

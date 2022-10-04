@@ -8,6 +8,7 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		// put all elements with id from 'verticalButtons' into MainApp class
 		console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
@@ -21,24 +22,6 @@ class MainApp {
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
-
-		// some SWITCHES
-		this.doMapMode = false; // show a lot of messages, input, dimensions etc.
-		// end some SWITCHES
-
-		// speed of update
-		this.num = 1;
-		this.den = 1;
-		this.cur = 0;
-
-		// add all the event listeners and initialize elements
-
-		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
-		this.checkboxMapMode.addEventListener('change', () => {
-			//console.log("parametric changed to " + this.checkboxParametric.checked);
-			this.doMapMode = this.checkboxMapMode.checked;
-		});
-		this.checkboxMapMode.checked = this.doMapMode; // UI checkbox toggle init
 
 		// scale reset button
 		this.buttonScaleCam.addEventListener('click', () => {
@@ -62,6 +45,7 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 		this.drawFun = new DrawFun(this.graphPaper);
+		this.drawFun.changeFunctionG(function(t) {return Math.cos(t * 20) * Math.exp(-t * (1/3));});
 
 		// start it off
 		this.#animate();
@@ -74,13 +58,11 @@ class MainApp {
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.plotter2d;
-		p.center[0] = 0;
+		this.plotter2d.xTransReset();
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.plotter2d;
-		p.center[1] = 0;
+		this.plotter2d.yTransReset();
 	}
 
 	static getNumInstances() { // test static methods
@@ -90,11 +72,11 @@ class MainApp {
 	// update some of the UI
 	#updateUI() {
 		const p = this.plotter2d;
-		const plotMouse =  "Move points around<br>and press buttons<br>"
+		const plotMouse =  "<br>Move points around<br>and press buttons<br>"
 			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
 			+ ", " + p.userMouse[1].toFixed(2) + ")";
 		this.title.innerHTML = plotMouse;
-		this.mode.innerHTML = this.doMapMode ? "MOVE" : "EDIT";
+		//this.mode.innerHTML = this.doMapMode ? "MOVE" : "EDIT";
 		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
 		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
 		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
@@ -131,7 +113,7 @@ class MainApp {
 		const hit = this.plotter2dCanvas.height;
 
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode);
+		this.plotter2d.proc(wid, hit, this.input.mouse);
 		this.oneShotMapMode = false;
 
 		// update UI, text
@@ -143,12 +125,12 @@ class MainApp {
 
 		// now in user/cam space
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-		this.drawFun.draw(this.doParametric, 150, 0, this.graphPaper);
+		//const numSteps = 2;
+		this.drawFun.draw(this.doParametric, undefined, 0, this.graphPaper);
 
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 	}
-
 }
 
 const mainApp = new MainApp();

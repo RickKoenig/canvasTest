@@ -8,6 +8,7 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		// put all elements with id from 'verticalButtons' into MainApp class
 		console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
@@ -25,11 +26,6 @@ class MainApp {
 		// some SWITCHES
 		this.doMapMode = false; // show a lot of messages, input, dimensions etc.
 		// end some SWITCHES
-
-		// speed of update
-		this.num = 1;
-		this.den = 1;
-		this.cur = 0;
 
 		// add all the event listeners and initialize elements
 
@@ -62,6 +58,12 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 		this.drawFun = new DrawFun(this.graphPaper);
+		/*
+		const fun = function(t) {return Math.cos(t) * Math.cos(t);};
+		this.drawFun.changeFunctionG(fun);
+		*/
+		this.drawFun.changeFunctionG(function(t) {return Math.cos(t * 20) * Math.exp(-t * (1/3));});
+		this.drawFun.setline
 
 		// start it off
 		this.#animate();
@@ -74,13 +76,11 @@ class MainApp {
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.plotter2d;
-		p.center[0] = 0;
+		this.plotter2d.xTransReset();
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.plotter2d;
-		p.center[1] = 0;
+		this.plotter2d.yTransReset();
 	}
 
 	static getNumInstances() { // test static methods
@@ -131,7 +131,7 @@ class MainApp {
 		const hit = this.plotter2dCanvas.height;
 
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode);
+		this.plotter2d.proc(wid, hit, this.input.mouse);
 		this.oneShotMapMode = false;
 
 		// update UI, text
@@ -143,7 +143,7 @@ class MainApp {
 
 		// now in user/cam space
 		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-		this.drawFun.draw(this.doParametric, 150, 0, this.graphPaper);
+		this.drawFun.draw(this.doParametric, 500, 0, this.graphPaper);
 
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());

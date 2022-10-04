@@ -10,6 +10,7 @@ class MainApp {
 
 		// connect all the getElementById's into the main class
 		//console.log("ids of verticalButtons");
+		// put all elements with id from 'verticalButtons' into MainApp class
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {
@@ -24,12 +25,12 @@ class MainApp {
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
 		// some SWITCHES
-		this.doMapMode = false; // show a lot of messages, input, dimensions etc.
+		//this.doMapMode = false; // show a lot of messages, input, dimensions etc.
 		// end some SWITCHES
 
 		this.startCenter = [.5, .5];
 		this.startZoom = .5;
-
+/*
 		// add all the event listeners and initialize elements
 		// MODE EDIT/MOVE
 		this.checkboxMapMode.addEventListener('change', () => {
@@ -37,7 +38,7 @@ class MainApp {
 			this.doMapMode = this.checkboxMapMode.checked;
 		});
 		this.checkboxMapMode.checked = this.doMapMode; // UI checkbox toggle init
-
+*/
 		// scale reset button
 		this.buttonScaleCam.addEventListener('click', () => {
 			//console.log("scale camera reset");
@@ -102,11 +103,12 @@ class MainApp {
 	// update some of the UI all innerHTML
 	#updateUI() {
 		const p = this.plotter2d;
-		const plotMouse =  "Move points around<br>and press buttons"
+		const plotMouse =  "<br>Move points around<br>and press buttons<br>"
+			+ "LMB to edit, RMB to navigate"
 			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
 			+ ", " + p.userMouse[1].toFixed(2) + ")";
 		this.title.innerHTML = plotMouse;
-		this.mode.innerHTML = this.doMapMode ? "MOVE" : "EDIT";
+		//this.mode.innerHTML = this.doMapMode ? "MOVE" : "EDIT";
 		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
 		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
 		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
@@ -195,7 +197,7 @@ class MainApp {
 		const hit = this.plotter2dCanvas.height;
 
 		// calc all spaces, interact with mouse if doMapMode is true
-		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode); 
+		this.plotter2d.proc(wid, hit, this.input.mouse, Mouse.RIGHT); 
 
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);

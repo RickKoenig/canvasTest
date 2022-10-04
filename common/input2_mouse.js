@@ -1,9 +1,9 @@
 'use strict';
 
 class Mouse {	
-	static MLEFT = 0;
-	static MMIDDLE = 1;
-	static MRIGHT = 2;
+	static LEFT = 0;
+	static MIDDLE = 1;
+	static RIGHT = 2;
 
 	constructor(div, canvas) {
 		this.div = div;
@@ -98,8 +98,10 @@ class Mouse {
 	
 	// event mouse exit
 	bmouseou(e) {
+		// see if we can handle this just a little better ?
 		this.mbutcur[0] = this.mbutcur[1] = this.mbutcur[2] = 0;
 		this.mbuthold[0] = this.mbuthold[1] = this.mbuthold[2] = 0;
+
 		this.lastinside[0] = this.mbutcur[0];
 		this.lastinside[1] = this.mbutcur[1];
 		this.lastinside[2] = this.mbutcur[2];

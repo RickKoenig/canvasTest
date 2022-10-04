@@ -11,6 +11,7 @@ class MainApp {
 		// get all the elements automatically
 		// children of verticalButtons
 
+		// put all elements with id from 'verticalButtons' into MainApp class
 		console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
@@ -189,13 +190,11 @@ class MainApp {
 	}
 
 	#buttonXTransCamReset() {
-		const p = this.plotter2d;
-		p.center[0] = 0;
+		this.plotter2d.xTransReset();
 	}
 
 	#buttonYTransCamReset() {
-		const p = this.plotter2d;
-		p.center[1] = 0;
+		this.plotter2d.yTransReset();
 	}
 
 	#resetFunctions() {
