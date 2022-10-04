@@ -11,7 +11,7 @@ class Plotter2d {
     constructor(ctx, startCenter = [0,0], startZoom = 1) {
         this.ctx = ctx; // only used for trans and scale, save and restore
         // mouse in user/cam space
-        this.userMouse = [0, 0];
+        this.userMouse = [0, 0]; // current mouse coords in user/cam space
     
         // screen space dimensions of <canvas> / <div>
         this.W = [0, 0];
@@ -45,11 +45,6 @@ class Plotter2d {
 		this.invZoom = 1 / this.zoom;
         this.logZoom = Math.log(this.zoom);
     }
-/*
-    centerReset() {
-        this.center = clone(this.startCenter);
-    }
-*/
 
 xTransReset() {
     this.center[0] = this.startCenter[0];
@@ -131,7 +126,7 @@ yTransReset() {
                 this.#newcenter(pnt, this.userMouse);
             }
     
-            if (mouse.mbut[0]) {
+            if (mouse.mbut[Mouse.MLEFT]) {
                 const f = 1 / (this.zoom * this.WMin / 2);
                 // where is the mouse in float coords
                 this.center[0] -= mouse.dmx*f;

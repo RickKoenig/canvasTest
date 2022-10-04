@@ -194,3 +194,65 @@ function arrayEquals(a, b) {
 function getRandomInt(max) {
 	return Math.floor(Math.random() * max);
 }
+
+function dist2dsq(p0, p1) {
+	const d = [p1[0] - p0[0], p1[1] - p0[1]];
+	return d[0] * d[0] + d[1] * d[1];
+}
+
+function midPnt(p0, p1) {
+	return [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+}
+
+class EditPnts {
+	constructor(pnts, pntRad) {
+		this.pnts = pnts;
+		this.numPnts = pnts.length;
+		this.curPntIdx = -1; // current select point for edit
+		this.hilitPntIdx = -1; // hover over
+		this.pntRad = pntRad;	
+	}
+
+	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
+		this.hilitPntIdx = -1
+		// edit stuff on the graph paper
+		let butDown = mouse.mbut[Mouse.MLEFT];
+		let lastButDown = mouse.lmbut[Mouse.MLEFT];
+
+		// hilit hover
+		// check topmost points first
+		for (let i = this.numPnts - 1; i >= 0; --i) {
+			const isInside
+				= dist2dsq(this.pnts[i], userMouse) 
+				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
+			if (isInside) {
+				this.hilitPntIdx = i;
+				break;
+			}
+		}
+		if (this.curPntIdx < 0) {
+			// nothing selected
+			if (this.hilitPntIdx >= 0) {
+				// something hilighted
+				if (butDown && !lastButDown) {
+					//mouse button pressed
+					console.log("button going down");
+					this.curPntIdx = this.hilitPntIdx;
+				}
+			}
+		}
+		if (!butDown) {
+			//deselect point when mouse not pressed
+			this.curPntIdx = -1;
+		}
+			
+		if (this.curPntIdx >= 0) {
+			this.pnts[this.curPntIdx] = userMouse;
+		}
+	}
+
+	getHilitIdx() {
+		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
+		return hilitIdx;
+	}
+}

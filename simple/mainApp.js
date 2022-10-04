@@ -9,7 +9,7 @@ class MainApp {
 		++MainApp.#numInstances;
 
 		// connect all the getElementById's into the main class
-		console.log("ids of verticalButtons");
+		//console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {
@@ -27,8 +27,10 @@ class MainApp {
 		this.doMapMode = false; // show a lot of messages, input, dimensions etc.
 		// end some SWITCHES
 
-		// add all the event listeners and initialize elements
+		this.startCenter = [.5, .5];
+		this.startZoom = .5;
 
+		// add all the event listeners and initialize elements
 		// MODE EDIT/MOVE
 		this.checkboxMapMode.addEventListener('change', () => {
 			//console.log("parametric changed to " + this.checkboxParametric.checked);
@@ -54,19 +56,28 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.ctx, [1, 1], .5);
+		this.plotter2d = new Plotter2d(this.ctx, this.startCenter, this.startZoom);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
 		// user init section
 		this.numPnts = 5;
-		this.pntRad = .02; // size of point
-		this.threshRad = .06; // size of when can select a point
+		this.pntRad = .05; // size of point
 		this.pnts = createArray(this.numPnts, 2); // array of 'two' dimensional points
 		for (let i = 0; i < this.numPnts; ++i) {
 			this.pnts[i] = [.25 + .5 * i, .5 + .25 * i];
 		}
-		//fillArray(this.pnts, 0); // all points start at 0
+
+		this.numPnts2 = 3;
+		this.pntRad2 = .15; // size of point
+		this.pnts2 = createArray(this.numPnts2, 2); // array of 'two' dimensional points
+		for (let i = 0; i < this.numPnts2; ++i) {
+			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i];
+		}
+
+		// interactive edit of points
+		this.editPnts = new EditPnts(this.pnts, this.pntRad);
+		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2);
 
 		// start off the repeated calls to #animate
 		this.#animate();
@@ -78,21 +89,17 @@ class MainApp {
 
 	#buttonXTransCamReset() {
 		this.plotter2d.xTransReset();
-		//const p = this.plotter2d;
-		//p.center[0] = 0;
 	}
 
 	#buttonYTransCamReset() {
 		this.plotter2d.yTransReset();
-		//const p = this.plotter2d;
-		//p.center[1] = 0;
 	}
 
 	static getNumInstances() { // test static methods
 		return MainApp.#numInstances;
 	}
 
-	// update some of the UI
+	// update some of the UI all innerHTML
 	#updateUI() {
 		const p = this.plotter2d;
 		const plotMouse =  "Move points around<br>and press buttons"
@@ -123,12 +130,6 @@ class MainApp {
 		}
 	}
 
-	#dist2dsq(p0, p1) {
-		const d = [p1[0] - p0[0], p1[1] - p0[1]];
-		return d[0] * d[0] + d[1] * d[1];
-	}
-
-
 	// user section
 	#proc() {
 		const key = this.input.keyboard.key;
@@ -140,18 +141,44 @@ class MainApp {
 				this.checkboxMapMode.checked = this.doMapMode; // UI checkbox toggle init
 			}
 		}
-
-		if (!this.doMapMode) {
-			// do edit mode instead, modify p0
-			let butDown = this.input.mouse.mbutcur[0];
-			if (butDown) {
-				this.pnts[0] = this.plotter2d.userMouse;
-			}
-			const inside = this.#dist2dsq(this.pnts[0], this.plotter2d.userMouse) < this.threshRad * this.threshRad;
-			this.drawPrim.drawCircleO(this.pnts[0], this.threshRad, .005, inside ? "yellow" : "blue");
+		
+		// proc
+		const editMode = !this.doMapMode;
+		// do edit mode instead, modify pnts
+		if (editMode) {
+			// pass in the buttons and the user/cam space mouse from drawPrim
+			this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
+			this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
 		}
+
+		// draw with hilits on some points
+		const hilitPntIdx = this.editPnts.getHilitIdx();
 		for (let i = 0; i < this.numPnts; ++i) {
 			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
+			let doHilit = i == hilitPntIdx;
+			if (!editMode) {
+				doHilit = false; // don't hilit when in edit mode
+			}
+			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
+		}
+		// draw some extra stuff like lines and midpoints
+		for (let i = 0; i < this.numPnts; ++i) {
+			const p0 = this.pnts[i];
+			const p1 = this.pnts[(i + 1) % this.numPnts];
+			this.drawPrim.drawLine(p0, p1, "darkgray");
+			const mid = midPnt(p0, p1);
+			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
+		}
+
+		// draw with hilits on some points2
+		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
+		for (let i = 0; i < this.numPnts2; ++i) {
+			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2, "green");
+			let doHilit = i == hilitPntIdx2;
+			if (!editMode) {
+				doHilit = false; // don't hilit when in edit mode
+			}
+			this.drawPrim.drawCircleO(this.pnts2[i], this.pntRad2, .01, doHilit ? "yellow" : "black");
 		}
 	}
 
@@ -167,8 +194,8 @@ class MainApp {
 		const wid = this.plotter2dCanvas.width;
 		const hit = this.plotter2dCanvas.height;
 
-		// calc all spaces, interact with mouse if doMapMode is enabled
-		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode);
+		// calc all spaces, interact with mouse if doMapMode is true
+		this.plotter2d.proc(wid, hit, this.input.mouse, this.doMapMode); 
 
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
@@ -176,7 +203,7 @@ class MainApp {
 		// now in user/cam space
 		this.graphPaper.draw("X", "Y");
 
-		this.#proc();
+		this.#proc(); // do user stuff
 
 		// update UI, text
 		this.#updateUI();
@@ -184,7 +211,6 @@ class MainApp {
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 	}
-
 }
 
 const mainApp = new MainApp();
