@@ -200,8 +200,32 @@ function dist2dsq(p0, p1) {
 	return d[0] * d[0] + d[1] * d[1];
 }
 
+function dist2d(p0, p1) {
+	return Math.sqrt(dist2dsq(p0, p1));
+}
+
 function midPnt(p0, p1) {
 	return [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+}
+
+function lerp(A, B, t) {
+	return A + (B - A) * t;
+}
+
+function getIntSect(A, B, C, D) {
+	const tTop  = (D[0] - C[0]) * (A[1] - C[1]) 
+				- (D[1] - C[1]) * (A[0] - C[0]);
+	const uTop  = (C[1] - A[1]) * (A[0] - B[0]) 
+				- (C[0] - A[0]) * (A[1] - B[1]);
+	const bottom  = (D[1] - C[1]) * (B[0] - A[0]) 
+				  - (D[0] - C[0]) * (B[1] - A[1]);
+    
+	if (bottom != 0) {
+		const t = tTop / bottom;
+		const u = uTop / bottom;
+		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
+	}
+	return null;
 }
 
 class EditPnts {
@@ -236,7 +260,7 @@ class EditPnts {
 				// something hilighted
 				if (butDown && !lastButDown) {
 					//mouse button pressed
-					console.log("button going down");
+					//console.log("button going down");
 					this.curPntIdx = this.hilitPntIdx;
 				}
 			}

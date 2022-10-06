@@ -12,7 +12,7 @@ class MainApp {
 		// children of verticalButtons
 
 		// put all elements with id from 'verticalButtons' into MainApp class
-		console.log("ids of verticalButtons");
+		// console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {

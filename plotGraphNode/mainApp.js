@@ -8,7 +8,7 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
-		console.log("ids of verticalButtons");
+		// console.log("ids of verticalButtons");
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {

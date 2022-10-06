@@ -8,9 +8,8 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
-		// connect all the getElementById's into the main class
 		//console.log("ids of verticalButtons");
-		// put all elements with id from 'verticalButtons' into MainApp class
+		// put all elements with getElementById from 'verticalButtons' into MainApp class
 		const vb = document.getElementById("verticalButtons");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {
@@ -24,21 +23,10 @@ class MainApp {
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
-		// some SWITCHES
-		//this.doMapMode = false; // show a lot of messages, input, dimensions etc.
-		// end some SWITCHES
-
 		this.startCenter = [.5, .5];
 		this.startZoom = .5;
-/*
+
 		// add all the event listeners and initialize elements
-		// MODE EDIT/MOVE
-		this.checkboxMapMode.addEventListener('change', () => {
-			//console.log("parametric changed to " + this.checkboxParametric.checked);
-			this.doMapMode = this.checkboxMapMode.checked;
-		});
-		this.checkboxMapMode.checked = this.doMapMode; // UI checkbox toggle init
-*/
 		// scale reset button
 		this.buttonScaleCam.addEventListener('click', () => {
 			//console.log("scale camera reset");
@@ -108,7 +96,6 @@ class MainApp {
 			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
 			+ ", " + p.userMouse[1].toFixed(2) + ")";
 		this.title.innerHTML = plotMouse;
-		//this.mode.innerHTML = this.doMapMode ? "MOVE" : "EDIT";
 		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
 		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
 		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
@@ -134,33 +121,17 @@ class MainApp {
 
 	// user section
 	#proc() {
-		const key = this.input.keyboard.key;
-		// 'm' doMapMode, keyboard shortcut
-		if (key) {
-			switch(key) {
-			case 'm'.charCodeAt(0) :
-				this.doMapMode = !this.doMapMode;
-				this.checkboxMapMode.checked = this.doMapMode; // UI checkbox toggle init
-			}
-		}
-		
 		// proc
-		const editMode = !this.doMapMode;
-		// do edit mode instead, modify pnts
-		if (editMode) {
-			// pass in the buttons and the user/cam space mouse from drawPrim
-			this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
-			this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
-		}
+		// pass in the buttons and the user/cam space mouse from drawPrim
+		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
+
 
 		// draw with hilits on some points
 		const hilitPntIdx = this.editPnts.getHilitIdx();
 		for (let i = 0; i < this.numPnts; ++i) {
 			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
 			let doHilit = i == hilitPntIdx;
-			if (!editMode) {
-				doHilit = false; // don't hilit when in edit mode
-			}
 			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
 		}
 		// draw some extra stuff like lines and midpoints
@@ -177,9 +148,6 @@ class MainApp {
 		for (let i = 0; i < this.numPnts2; ++i) {
 			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2, "green");
 			let doHilit = i == hilitPntIdx2;
-			if (!editMode) {
-				doHilit = false; // don't hilit when in edit mode
-			}
 			this.drawPrim.drawCircleO(this.pnts2[i], this.pntRad2, .01, doHilit ? "yellow" : "black");
 		}
 	}

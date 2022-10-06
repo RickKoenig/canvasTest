@@ -35,6 +35,10 @@ span{
 	margin:0;
 }
 
+.bigger{
+	font-size: 160%;
+}
+
 .slidecontainer{
 	text-align: center;
 	margin:0;
