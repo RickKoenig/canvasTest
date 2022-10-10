@@ -172,15 +172,90 @@ class MainApp {
 		return this.#calcTriOutside(newMidPnts);
 	}
 
+	// 0 <= a < 2 * PI
+	#normAngRadUnsigned(a)
+	{
+		let watchDog = 10;
+		while(true) {
+			if (a < 0) {
+				a += 2 * Math.PI;
+				--watchDog;
+			} else if (a >= 2 * Math.PI) {
+				a -= 2 * Math.PI;
+				--watchDog;
+			} else {
+				break;
+			}
+			if (watchDog == 0) {
+				alert("watchDog: normAngRadUnsigned hit");
+				return 0;
+			}
+		}
+		return a;
+	}
+
+	// -PI <= a < PI
+	#normAngRadSigned(a)
+	{
+		let watchDog = 10;
+		while(true) {
+			if (a < -Math.PI) {
+				a += 2 * Math.PI;
+				--watchDog;
+			} else if (a >= Math.PI) {
+				a -= 2 * Math.PI;
+				--watchDog;
+			} else {
+				break;
+			}
+			if (watchDog == 0) {
+				alert("watchDog: normAngRadUnsigned hit");
+				return 0;
+			}
+		}
+		return a;
+	}
+
+	#delLine(pnt, angM) {
+		const delM = new Array(2);
+		delM[0] = Math.cos(angM);
+		delM[1] = Math.sin(angM);
+		const scl = .25;
+		const offset = [pnt[0] + delM[0] * scl, pnt[1] + delM[1] * scl];
+		const ln = [pnt, offset];
+		return ln;
+	}
+
 	#calcSectors(pnts)
 	{
-		const ret = [
-			[[.1, .3], [.2, .4]],
-			[[.12, .33], [.24, .48]],
-			[[.14, .36], [.28, .44]]
-		];
-		return ret;
+		const numSect = 3; // triSect angles
+		const ret = new Array(3); // 3 for triangle
+		for (let i = 0; i < 3; ++i) {
+			const sect = new Array(numSect - 1);
 
+			const j = (i + 1) % 3;
+			const k = (i + 2) % 3;
+			const del0 = new Array(2);
+			const del1 = new Array(2);
+			del0[0] = pnts[j][0] - pnts[i][0];
+			del0[1] = pnts[j][1] - pnts[i][1];
+			del1[0] = pnts[k][0] - pnts[i][0];
+			del1[1] = pnts[k][1] - pnts[i][1];
+			// murder some kittens ('IQ')
+			const ang0 = Math.atan2(del0[1], del0[0]);
+			const ang1 = Math.atan2(del1[1], del1[0]);
+
+			let dela = ang1 - ang0;
+			dela = this.#normAngRadSigned(dela);
+			for (let j = 0; j < numSect - 1; ++j) {
+				let angM = ang0 + dela * (j + 1) / numSect; // skip 0 and numSect
+				angM = this.#normAngRadUnsigned(angM);
+				const lnM = this.#delLine(pnts[i], angM);
+				sect[j] = lnM;
+			}
+			ret[i] = sect;
+		}
+		return ret;
 	}
 
 	// update some of the UI all innerHTML
@@ -207,6 +282,7 @@ class MainApp {
 		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
 
 
+
 		// 1st set of points
 		// draw with hilits on some points
 		const hilitPntIdx = this.editPnts.getHilitIdx();
@@ -231,7 +307,6 @@ class MainApp {
 
 
 
-
 		// 2nd set of points
 		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
 		for (let i = 0; i < this.numPnts2; ++i) {
@@ -247,11 +322,28 @@ class MainApp {
 			this.drawPrim.drawLine(p0, p1, .01, "darkcyan");
 		}
 		// calc ang bi/tri sectors
-		const sect = this.#calcSectors(this.pnts2);
-		for (let i = 0; i < this.numPnts2; ++i) {
-			const p0 = sect[i][0];
-			const p1 = sect[i][1];
-			this.drawPrim.drawLine(p0, p1, .01, "maroon");
+		const sects = this.#calcSectors(this.pnts2);
+
+		const isects = new Array(3);
+		// draw sectors
+		for (let i = 0; i < sects.length; ++i) {
+			const k = (i + 1) % sects.length;
+			const sect0 = sects[i];
+			const sect1 = sects[k];
+			// calc and draw the intsect of triSect lines
+			const line0 = sect0[0];
+			const line1 = sect1[1];
+			const isect = getIntSect(line0[0], line0[1], line1[0], line1[1]);
+			if (isect) {
+				this.drawPrim.drawCircle(isect, .02, "black");
+				isects[i] = isect;
+			}
+		}
+		for (let i = 0; i < isects.length; ++i) {
+			const j = (i + 2) % isects.length;
+			this.drawPrim.drawLine(isects[i], isects[j], .01, "black");
+			this.drawPrim.drawLine(this.pnts2[i], isects[i], .01, "brown");
+			this.drawPrim.drawLine(this.pnts2[i], isects[j], .01, "brown");
 		}
 	}
 
