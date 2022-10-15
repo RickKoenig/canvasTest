@@ -6,8 +6,10 @@ class Plotter2d {
     // enum spaces
     static spaces = makeEnum(["SCREEN", "NDC", "USER"]);
 
-    constructor(ctx, startCenter = [0,0], startZoom = 1) {
+    constructor(canvas, ctx, vb, startCenter = [0,0], startZoom = 1) {
+        this.canvas = canvas;
         this.ctx = ctx; // only used for trans and scale, save and restore
+        this.vb = vb;
         // mouse in user/cam space
         this.userMouse = [0, 0]; // current mouse coords in user/cam space
     
@@ -36,6 +38,56 @@ class Plotter2d {
         // good state is one ctx.default in the stack and some active current state
         this.ctx.save();
         this.curSpace = Plotter2d.spaces.SCREEN;
+
+        if (this.vb) {
+            const clazz = "noMargins";
+            const pieces = [
+                {
+                    preId: "textXTransCam2",
+                    preText: "hum1",
+                    butId: "buttonXTransCam2",
+                    butText: "X Trans Camera Reset"
+                },
+                {
+                    preId: "textYTransCam2",
+                    preText: "hum2",
+                    butId: "buttonXTransCam2",
+                    butText: "X Trans Camera Reset"
+                },
+                {
+                    preId: "textScaleCam2",
+                    preText: "hum3",
+                    butId: "buttonScaleCam2",
+                    butText: "Scale Camera Reset"
+                }
+            ];
+            for (let piece in pieces) {
+                console.log("piece id = " + pieces[piece].preId);
+
+            }
+/*
+		<hr>
+		<pre class="noMargins"><span id="textXTransCam">hum1</span></pre>
+		<button id="buttonXTransCam">X Trans Camera Reset</button>
+
+		<hr>
+		<pre class="noMargins"><span id="textYTransCam">hum2</span></pre>
+		<button id="buttonYTransCam">Y Trans Camera Reset</button>
+
+		<hr>
+		<pre class="noMargins"><span id="textScaleCam">hum3</span></pre>
+		<button id="buttonScaleCam">Scale Camera Reset</button>
+		<hr>
+*/
+        }
+    }
+
+    #setCamPiece() {
+
+    }
+
+    #setCamTransScale() {
+
     }
 
 	scaleReset() {
@@ -75,9 +127,28 @@ class Plotter2d {
         return zoom;
     }
 
-    proc(wid, hit, mouse, whichBut = Mouse.LEFT) {
-        this.W[0] = wid;
-        this.W[1] = hit;
+	// given size of window or a fixed size set canvas size
+	#calcCanvasSize() {
+		const fixedDim = false;
+        if (fixedDim) {
+			const fixedSize = [800, 600];
+			// set canvas size to a fixed size
+			this.canvas.width = fixedSize[0];
+			this.canvas.height = fixedSize[1];
+		} else {
+			// set canvas size depending on window size
+			// TODO: get rid of magic numbers
+			const wid = window.innerWidth - 450; // window is global
+			const hit = window.innerHeight - 100;
+			this.canvas.width = Math.max(200, wid);
+			this.canvas.height = Math.max(750, hit);
+		}
+	}
+
+    proc(mouse, whichBut = Mouse.LEFT) {
+        this.W[0] = this.canvas.width;
+        this.W[1] = this.canvas.height;
+        this.#calcCanvasSize();
 
         this.WMin = Math.min(this.W[0], this.W[1]);
         // use the mouse to navigate the user/cam space
@@ -111,8 +182,10 @@ class Plotter2d {
                 if (mouse.mbut[Mouse.MIDDLE]) { // faster wheel mouse when middle button held down
                     lzoomspeed *= 4;
                 }
+                const minLogZoom = -5;
+                const maxLogZoom = 4;
                 this.logZoom += m * lzoomspeed;
-                this.logZoom = range(-5, this.logZoom, 5);
+                this.logZoom = range(minLogZoom, this.logZoom, maxLogZoom);
                 this.zoom = Math.exp(this.logZoom);
                 this.invZoom = 1 / this.zoom;
     

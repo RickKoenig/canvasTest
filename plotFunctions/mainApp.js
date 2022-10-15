@@ -132,7 +132,7 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.ctx);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 		this.drawFun = new DrawFun(this.graphPaper);
@@ -321,7 +321,7 @@ class MainApp {
 		this.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
 		this.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
 	}
-
+/*
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
 		const fixedDim = false;
@@ -339,7 +339,7 @@ class MainApp {
 			this.plotter2dCanvas.height = Math.max(750, hit);
 		}
 	}
-
+*/
 	// slower rate of speed, skip sometimes, depends on num and den
 	#proc() {
 		// update FPS
@@ -382,14 +382,14 @@ class MainApp {
 		this.#updateUI();
 
 		// re-adjust canvas size depending on the window resize
-		this.#calcCanvasSize();
+		//this.#calcCanvasSize();
 
 		// proc/draw all the classes
-		const wid = this.plotter2dCanvas.width;
-		const hit = this.plotter2dCanvas.height;
+		//const wid = this.plotter2dCanvas.width;
+		//const hit = this.plotter2dCanvas.height;
 
 		// interact with mouse, calc all spaces
-        this.plotter2d.proc(wid, hit, this.input.mouse);
+        this.plotter2d.proc(this.input.mouse);
 
 		
 		// goto user/cam space

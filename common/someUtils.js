@@ -228,6 +228,17 @@ function getIntSect(A, B, C, D) {
 	return null;
 }
 
+function populateElementIds(parent, dest) {
+	// put all elements with id from parent to dest object
+	const vb = document.getElementById("verticalButtons");
+	const vba = vb.getElementsByTagName("*");
+	for (const htmle of vba) {
+		if (htmle.id.length) {
+			dest[htmle.id] = document.getElementById(htmle.id);
+		}
+	}
+}
+
 class EditPnts {
 	constructor(pnts, pntRad) {
 		this.pnts = pnts;

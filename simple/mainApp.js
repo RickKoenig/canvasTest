@@ -45,7 +45,7 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.ctx, this.startCenter, this.startZoom);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
@@ -100,7 +100,7 @@ class MainApp {
 		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
 		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
 	}
-
+/*
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
 		const fixedDim = false;
@@ -118,7 +118,7 @@ class MainApp {
 			this.plotter2dCanvas.height = Math.max(750, hit);
 		}
 	}
-
+*/
 	// user section
 	#proc() {
 		// proc
@@ -158,14 +158,14 @@ class MainApp {
 		this.input.proc();
 
 		// re-adjust canvas size depending on the window resize
-		this.#calcCanvasSize();
+		//this.#calcCanvasSize();
 
 		// proc/draw all the classes
-		const wid = this.plotter2dCanvas.width;
-		const hit = this.plotter2dCanvas.height;
+		//const wid = this.plotter2dCanvas.width;
+		//const hit = this.plotter2dCanvas.height;
 
 		// calc all spaces, interact with mouse if doMapMode is true
-		this.plotter2d.proc(wid, hit, this.input.mouse, Mouse.RIGHT); 
+		this.plotter2d.proc(this.input.mouse, Mouse.RIGHT); 
 
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);

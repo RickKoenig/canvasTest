@@ -45,12 +45,11 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.ctx, this.startCenter, this.startZoom);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
 		// user init section
-
 		//1st triangle
 		this.pntRad = .05; // size of point
 		this.pnts = [
@@ -94,7 +93,7 @@ class MainApp {
 	static getNumInstances() { // test static methods
 		return MainApp.#numInstances;
 	}
-
+/*
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
 		const fixedDim = false;
@@ -112,8 +111,26 @@ class MainApp {
 			this.plotter2dCanvas.height = Math.max(750, hit);
 		}
 	}
-
+*/
 	// user section
+
+
+	// update some of the UI all innerHTML
+	#updateUI() {
+		const p = this.plotter2d;
+		const plotMouse =  "<br>Move points around<br>and press buttons<br>"
+			+ "LMB to edit, RMB to navigate"
+			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
+			+ ", " + p.userMouse[1].toFixed(2) + ")";
+		this.title.innerHTML = plotMouse;
+		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
+		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
+		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
+	
+		this.triangleInfo.innerHTML = "Perimeter: " 
+								+ this.#calcTriPerimeter(this.pnts).toFixed(3) + "<br>Area: "
+								+ this.#calcTriArea(this.pnts).toFixed(3);
+	}
 
 	#calcTriPerimeter(pnts) {
 		let perm = 0;
@@ -258,23 +275,6 @@ class MainApp {
 		return ret;
 	}
 
-	// update some of the UI all innerHTML
-	#updateUI() {
-		const p = this.plotter2d;
-		const plotMouse =  "<br>Move points around<br>and press buttons<br>"
-			+ "LMB to edit, RMB to navigate"
-			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
-			+ ", " + p.userMouse[1].toFixed(2) + ")";
-		this.title.innerHTML = plotMouse;
-		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
-		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
-		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
-	
-		this.triangleInfo.innerHTML = "Perimeter: " 
-								+ this.#calcTriPerimeter(this.pnts).toFixed(3) + "<br>Area: "
-								+ this.#calcTriArea(this.pnts).toFixed(3);
-	}
-
 	#proc() {
 		// proc
 		// pass in the buttons and the user/cam space mouse from drawPrim
@@ -299,6 +299,7 @@ class MainApp {
 			this.drawPrim.drawLine(p0, p1, .01, "brown");
 		}
 
+		// draw interior and exterior circles
 		const cirInside = this.#calcTriInside(this.pnts);
 		const cirOutside = this.#calcTriOutside(this.pnts);
 
@@ -307,7 +308,7 @@ class MainApp {
 
 
 
-		// 2nd set of points
+		// 2nd set of points, do trisect equilateral triangle problem
 		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
 		for (let i = 0; i < this.numPnts2; ++i) {
 			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2 * .5, "green");
@@ -339,6 +340,7 @@ class MainApp {
 				isects[i] = isect;
 			}
 		}
+		// draw interior triangle
 		for (let i = 0; i < isects.length; ++i) {
 			const j = (i + 2) % isects.length;
 			this.drawPrim.drawLine(isects[i], isects[j], .01, "black");
@@ -353,14 +355,14 @@ class MainApp {
 		this.input.proc();
 
 		// re-adjust canvas size depending on the window resize
-		this.#calcCanvasSize();
+		//this.#calcCanvasSize();
 
 		// proc/draw all the classes
-		const wid = this.plotter2dCanvas.width;
-		const hit = this.plotter2dCanvas.height;
+		//const wid = this.plotter2dCanvas.width;
+		//const hit = this.plotter2dCanvas.height;
 
 		// calc all spaces, interact with mouse if doMapMode is true
-		this.plotter2d.proc(wid, hit, this.input.mouse, Mouse.RIGHT); 
+		this.plotter2d.proc(this.input.mouse, Mouse.RIGHT); 
 
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
