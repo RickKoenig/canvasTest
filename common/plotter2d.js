@@ -40,6 +40,7 @@ class Plotter2d {
         this.curSpace = Plotter2d.spaces.SCREEN;
 
         if (this.vb) {
+            // add the UI for the user/cam space (reset and info)
             const clazz = "noMargins";
             const pieces = [
                 {
@@ -61,10 +62,17 @@ class Plotter2d {
                     butText: "Scale Camera Reset"
                 }
             ];
+            /*
             for (let piece in pieces) {
                 console.log("piece id = " + pieces[piece].preId);
+                vb.innerHTML += "<pre>hello</pre>";
 
-            }
+            }*/
+            vb.innerHTML +=
+            "<hr>"
+            + '<pre class="noMargins"><span id="textXTransCam3">hum1</span></pre>'
+            + '<button id="buttonXTransCam3">X Trans Camera Reset</button>'
+    
 /*
 		<hr>
 		<pre class="noMargins"><span id="textXTransCam">hum1</span></pre>
@@ -77,11 +85,12 @@ class Plotter2d {
 		<hr>
 		<pre class="noMargins"><span id="textScaleCam">hum3</span></pre>
 		<button id="buttonScaleCam">Scale Camera Reset</button>
+
 		<hr>
 */
         }
     }
-
+/*
     #setCamPiece() {
 
     }
@@ -89,7 +98,7 @@ class Plotter2d {
     #setCamTransScale() {
 
     }
-
+*/
 	scaleReset() {
         this.zoom = this.startZoom;
 		this.invZoom = 1 / this.zoom;

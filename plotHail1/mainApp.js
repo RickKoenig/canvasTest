@@ -5,7 +5,6 @@
 class MainApp {
 	constructor() {
 		const vb = document.getElementById("verticalButtons");
-		populateElementIds(vb, this);
 
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
@@ -16,6 +15,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed (part1)
 		// vb is for UI trans, scale info and reset
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vb);
+		populateElementIds(vb, this);
 
 		
 		// add all the event listeners and initialize elements
@@ -25,7 +25,7 @@ class MainApp {
 			this.#buttonScaleCamReset();
 		});
 		// x trans reset button
-		this.buttonXTransCam.addEventListener('click', () => {
+		this.buttonXTransCam3.addEventListener('click', () => {
 			this.#buttonXTransCamReset();
 		});
 		// y trans reset button
@@ -66,11 +66,10 @@ class MainApp {
 	#updateUI() {
 		const p = this.plotter2d;
 		const plotMouse =  "Hail 1 test<br>"
-			+ "<br>Mouse = (" + p.userMouse[0].toFixed(2) 
-			+ ", " + p.userMouse[1].toFixed(2) + ")";
+			+ "<br>Mouse = (" + p.userMouse[0].toFixed(2) + ", " + p.userMouse[1].toFixed(2) + ")";
 		this.title.innerHTML = plotMouse;
 		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(2) + ", logZ = " + p.logZoom.toFixed(2);
-		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
+		this.textXTransCam3.innerHTML = "center[0] = " + p.center[0].toFixed(2);
 		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
 	}
 
