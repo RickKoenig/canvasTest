@@ -1,10 +1,10 @@
 'use strict';
 
-// handle the html elements, do the UI on verticalButtons, and init and proc the other classes
+// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	constructor() {
-		const vb = document.getElementById("verticalButtons");
+		const vb = document.getElementById("verticalPanel");
 		populateElementIds(vb, this);
 
 		// setup 2D drawing environment

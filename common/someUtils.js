@@ -230,7 +230,7 @@ function getIntSect(A, B, C, D) {
 
 function populateElementIds(parent, dest) {
 	// put all elements with id from parent to dest object
-	const vb = document.getElementById("verticalButtons");
+	const vb = document.getElementById("verticalPanel");
 	const vba = vb.getElementsByTagName("*");
 	for (const htmle of vba) {
 		if (htmle.id.length) {

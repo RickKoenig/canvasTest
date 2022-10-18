@@ -6,10 +6,24 @@ class Plotter2d {
     // enum spaces
     static spaces = makeEnum(["SCREEN", "NDC", "USER"]);
 
-    constructor(canvas, ctx, vb, startCenter = [0,0], startZoom = 1) {
+    scaleReset() {
+        this.zoom = this.startZoom;
+		this.invZoom = 1 / this.zoom;
+        this.logZoom = Math.log(this.zoom);
+    }
+
+    xTransReset() {
+        this.center[0] = this.startCenter[0];
+    }
+
+    yTransReset() {
+        this.center[1] = this.startCenter[1];
+    }
+
+    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1) {
         this.canvas = canvas;
         this.ctx = ctx; // only used for trans and scale, save and restore
-        this.vb = vb;
+        this.vp = vp;
         // mouse in user/cam space
         this.userMouse = [0, 0]; // current mouse coords in user/cam space
     
@@ -39,78 +53,51 @@ class Plotter2d {
         this.ctx.save();
         this.curSpace = Plotter2d.spaces.SCREEN;
 
-        if (this.vb) {
+        if (this.vp) {
             // add the UI for the user/cam space (reset and info)
-            const clazz = "noMargins";
-            const pieces = [
+            this.pieces = [
                 {
-                    preId: "textXTransCam2",
-                    preText: "hum1",
-                    butId: "buttonXTransCam2",
-                    butText: "X Trans Camera Reset"
+                    preId: "textXTransCam",
+                    butId: "buttonXTransCam",
+                    butText: "X Trans Camera Reset",
+                    reset: this.xTransReset
+                    // textInfoEle
+                    // butInfoEle
                 },
                 {
-                    preId: "textYTransCam2",
-                    preText: "hum2",
-                    butId: "buttonXTransCam2",
-                    butText: "X Trans Camera Reset"
+                    preId: "textYTransCam",
+                    butId: "buttonYTransCam",
+                    butText: "Y Trans Camera Reset",
+                    reset: this.yTransReset
                 },
                 {
-                    preId: "textScaleCam2",
-                    preText: "hum3",
-                    butId: "buttonScaleCam2",
-                    butText: "Scale Camera Reset"
+                    preId: "textScaleCam",
+                    butId: "buttonScaleCam",
+                    butText: "Scale Camera Reset",
+                    reset: this.scaleReset
                 }
             ];
-            /*
-            for (let piece in pieces) {
-                console.log("piece id = " + pieces[piece].preId);
-                vb.innerHTML += "<pre>hello</pre>";
-
-            }*/
-            vb.innerHTML +=
-            "<hr>"
-            + '<pre class="noMargins"><span id="textXTransCam3">hum1</span></pre>'
-            + '<button id="buttonXTransCam3">X Trans Camera Reset</button>'
-    
-/*
-		<hr>
-		<pre class="noMargins"><span id="textXTransCam">hum1</span></pre>
-		<button id="buttonXTransCam">X Trans Camera Reset</button>
-
-		<hr>
-		<pre class="noMargins"><span id="textYTransCam">hum2</span></pre>
-		<button id="buttonYTransCam">Y Trans Camera Reset</button>
-
-		<hr>
-		<pre class="noMargins"><span id="textScaleCam">hum3</span></pre>
-		<button id="buttonScaleCam">Scale Camera Reset</button>
-
-		<hr>
-*/
+            
+            for (const piece of this.pieces) {
+                console.log("piece id = " + piece.butId);
+                vp.innerHTML += "<hr>"
+                    + '<pre class="noMargins"><span id="' + piece.preId + '">' + piece.preId + '</span></pre>'
+                    + '<button id="' + piece.butId + '">' + piece.butText + '</button>';
+            }
+            vp.innerHTML += "<hr>";
+            
+            for (const piece of this.pieces) {
+                const textInfoEle = document.getElementById(piece.preId);
+                const butInfoEle = document.getElementById(piece.butId);
+                //console.log(ele);
+                piece.textInfoEle = textInfoEle;
+                piece.butInfoEle = butInfoEle;
+                butInfoEle.addEventListener('click', () => {
+                    //console.log("scale camera reset");
+                    piece.reset.call(this);
+                });
+            }
         }
-    }
-/*
-    #setCamPiece() {
-
-    }
-
-    #setCamTransScale() {
-
-    }
-*/
-	scaleReset() {
-        this.zoom = this.startZoom;
-		this.invZoom = 1 / this.zoom;
-        this.logZoom = Math.log(this.zoom);
-    }
-
-    xTransReset() {
-        this.center[0] = this.startCenter[0];
-    }
-
-    yTransReset() {
-        this.center[1] = this.startCenter[1];
     }
 
     #newcenter(i, pnt) {
@@ -127,6 +114,7 @@ class Plotter2d {
         this.userMouse = r;
     }
 
+    // return correct zoom for a given space
     getZoom(ndcScale) {
         if (this.curSpace != Plotter2d.spaces.USER) {
             return 1;
@@ -154,7 +142,7 @@ class Plotter2d {
 		}
 	}
 
-    proc(mouse, whichBut = Mouse.LEFT) {
+    proc(vp, mouse, whichBut = Mouse.LEFT) {
         this.W[0] = this.canvas.width;
         this.W[1] = this.canvas.height;
         this.#calcCanvasSize();
@@ -214,6 +202,21 @@ class Plotter2d {
         this.camMin[1] = this.ndcMin[1] * this.invZoom + this.center[1];
         this.camMax[0] = this.ndcMax[0] * this.invZoom + this.center[0];
         this.camMax[1] = this.ndcMax[1] * this.invZoom + this.center[1];
+
+		// scale
+        this.pieces[0].textInfoEle.innerHTML = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
+        // xtrans
+		this.pieces[1].textInfoEle.innerHTML = "center[0] = " + this.center[0].toFixed(2);
+        // ytrans
+		this.pieces[2].textInfoEle.innerHTML = "center[1] = " + this.center[1].toFixed(2);
+
+        //console.log("update info");
+        // update info 
+        /*
+		this.vp.textScaleCam.innerHTML = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
+		this.textXTransCam.innerHTML = "center[0] = " + this.center[0].toFixed(2);
+		this.textYTransCam.innerHTML = "center[1] = " + this.center[1].toFixed(2); */
+
     }
 
     setSpace(space) {
@@ -229,15 +232,15 @@ class Plotter2d {
             break;
         case Plotter2d.spaces.NDC:
             // to NDC space
-            this.ctx.scale(this.scl, -this.scl); // math to screen space
+            this.ctx.scale(this.scl, -this.scl); // screen to NDC space
             this.ctx.translate(this.trans[0], this.trans[1]);
             // ###### now in NDC space
             break;
         case Plotter2d.spaces.USER:
             // to USER space
-            this.ctx.scale(this.scl, -this.scl); // math to screen space
+            this.ctx.scale(this.scl, -this.scl); // screen to NDC space
             this.ctx.translate(this.trans[0], this.trans[1]);
-            // to user/cam space
+            // NDC to user/cam space
             this.ctx.scale(this.zoom, this.zoom);
             this.ctx.translate(-this.center[0], -this.center[1]);
             // ###### now in user/cam space

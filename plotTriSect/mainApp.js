@@ -1,6 +1,6 @@
 'use strict';
 
-// handle the html elements, do the UI on verticalButtons, and init and proc the other classes
+// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	static #numInstances = 0; // test static members
@@ -8,9 +8,9 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
-		//console.log("ids of verticalButtons");
-		// put all elements with getElementById from 'verticalButtons' into MainApp class
-		const vb = document.getElementById("verticalButtons");
+		//console.log("ids of verticalPanel");
+		// put all elements with getElementById from 'verticalPanel' into MainApp class
+		const vb = document.getElementById("verticalPanel");
 		const vba = vb.getElementsByTagName("*");
 		for (const htmle of vba) {
 			if (htmle.id.length) {
