@@ -8,6 +8,38 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		// vertical panel UI
+		const vp = document.getElementById("verticalPanel");
+
+		// setup 2D drawing environment
+		this.plotter2dDiv = document.getElementById("plotter2dDiv");
+		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
+		this.ctx = this.plotter2dCanvas.getContext("2d");
+
+		// fire up all instances of the classes that are needed (part1)
+		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp);
+		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
+		this.drawPrim = new DrawPrimitives(this.plotter2d);
+		this.graphPaper = new GraphPaper(this.drawPrim);
+
+		 // add all elements from vp to ele if needed
+		  // uncomment if you need elements from vp
+		/*
+		this.ele = {};
+		populateElementIds(vp, this.ele);
+		*/
+
+		// start it off
+		this.#animate();
+
+		// USER:
+		this.#userInit();
+
+
+
+
+
 		//console.log("ids of verticalPanel");
 		// put all elements with getElementById from 'verticalPanel' into MainApp class
 		const vb = document.getElementById("verticalPanel");
@@ -70,6 +102,19 @@ class MainApp {
 
 		// start off the repeated calls to #animate
 		this.#animate();
+	}
+
+	// USER: add more members or classes to MainApp
+	#userInit() {
+	}
+
+	// USER: update some of the UI in vertical panel if there is some in the HTML
+	#userUpdateInfo() {
+	}
+
+	#userProc() { // USER:
+		this.drawPrim.drawCircle([.75, .5], .08, "green");
+		this.drawPrim.drawCircle([this.plotter2d.userMouse[0], this.plotter2d.userMouse[1]], .08, "green");
 	}
 
 	#buttonScaleCamReset() {
