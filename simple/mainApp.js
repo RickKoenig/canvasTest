@@ -4,6 +4,11 @@
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	static #numInstances = 0; // test static members
+
+	static getNumInstances() { // test static methods
+		return MainApp.#numInstances;
+	}
+
 	constructor() {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
@@ -11,20 +16,23 @@ class MainApp {
 		// vertical panel UI
 		const vp = document.getElementById("verticalPanel");
 
+		// USER:
+		this.#userInit();
+
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
-		// fire up all instances of the classes that are needed (part1)
+		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
 		 // add all elements from vp to ele if needed
-		  // uncomment if you need elements from vp
+		// uncomment if you need elements from vp
 		/*
 		this.ele = {};
 		populateElementIds(vp, this.ele);
@@ -32,55 +40,10 @@ class MainApp {
 
 		// start it off
 		this.#animate();
+	}
 
-		// USER:
-		this.#userInit();
-
-
-
-
-
-		//console.log("ids of verticalPanel");
-		// put all elements with getElementById from 'verticalPanel' into MainApp class
-		const vb = document.getElementById("verticalPanel");
-		const vba = vb.getElementsByTagName("*");
-		for (const htmle of vba) {
-			if (htmle.id.length) {
-				this[htmle.id] = document.getElementById(htmle.id);
-			}
-		}
-
-		// setup 2D drawing environment
-		this.plotter2dDiv = document.getElementById("plotter2dDiv");
-		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
-		this.ctx = this.plotter2dCanvas.getContext("2d");
-
-		this.startCenter = [.5, .5];
-		this.startZoom = .5;
-
-		// add all the event listeners and initialize elements
-		// scale reset button
-		this.buttonScaleCam.addEventListener('click', () => {
-			//console.log("scale camera reset");
-			this.#buttonScaleCamReset();
-		});
-		// x trans reset button
-		this.buttonXTransCam.addEventListener('click', () => {
-			//console.log("X trans camera reset");
-			this.#buttonXTransCamReset();
-		});
-		// y trans reset button
-		this.buttonYTransCam.addEventListener('click', () => {
-			//console.log("Y trans camera reset");
-			this.#buttonYTransCamReset();
-		});
-
-		// fire up all instances of the classes that are needed
-		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom);
-		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim);
-
+	// USER: add more members or classes to MainApp
+	#userInit() {
 		// user init section
 		this.numPnts = 5;
 		this.pntRad = .05; // size of point
@@ -95,77 +58,16 @@ class MainApp {
 		for (let i = 0; i < this.numPnts2; ++i) {
 			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i];
 		}
-
 		// interactive edit of points
 		this.editPnts = new EditPnts(this.pnts, this.pntRad);
 		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2);
 
-		// start off the repeated calls to #animate
-		this.#animate();
+		// before firing up Plotter2d
+		this.startCenter = [.5, .5];
+		this.startZoom = .5;
 	}
 
-	// USER: add more members or classes to MainApp
-	#userInit() {
-	}
-
-	// USER: update some of the UI in vertical panel if there is some in the HTML
-	#userUpdateInfo() {
-	}
-
-	#userProc() { // USER:
-		this.drawPrim.drawCircle([.75, .5], .08, "green");
-		this.drawPrim.drawCircle([this.plotter2d.userMouse[0], this.plotter2d.userMouse[1]], .08, "green");
-	}
-
-	#buttonScaleCamReset() {
-		this.plotter2d.scaleReset();
-	}
-
-	#buttonXTransCamReset() {
-		this.plotter2d.xTransReset();
-	}
-
-	#buttonYTransCamReset() {
-		this.plotter2d.yTransReset();
-	}
-
-	static getNumInstances() { // test static methods
-		return MainApp.#numInstances;
-	}
-
-	// update some of the UI all innerHTML
-	#updateUI() {
-		const p = this.plotter2d;
-		const plotMouse =  "<br>Move points around<br>and press buttons<br>"
-			+ "LMB to edit, RMB to navigate"
-			+ "<br>mouse = (" + p.userMouse[0].toFixed(2) 
-			+ ", " + p.userMouse[1].toFixed(2) + ")";
-		this.title.innerHTML = plotMouse;
-		this.textScaleCam.innerHTML = "zoom = " + p.zoom.toFixed(4) + ", logZoom = " + p.logZoom.toFixed(3);
-		this.textXTransCam.innerHTML = "center[0] = " + p.center[0].toFixed(2);
-		this.textYTransCam.innerHTML = "center[1] = " + p.center[1].toFixed(2);
-	}
-/*
-	// given size of window or a fixed size set canvas size
-	#calcCanvasSize() {
-		const fixedDim = false;
-		if (fixedDim) {
-			const fixedSize = [800, 600];
-			// set canvas size to a fixed size
-			this.plotter2dCanvas.width = fixedSize[0];
-			this.plotter2dCanvas.height = fixedSize[1];
-		} else {
-			// set canvas size depending on window size
-			// TODO: get rid of magic numbers
-			const wid = window.innerWidth - 450;
-			const hit = window.innerHeight - 100;
-			this.plotter2dCanvas.width = Math.max(200, wid);
-			this.plotter2dCanvas.height = Math.max(750, hit);
-		}
-	}
-*/
-	// user section
-	#proc() {
+	#userProc() {
 		// proc
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
@@ -197,34 +99,27 @@ class MainApp {
 		}
 	}
 
-	// process every frame
+	// USER: update some of the UI in vertical panel if there is some in the HTML
+	#userUpdateInfo() {
+	}
+
+	// proc
 	#animate() {
 		// update input system
 		this.input.proc();
-
-		// re-adjust canvas size depending on the window resize
-		//this.#calcCanvasSize();
-
-		// proc/draw all the classes
-		//const wid = this.plotter2dCanvas.width;
-		//const hit = this.plotter2dCanvas.height;
-
-		// calc all spaces, interact with mouse if doMapMode is true
-		this.plotter2d.proc(this.input.mouse, Mouse.RIGHT); 
-
+		// interact with mouse, calc all spaces
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-
 		// now in user/cam space
 		this.graphPaper.draw("X", "Y");
-
-		this.#proc(); // do user stuff
-
-		// update UI, text
-		this.#updateUI();
-		
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
+
+		// USER: do USER stuff
+		this.#userProc(); // proc and draw
+		// update UI, text
+		this.#userUpdateInfo();
 	}
 }
 

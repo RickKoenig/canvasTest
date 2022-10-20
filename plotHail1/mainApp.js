@@ -4,15 +4,19 @@
 // TODO: for now, assume 60hz refresh rate
 class MainApp {
 	constructor() {
+
 		// vertical panel UI
 		const vp = document.getElementById("verticalPanel");
+
+		// USER:
+		this.#userInit();
 
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
-		// fire up all instances of the classes that are needed (part1)
+		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
@@ -28,22 +32,19 @@ class MainApp {
 
 		// start it off
 		this.#animate();
-
-		// USER:
-		this.#userInit();
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
 	}
 
-	// USER: update some of the UI in vertical panel if there is some in the HTML
-	#userUpdateInfo() {
-	}
-
 	#userProc() { // USER:
 		this.drawPrim.drawCircle([.75, .5], .08, "green");
 		this.drawPrim.drawCircle([this.plotter2d.userMouse[0], this.plotter2d.userMouse[1]], .08, "green");
+	}
+
+	// USER: update some of the UI in vertical panel if there is some in the HTML
+	#userUpdateInfo() {
 	}
 
 	// proc
