@@ -81,21 +81,6 @@ class Plotter2d {
                 }
             };
             
-
-                /*
-            vp.innerHTML += "<hr>"
-            + '<pre class="noMargins"><span id="' + piece.preId + '">' + piece.preId + '</span></pre>'
-            + '<button id="' + piece.butId + '">' + piece.butText + '</button>';
-*/
-/*            const p = this.plotter2d;
-        const plotMouse =  "Hail 1 test<br>"
-            + "<br>Mouse = (" + p.userMouse[0].toFixed(2) + ", " + p.userMouse[1].toFixed(2) + ")";
-        this.title.innerHTML = plotMouse;
-*/    
-//return;
-
-            //vp.innerHTML += '<pre class="noMargins"><span id="' + piece.preId + '">' + piece.preId + '</span></pre>'
-            
             const pieces = Object.values(this.pieces);
             // setup html
             for (const piece of pieces) {
@@ -237,20 +222,6 @@ class Plotter2d {
             this.pieces.scale.textInfoEle.innerHTML = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
             // mouse
             this.pieces.mouse.textInfoEle.innerHTML = "Mouse = (" + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
-
-            //console.log("update info");
-            // update info 
-            /*
-            this.vp.textScaleCam.innerHTML = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
-            this.textXTransCam.innerHTML = "center[0] = " + this.center[0].toFixed(2);
-            this.textYTransCam.innerHTML = "center[1] = " + this.center[1].toFixed(2); */
-
-    /*            const p = this.plotter2d;
-            const plotMouse =  "Hail 1 test<br>"
-                + "<br>Mouse = (" + p.userMouse[0].toFixed(2) + ", " + p.userMouse[1].toFixed(2) + ")";
-            this.title.innerHTML = plotMouse;
-    */    
-                
         }
 
     }
@@ -284,5 +255,4 @@ class Plotter2d {
         }
         this.curSpace = space;
     }
-
 }

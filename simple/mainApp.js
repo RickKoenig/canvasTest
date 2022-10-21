@@ -34,8 +34,8 @@ class MainApp {
 		 // add all elements from vp to ele if needed
 		// uncomment if you need elements from vp
 		/*
-		this.ele = {};
-		populateElementIds(vp, this.ele);
+		this.eles = {};
+		populateElementIds(vp, this.eles);
 		*/
 
 		// start it off

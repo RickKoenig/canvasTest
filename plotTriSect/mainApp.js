@@ -26,9 +26,8 @@ class MainApp {
 
 		 // add all elements from vp to ele if needed
 		// uncomment if you need elements from vp
-		this.ele = {};
-		//populateElementIds(vp, this);
-		populateElementIds(vp, this.ele);
+		this.eles = {};
+		populateElementIds(vp, this.eles);
 
 		// start it off
 		this.#animate();
@@ -168,7 +167,7 @@ class MainApp {
 		return a;
 	}
 
-	#delLine(pnt, angM) {
+	#deltaLine(pnt, angM) {
 		const delM = new Array(2);
 		delM[0] = Math.cos(angM);
 		delM[1] = Math.sin(angM);
@@ -202,7 +201,7 @@ class MainApp {
 			for (let j = 0; j < numSect - 1; ++j) {
 				let angM = ang0 + dela * (j + 1) / numSect; // skip 0 and numSect
 				angM = this.#normAngRadUnsigned(angM);
-				const lnM = this.#delLine(pnts[i], angM);
+				const lnM = this.#deltaLine(pnts[i], angM);
 				sect[j] = lnM;
 			}
 			ret[i] = sect;
@@ -283,7 +282,7 @@ class MainApp {
 	}
 
 	#userUpdateInfo() {
-	this.ele.triInfo.innerHTML = "<br>Perimeter " 
+	this.eles.triInfo.innerHTML = "<br>Perimeter " 
 			+ this.#calcTriPerimeter(this.pnts).toFixed(3) 
 			+ "<br>Area: "
 			+ this.#calcTriArea(this.pnts).toFixed(3);
