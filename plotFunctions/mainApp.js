@@ -74,7 +74,6 @@ class MainApp {
 		this.fps;
 		this.avgFps = 0;
 		this.oldTime; // for delta time
-		this.avgFps = 0;
 		this.fpsScreen = 60; // TODO: make work with different refresh rates
 
 		// speed of update
@@ -370,8 +369,11 @@ class MainApp {
 	#userUpdateInfo() {
 		const p = this.plotter2d;
 		// show inputEventsStats
+		const fpsStr = "FPS " + this.avgFps.toFixed(2) + "<br>";
+		this.eles.textInfoLog.innerHTML = fpsStr;
+
 		if (this.doDebug) {
-			this.eles.textInfoLog.innerHTML = "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"
+			this.eles.textInfoLog.innerHTML += "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"
 			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
 			+ "<br>ndcMax[0] = " + p.ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + p.ndcMax[1].toFixed(2)
 			+ "<br><br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)
@@ -382,7 +384,7 @@ class MainApp {
 			+ "Mevent: " + this.input.mouse.events + "<br>"
 			+ "Kevent: " + this.input.keyboard.events
 		} else { // show functions
-			this.eles.textInfoLog.innerHTML = this.doParametric
+			this.eles.textInfoLog.innerHTML += this.doParametric
 				? "x = F(t),  y = G(t + p)<br>0 <= t < 2*PI" 
 				: "y = G(t + p)<br>" + this.plotter2d.camMin[0].toFixed(2) 
 					+ " <= t < " + this.plotter2d.camMax[0].toFixed(2);
@@ -396,11 +398,12 @@ class MainApp {
 		this.eles.labelFunctionF2.style.display = vis;
 		this.eles.textFunctionF.style.display = vis;
 
-		// update sliders
+		// update sliders input
 		this.eles.sliderPhase.value = this.phase;
 		this.eles.sliderFreq.value = this.freq;
 		this.eles.sliderLineStep.value = this.lineStep;
 
+		// update sliders text value
 		this.eles.textPhase.innerHTML = "sliderPhase (p) = " + this.phase.toFixed(2);
 		this.eles.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
 		this.eles.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
