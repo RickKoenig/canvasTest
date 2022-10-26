@@ -214,7 +214,7 @@ class Plotter2d {
         this.camMax[1] = this.ndcMax[1] * this.invZoom + this.center[1];
 
         if (this.vp) {
-                // xtrans
+            // xtrans
             this.pieces.xTrans.textInfoEle.innerHTML = "center[0] = " + this.center[0].toFixed(2);
             // ytrans
             this.pieces.yTrans.textInfoEle.innerHTML = "center[1] = " + this.center[1].toFixed(2);
