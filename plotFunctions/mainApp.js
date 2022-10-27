@@ -15,6 +15,7 @@ class MainApp {
 
 		// vertical panel UI
 		const vp = document.getElementById("verticalPanel");
+		//const vp = null;
 
 		// USER:
 		this.#userInit();
@@ -53,7 +54,7 @@ class MainApp {
 		// end some SWITCHES
 
 		// test keyboard normal typing
-		this.testText = "";
+		this.textTextType = "";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.phase = 0; // [0 to 2 * PI)
@@ -211,7 +212,7 @@ class MainApp {
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionF(subFun);
-			this.eles.textFunctionF.innerHTML = funStr;
+			this.eles.textFunctionF.innerText = funStr;
 		}
 	}
 
@@ -224,7 +225,7 @@ class MainApp {
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionG(subFun);
-			this.eles.textFunctionG.innerHTML = funStr;
+			this.eles.textFunctionG.innerText = funStr;
 		}
 	}
 
@@ -271,9 +272,9 @@ class MainApp {
 			const key = this.input.keyboard.key;
 			if (key) {
 				if (key == keyTable.keycodes.BACKSPACE) {
-					this.testText = this.testText.slice(0,this.testText.length - 1);
+					this.textTextType = this.textTextType.slice(0,this.textTextType.length - 1);
 				} else {
-					this.testText += String.fromCharCode(key);
+					this.textTextType += String.fromCharCode(key);
 				}
 			}
 		}
@@ -370,12 +371,14 @@ class MainApp {
 	#userUpdateInfo() {
 		const p = this.plotter2d;
 		// show inputEventsStats
-		const fpsStr = "FPS " + this.avgFps.toFixed(2) + "<br>";
-		this.eles.textInfoLog.innerHTML = fpsStr;
+		const fpsStr = "FPS " + this.avgFps.toFixed(2) + "\n";
+		this.eles.textInfoLog.innerText = fpsStr;
 
 		if (this.doDebug) {
-			this.eles.textInfoLog.innerHTML += "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"
-			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
+			//this.eles.textInfoLog.innerText
+			this.eles.textInfoLog.innerHTML
+			= "<br>TextStringTest = " + "'" + this.textTextType + "'"
+			+ "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
 			+ "<br>ndcMax[0] = " + p.ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + p.ndcMax[1].toFixed(2)
 			+ "<br><br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)
 			+ "<br>camMax[0] = " + p.camMax[0].toFixed(2) + ", camMax[1] = "  + p.camMax[1].toFixed(2)
@@ -385,11 +388,11 @@ class MainApp {
 			+ "Mevent: " + this.input.mouse.events + "<br>"
 			+ "Kevent: " + this.input.keyboard.events
 		} else { // show functions
-			this.eles.textInfoLog.innerHTML += this.doParametric
-				? "x = F(t),  y = G(t + p)<br>0 <= t < 2*PI" 
-				: "y = G(t + p)<br>" + this.plotter2d.camMin[0].toFixed(2) 
+			this.eles.textInfoLog.innerText += this.doParametric
+				? "x = F(t),  y = G(t + p)\n0 <= t < 2*PI" 
+				: "y = G(t + p)\n" + this.plotter2d.camMin[0].toFixed(2) 
 					+ " <= t < " + this.plotter2d.camMax[0].toFixed(2);
-			this.eles.textInfoLog.innerHTML += "<br>0 <= p < 2*PI";
+			this.eles.textInfoLog.innerText += "\n0 <= p < 2*PI";
 		}
 
 		// hide/show function 'F' when parametric is turned on or off
@@ -405,9 +408,9 @@ class MainApp {
 		this.eles.sliderLineStep.value = this.lineStep;
 
 		// update sliders text value
-		this.eles.textPhase.innerHTML = "sliderPhase (p) = " + this.phase.toFixed(2);
-		this.eles.textFreq.innerHTML = "sliderFreq = " + this.freq.toFixed(2);
-		this.eles.textLineStep.innerHTML = "Line Step = " + this.lineStep.toFixed();
+		this.eles.textPhase.innerText = "sliderPhase (p) = " + this.phase.toFixed(2);
+		this.eles.textFreq.innerText = "sliderFreq = " + this.freq.toFixed(2);
+		this.eles.textLineStep.innerText = "Line Step = " + this.lineStep.toFixed();
 	}
 
 	#animate() {

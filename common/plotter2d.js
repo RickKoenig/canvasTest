@@ -54,7 +54,9 @@ class Plotter2d {
         this.curSpace = Plotter2d.spaces.SCREEN;
 
         if (this.vp) {
+            const div = makeEle(this.vp, "div", null, null);
             // add the UI for the user/cam space (reset and info)
+            // text and buttons 
             this.pieces = {
                 mouse: 
                 {
@@ -85,14 +87,14 @@ class Plotter2d {
             // setup html
             for (const piece of pieces) {
                 //console.log("piece id = " + piece.butId);
-                        vp.innerHTML += "<hr>"
+                        div.innerHTML += "<hr>"
                         + '<pre class="noMargins"><span id="' + piece.preId + '">' + piece.preId + '</span></pre>';
                 //if (true) {
                 if (piece.butId) {
-                    vp.innerHTML += '<button id="' + piece.butId + '">' + piece.butText + '</button>';
+                    div.innerHTML += '<button id="' + piece.butId + '">' + piece.butText + '</button>';
                 }
             }
-            vp.innerHTML += "<hr>";
+            div.innerHTML += "<hr>";
             
             // setup eventListeners
             for (const piece of pieces) {
@@ -129,7 +131,7 @@ class Plotter2d {
         if (this.curSpace != Plotter2d.spaces.USER) {
             return 1;
         }
-        // only in user space
+        // only in user space, scale back to NDC
         const zoom = ndcScale ? this.invZoom : 1;
         return zoom;
     }
@@ -215,15 +217,14 @@ class Plotter2d {
 
         if (this.vp) {
             // xtrans
-            this.pieces.xTrans.textInfoEle.innerHTML = "center[0] = " + this.center[0].toFixed(2);
+            this.pieces.xTrans.textInfoEle.innerText = "center[0] = " + this.center[0].toFixed(2);
             // ytrans
-            this.pieces.yTrans.textInfoEle.innerHTML = "center[1] = " + this.center[1].toFixed(2);
+            this.pieces.yTrans.textInfoEle.innerText = "center[1] = " + this.center[1].toFixed(2);
             // scale
-            this.pieces.scale.textInfoEle.innerHTML = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
+            this.pieces.scale.textInfoEle.innerText = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
             // mouse
-            this.pieces.mouse.textInfoEle.innerHTML = "Mouse = (" + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
+            this.pieces.mouse.textInfoEle.innerText = "Mouse = (" + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
         }
-
     }
 
     setSpace(space) {

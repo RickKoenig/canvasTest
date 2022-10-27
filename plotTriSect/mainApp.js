@@ -7,7 +7,7 @@ class MainApp {
 		console.log("creating instance of MainApp");
 
 		// vertical panel UI
-		const vp = document.getElementById("verticalPanel");
+		this.vp = document.getElementById("verticalPanel");
 
 		// USER:
 		this.#userInit();
@@ -19,15 +19,14 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp, this.startCenter, this.startZoom);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
 		 // add all elements from vp to ele if needed
 		// uncomment if you need elements from vp
-		this.eles = {};
-		populateElementIds(vp, this.eles);
+		//populateElementIds(this.vp, this.eles);
 
 		// start it off
 		this.#animate();
@@ -35,7 +34,10 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		// user init section
+		// elements
+		this.eles = {};
+		this.eles.triInfo = makeEle(this.vp, "pre", null, "triInfo");
+
 		//1st triangle
 		this.pntRad = .05; // size of point
 		this.pnts = [
@@ -65,6 +67,103 @@ class MainApp {
 		this.startZoom = .5;
 	}
 
+	#userProc() {
+		// proc
+		// pass in the buttons and the user/cam space mouse from drawPrim
+		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
+
+
+		// 1st set of points
+		// draw with hilits on some points
+		const hilitPntIdx = this.editPnts.getHilitIdx();
+		for (let i = 0; i < this.numPnts; ++i) {
+			this.drawPrim.drawCircle(this.pnts[i], this.pntRad * .5, "green");
+			if (i == hilitPntIdx) {
+				this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, "yellow");
+			}
+		}
+		// draw lines connecting the 3 points
+		for (let i = 0; i < this.numPnts; ++i) {
+			const p0 = this.pnts[i];
+			const p1 = this.pnts[(i + 1) % this.numPnts];
+			this.drawPrim.drawLine(p0, p1, .01, "brown");
+		}
+
+		// draw interior and exterior circles
+		const cirInside = this.#calcTriInside(this.pnts);
+		const cirOutside = this.#calcTriOutside(this.pnts);
+
+		this.drawPrim.drawCircleO(cirInside.center, cirInside.radius, .01, "magenta");
+		this.drawPrim.drawCircleO(cirOutside.center, cirOutside.radius, .01, "blue");
+
+
+		// 2nd set of points, do trisect equilateral triangle problem
+		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
+		for (let i = 0; i < this.numPnts2; ++i) {
+			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2 * .5, "green");
+			if (i == hilitPntIdx2) {
+				this.drawPrim.drawCircleO(this.pnts2[i], this.pntRad2, .01, "black");
+			}
+		}
+		// draw lines connecting the 3 points
+		for (let i = 0; i < this.numPnts2; ++i) {
+			const p0 = this.pnts2[i];
+			const p1 = this.pnts2[(i + 1) % this.numPnts];
+			this.drawPrim.drawLine(p0, p1, .01, "darkcyan");
+		}
+		// calc ang bi/tri sectors
+		const sects = this.#calcSectors(this.pnts2);
+
+		const isects = new Array(3);
+		// draw sectors
+		for (let i = 0; i < sects.length; ++i) {
+			const k = (i + 1) % sects.length;
+			const sect0 = sects[i];
+			const sect1 = sects[k];
+			// calc and draw the intsect of triSect lines
+			const line0 = sect0[0];
+			const line1 = sect1[1];
+			const isect = getIntSect(line0[0], line0[1], line1[0], line1[1]);
+			if (isect) {
+				this.drawPrim.drawCircle(isect, .02, "black");
+				isects[i] = isect;
+			}
+		}
+		// draw interior triangle
+		for (let i = 0; i < isects.length; ++i) {
+			const j = (i + 2) % isects.length;
+			this.drawPrim.drawLine(isects[i], isects[j], .01, "black");
+			this.drawPrim.drawLine(this.pnts2[i], isects[i], .01, "brown");
+			this.drawPrim.drawLine(this.pnts2[i], isects[j], .01, "brown");
+		}
+	}
+
+	#userUpdateInfo() {
+	this.eles.triInfo.innerText = "\nPerimeter " 
+			+ this.#calcTriPerimeter(this.pnts).toFixed(3) 
+			+ "\nArea: "
+			+ this.#calcTriArea(this.pnts).toFixed(3);
+	}
+
+	// process every frame
+	#animate() {
+		// update input system
+		this.input.proc();
+		// interact with mouse, calc all spaces
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
+		// goto user/cam space
+		this.plotter2d.setSpace(Plotter2d.spaces.USER);
+		// now in user/cam space
+		this.graphPaper.draw("X", "Y");
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
+
+		// USER: do USER stuff
+		this.#userProc(); // proc and draw
+		// update UI, text
+		this.#userUpdateInfo();
+	}
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#calcTriPerimeter(pnts) {
 		let perm = 0;
@@ -209,103 +308,6 @@ class MainApp {
 		return ret;
 	}
 
-	#userProc() {
-		// proc
-		// pass in the buttons and the user/cam space mouse from drawPrim
-		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
-		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
-
-
-		// 1st set of points
-		// draw with hilits on some points
-		const hilitPntIdx = this.editPnts.getHilitIdx();
-		for (let i = 0; i < this.numPnts; ++i) {
-			this.drawPrim.drawCircle(this.pnts[i], this.pntRad * .5, "green");
-			if (i == hilitPntIdx) {
-				this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, "yellow");
-			}
-		}
-		// draw lines connecting the 3 points
-		for (let i = 0; i < this.numPnts; ++i) {
-			const p0 = this.pnts[i];
-			const p1 = this.pnts[(i + 1) % this.numPnts];
-			this.drawPrim.drawLine(p0, p1, .01, "brown");
-		}
-
-		// draw interior and exterior circles
-		const cirInside = this.#calcTriInside(this.pnts);
-		const cirOutside = this.#calcTriOutside(this.pnts);
-
-		this.drawPrim.drawCircleO(cirInside.center, cirInside.radius, .01, "magenta");
-		this.drawPrim.drawCircleO(cirOutside.center, cirOutside.radius, .01, "blue");
-
-
-		// 2nd set of points, do trisect equilateral triangle problem
-		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
-		for (let i = 0; i < this.numPnts2; ++i) {
-			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2 * .5, "green");
-			if (i == hilitPntIdx2) {
-				this.drawPrim.drawCircleO(this.pnts2[i], this.pntRad2, .01, "black");
-			}
-		}
-		// draw lines connecting the 3 points
-		for (let i = 0; i < this.numPnts2; ++i) {
-			const p0 = this.pnts2[i];
-			const p1 = this.pnts2[(i + 1) % this.numPnts];
-			this.drawPrim.drawLine(p0, p1, .01, "darkcyan");
-		}
-		// calc ang bi/tri sectors
-		const sects = this.#calcSectors(this.pnts2);
-
-		const isects = new Array(3);
-		// draw sectors
-		for (let i = 0; i < sects.length; ++i) {
-			const k = (i + 1) % sects.length;
-			const sect0 = sects[i];
-			const sect1 = sects[k];
-			// calc and draw the intsect of triSect lines
-			const line0 = sect0[0];
-			const line1 = sect1[1];
-			const isect = getIntSect(line0[0], line0[1], line1[0], line1[1]);
-			if (isect) {
-				this.drawPrim.drawCircle(isect, .02, "black");
-				isects[i] = isect;
-			}
-		}
-		// draw interior triangle
-		for (let i = 0; i < isects.length; ++i) {
-			const j = (i + 2) % isects.length;
-			this.drawPrim.drawLine(isects[i], isects[j], .01, "black");
-			this.drawPrim.drawLine(this.pnts2[i], isects[i], .01, "brown");
-			this.drawPrim.drawLine(this.pnts2[i], isects[j], .01, "brown");
-		}
-	}
-
-	#userUpdateInfo() {
-	this.eles.triInfo.innerHTML = "<br>Perimeter " 
-			+ this.#calcTriPerimeter(this.pnts).toFixed(3) 
-			+ "<br>Area: "
-			+ this.#calcTriArea(this.pnts).toFixed(3);
-	}
-
-	// process every frame
-	#animate() {
-		// update input system
-		this.input.proc();
-		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		this.graphPaper.draw("X", "Y");
-		// keep animation going
-		requestAnimationFrame(() => this.#animate());
-
-		// USER: do USER stuff
-		this.#userProc(); // proc and draw
-		// update UI, text
-		this.#userUpdateInfo();
-	}
 }
 
 const mainApp = new MainApp();

@@ -291,3 +291,18 @@ class EditPnts {
 		return hilitIdx;
 	}
 }
+
+function makeEle(parent, kind, id, text) {
+	const ele = document.createElement(kind);
+	if (id) {
+		ele.id = id;
+	}
+	if (text) {
+		const textNode = document.createTextNode(text);
+		ele.appendChild(textNode);
+	}
+	if (parent) {
+		parent.appendChild(ele);
+	}
+	return ele;
+}
