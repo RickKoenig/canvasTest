@@ -54,7 +54,9 @@ class Plotter2d {
         this.curSpace = Plotter2d.spaces.SCREEN;
 
         if (this.vp) {
-            const div = makeEle(this.vp, "div", null, null);
+             // hide innerHTML work inside a div to protect vertical panel
+             //const div = makeEle(this.vp, "div", null, null);
+
             // add the UI for the user/cam space (reset and info)
             // text and buttons 
             this.pieces = {
@@ -84,17 +86,17 @@ class Plotter2d {
             };
             
             const pieces = Object.values(this.pieces);
-            // setup html
+            // makeElements
             for (const piece of pieces) {
-                //console.log("piece id = " + piece.butId);
-                        div.innerHTML += "<hr>"
-                        + '<pre class="noMargins"><span id="' + piece.preId + '">' + piece.preId + '</span></pre>';
-                //if (true) {
+                makeEle(this.vp, "hr");
+                const pre = makeEle(this.vp, "pre", null, piece.preId);
+                pre.className = "noMargins";
+                makeEle(pre, "span", piece.preId);
                 if (piece.butId) {
-                    div.innerHTML += '<button id="' + piece.butId + '">' + piece.butText + '</button>';
+                    makeEle(this.vp, "button", piece.butId, piece.butText);
                 }
             }
-            div.innerHTML += "<hr>";
+            makeEle(this.vp, "hr");
             
             // setup eventListeners
             for (const piece of pieces) {

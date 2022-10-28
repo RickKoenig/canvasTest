@@ -14,8 +14,8 @@ class MainApp {
 		++MainApp.#numInstances;
 
 		// vertical panel UI
-		const vp = document.getElementById("verticalPanel");
-		//const vp = null;
+		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null;
 
 		// USER:
 		this.#userInit();
@@ -27,8 +27,8 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp, this.startCenter, this.startZoom);
-		//vp.innerHTML += "<p>ABCDEF</p>";
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
+		//this.vp.innerHTML += "<p>ABCDEF</p>";
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -37,8 +37,7 @@ class MainApp {
 
 		 // add all elements from vp to ele if needed
 		// uncomment if you need elements from vp
-		this.eles = {};
-		populateElementIds(vp, this.eles);
+		populateElementIds(this.vp, this.eles);
 
 		this.#addUserListeners();
 
@@ -47,6 +46,8 @@ class MainApp {
 	}
 
 	#userInit() {
+		this.eles = {};
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfoLog");
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
@@ -377,7 +378,8 @@ class MainApp {
 		if (this.doDebug) {
 			//this.eles.textInfoLog.innerText
 			this.eles.textInfoLog.innerHTML
-			= "<br>TextStringTest = " + "'" + this.textTextType + "'"
+			= "<br>" + fpsStr
+			+ "<br>TextStringTest = " + "'" + this.textTextType + "'"
 			+ "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
 			+ "<br>ndcMax[0] = " + p.ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + p.ndcMax[1].toFixed(2)
 			+ "<br><br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)

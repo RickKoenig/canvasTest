@@ -292,7 +292,7 @@ class EditPnts {
 	}
 }
 
-function makeEle(parent, kind, id, text) {
+function makeEle(parent, kind, id, text/*, front = false*/) {
 	const ele = document.createElement(kind);
 	if (id) {
 		ele.id = id;
@@ -302,7 +302,11 @@ function makeEle(parent, kind, id, text) {
 		ele.appendChild(textNode);
 	}
 	if (parent) {
-		parent.appendChild(ele);
+		//if (front) {
+		//	parent.prepend(ele);
+		//} else {
+			parent.appendChild(ele);
+		//}
 	}
 	return ele;
 }
