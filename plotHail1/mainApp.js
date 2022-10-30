@@ -6,7 +6,7 @@ class MainApp {
 	constructor() {
 
 		// vertical panel UI
-		const vp = document.getElementById("verticalPanel");
+		this.vp = document.getElementById("verticalPanel");
 
 		// USER:
 		this.#userInit();

@@ -228,6 +228,50 @@ function getIntSect(A, B, C, D) {
 	return null;
 }
 
+// 0 <= a < 2 * PI
+function normAngRadUnsigned(a)
+{
+	let watchDog = 10;
+	while(true) {
+		if (a < 0) {
+			a += 2 * Math.PI;
+			--watchDog;
+		} else if (a >= 2 * Math.PI) {
+			a -= 2 * Math.PI;
+			--watchDog;
+		} else {
+			break;
+		}
+		if (watchDog == 0) {
+			alert("watchDog: normAngRadUnsigned hit");
+			return 0;
+		}
+	}
+	return a;
+}
+
+// -PI <= a < PI
+function normAngRadSigned(a)
+{
+	let watchDog = 10;
+	while(true) {
+		if (a < -Math.PI) {
+			a += 2 * Math.PI;
+			--watchDog;
+		} else if (a >= Math.PI) {
+			a -= 2 * Math.PI;
+			--watchDog;
+		} else {
+			break;
+		}
+		if (watchDog == 0) {
+			alert("watchDog: normAngRadUnsigned hit");
+			return 0;
+		}
+	}
+	return a;
+}
+
 function populateElementIds(parent, dest) {
 	// put all elements with id from parent to dest object
 	const vb = document.getElementById("verticalPanel");
@@ -292,15 +336,8 @@ class EditPnts {
 	}
 }
 
-function makeEle(parent, kind, id, text/*, front = false*/) {
+function makeEle(parent, kind, id, className, text, callback, type) {
 	const ele = document.createElement(kind);
-	if (id) {
-		ele.id = id;
-	}
-	if (text) {
-		const textNode = document.createTextNode(text);
-		ele.appendChild(textNode);
-	}
 	if (parent) {
 		//if (front) {
 		//	parent.prepend(ele);
@@ -308,5 +345,105 @@ function makeEle(parent, kind, id, text/*, front = false*/) {
 			parent.appendChild(ele);
 		//}
 	}
+	if (id) {
+		ele.id = id;
+	}
+	if (className) {
+		ele.className = className;
+	}
+	if (type) {
+		ele.type = type;
+	}
+	if (text) {
+		const textNode = document.createTextNode(text);
+		ele.appendChild(textNode);
+	}
+	if (callback) {
+		let eventType = null;
+		if (kind == 'input') {
+			if (type == 'range') {
+				eventType = 'input'; // slider
+			} else if (type == 'checkbox') { // NYI
+				eventType = 'change';
+			}
+
+		} else if (kind == 'button') { // button
+			eventType = 'click';
+		} else if (kind == 'textarea') { // NYI
+			eventType = 'keyup';
+		}
+		if (eventType) {
+			ele.addEventListener(eventType, callback);
+		}
+	}
 	return ele;
 }
+
+// label, slider, reset
+//new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
+class makeEleCombo {
+	constructor(parent, labelStr, min, max, start, step, precision, outerCallback) {
+		// pre/span
+		const pre = makeEle(parent, "pre", null, "noMargins");
+		this.labelStr = labelStr;
+		this.label = makeEle(pre, "span", "aSpanId", null, "label");
+		// slider
+		this.slider = makeEle(parent, "input", "aSliderId", "slider", null, this.#callbackSlider.bind(this), "range");
+		this.slider.min = min;
+		this.slider.max = max;
+		this.start = start;
+		this.slider.value = start;
+		this.slider.step = step;
+		this.outerCallback = outerCallback;
+		this.#callbackSlider(); // fire off one callback at init
+		// button
+		makeEle(parent, "button", "aButtonId", null, this.labelStr + " reset", this.#callbackResetButton.bind(this));
+		// break
+		makeEle(parent, "hr");
+	}
+
+	#callbackResetButton() {
+		this.slider.value = this.start;
+		this.#callbackSlider();
+		//this.label.innerText = this.labelStr + " = " + this.slider.value;
+	}
+
+	#callbackSlider() {
+		this.label.innerText = this.labelStr + " = " + this.slider.value;
+		if (this.outerCallback) {
+			this.outerCallback(this.slider.value);
+		}
+	}
+
+	getValue() {
+		return this.slider.value;
+	}
+
+	setValue(val) {
+		this.slider.value = val;
+		this.#callbackSlider();
+	}
+
+}
+/*
+		// line step
+		// linestep slider
+		this.eles.sliderLineStep.min = this.minLineStep;
+		this.eles.sliderLineStep.max = this.maxLineStep;
+		this.eles.sliderLineStep.value = this.startLineStep;
+		this.eles.sliderLineStep.addEventListener('input', () => {
+			//console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
+			this.lineStep = parseFloat(this.eles.sliderLineStep.value);
+		});
+		// linestep reset button
+		this.eles.buttonLineStep.addEventListener('click', () => {
+			//console.log("buttonLineStep reset");
+			this.#buttonLineStepReset();
+		});
+*/
+/*
+<pre class="noMargins"><span id="textPhase">hi</span></pre>
+<input type="range"	class="slider" id="sliderPhase">
+<button id="buttonPhase">Phase Reset</button>
+<hr>
+*/

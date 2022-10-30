@@ -45,9 +45,52 @@ class MainApp {
 		this.#animate();
 	}
 
+	#resetCounter() {
+		this.count = 0;
+	}
+
+	#aSliderCallback(val) {
+		//console.log("hi = " + val);
+		if (this.txtCallbackSlider) {
+			this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
+		}
+	}
+
+	#aComboSet1() {
+		this.aCombo.setValue(69);
+	}
+
 	#userInit() {
 		this.eles = {};
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfoLog");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "noMargins", "textInfoLog");
+		
+		this.txtPollSlider = makeEle(this.vp, "pre");
+		this.txtCallbackSlider = makeEle(this.vp, "pre", null, null, "foo");
+		this.cntCallbackSlider = 0;
+		makeEle(this.vp, "button", null, null, "Combo SET", this.#aComboSet1.bind(this));
+
+		// start test combo
+		makeEle(this.vp, "br");		
+		const label = "Test Combo";
+		const min = 33;
+		const max = 87;
+		const start = 51;
+		const step = 3;
+		const precision = 4;
+		const callback = this.#aSliderCallback;
+		this.aCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
+		// end test combo
+
+		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
+			(e) => {
+				this.count = 10000;
+			}
+		);
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "pre", null, null, "");
+
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
@@ -78,6 +121,7 @@ class MainApp {
 		this.avgFps = 0;
 		this.oldTime; // for delta time
 		this.fpsScreen = 60; // TODO: make work with different refresh rates
+		this.count = 0;
 
 		// speed of update
 		this.num = 1;
@@ -258,15 +302,11 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+		++this.count;
 	
 		// update phase given freq
 		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
-		const twoPI = 2 * Math.PI;
-		if (this.phase >= twoPI) {
-			this.phase -= twoPI;
-		} else if (this.phase < 0) {
-			this.phase += twoPI;
-		}
+		this.phase = normAngRadUnsigned(this.phase);
 	
 		// test keyboard, edit a string
 		if (this.doDebug) {
@@ -279,6 +319,9 @@ class MainApp {
 				}
 			}
 		}
+
+		this.txtPollSlider.innerHTML = "poll aCombo = " + this.aCombo.getValue();
+		//this.txtCallBackSlider.innerHTML = "callback aCombo = " + this.aCombo.getValue();
 
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 		if (this.doDebug) {
@@ -372,7 +415,7 @@ class MainApp {
 	#userUpdateInfo() {
 		const p = this.plotter2d;
 		// show inputEventsStats
-		const fpsStr = "FPS " + this.avgFps.toFixed(2) + "\n";
+		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + ", Count = " + this.count + "\n";
 		this.eles.textInfoLog.innerText = fpsStr;
 
 		if (this.doDebug) {

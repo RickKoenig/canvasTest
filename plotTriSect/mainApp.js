@@ -36,7 +36,7 @@ class MainApp {
 	#userInit() {
 		// elements
 		this.eles = {};
-		this.eles.triInfo = makeEle(this.vp, "pre", null, "triInfo");
+		this.eles.triInfo = makeEle(this.vp, "pre", null, null, "triInfo");
 
 		//1st triangle
 		this.pntRad = .05; // size of point
@@ -222,50 +222,6 @@ class MainApp {
 		return this.#calcTriOutside(newMidPnts);
 	}
 
-	// 0 <= a < 2 * PI
-	#normAngRadUnsigned(a)
-	{
-		let watchDog = 10;
-		while(true) {
-			if (a < 0) {
-				a += 2 * Math.PI;
-				--watchDog;
-			} else if (a >= 2 * Math.PI) {
-				a -= 2 * Math.PI;
-				--watchDog;
-			} else {
-				break;
-			}
-			if (watchDog == 0) {
-				alert("watchDog: normAngRadUnsigned hit");
-				return 0;
-			}
-		}
-		return a;
-	}
-
-	// -PI <= a < PI
-	#normAngRadSigned(a)
-	{
-		let watchDog = 10;
-		while(true) {
-			if (a < -Math.PI) {
-				a += 2 * Math.PI;
-				--watchDog;
-			} else if (a >= Math.PI) {
-				a -= 2 * Math.PI;
-				--watchDog;
-			} else {
-				break;
-			}
-			if (watchDog == 0) {
-				alert("watchDog: normAngRadUnsigned hit");
-				return 0;
-			}
-		}
-		return a;
-	}
-
 	#deltaLine(pnt, angM) {
 		const delM = new Array(2);
 		delM[0] = Math.cos(angM);
@@ -296,10 +252,10 @@ class MainApp {
 			const ang1 = Math.atan2(del1[1], del1[0]);
 
 			let dela = ang1 - ang0;
-			dela = this.#normAngRadSigned(dela);
+			dela = normAngRadSigned(dela);
 			for (let j = 0; j < numSect - 1; ++j) {
 				let angM = ang0 + dela * (j + 1) / numSect; // skip 0 and numSect
-				angM = this.#normAngRadUnsigned(angM);
+				angM = normAngRadUnsigned(angM);
 				const lnM = this.#deltaLine(pnts[i], angM);
 				sect[j] = lnM;
 			}

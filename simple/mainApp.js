@@ -13,8 +13,10 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
+		this.count = 0;
+
 		// vertical panel UI
-		const vp = document.getElementById("verticalPanel");
+		this.vp = document.getElementById("verticalPanel");
 
 		// USER:
 		this.#userInit();
@@ -26,7 +28,7 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, vp, this.startCenter, this.startZoom);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -42,8 +44,38 @@ class MainApp {
 		this.#animate();
 	}
 
+	#resetCounter() {
+		this.count = 0;
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.eles = {};
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "noMargins", "textInfoLog");
+
+
+		makeEle(this.vp, "br");
+		const label = "lab";
+		const min = 33;
+		const max = 87;
+		const start = 44;
+		const step = 3;
+		const precision = 4;
+		const callback = null;
+		new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
+		
+		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
+			() => {
+				this.count = 10000;
+			}
+		);
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "pre", null, null, "");
+
+
+
 		// user init section
 		this.numPnts = 5;
 		this.pntRad = .05; // size of point
@@ -69,6 +101,7 @@ class MainApp {
 
 	#userProc() {
 		// proc
+		++this.count;
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
@@ -101,6 +134,8 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
+		const countStr = "Count = " + this.count + "\n";
+		this.eles.textInfoLog.innerText = countStr;
 	}
 
 	// proc
