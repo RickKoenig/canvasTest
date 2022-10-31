@@ -51,9 +51,17 @@ class MainApp {
 
 	#aSliderCallback(val) {
 		//console.log("hi = " + val);
-		if (this.txtCallbackSlider) {
+		//if (this.txtCallbackSlider) {
 			this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
-		}
+		//}
+	}
+
+	#lineStepCallback(val) {
+		this.lineStep = val;
+		//console.log("hi = " + val);
+		//if (this.txtCallbackSlider) {
+			//this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
+		//}
 	}
 
 	#aComboSet1() {
@@ -69,17 +77,19 @@ class MainApp {
 		this.cntCallbackSlider = 0;
 		makeEle(this.vp, "button", null, null, "Combo SET", this.#aComboSet1.bind(this));
 
+		{
 		// start test combo
-		makeEle(this.vp, "br");		
-		const label = "Test Combo";
-		const min = 33;
-		const max = 87;
-		const start = 51;
-		const step = 3;
-		const precision = 4;
-		const callback = this.#aSliderCallback;
-		this.aCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
-		// end test combo
+			makeEle(this.vp, "br");		
+			const label = "Test Combo";
+			const min = 33;
+			const max = 87;
+			const start = 51;
+			const step = .5;
+			const precision = 1;
+			const callback = this.#aSliderCallback;
+			this.aCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
+			// end test combo
+		}
 
 		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
 		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
@@ -115,6 +125,20 @@ class MainApp {
 		this.lineStep = this.startLineStep;
 		this.maxLineStep = 1500;
 		this.minLineStep = 1;
+
+		{
+			// start lineStep UI
+			makeEle(this.vp, "br");		
+			const label = "Line step";
+			const min = this.minLineStep;
+			const max = this.maxLineStep;
+			const start = this.startLineStep;
+			const step = 1;
+			const precision = 0;
+			const callback = this.#lineStepCallback;
+			/*this.aCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
+			// end lineStep UI
+		}
 
 		// measure frame rate
 		this.fps;
@@ -183,9 +207,9 @@ class MainApp {
 			//console.log("buttonFreq reset");
 			this.#buttonFreqReset();
 		});
-
+/*
 		// line step
-		// linestep slider
+		// lineStep slider
 		this.eles.sliderLineStep.min = this.minLineStep;
 		this.eles.sliderLineStep.max = this.maxLineStep;
 		this.eles.sliderLineStep.value = this.startLineStep;
@@ -193,12 +217,12 @@ class MainApp {
 			//console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
 			this.lineStep = parseFloat(this.eles.sliderLineStep.value);
 		});
-		// linestep reset button
+		// lineStep reset button
 		this.eles.buttonLineStep.addEventListener('click', () => {
 			//console.log("buttonLineStep reset");
 			this.#buttonLineStepReset();
 		});
-
+*/
 		if (this.runFunGenTests) {
 			FunGen.runTests();
 		}
@@ -450,12 +474,12 @@ class MainApp {
 		// update sliders input
 		this.eles.sliderPhase.value = this.phase;
 		this.eles.sliderFreq.value = this.freq;
-		this.eles.sliderLineStep.value = this.lineStep;
+		//this.eles.sliderLineStep.value = this.lineStep;
 
 		// update sliders text value
 		this.eles.textPhase.innerText = "sliderPhase (p) = " + this.phase.toFixed(2);
 		this.eles.textFreq.innerText = "sliderFreq = " + this.freq.toFixed(2);
-		this.eles.textLineStep.innerText = "Line Step = " + this.lineStep.toFixed();
+		//this.eles.textLineStep.innerText = "Line Step = " + this.lineStep.toFixed();
 	}
 
 	#animate() {

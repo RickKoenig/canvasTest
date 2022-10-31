@@ -394,6 +394,7 @@ class makeEleCombo {
 		this.start = start;
 		this.slider.value = start;
 		this.slider.step = step;
+		this.precision = precision;
 		this.outerCallback = outerCallback;
 		this.#callbackSlider(); // fire off one callback at init
 		// button
@@ -409,7 +410,7 @@ class makeEleCombo {
 	}
 
 	#callbackSlider() {
-		this.label.innerText = this.labelStr + " = " + this.slider.value;
+		this.label.innerText = this.labelStr + " = " + parseFloat(this.slider.value).toFixed(this.precision);
 		if (this.outerCallback) {
 			this.outerCallback(this.slider.value);
 		}
