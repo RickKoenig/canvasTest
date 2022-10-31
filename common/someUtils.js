@@ -410,9 +410,10 @@ class makeEleCombo {
 	}
 
 	#callbackSlider() {
-		this.label.innerText = this.labelStr + " = " + parseFloat(this.slider.value).toFixed(this.precision);
+		const val = parseFloat(this.slider.value);
+		this.label.innerText = this.labelStr + " = " + val.toFixed(this.precision);
 		if (this.outerCallback) {
-			this.outerCallback(this.slider.value);
+			this.outerCallback(val);
 		}
 	}
 

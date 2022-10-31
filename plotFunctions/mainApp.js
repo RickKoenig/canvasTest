@@ -63,6 +63,14 @@ class MainApp {
 			//this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
 		//}
 	}
+/*
+	#phaseCallback(val) {
+		this.phase = val;
+		//console.log("hi = " + val);
+		//if (this.txtCallbackSlider) {
+			//this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
+		//}
+	} */
 
 	#aComboSet1() {
 		this.aCombo.setValue(69);
@@ -140,11 +148,42 @@ class MainApp {
 			// end lineStep UI
 		}
 
+		{
+			// start phase UI
+			makeEle(this.vp, "br");		
+			const label = "Phase (p)";
+			const min = this.minPhase;
+			const max = this.maxPhase;
+			const start = 0;
+			const step = this.stepPhase;
+			const precision = 2;
+			//const callback = this.#phaseCallback;
+			///*this.aCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
+			this.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.phase = v});
+			// end phase UI
+		}
+
+		{
+			// start freq UI
+			makeEle(this.vp, "br");		
+			const label = "Frequency";
+			const min = this.minFreq;
+			const max = this.maxFreq;
+			const start = 0;
+			const step = this.stepFreq;
+			const precision = 2;
+			//const callback = this.#freqCallback;
+			/*this.freqCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
+			// end freq UI
+		}
+
 		// measure frame rate
 		this.fps;
 		this.avgFps = 0;
 		this.oldTime; // for delta time
-		this.fpsScreen = 60; // TODO: make work with different refresh rates
+		this.fpsScreen = 60; // DONE: make work with different refresh rates
+		this.useAvgFps = true; // in proc, copy fpsAvgFps to fpsScreen instead of 60
+
 		this.count = 0;
 
 		// speed of update
@@ -176,6 +215,7 @@ class MainApp {
 		});
 		this.eles.checkboxDebug.checked = this.doDebug; // UI checkbox toggle init
 
+		/*
 		// phase
 		// phase slider
 		this.eles.sliderPhase.min = this.minPhase;
@@ -191,7 +231,8 @@ class MainApp {
 			//console.log("buttonPhase reset");
 			this.#buttonPhaseReset();
 		});
-
+		*/
+		/*
 		// freq
 		// freq slider
 		this.eles.sliderFreq.min = this.minFreq;
@@ -207,6 +248,7 @@ class MainApp {
 			//console.log("buttonFreq reset");
 			this.#buttonFreqReset();
 		});
+		*/
 /*
 		// line step
 		// lineStep slider
@@ -326,11 +368,18 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+		if (this.useAvgFps) {
+			this.fpsScreen = this.avgFps; // DONE: make work with different refresh rates
+		}
+
 		++this.count;
 	
 		// update phase given freq
-		this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
-		this.phase = normAngRadUnsigned(this.phase);
+		if (this.freq !== 0) {
+			this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
+			this.phase = normAngRadUnsigned(this.phase);
+			this.phaseCombo.setValue(this.phase);
+		}
 	
 		// test keyboard, edit a string
 		if (this.doDebug) {
@@ -472,13 +521,13 @@ class MainApp {
 		this.eles.textFunctionF.style.display = vis;
 
 		// update sliders input
-		this.eles.sliderPhase.value = this.phase;
-		this.eles.sliderFreq.value = this.freq;
+		//this.eles.sliderPhase.value = this.phase;
+		//this.eles.sliderFreq.value = this.freq;
 		//this.eles.sliderLineStep.value = this.lineStep;
 
 		// update sliders text value
-		this.eles.textPhase.innerText = "sliderPhase (p) = " + this.phase.toFixed(2);
-		this.eles.textFreq.innerText = "sliderFreq = " + this.freq.toFixed(2);
+		//this.eles.textPhase.innerText = "sliderPhase (p) = " + this.phase.toFixed(2);
+		//this.eles.textFreq.innerText = "sliderFreq = " + this.freq.toFixed(2);
 		//this.eles.textLineStep.innerText = "Line Step = " + this.lineStep.toFixed();
 	}
 
