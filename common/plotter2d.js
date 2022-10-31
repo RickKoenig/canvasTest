@@ -86,7 +86,7 @@ class Plotter2d {
             // makeElements
             for (const piece of pieces) {
                 makeEle(this.vp, "hr");
-                const pre = makeEle(this.vp, "pre", piece.preId, "noMargins");
+                const pre = makeEle(this.vp, "pre", piece.preId);
                 makeEle(pre, "span", piece.preId);
                 if (piece.butId) { // also add eventListeners for the button
                     makeEle(this.vp, "button", piece.butId, null, piece.butText, piece.reset.bind(this));

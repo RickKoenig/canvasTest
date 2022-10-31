@@ -1,7 +1,6 @@
 'use strict';
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
-// TODO: for now assume 60hz refresh rate
 class MainApp {
 	static #numInstances = 0; // test static members
 
@@ -15,7 +14,7 @@ class MainApp {
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
-		//this.vp = null;
+		//this.vp = null; // no vertical panel UI
 
 		// USER:
 		this.#userInit();
@@ -28,7 +27,6 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
-		//this.vp.innerHTML += "<p>ABCDEF</p>";
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -45,70 +43,10 @@ class MainApp {
 		this.#animate();
 	}
 
-	#resetCounter() {
-		this.count = 0;
-	}
-
-	#aSliderCallback(val) {
-		//console.log("hi = " + val);
-		//if (this.txtCallbackSlider) {
-			this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
-		//}
-	}
-
-	#lineStepCallback(val) {
-		this.lineStep = val;
-		//console.log("hi = " + val);
-		//if (this.txtCallbackSlider) {
-			//this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
-		//}
-	}
-/*
-	#phaseCallback(val) {
-		this.phase = val;
-		//console.log("hi = " + val);
-		//if (this.txtCallbackSlider) {
-			//this.txtCallbackSlider.innerHTML =  "callback aCombo = " + val;
-		//}
-	} */
-
-	#aComboSet1() {
-		this.aCombo.setValue(69);
-	}
-
 	#userInit() {
 		this.eles = {};
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "noMargins", "textInfoLog");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		
-		this.txtPollSlider = makeEle(this.vp, "pre");
-		this.txtCallbackSlider = makeEle(this.vp, "pre", null, null, "foo");
-		this.cntCallbackSlider = 0;
-		makeEle(this.vp, "button", null, null, "Combo SET", this.#aComboSet1.bind(this));
-
-		{
-		// start test combo
-			makeEle(this.vp, "br");		
-			const label = "Test Combo";
-			const min = 33;
-			const max = 87;
-			const start = 51;
-			const step = .5;
-			const precision = 1;
-			const callback = this.#aSliderCallback;
-			this.aCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
-			// end test combo
-		}
-
-		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
-		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
-			(e) => {
-				this.count = 10000;
-			}
-		);
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "pre", null, null, "");
-
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
@@ -136,44 +74,37 @@ class MainApp {
 
 		{
 			// start lineStep UI
-			makeEle(this.vp, "br");		
 			const label = "Line step";
 			const min = this.minLineStep;
 			const max = this.maxLineStep;
 			const start = this.startLineStep;
 			const step = 1;
 			const precision = 0;
-			const callback = this.#lineStepCallback;
-			/*this.aCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineStep = v});
 			// end lineStep UI
 		}
 
 		{
 			// start phase UI
-			makeEle(this.vp, "br");		
 			const label = "Phase (p)";
 			const min = this.minPhase;
 			const max = this.maxPhase;
 			const start = 0;
 			const step = this.stepPhase;
 			const precision = 2;
-			//const callback = this.#phaseCallback;
-			///*this.aCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, callback.bind(this));
 			this.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.phase = v});
 			// end phase UI
 		}
 
 		{
 			// start freq UI
-			makeEle(this.vp, "br");		
 			const label = "Frequency";
 			const min = this.minFreq;
 			const max = this.maxFreq;
 			const start = 0;
 			const step = this.stepFreq;
 			const precision = 2;
-			//const callback = this.#freqCallback;
-			/*this.freqCombo = */new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
+			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 			// end freq UI
 		}
 
@@ -183,8 +114,6 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.fpsScreen = 60; // DONE: make work with different refresh rates
 		this.useAvgFps = true; // in proc, copy fpsAvgFps to fpsScreen instead of 60
-
-		this.count = 0;
 
 		// speed of update
 		this.num = 1;
@@ -203,80 +132,27 @@ class MainApp {
 
 		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
 		this.eles.checkboxParametric.addEventListener('change', () => {
-			//console.log("parametric changed to " + this.checkboxParametric.checked);
 			this.doParametric = this.eles.checkboxParametric.checked;
 		});
 		this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
 
 		// Debug check box, could 'poll' this, but test events on a simple Boolean event
 		this.eles.checkboxDebug.addEventListener('change', () => {
-			//console.log("debug changed to " + this.checkboxDebug.checked);
 			this.doDebug = this.eles.checkboxDebug.checked;
 		});
 		this.eles.checkboxDebug.checked = this.doDebug; // UI checkbox toggle init
 
-		/*
-		// phase
-		// phase slider
-		this.eles.sliderPhase.min = this.minPhase;
-		this.eles.sliderPhase.max = this.maxPhase;
-		this.eles.sliderPhase.step = this.stepPhase;
-		this.eles.sliderPhase.value = this.phase;
-		this.eles.sliderPhase.addEventListener('input', () => {
-			//console.log("sliderPhase input, this = " + this.sliderPhase.value);
-			this.phase = parseFloat(this.eles.sliderPhase.value);
-		});
-		// phase reset button
-		this.eles.buttonPhase.addEventListener('click', () => {
-			//console.log("buttonPhase reset");
-			this.#buttonPhaseReset();
-		});
-		*/
-		/*
-		// freq
-		// freq slider
-		this.eles.sliderFreq.min = this.minFreq;
-		this.eles.sliderFreq.max = this.maxFreq;
-		this.eles.sliderFreq.step = this.stepFreq;
-		this.eles.sliderFreq.value = this.freq;
-		this.eles.sliderFreq.addEventListener('input', () => {
-			//console.log("sliderFreq input, this = " + this.sliderFreq.value);
-			this.freq = parseFloat(this.eles.sliderFreq.value);
-		});
-		// freq reset button
-		this.eles.buttonFreq.addEventListener('click', () => {
-			//console.log("buttonFreq reset");
-			this.#buttonFreqReset();
-		});
-		*/
-/*
-		// line step
-		// lineStep slider
-		this.eles.sliderLineStep.min = this.minLineStep;
-		this.eles.sliderLineStep.max = this.maxLineStep;
-		this.eles.sliderLineStep.value = this.startLineStep;
-		this.eles.sliderLineStep.addEventListener('input', () => {
-			//console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
-			this.lineStep = parseFloat(this.eles.sliderLineStep.value);
-		});
-		// lineStep reset button
-		this.eles.buttonLineStep.addEventListener('click', () => {
-			//console.log("buttonLineStep reset");
-			this.#buttonLineStepReset();
-		});
-*/
 		if (this.runFunGenTests) {
 			FunGen.runTests();
 		}
-
 		this.textStartFunctionF = "t";
 		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 		this.#resetFunctions();
 		this.#submitFunctions();
 		this.eles.submitFunctions.addEventListener('click', () => {
-			//console.log("button submitFunctions");
 			this.#submitFunctions();
 		});
+		/*
 		// function edit box
 		this.eles.editFunctionF.addEventListener("keyup", ({key}) => {
 			if (key === "Enter") {
@@ -289,6 +165,7 @@ class MainApp {
 				this.#submitFunctionG();
 			}
 		});
+		*/
 	}
 
 	#resetFunctions() {
@@ -301,22 +178,8 @@ class MainApp {
 		this.#submitFunctionG();
 	}
 
-	#stripNewlinesAtEnd(funStr) {
-		// remove newlines at end of function string if they're from a submit by hitting CR
-		while(true) {
-			const lenMinus1 = funStr.length - 1;
-			if (funStr[lenMinus1] == '\n') {
-				funStr = funStr.substring(0,lenMinus1);
-			} else {
-				break;
-			}
-		}
-		return funStr;
-	}
-
 	#submitFunctionF() {
-		const funStr = this.#stripNewlinesAtEnd(this.eles.editFunctionF.value);
-		this.eles.editFunctionF.value = funStr;
+		const funStr = this.eles.editFunctionF.value;
  		// make UI editbox bigger, noscroll
 		const extraHeight = -4; // ???
  		this.eles.editFunctionF.style.height = this.eles.editFunctionF.scrollHeight + extraHeight + 'px';
@@ -328,8 +191,7 @@ class MainApp {
 	}
 
 	#submitFunctionG() {
-		const funStr = this.#stripNewlinesAtEnd(this.eles.editFunctionG.value);
-		this.eles.editFunctionG.value = funStr;
+		const funStr = this.eles.editFunctionG.value;
  		// make UI editbox bigger, noscroll
 		const extraHeight = -4; // ???
 		this.eles.editFunctionG.style.height = this.eles.editFunctionG.scrollHeight + extraHeight + 'px';
@@ -338,21 +200,6 @@ class MainApp {
 			this.drawFun.changeFunctionG(subFun);
 			this.eles.textFunctionG.innerText = funStr;
 		}
-	}
-
-	#buttonPhaseReset() {
-		//console.log("button phase reset");
-		this.phase = 0;
-	}
-
-	#buttonFreqReset() {
-		//console.log("button freq reset");
-		this.freq = 0;
-	}
-
-	#buttonLineStepReset() {
-		//console.log("button lineStep reset");
-		this.lineStep = this.startLineStep;
 	}
 
 	// slower rate of speed, skip sometimes, depends on num and den
@@ -372,8 +219,6 @@ class MainApp {
 			this.fpsScreen = this.avgFps; // DONE: make work with different refresh rates
 		}
 
-		++this.count;
-	
 		// update phase given freq
 		if (this.freq !== 0) {
 			this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
@@ -392,9 +237,6 @@ class MainApp {
 				}
 			}
 		}
-
-		this.txtPollSlider.innerHTML = "poll aCombo = " + this.aCombo.getValue();
-		//this.txtCallBackSlider.innerHTML = "callback aCombo = " + this.aCombo.getValue();
 
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 		if (this.doDebug) {
@@ -488,23 +330,22 @@ class MainApp {
 	#userUpdateInfo() {
 		const p = this.plotter2d;
 		// show inputEventsStats
-		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + ", Count = " + this.count + "\n";
+		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n";
 		this.eles.textInfoLog.innerText = fpsStr;
 
 		if (this.doDebug) {
 			//this.eles.textInfoLog.innerText
 			this.eles.textInfoLog.innerHTML
-			= "<br>" + fpsStr
-			+ "<br>TextStringTest = " + "'" + this.textTextType + "'"
-			+ "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"			+ "<br><br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
+			= fpsStr
+			+ "TextStringTest = " + "'" + this.textTextType + "'"
+			+ "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"			+ "<br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
 			+ "<br>ndcMax[0] = " + p.ndcMax[0].toFixed(2) + ", ndcMax[1] = "  + p.ndcMax[1].toFixed(2)
-			+ "<br><br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)
+			+ "<br>camMin[0] = " + p.camMin[0].toFixed(2) + ", camMin[1] = "  + p.camMin[1].toFixed(2)
 			+ "<br>camMax[0] = " + p.camMax[0].toFixed(2) + ", camMax[1] = "  + p.camMax[1].toFixed(2)
-			+ "<br><br>"
-			+ "Mstat:" + this.input.mouse.stats + "<br>"
-			+ "Kstat:" + this.input.keyboard.stats + "<br>"
-			+ "Mevent: " + this.input.mouse.events + "<br>"
-			+ "Kevent: " + this.input.keyboard.events
+			+ "<br>Mstat:" + this.input.mouse.stats
+			+ "<br>Kstat:" + this.input.keyboard.stats
+			+ "<br>Mevent: " + this.input.mouse.events
+			+ "<br>Kevent: " + this.input.keyboard.events;
 		} else { // show functions
 			this.eles.textInfoLog.innerText += this.doParametric
 				? "x = F(t),  y = G(t + p)\n0 <= t < 2*PI" 
@@ -519,16 +360,6 @@ class MainApp {
 		this.eles.editFunctionF.style.display = vis;
 		this.eles.labelFunctionF2.style.display = vis;
 		this.eles.textFunctionF.style.display = vis;
-
-		// update sliders input
-		//this.eles.sliderPhase.value = this.phase;
-		//this.eles.sliderFreq.value = this.freq;
-		//this.eles.sliderLineStep.value = this.lineStep;
-
-		// update sliders text value
-		//this.eles.textPhase.innerText = "sliderPhase (p) = " + this.phase.toFixed(2);
-		//this.eles.textFreq.innerText = "sliderFreq = " + this.freq.toFixed(2);
-		//this.eles.textLineStep.innerText = "Line Step = " + this.lineStep.toFixed();
 	}
 
 	#animate() {

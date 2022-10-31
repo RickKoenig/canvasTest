@@ -13,53 +13,37 @@
 		<p id="linkback">Go back to <a href="../../index.html#plotter2d"> The Main page.</a></p>
 		<br><pre>Move sliders, Press buttons<br> Enter functions</pre>
 
+		<!-- checkboxes -->
 		<span>Parametric
 			<input type="checkbox" id="checkboxParametric"/>
 		</span>
 		<span>&nbsp;&nbsp;Debug
 			<input type="checkbox" id="checkboxDebug"/>
 		</span>
-
-<!--
-		<pre class="noMargins"><span id="textPhase">hi</span></pre>
-		<input type="range"	class="slider" id="sliderPhase">
-		<button id="buttonPhase">Phase Reset</button>
 		<hr>
--->
 
-<!--
-		<pre class="noMargins"><span id="textFreq">ho</span></pre>
-		<input type="range"	class="slider" id="sliderFreq">
-		<button id="buttonFreq">Freq Reset</button>
-		<hr>
--->
-
-<!--
-		<pre class="noMargins"><span id="textLineStep">hum0</span></pre>
-		<input type="range" class="slider" id="sliderLineStep">
-		<button id="buttonLineStep">Line Step Reset</button>
-		<hr>
--->
-
-		<pre class="noMargins" id="labelFunctionF1">Enter F(t)</pre>
+		<!-- edit input functions -->
+		<pre id="labelFunctionF1">Enter F(t)</pre>
 		<textarea id="editFunctionF"
 			class="editbox" spellcheck="false">
 		</textarea>
 
-		<pre class="noMargins">Enter G(t)</pre>
+		<pre>Enter G(t)</pre>
 		<textarea id="editFunctionG"
 			class="editbox" spellcheck="false">
 		</textarea>
 
-
+		<!-- submit functions -->
 		<button id="submitFunctions">Submit Function(s)</button>
 
 
-		<pre class="noMargins" id="labelFunctionF2">Parsed F(t)</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionF">function F</span></pre>
+		<!-- parsed output functions -->
+		<pre id="labelFunctionF2">Parsed F(t)</pre>
+		<pre class="textFunction"><span id="textFunctionF">function F</span></pre>
 		
-		<pre class="noMargins">Parsed G(t)</pre>
-		<pre class="noMargins textFunction"><span id="textFunctionG">function G</span></pre>
+		<pre>Parsed G(t)</pre>
+		<pre class="textFunction"><span id="textFunctionG">function G</span></pre>
+		<hr>
 
 	</div>
 

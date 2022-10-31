@@ -379,12 +379,12 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 	return ele;
 }
 
-// label, slider, reset
-//new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
 class makeEleCombo {
 	constructor(parent, labelStr, min, max, start, step, precision, outerCallback) {
+		// break
+		makeEle(parent, "hr");
 		// pre/span
-		const pre = makeEle(parent, "pre", null, "noMargins");
+		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;
 		this.label = makeEle(pre, "span", "aSpanId", null, "label");
 		// slider
@@ -399,14 +399,11 @@ class makeEleCombo {
 		this.#callbackSlider(); // fire off one callback at init
 		// button
 		makeEle(parent, "button", "aButtonId", null, this.labelStr + " reset", this.#callbackResetButton.bind(this));
-		// break
-		makeEle(parent, "hr");
 	}
 
 	#callbackResetButton() {
 		this.slider.value = this.start;
 		this.#callbackSlider();
-		//this.label.innerText = this.labelStr + " = " + this.slider.value;
 	}
 
 	#callbackSlider() {
@@ -427,25 +424,3 @@ class makeEleCombo {
 	}
 
 }
-/*
-		// line step
-		// linestep slider
-		this.eles.sliderLineStep.min = this.minLineStep;
-		this.eles.sliderLineStep.max = this.maxLineStep;
-		this.eles.sliderLineStep.value = this.startLineStep;
-		this.eles.sliderLineStep.addEventListener('input', () => {
-			//console.log("sliderLineStep input, this = " + this.sliderLineStep.value);
-			this.lineStep = parseFloat(this.eles.sliderLineStep.value);
-		});
-		// linestep reset button
-		this.eles.buttonLineStep.addEventListener('click', () => {
-			//console.log("buttonLineStep reset");
-			this.#buttonLineStepReset();
-		});
-*/
-/*
-<pre class="noMargins"><span id="textPhase">hi</span></pre>
-<input type="range"	class="slider" id="sliderPhase">
-<button id="buttonPhase">Phase Reset</button>
-<hr>
-*/

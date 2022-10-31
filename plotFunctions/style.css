@@ -30,13 +30,8 @@ span{
 	margin:0;
 }
 
-.noMargins{
-	margin:0;
-}
-
 .slidecontainer{
 	text-align: center;
-	margin:0;
 }
 
 .slider{
@@ -49,7 +44,6 @@ span{
 }
 
 div{
-	margin: 0;
 	outline: none;
 	padding: none;
 	position: relative;
@@ -57,7 +51,6 @@ div{
 }
 
 canvas{
-	margin: 0;
 	outline: none;
 	border: none;
 	background: lightgray;

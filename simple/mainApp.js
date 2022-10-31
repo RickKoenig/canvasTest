@@ -51,7 +51,7 @@ class MainApp {
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		this.eles = {};
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "noMargins", "textInfoLog");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 
 
 		makeEle(this.vp, "br");
@@ -70,8 +70,6 @@ class MainApp {
 				this.count = 10000;
 			}
 		);
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
 		makeEle(this.vp, "pre", null, null, "");
 
 
