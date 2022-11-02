@@ -73,7 +73,11 @@ class MainApp {
 		if (this.runFunGenTests) {
 			FunGen.runTests();
 		}
-		// test keyboard normal typing
+
+		this.textStartFunctionF = "t";
+		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+
+	// test keyboard normal typing
 		this.textTextType = "";
 
 		// for sine wave like functions, add a phase to the input of the function(s)
@@ -99,6 +103,8 @@ class MainApp {
 		}
 		let ele; // for two level html
 
+
+		//  parametric and debug
 		makeEle(this.vp, "hr");
 
 		ele = makeEle(this.vp, "span", null, "marg", "Parametric");
@@ -109,8 +115,13 @@ class MainApp {
 		this.eles.checkboxDebug = makeEle(ele, "input", "checkboxDebug", null, "checkboxDebug", null, "checkbox");
 		this.eles.checkboxDebug.checked = this.doParametric; // UI checkbox toggle init
 		
+
+		// text info log
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
+
+
+		// line step slider combo
 		{
 			makeEle(this.vp, "hr");
 			// start lineStep UI
@@ -124,6 +135,8 @@ class MainApp {
 			// end lineStep UI
 		}
 
+
+		// phase slider combo
 		makeEle(this.vp, "hr");
 		{
 			// start phase UI
@@ -137,6 +150,8 @@ class MainApp {
 			// end phase UI
 		}
 
+
+		// frequency slider combo
 		{
 			// start freq UI
 			const label = "Frequency";
@@ -148,6 +163,9 @@ class MainApp {
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 			// end freq UI
 		}
+
+
+		// input: edit functions
 		makeEle(this.vp, "hr");
 		{
 			this.eles.labelEditFunctionF = makeEle(this.vp, "pre", "labelEditFunctionF", null, "Enter F(t)");
@@ -156,13 +174,10 @@ class MainApp {
 			this.eles.editFunctionG = makeEle(this.vp, "textarea", "editFunctionG", "editbox");
 		}
 
-		{
-			this.textStartFunctionF = "t";
-			this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
-			// submit functions
-			makeEle(this.vp, "button", null, null, "Submit functions",this.#submitFunctions.bind(this));
-		}
+		// submit functions
+		makeEle(this.vp, "button", null, null, "Submit functions",this.#submitFunctions.bind(this));
 
+		// output: parsed functions
 		this.eles.labelParsedFunctionF = makeEle(this.vp, "pre", null, null, "Parsed F(t)");
 		ele = makeEle(this.vp, "pre", null, "parsedFunction");
 		this.eles.textParsedFunctionF = makeEle(ele, "span", "textParsedFunctionF", null, "Function F");
@@ -171,6 +186,7 @@ class MainApp {
 		ele = makeEle(this.vp, "pre", null, "parsedFunction");
 		this.eles.textParsedFunctionG = makeEle(ele, "span", "textParsedFunctionG", null, "Function G");
 
+		// init functions
 		this.#resetFunctions();
 		this.#submitFunctions();
 	}
