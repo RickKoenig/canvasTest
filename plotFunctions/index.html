@@ -8,9 +8,9 @@
 </head>
 
 <body>
-	<!-- UI is added to verticalPanel -->
+	<!-- UI is added to verticalPanel from mainApp -->
 	<div id="verticalPanel">
-		<p id="linkback">Go back to <a href="../../index.html#plotter2d"> The Main page.</a></p>
+		<p>Go back to <a href="../../index.html#plotter2d"> The Main page.</a></p>
 		<br><pre>Move sliders, Press buttons<br> Enter functions</pre>
 
 		<!-- checkboxes -->
@@ -20,30 +20,6 @@
 		<span>&nbsp;&nbsp;Debug
 			<input type="checkbox" id="checkboxDebug"/>
 		</span>
-		<hr>
-
-		<!-- edit input functions -->
-		<pre id="labelFunctionF1">Enter F(t)</pre>
-		<textarea id="editFunctionF"
-			class="editbox" spellcheck="false">
-		</textarea>
-
-		<pre>Enter G(t)</pre>
-		<textarea id="editFunctionG"
-			class="editbox" spellcheck="false">
-		</textarea>
-
-		<!-- submit functions -->
-		<button id="submitFunctions">Submit Function(s)</button>
-
-
-		<!-- parsed output functions -->
-		<pre id="labelFunctionF2">Parsed F(t)</pre>
-		<pre class="textFunction"><span id="textFunctionF">function F</span></pre>
-		
-		<pre>Parsed G(t)</pre>
-		<pre class="textFunction"><span id="textFunctionG">function G</span></pre>
-		<hr>
 
 	</div>
 

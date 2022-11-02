@@ -272,13 +272,15 @@ function normAngRadSigned(a)
 	return a;
 }
 
-function populateElementIds(parent, dest) {
 	// put all elements with id from parent to dest object
-	const vb = document.getElementById("verticalPanel");
-	const vba = vb.getElementsByTagName("*");
-	for (const htmle of vba) {
-		if (htmle.id.length) {
-			dest[htmle.id] = document.getElementById(htmle.id);
+	function populateElementIds(parent, dest) {
+		if (!parent || !dest) {
+			return;
+		}
+	const eles = parent.getElementsByTagName("*");
+	for (const ele of eles) {
+		if (ele.id.length) {
+			dest[ele.id] = document.getElementById(ele.id);
 		}
 	}
 }
@@ -315,7 +317,6 @@ class EditPnts {
 				// something hilighted
 				if (butDown && !lastButDown) {
 					//mouse button pressed
-					//console.log("button going down");
 					this.curPntIdx = this.hilitPntIdx;
 				}
 			}
@@ -338,12 +339,11 @@ class EditPnts {
 
 function makeEle(parent, kind, id, className, text, callback, type) {
 	const ele = document.createElement(kind);
+	if (kind == "textarea") {
+		ele.spellcheck = false;
+	}
 	if (parent) {
-		//if (front) {
-		//	parent.prepend(ele);
-		//} else {
-			parent.appendChild(ele);
-		//}
+		parent.appendChild(ele);
 	}
 	if (id) {
 		ele.id = id;
@@ -363,13 +363,13 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 		if (kind == 'input') {
 			if (type == 'range') {
 				eventType = 'input'; // slider
-			} else if (type == 'checkbox') { // NYI
+			} else if (type == 'checkbox') { // checkbox
 				eventType = 'change';
 			}
 
 		} else if (kind == 'button') { // button
 			eventType = 'click';
-		} else if (kind == 'textarea') { // NYI
+		} else if (kind == 'textarea') { // textarea
 			eventType = 'keyup';
 		}
 		if (eventType) {
@@ -382,7 +382,7 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 class makeEleCombo {
 	constructor(parent, labelStr, min, max, start, step, precision, outerCallback) {
 		// break
-		makeEle(parent, "hr");
+		//makeEle(parent, "hr");
 		// pre/span
 		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;

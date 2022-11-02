@@ -84,15 +84,15 @@ class Plotter2d {
             
             const pieces = Object.values(this.pieces);
             // makeElements
+            makeEle(this.vp, "hr");
             for (const piece of pieces) {
-                makeEle(this.vp, "hr");
+                //makeEle(this.vp, "hr");
                 const pre = makeEle(this.vp, "pre", piece.preId);
                 makeEle(pre, "span", piece.preId);
                 if (piece.butId) { // also add eventListeners for the button
                     makeEle(this.vp, "button", piece.butId, null, piece.butText, piece.reset.bind(this));
                 }
             }
-            makeEle(this.vp, "hr");
             
             // setup textInfoEle for each piece
             for (const piece of pieces) {

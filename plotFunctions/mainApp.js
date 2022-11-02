@@ -14,18 +14,23 @@ class MainApp {
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
-		//this.vp = null; // no vertical panel UI
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
 
-		// USER:
+		 // add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		populateElementIds(this.vp, this.eles);
+
+		// USER before UI built
 		this.#userInit();
-
+		
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
-		// fire up all instances of the classes that are needed
-		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		// fire up all instances of the plotter2d classes that are needed
+		// this.vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
@@ -33,26 +38,41 @@ class MainApp {
 
 		this.drawFun = new DrawFun(this.graphPaper);
 
-		 // add all elements from vp to ele if needed
-		// uncomment if you need elements from vp
-		populateElementIds(this.vp, this.eles);
-
-		this.#addUserListeners();
+		// USER build UI
+		this.#userBuildUI();
 
 		// start it off
 		this.#animate();
 	}
 
 	#userInit() {
-		this.eles = {};
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
-		this.runFunGenTests = false; // test function generator
+		this.runFunGenTests = false; // unit test: function generator
 		// end some SWITCHES
 
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.fpsScreen = 60; // DONE: make work with different refresh rates
+		this.useAvgFps = true; // in proc, copy fpsAvgFps to fpsScreen instead of 60
+
+		// speed of frame update as a fraction from 0 to 1
+		this.num = 1;
+		this.den = 1;
+		this.cur = 0;
+		this.avgFpsObj = new Runavg(500);
+		// end speed of update
+
+		// set start Plotter2d Center and Zoom if needed
+		//this.startCenter = [3, 1];
+		//this.startZoom = .5;
+
+		if (this.runFunGenTests) {
+			FunGen.runTests();
+		}
 		// test keyboard normal typing
 		this.textTextType = "";
 
@@ -71,8 +91,16 @@ class MainApp {
 		this.lineStep = this.startLineStep;
 		this.maxLineStep = 1500;
 		this.minLineStep = 1;
+	}
 
+	#userBuildUI() {
+		if (!this.vp) {
+			return;
+		}
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
 		{
+			makeEle(this.vp, "hr");
 			// start lineStep UI
 			const label = "Line step";
 			const min = this.minLineStep;
@@ -84,6 +112,7 @@ class MainApp {
 			// end lineStep UI
 		}
 
+		makeEle(this.vp, "hr");
 		{
 			// start phase UI
 			const label = "Phase (p)";
@@ -107,29 +136,30 @@ class MainApp {
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 			// end freq UI
 		}
+			makeEle(this.vp, "hr");
+		{
+			this.eles.labelEditFunctionF = makeEle(this.vp, "pre", "labelEditFunctionF", null, "Enter F(t)");
+			this.eles.editFunctionF = makeEle(this.vp, "textarea", "editFunctionF", "editbox");
+			makeEle(this.vp, "pre", null, null, "Enter G(t)");
+			this.eles.editFunctionG = makeEle(this.vp, "textarea", "editFunctionG", "editbox");
+		}
 
-		// measure frame rate
-		this.fps;
-		this.avgFps = 0;
-		this.oldTime; // for delta time
-		this.fpsScreen = 60; // DONE: make work with different refresh rates
-		this.useAvgFps = true; // in proc, copy fpsAvgFps to fpsScreen instead of 60
+		{
+			this.textStartFunctionF = "t";
+			this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
+			// submit functions
+			makeEle(this.vp, "button", null, null, "Submit functions",this.#submitFunctions.bind(this));
+		}
 
-		// speed of update
-		this.num = 1;
-		this.den = 1;
-		this.cur = 0;
-		this.avgFpsObj = new Runavg(500);
-		// end speed of update
+		this.eles.labelParsedFunctionF = makeEle(this.vp, "pre", null, null, "Parsed F(t)");
+		let ele = makeEle(this.vp, "pre", null, "parsedFunction");
+		this.eles.textParsedFunctionF = makeEle(ele, "span", "textParsedFunctionF", null, "Function F");
 
-		// before firing up Plotter2d
-		this.startCenter = [0, 0];
-		this.startZoom = .5;
-	}
+		makeEle(this.vp, "pre", null, null, "Parsed G(t)");
+		ele = makeEle(this.vp, "pre", null, "parsedFunction");
+		this.eles.textParsedFunctionG = makeEle(ele, "span", "textParsedFunctionG", null, "Function G");
 
-	#addUserListeners() {
 		// add all the event listeners and initialize elements
-
 		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
 		this.eles.checkboxParametric.addEventListener('change', () => {
 			this.doParametric = this.eles.checkboxParametric.checked;
@@ -142,30 +172,8 @@ class MainApp {
 		});
 		this.eles.checkboxDebug.checked = this.doDebug; // UI checkbox toggle init
 
-		if (this.runFunGenTests) {
-			FunGen.runTests();
-		}
-		this.textStartFunctionF = "t";
-		this.textStartFunctionG = "sin(t) + 1/3*sin(3*t) + 1/5*sin(5*t) + 1/7*sin(7*t) + 1/9*sin(9*t)";
 		this.#resetFunctions();
 		this.#submitFunctions();
-		this.eles.submitFunctions.addEventListener('click', () => {
-			this.#submitFunctions();
-		});
-		/*
-		// function edit box
-		this.eles.editFunctionF.addEventListener("keyup", ({key}) => {
-			if (key === "Enter") {
-				this.#submitFunctionF();
-			}
-		});
-		// function edit box
-		this.eles.editFunctionG.addEventListener("keyup", ({key}) => {
-			if (key === "Enter") {
-				this.#submitFunctionG();
-			}
-		});
-		*/
 	}
 
 	#resetFunctions() {
@@ -186,7 +194,7 @@ class MainApp {
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionF(subFun);
-			this.eles.textFunctionF.innerText = funStr;
+			this.eles.textParsedFunctionF.innerText = funStr;
 		}
 	}
 
@@ -198,7 +206,7 @@ class MainApp {
 		const subFun = FunGen.stringToFunction(funStr);
 		if (subFun) {
 			this.drawFun.changeFunctionG(subFun);
-			this.eles.textFunctionG.innerText = funStr;
+			this.eles.textParsedFunctionG.innerText = funStr;
 		}
 	}
 
@@ -216,7 +224,7 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 		if (this.useAvgFps) {
-			this.fpsScreen = this.avgFps; // DONE: make work with different refresh rates
+			 this.fpsScreen = this.avgFps; // support for different refresh rates
 		}
 
 		// update phase given freq
@@ -232,7 +240,7 @@ class MainApp {
 			if (key) {
 				if (key == keyTable.keycodes.BACKSPACE) {
 					this.textTextType = this.textTextType.slice(0,this.textTextType.length - 1);
-				} else {
+				} else if (this.textTextType.length < 20) {
 					this.textTextType += String.fromCharCode(key);
 				}
 			}
@@ -334,8 +342,7 @@ class MainApp {
 		this.eles.textInfoLog.innerText = fpsStr;
 
 		if (this.doDebug) {
-			//this.eles.textInfoLog.innerText
-			this.eles.textInfoLog.innerHTML
+			this.eles.textInfoLog.innerHTML // only use innerHTML in doDebug mode
 			= fpsStr
 			+ "TextStringTest = " + "'" + this.textTextType + "'"
 			+ "<br>Screen draw dim = (" + p.W[0] + " , " + p.W[1] + ")"			+ "<br>ndcMin[0] = " + p.ndcMin[0].toFixed(2) + ", ndcMin[1] = "  + p.ndcMin[1].toFixed(2)
@@ -356,10 +363,10 @@ class MainApp {
 
 		// hide/show function 'F' when parametric is turned on or off
 		const vis = this.doParametric ? "" : "none";
-		this.eles.labelFunctionF1.style.display = vis;
+		this.eles.labelEditFunctionF.style.display = vis;
 		this.eles.editFunctionF.style.display = vis;
-		this.eles.labelFunctionF2.style.display = vis;
-		this.eles.textFunctionF.style.display = vis;
+		this.eles.labelParsedFunctionF.style.display = vis;
+		this.eles.textParsedFunctionF.style.display = vis;
 	}
 
 	#animate() {
