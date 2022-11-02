@@ -19,7 +19,7 @@ class MainApp {
 
 		 // add all elements from vp to ele if needed
 		// uncomment if you need elements from vp html
-		populateElementIds(this.vp, this.eles);
+		//populateElementIds(this.vp, this.eles);
 
 		// USER before UI built
 		this.#userInit();
@@ -97,6 +97,18 @@ class MainApp {
 		if (!this.vp) {
 			return;
 		}
+		let ele; // for two level html
+
+		makeEle(this.vp, "hr");
+
+		ele = makeEle(this.vp, "span", null, "marg", "Parametric");
+		this.eles.checkboxParametric = makeEle(ele, "input", "checkboxParametric", null, "checkboxParametric", null, "checkbox");
+		this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
+
+		ele = makeEle(this.vp, "span", null, "marg", "Debug");
+		this.eles.checkboxDebug = makeEle(ele, "input", "checkboxDebug", null, "checkboxDebug", null, "checkbox");
+		this.eles.checkboxDebug.checked = this.doParametric; // UI checkbox toggle init
+		
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
 		{
@@ -136,7 +148,7 @@ class MainApp {
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 			// end freq UI
 		}
-			makeEle(this.vp, "hr");
+		makeEle(this.vp, "hr");
 		{
 			this.eles.labelEditFunctionF = makeEle(this.vp, "pre", "labelEditFunctionF", null, "Enter F(t)");
 			this.eles.editFunctionF = makeEle(this.vp, "textarea", "editFunctionF", "editbox");
@@ -152,25 +164,12 @@ class MainApp {
 		}
 
 		this.eles.labelParsedFunctionF = makeEle(this.vp, "pre", null, null, "Parsed F(t)");
-		let ele = makeEle(this.vp, "pre", null, "parsedFunction");
+		ele = makeEle(this.vp, "pre", null, "parsedFunction");
 		this.eles.textParsedFunctionF = makeEle(ele, "span", "textParsedFunctionF", null, "Function F");
 
 		makeEle(this.vp, "pre", null, null, "Parsed G(t)");
 		ele = makeEle(this.vp, "pre", null, "parsedFunction");
 		this.eles.textParsedFunctionG = makeEle(ele, "span", "textParsedFunctionG", null, "Function G");
-
-		// add all the event listeners and initialize elements
-		// Parametric check box, could 'poll' this, but test events on a simple Boolean event
-		this.eles.checkboxParametric.addEventListener('change', () => {
-			this.doParametric = this.eles.checkboxParametric.checked;
-		});
-		this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
-
-		// Debug check box, could 'poll' this, but test events on a simple Boolean event
-		this.eles.checkboxDebug.addEventListener('change', () => {
-			this.doDebug = this.eles.checkboxDebug.checked;
-		});
-		this.eles.checkboxDebug.checked = this.doDebug; // UI checkbox toggle init
 
 		this.#resetFunctions();
 		this.#submitFunctions();
@@ -212,6 +211,9 @@ class MainApp {
 
 	// slower rate of speed, skip sometimes, depends on num and den
 	#userProc() {
+		this.doParametric = this.eles.checkboxParametric.checked; // UI checkbox toggle init
+		this.doDebug = this.eles.checkboxDebug.checked; // UI checkbox toggle init
+
 		// update FPS
 		if (this.oldTime === undefined) {
 			this.oldTime = performance.now();

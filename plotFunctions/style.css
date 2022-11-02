@@ -101,3 +101,7 @@ button:hover{
 	font-style: italic;
 	font-size: 120%;
 }
+
+.marg{
+	margin-right: 10px;
+}
