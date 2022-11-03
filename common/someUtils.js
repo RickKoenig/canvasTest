@@ -229,8 +229,7 @@ function getIntSect(A, B, C, D) {
 }
 
 // 0 <= a < 2 * PI
-function normAngRadUnsigned(a)
-{
+function normAngRadUnsigned(a) {
 	let watchDog = 10;
 	while(true) {
 		if (a < 0) {
@@ -251,8 +250,7 @@ function normAngRadUnsigned(a)
 }
 
 // -PI <= a < PI
-function normAngRadSigned(a)
-{
+function normAngRadSigned(a) {
 	let watchDog = 10;
 	while(true) {
 		if (a < -Math.PI) {
@@ -272,11 +270,11 @@ function normAngRadSigned(a)
 	return a;
 }
 
-	// put all elements with id from parent to dest object
-	function populateElementIds(parent, dest) {
-		if (!parent || !dest) {
-			return;
-		}
+// put all elements with id from parent to dest object
+function populateElementIds(parent, dest) {
+	if (!parent || !dest) {
+		return;
+	}
 	const eles = parent.getElementsByTagName("*");
 	for (const ele of eles) {
 		if (ele.id.length) {
@@ -422,5 +420,4 @@ class makeEleCombo {
 		this.slider.value = val;
 		this.#callbackSlider();
 	}
-
 }

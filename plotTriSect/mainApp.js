@@ -8,8 +8,14 @@ class MainApp {
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
 
-		// USER:
+		// add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		//populateElementIds(this.vp, this.eles);
+
+		// USER before UI built
 		this.#userInit();
 
 		// setup 2D drawing environment
@@ -24,9 +30,8 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
-		 // add all elements from vp to ele if needed
-		// uncomment if you need elements from vp
-		//populateElementIds(this.vp, this.eles);
+		// USER build UI
+		this.#userBuildUI();
 
 		// start it off
 		this.#animate();
@@ -34,10 +39,6 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		// elements
-		this.eles = {};
-		this.eles.triInfo = makeEle(this.vp, "pre", null, null, "triInfo");
-
 		//1st triangle
 		this.pntRad = .05; // size of point
 		this.pnts = [
@@ -65,6 +66,16 @@ class MainApp {
 		// before firing up Plotter2d
 		this.startCenter = [.5, .5];
 		this.startZoom = .5;
+	}
+
+	#userBuildUI() {
+		if (!this.vp) {
+			return;
+		}
+		// elements
+		this.eles = {};
+		makeEle(this.vp, "hr");
+		this.eles.triInfo = makeEle(this.vp, "pre", null, null, "triInfo");
 	}
 
 	#userProc() {
@@ -140,7 +151,10 @@ class MainApp {
 	}
 
 	#userUpdateInfo() {
-	this.eles.triInfo.innerText = "\nPerimeter " 
+		if (!this.vp) {
+			return;
+		}
+		this.eles.triInfo.innerText = "Perimeter " 
 			+ this.#calcTriPerimeter(this.pnts).toFixed(3) 
 			+ "\nArea: "
 			+ this.#calcTriArea(this.pnts).toFixed(3);
@@ -164,6 +178,7 @@ class MainApp {
 		// update UI, text
 		this.#userUpdateInfo();
 	}
+	
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#calcTriPerimeter(pnts) {
 		let perm = 0;
@@ -232,8 +247,7 @@ class MainApp {
 		return ln;
 	}
 
-	#calcSectors(pnts)
-	{
+	#calcSectors(pnts) {
 		const numSect = 3; // triSect angles
 		const ret = new Array(3); // 3 for triangle
 		for (let i = 0; i < 3; ++i) {
@@ -263,7 +277,6 @@ class MainApp {
 		}
 		return ret;
 	}
-
 }
 
 const mainApp = new MainApp();

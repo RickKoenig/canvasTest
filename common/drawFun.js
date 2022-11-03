@@ -25,11 +25,9 @@ class DrawFun {
 
 	#drawParametric(lineStep, phase, graphPaper, p) {
 		if (!this.functionF) {
-			//console.log("no draw functionF !!!");
 			return;
 		}
 		if (!this.functionG) {
-			//console.log("no draw functionG !!!");
 			return;
 		}
 		// draw a user defined function, default is a sine wave

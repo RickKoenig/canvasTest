@@ -2,7 +2,6 @@
 
 // handle screen, NFC, user/cam spaces,    allow mouse to UI control the user/cam space
 class Plotter2d {
-
     // enum spaces
     static spaces = makeEnum(["SCREEN", "NDC", "USER"]);
 

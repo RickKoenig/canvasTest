@@ -7,8 +7,14 @@ class MainApp {
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
 
-		// USER:
+		// add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		//populateElementIds(this.vp, this.eles);
+
+		// USER before UI built
 		this.#userInit();
 
 		// setup 2D drawing environment
@@ -23,12 +29,8 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
-		 // add all elements from vp to ele if needed
-		  // uncomment if you need elements from vp
-		/*
-		this.eles = {};
-		populateElementIds(vp, this.eles);
-		*/
+		// USER build UI
+		this.#userBuildUI();
 
 		// start it off
 		this.#animate();
@@ -36,6 +38,9 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+	}
+
+	#userBuildUI() {
 	}
 
 	#userProc() { // USER:

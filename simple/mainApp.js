@@ -13,12 +13,16 @@ class MainApp {
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
-		this.count = 0;
-
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
 
-		// USER:
+		// add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		//populateElementIds(this.vp, this.eles);
+
+		// USER before UI built
 		this.#userInit();
 
 		// setup 2D drawing environment
@@ -33,48 +37,18 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
-		 // add all elements from vp to ele if needed
-		// uncomment if you need elements from vp
-		/*
-		this.eles = {};
-		populateElementIds(vp, this.eles);
-		*/
+		// USER build UI
+		this.#userBuildUI();
 
 		// start it off
 		this.#animate();
 	}
 
-	#resetCounter() {
-		this.count = 0;
-	}
-
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		this.eles = {};
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-
-
-		makeEle(this.vp, "br");
-		const label = "lab";
-		const min = 33;
-		const max = 87;
-		const start = 44;
-		const step = 3;
-		const precision = 4;
-		const callback = null;
-		new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
-		
-		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
-		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
-			() => {
-				this.count = 10000;
-			}
-		);
-		makeEle(this.vp, "pre", null, null, "");
-
-
-
 		// user init section
+		this.count = 0;
+
 		this.numPnts = 5;
 		this.pntRad = .05; // size of point
 		this.pnts = createArray(this.numPnts, 2); // array of 'two' dimensional points
@@ -97,13 +71,35 @@ class MainApp {
 		this.startZoom = .5;
 	}
 
+	#userBuildUI() {
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
+		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
+			() => {
+				this.count = 10000;
+			}
+		);
+
+		makeEle(this.vp, "hr");
+		{
+			const label = "test combo";
+			const min = 33;
+			const max = 87;
+			const start = 44;
+			const step = 3;
+			const precision = 4;
+			const callback = null;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
+		}
+	}		
+	
 	#userProc() {
 		// proc
 		++this.count;
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
-
 
 		// draw with hilits on some points
 		const hilitPntIdx = this.editPnts.getHilitIdx();
@@ -132,7 +128,7 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		const countStr = "Count = " + this.count + "\n";
+		const countStr = "Count = " + this.count;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
@@ -153,6 +149,10 @@ class MainApp {
 		this.#userProc(); // proc and draw
 		// update UI, text
 		this.#userUpdateInfo();
+	}
+
+	#resetCounter() {
+		this.count = 0;
 	}
 }
 

@@ -9,7 +9,6 @@ class DrawPrimitives {
     drawCircle(pnt, rad, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
-        //this.ctx.lineWidth = lineWidth * ndcZoom;
         this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, Math.PI * 2);
         this.ctx.fillStyle = color;
         this.ctx.fill();
@@ -33,7 +32,6 @@ class DrawPrimitives {
             , center[1] - sy / 2
             , sx
             , sy);
-    
     }
 
     drawRectangleO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
@@ -46,10 +44,8 @@ class DrawPrimitives {
             , center[1] - sy / 2
             , sx
             , sy);
-    
     }
 
-    //drawALine(center, size, lineWidth = .01, color = "black", ndcScale = false) {
     drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         this.ctx.beginPath();
@@ -81,5 +77,4 @@ class DrawPrimitives {
         this.ctx.fillText(text, center[0], center[1]);
         this.ctx.restore();
     }
-
 }

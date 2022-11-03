@@ -130,5 +130,4 @@ class FunGen {
 		const fun = FunGen.#generateDrawFunction(FunGen.#addMathPrefix(str));
 		return fun;
 	}
-
 }

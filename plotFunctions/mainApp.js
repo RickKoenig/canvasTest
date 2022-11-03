@@ -191,44 +191,12 @@ class MainApp {
 		this.#submitFunctions();
 	}
 
-	#resetFunctions() {
-		this.eles.editFunctionF.value = this.textStartFunctionF;
-		this.eles.editFunctionG.value = this.textStartFunctionG;
-	}
-
-	#submitFunctions() {
-		this.#submitFunctionF();
-		this.#submitFunctionG();
-	}
-
-	#submitFunctionF() {
-		const funStr = this.eles.editFunctionF.value;
- 		// make UI editbox bigger, noscroll
-		const extraHeight = -4; // ???
- 		this.eles.editFunctionF.style.height = this.eles.editFunctionF.scrollHeight + extraHeight + 'px';
-		const subFun = FunGen.stringToFunction(funStr);
-		if (subFun) {
-			this.drawFun.changeFunctionF(subFun);
-			this.eles.textParsedFunctionF.innerText = funStr;
-		}
-	}
-
-	#submitFunctionG() {
-		const funStr = this.eles.editFunctionG.value;
- 		// make UI editbox bigger, noscroll
-		const extraHeight = -4; // ???
-		this.eles.editFunctionG.style.height = this.eles.editFunctionG.scrollHeight + extraHeight + 'px';
-		const subFun = FunGen.stringToFunction(funStr);
-		if (subFun) {
-			this.drawFun.changeFunctionG(subFun);
-			this.eles.textParsedFunctionG.innerText = funStr;
-		}
-	}
-
 	// slower rate of speed, skip sometimes, depends on num and den
 	#userProc() {
-		this.doParametric = this.eles.checkboxParametric.checked; // UI checkbox toggle init
-		this.doDebug = this.eles.checkboxDebug.checked; // UI checkbox toggle init
+		if (this.vp) {
+			this.doParametric = this.eles.checkboxParametric.checked; // UI checkbox toggle init
+			this.doDebug = this.eles.checkboxDebug.checked; // UI checkbox toggle init
+		}
 
 		// update FPS
 		if (this.oldTime === undefined) {
@@ -354,6 +322,10 @@ class MainApp {
 
 	// update some of the UI
 	#userUpdateInfo() {
+		if (!this.vp) {
+			return;
+		}
+
 		const p = this.plotter2d;
 		// show inputEventsStats
 		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n";
@@ -411,6 +383,40 @@ class MainApp {
 	
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
+	}
+	
+	#resetFunctions() {
+		this.eles.editFunctionF.value = this.textStartFunctionF;
+		this.eles.editFunctionG.value = this.textStartFunctionG;
+	}
+
+	#submitFunctions() {
+		this.#submitFunctionF();
+		this.#submitFunctionG();
+	}
+
+	#submitFunctionF() {
+		const funStr = this.eles.editFunctionF.value;
+ 		// make UI editbox bigger, noscroll
+		const extraHeight = -4; // ???
+ 		this.eles.editFunctionF.style.height = this.eles.editFunctionF.scrollHeight + extraHeight + 'px';
+		const subFun = FunGen.stringToFunction(funStr);
+		if (subFun) {
+			this.drawFun.changeFunctionF(subFun);
+			this.eles.textParsedFunctionF.innerText = funStr;
+		}
+	}
+
+	#submitFunctionG() {
+		const funStr = this.eles.editFunctionG.value;
+ 		// make UI editbox bigger, noscroll
+		const extraHeight = -4; // ???
+		this.eles.editFunctionG.style.height = this.eles.editFunctionG.scrollHeight + extraHeight + 'px';
+		const subFun = FunGen.stringToFunction(funStr);
+		if (subFun) {
+			this.drawFun.changeFunctionG(subFun);
+			this.eles.textParsedFunctionG.innerText = funStr;
+		}
 	}
 }
 
