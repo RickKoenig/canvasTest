@@ -24,23 +24,23 @@ class Plotter2d {
         this.ctx = ctx; // only used for trans and scale, save and restore
         this.vp = vp;
         // mouse in user/cam space
-        this.userMouse = [0, 0]; // current mouse coords in user/cam space
+        this.userMouse = vec2.create(); // current mouse coords in user/cam space
     
         // screen space dimensions of <canvas> / <div>
-        this.W = [0, 0];
+        this.W = vec2.create();
         this.WMin = 0;
     
         // screen to NDC space
-        this.trans = [0, 0];
+        this.trans = vec2.create();
         this.scl = 0;
-        this.ndcMin= [0, 0];
-        this.ndcMax= [0, 0];
+        this.ndcMin = vec2.create();
+        this.ndcMax = vec2.create();
     
         // NDC to  user/cam space
-        this.camMin= [0, 0];
-        this.camMax= [0, 0];
-        this.center= clone(startCenter);
-        this.startCenter= clone(startCenter);
+        this.camMin = vec2.create();
+        this.camMax = vec2.create();
+        this.center = vec2.clone(startCenter);
+        this.startCenter = vec2.clone(startCenter);
 
         this.startZoom= startZoom;
         this.zoom= 1;
@@ -101,14 +101,14 @@ class Plotter2d {
     }
 
     #newcenter(i, pnt) {
-        let nc = Array(2);
+        let nc = vec2.create();
         nc[0] = pnt[0] - (i[0] - this.W[0] / 2) / (this.zoom * this.WMin / 2);
         nc[1] = pnt[1] - (i[1] - this.W[1] / 2) / (-this.zoom * this.WMin / 2);
         this.center = nc;
     }
 
     #screen2userCam(i) {
-        let r = Array(2);
+        let r = vec2.create();
         r[0] = this.center[0] + (i[0] - this.W[0]/2)/(this.zoom*this.WMin/2);
         r[1] = this.center[1] + (i[1] - this.W[1]/2)/(-this.zoom*this.WMin/2);
         this.userMouse = r;
@@ -149,7 +149,7 @@ class Plotter2d {
 
         this.WMin = Math.min(this.W[0], this.W[1]);
         // use the mouse to navigate the user/cam space
-        let pnt = [mouse.mx, mouse.my];
+        let pnt = vec2.clone(mouse.mxy);
         this.#screen2userCam(pnt);
         // calc min and max of NDC space and scale and translate
         if (this.W[0] >= this.W[1]) { // landscape
@@ -193,16 +193,23 @@ class Plotter2d {
             if (mouse.mbut[whichBut]) {
                 const f = 1 / (this.zoom * this.WMin / 2);
                 // where is the mouse in float coords
-                this.center[0] -= mouse.dmx*f;
-                this.center[1] += mouse.dmy*f;
+                this.center[0] -= mouse.dmxy[0]*f;
+                this.center[1] += mouse.dmxy[1]*f;
             }
         } 
-
+/*
         this.camMin[0] = this.ndcMin[0] * this.invZoom + this.center[0];
         this.camMin[1] = this.ndcMin[1] * this.invZoom + this.center[1];
         this.camMax[0] = this.ndcMax[0] * this.invZoom + this.center[0];
         this.camMax[1] = this.ndcMax[1] * this.invZoom + this.center[1];
+*/
+        let temp = vec2.create();
 
+        vec2.scale(temp, this.ndcMin, this.invZoom);
+        vec2.add(this.camMin, temp, this.center);
+        vec2.scale(temp, this.ndcMax, this.invZoom);
+        vec2.add(this.camMax, temp, this.center);
+        
         if (this.vp) {
             // xtrans
             this.pieces.xTrans.textInfoEle.innerText = "center[0] = " + this.center[0].toFixed(2);

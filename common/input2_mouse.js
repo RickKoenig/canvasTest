@@ -12,14 +12,18 @@ class Mouse {
 		this.mbutcur = [0,0,0];
 		this.mbutlast = [0,0,0];
 		this.mbuthold = [0,0,0];
-
+/*
         this.mx = 0;
         this.my = 0;
         this.lmx = 0;
         this.lmy = 0;
         this.dmx = 0;
         this.dmy = 0;
-        this.mbut = [0, 0, 0];
+*/
+		this.mxy = vec2.create();
+		this.lmxy = vec2.create();
+		this.dmxy = vec2.create();
+		this.mbut = [0, 0, 0];
         this.lmbut = [0, 0, 0];
         this.mclick = [0, 0, 0];
         this.wheelPos = 0;
@@ -125,23 +129,23 @@ class Mouse {
 	// event mouse move
 	bmousem(e) {
 		if (e.layerX == null) {
-			this.mx = this.getxcode(e); // doesn't work with scrollbars
-			this.my = this.getycode(e);
+			this.mxy[0] = this.getxcode(e); // doesn't work with scrollbars
+			this.mxy[1] = this.getycode(e);
 		} else {
-			this.mx = e.layerX; // works with scrollbars
-			this.my = e.layerY;
+			this.mxy[0] = e.layerX; // works with scrollbars
+			this.mxy[1] = e.layerY;
 		}
-		if (this.mx < 0) {
-			this.mx = 0;
+		if (this.mxy[0] < 0) {
+			this.mxy[0] = 0;
 		}
-		if (this.my < 0) {
-			this.my = 0;
+		if (this.mxy[1] < 0) {
+			this.mxy[1] = 0;
 		}
-		if (this.mx >= this.maxX) {
-			this.mx = this.maxX - 1;
+		if (this.mxy[0] >= this.maxX) {
+			this.mxy[0] = this.maxX - 1;
 		}
-		if (this.my >= this.maxY) {
-			this.my = this.maxY - 1;
+		if (this.mxy[1] >= this.maxY) {
+			this.mxy[1] = this.maxY - 1;
 		}
 	}
 	
@@ -170,8 +174,8 @@ class Mouse {
     
 	updateMouseStats() {
 		this.stats = 
-		"mx " + this.mx + 
-		", my " + this.my + 
+		"mx " + this.mxy[0] + 
+		", my " + this.mxy[1] + 
 		", mz " + this.wheelPos + 
 		", mdz " + this.wheelDelta + 
 		"<br>mbut [" + this.mbut + "]"+ 
@@ -205,10 +209,12 @@ class Mouse {
 			this.wheelPos += this.rawwheeldelta;
 		}
 		this.rawwheeldelta = 0;
-		this.dmx = this.mx - this.lmx;
-		this.dmy = this.my - this.lmy;
-		this.lmx = this.mx;
-		this.lmy = this.my;
+		vec2.sub(this.dmxy, this.mxy, this.lmxy);
+		//this.dmx = this.mx - this.lmx;
+		//this.dmy = this.my - this.lmy;
+		vec2.copy(this.lmxy, this.mxy);
+		//this.lmx = this.mx;
+		//this.lmy = this.my;
 		this.updateMouseStats();
    	}
 }
