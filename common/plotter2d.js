@@ -19,10 +19,11 @@ class Plotter2d {
         this.center[1] = this.startCenter[1];
     }
 
-    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1) {
+    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize) {
         this.canvas = canvas;
         this.ctx = ctx; // only used for trans and scale, save and restore
         this.vp = vp;
+        this.fixedSize = fixedSize;
         // mouse in user/cam space
         this.userMouse = vec2.create(); // current mouse coords in user/cam space
     
@@ -126,12 +127,10 @@ class Plotter2d {
 
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
-		const fixedDim = false;
-        if (fixedDim) {
-			const fixedSize = [800, 600];
+        if (this.fixedSize) {
 			// set canvas size to a fixed size
-			this.canvas.width = fixedSize[0];
-			this.canvas.height = fixedSize[1];
+			this.canvas.width = this.fixedSize[0];
+			this.canvas.height = this.fixedSize[1];
 		} else {
 			// set canvas size depending on window size
 			// TODO: get rid of magic numbers

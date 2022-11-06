@@ -1,45 +1,7 @@
 'use strict';
 
-// running average class
-class Runavg {
-	constructor(nele) {
-		this.nele = nele;
-		this.arr = [];
-		this.idx = 0;
-		this.sum = 0;
-	}
 
-	add(num) {
-		if (this.arr.length == this.nele) { // array filled up
-			this.sum -= this.arr[this.idx];
-			this.arr[this.idx] = num;
-			this.sum += num;
-			++this.idx;
-			if (this.idx == this.nele)
-				this.idx = 0;
-		} else { // building up array
-			this.arr[this.idx] = num;
-			this.sum += num;
-			++this.idx;
-			if (this.idx == this.nele)
-				this.idx = 0;
-		}
-		return this.sum/this.arr.length;
-	}
-}
-
-function range(a,b,c) {
-	if (b<a)
-		return a;
-	if (b>c)
-		return c;
-	return b;
-}
-
-function lerp(a, b, t) {
-	return a + t * (b - a);
-}
-
+// javacript helpers
 // deep copy of object, includes it's constructor too
 function clone(obj) {
     var copy;
@@ -117,6 +79,13 @@ function fillArray(arr, val) {
 	}
 }
 
+function arrayEquals(a, b) {
+    return Array.isArray(a) &&
+        Array.isArray(b) &&
+        a.length === b.length &&
+        a.every((val, index) => val === b[index]);
+}
+
 function extend(base, sub) {
 	// Avoid instantiating the base class just to setup inheritance
 	// Also, do a recursive merge of two prototypes, so we don't overwrite 
@@ -151,6 +120,38 @@ function makeEnum(strArr) {
 	return ret;
 }
 
+
+// json helpers
+// remove comments from a string before sending it to a parser, like JSON
+function stripComments(str) {
+	var lines = str.split("\n");
+	var reCombined = "";
+	for (var i = 0; i < lines.length; ++i) {
+		var line = lines[i];
+		var res = line.search("//");
+		if (res == 0)
+			continue;
+		if (res > 0)
+			line = line.substr(0,res);
+		reCombined += line + "\n";
+	}
+	return reCombined;
+}
+
+
+// math helpers
+function range(a,b,c) {
+	if (b<a)
+		return a;
+	if (b>c)
+		return c;
+	return b;
+}
+
+function lerp(a, b, t) {
+	return a + t * (b - a);
+}
+
 function ilog2(t) {
 	var r = 0;
 	if (t == 0)
@@ -168,44 +169,13 @@ function makepow2(x) {
 	return 1<<ilog2(x);
 }
 
-// remove comments from a string before sending it to a parser, like JSON
-function stripComments(str) {
-	var lines = str.split("\n");
-	var reCombined = "";
-	for (var i = 0; i < lines.length; ++i) {
-		var line = lines[i];
-		var res = line.search("//");
-		if (res == 0)
-			continue;
-		if (res > 0)
-			line = line.substr(0,res);
-		reCombined += line + "\n";
-	}
-	return reCombined;
-}
-
-function arrayEquals(a, b) {
-    return Array.isArray(a) &&
-        Array.isArray(b) &&
-        a.length === b.length &&
-        a.every((val, index) => val === b[index]);
-}
-
 function getRandomInt(max) {
 	return Math.floor(Math.random() * max);
 }
 
-function dist2dsq(p0, p1) {
-	const d = [p1[0] - p0[0], p1[1] - p0[1]];
-	return d[0] * d[0] + d[1] * d[1];
-}
-
-function dist2d(p0, p1) {
-	return Math.sqrt(dist2dsq(p0, p1));
-}
-
-function midPnt(p0, p1) {
-	return [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+function midPnt(out, p0, p1) {
+	vec2.add(out, p1, p0);
+	vec2.scale(out, out, .5);
 }
 
 function lerp(A, B, t) {
@@ -270,19 +240,35 @@ function normAngRadSigned(a) {
 	return a;
 }
 
-// put all elements with id from parent to dest object
-function populateElementIds(parent, dest) {
-	if (!parent || !dest) {
-		return;
+// running average class
+class Runavg {
+	constructor(nele) {
+		this.nele = nele;
+		this.arr = [];
+		this.idx = 0;
+		this.sum = 0;
 	}
-	const eles = parent.getElementsByTagName("*");
-	for (const ele of eles) {
-		if (ele.id.length) {
-			dest[ele.id] = document.getElementById(ele.id);
+
+	add(num) {
+		if (this.arr.length == this.nele) { // array filled up
+			this.sum -= this.arr[this.idx];
+			this.arr[this.idx] = num;
+			this.sum += num;
+			++this.idx;
+			if (this.idx == this.nele)
+				this.idx = 0;
+		} else { // building up array
+			this.arr[this.idx] = num;
+			this.sum += num;
+			++this.idx;
+			if (this.idx == this.nele)
+				this.idx = 0;
 		}
+		return this.sum/this.arr.length;
 	}
 }
 
+// drag points around
 class EditPnts {
 	constructor(pnts, pntRad) {
 		this.pnts = pnts;
@@ -301,8 +287,8 @@ class EditPnts {
 		// hilit hover
 		// check topmost points first
 		for (let i = this.numPnts - 1; i >= 0; --i) {
-			const isInside
-				= dist2dsq(this.pnts[i], userMouse) 
+			const isInside 
+				= vec2.squaredDistance(this.pnts[i], userMouse) 
 				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
 			if (isInside) {
 				this.hilitPntIdx = i;
@@ -332,6 +318,21 @@ class EditPnts {
 	getHilitIdx() {
 		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
 		return hilitIdx;
+	}
+}
+
+
+// html helpers
+// put all elements with id from parent to dest object
+function populateElementIds(parent, dest) {
+	if (!parent || !dest) {
+		return;
+	}
+	const eles = parent.getElementsByTagName("*");
+	for (const ele of eles) {
+		if (ele.id.length) {
+			dest[ele.id] = document.getElementById(ele.id);
+		}
 	}
 }
 

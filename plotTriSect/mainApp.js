@@ -25,7 +25,9 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
+		//this.fixedSize = [800, 600];
+		this.fixedSize = null;
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom, this.fixedSize);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -184,7 +186,9 @@ class MainApp {
 		let perm = 0;
 		for (let i = 0; i < 3; ++i) {
 			let j = (i + 1) %3;
-			perm += dist2d(pnts[i], pnts[j]);
+			const len = vec2.create();
+			perm += vec2.distance( pnts[i], pnts[j]);
+
 		}
 		return perm;
 	}
@@ -199,15 +203,17 @@ class MainApp {
 	#calcTriOutside(pnts) {
 		const slope01 = [pnts[1][0] - pnts[0][0], pnts[1][1] - pnts[0][1]];
 		const slope02 = [pnts[2][0] - pnts[0][0], pnts[2][1] - pnts[0][1]];
-		const p0 = midPnt(pnts[0], pnts[1]);
-		const p2 = midPnt(pnts[0], pnts[2]);
+		const p0 = vec2.create();
+		midPnt(p0, pnts[0], pnts[1]);
+		const p2 = vec2.create();
+		midPnt(p2, pnts[0], pnts[2]);
 		// perpendicular
 		const p1 = [p0[0] + slope01[1], p0[1] - slope01[0]];
 		const p3 = [p2[0] + slope02[1], p2[1] - slope02[0]];
 		const isect = getIntSect(p0, p1, p2, p3);
 		return {
 			center: isect,
-			radius: dist2d(isect, pnts[0])
+			radius: vec2.distance(isect, pnts[0])
 		};
 	}
 
@@ -215,7 +221,8 @@ class MainApp {
 		const lens = [];
 		for (let i = 0; i < 3; ++i) {
 			const j = (i + 1) % 3;
-			lens.push(dist2d(pnts[i], pnts[j]));
+			//const out = vec2.create();
+			lens.push(vec2.distance(pnts[i], pnts[j]));
 		}
 		// s0 + s1 = len0, s1 + s2 = len1, s2 + s0 = len2
 		// solve a, b, c

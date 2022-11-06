@@ -109,11 +109,12 @@ class MainApp {
 			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
 		}
 		// draw some extra stuff like lines and midpoints
+		const mid = vec2.create();
 		for (let i = 0; i < this.numPnts; ++i) {
 			const p0 = this.pnts[i];
 			const p1 = this.pnts[(i + 1) % this.numPnts];
 			this.drawPrim.drawLine(p0, p1, "darkgray");
-			const mid = midPnt(p0, p1);
+			midPnt(mid, p0, p1);
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
 
