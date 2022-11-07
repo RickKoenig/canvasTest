@@ -90,6 +90,15 @@ class MainApp {
 		this.rectSize = this.useSliders ? this.sliderSize : this.input.mouse.mxy;
 		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
 		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
+
+		const checkX = 16;
+		const checkY = 16;
+		for (let j = 0; j < checkY; ++j) {
+			for (let i = 0; i < checkX; ++i) {
+				const color = (i & 1) ^ (j & 1) ? "white" : "black";
+				this.drawPrim.drawRectangle([400 + i, 400 + j], [1, 1], color);
+			}
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
