@@ -9,7 +9,6 @@ class MainApp {
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
-		//this.vp = null; // OR, no vertical panel UI
 		this.eles = {}; // keep track of eles in vertical panel
 
 		// USER before UI built
@@ -21,11 +20,11 @@ class MainApp {
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
 		// fire up all instances of the classes that are needed
-		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom, this.fixedSize);
+		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
+		// only use screen space
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize); 
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim);
 
 		// USER build UI
 		this.#userBuildUI();
@@ -36,7 +35,6 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-
 		this.useSliders = false;
 
 		// some rectangle
@@ -44,16 +42,6 @@ class MainApp {
 		this.sliderSize = vec2.clone(this.sliderstartSize);
 		this.minSize = vec2.create();
 		this.maxSize = vec2.clone(this.fixedSize);
-/*		
-		this.startX = 300;
-		this.Width = this.sliderSize[0];
-		this.maxX = this.fixedSize[0];
-		this.minX = 0;
-
-		this.startY = 200;
-		this.Height = this.sliderSize[1];
-		this.maxY = this.fixedSize[1];
-		this.minY = 0; */
 	}
 
 	#userBuildUI() {
@@ -99,11 +87,6 @@ class MainApp {
 
 	#userProc() { // USER:
 		this.useSliders = this.eles.checkboxUseSliders.checked; // UI checkbox toggle init
-
-		this.drawPrim.drawCircle([.75, .5], .08, "green");
-		this.drawPrim.drawCircle([this.plotter2d.userMouse[0], this.plotter2d.userMouse[1]], .08, "green");
-
-		this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
 		this.rectSize = this.useSliders ? this.sliderSize : this.input.mouse.mxy;
 		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
 		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
@@ -124,10 +107,6 @@ class MainApp {
 		this.input.proc();
 		// interact with mouse, calc all spaces
 		this.plotter2d.proc(this.vp, this.input.mouse);
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 
