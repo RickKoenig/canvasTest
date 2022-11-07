@@ -1,5 +1,7 @@
 'use strict';
 
+// 'O' means outline
+
 class DrawPrimitives {
     constructor(plotter2d) {
         this.plotter2d = plotter2d // state of user/cam space
@@ -23,7 +25,24 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
-    drawRectangle(center, size, color = "black", ndcScale = false) {
+    drawRectangle(topLeft, size, color = "black", ndcScale = false) {
+        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const sizeScale = vec2.create();
+        vec2.scale(sizeScale, size, ndcZoom);
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(topLeft[0], topLeft[1], sizeScale[0], sizeScale[1]);
+    }
+
+    drawRectangleO(topLeft, size, lineWidth, color = "black", ndcScale = false) {
+        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        this.ctx.lineWidth = lineWidth * ndcZoom;
+        const sizeScale = vec2.create();
+        vec2.scale(sizeScale, size, ndcZoom);
+        this.ctx.fillStyle = color;
+        this.ctx.strokeRect(topLeft[0], topLeft[1], sizeScale[0], sizeScale[1]);
+    }
+
+    drawRectangleCenter(center, size, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
@@ -34,7 +53,7 @@ class DrawPrimitives {
             , sy);
     }
 
-    drawRectangleO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
+    drawRectangleCenterO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         let sx = size[0] * ndcZoom;
@@ -59,7 +78,7 @@ class DrawPrimitives {
     drawText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {
         let textYSize = 1;
         if (back) {
-            this.drawRectangle(center, [size[0], size[1]], back, ndcScale);
+            this.drawRectangleCenter(center, [size[0], size[1]], back, ndcScale);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';

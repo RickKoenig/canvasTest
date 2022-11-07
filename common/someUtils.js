@@ -421,4 +421,8 @@ class makeEleCombo {
 		this.slider.value = val;
 		this.#callbackSlider();
 	}
+
+	resetValue() {
+		this.setValue(this.start);
+	}
 }

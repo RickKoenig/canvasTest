@@ -249,14 +249,14 @@ class MainApp {
 			this.drawPrim.drawCircleO([.5, .525], .125, lineWidth, "cyan");
 			this.drawPrim.drawCircleO([.5, .475], .125, lineWidth, "brown", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawRectangleO([.5, .25], [.25, .125], lineWidth, "blue");
-			this.drawPrim.drawRectangleO([.5, 0], [.25, .125], lineWidth, "red", ndcScale);
+			this.drawPrim.drawRectangleCenterO([.5, .25], [.25, .125], lineWidth, "blue");
+			this.drawPrim.drawRectangleCenterO([.5, 0], [.25, .125], lineWidth, "red", ndcScale);
 			// circles fill
 			this.drawPrim.drawCircle([.5, -.25], .0625, "cyan");
 			this.drawPrim.drawCircle([.5, -.3], .0625, "brown", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawRectangle([.5, -.52], [.25, .125], "blue");
-			this.drawPrim.drawRectangle([.5, -.72], [.25, .125], "red", ndcScale);
+			this.drawPrim.drawRectangleCenter([.5, -.52], [.25, .125], "blue");
+			this.drawPrim.drawRectangleCenter([.5, -.72], [.25, .125], "red", ndcScale);
 			// lines
 			this.drawPrim.drawLine([.375, -.9125], [.625, -.7875], lineWidth, "red");
 			this.drawPrim.drawLine([.375, -1.0125], [.625, -.8875], lineWidth, "red", ndcScale);
@@ -284,14 +284,14 @@ class MainApp {
 			this.drawPrim.drawCircleO([-.5, .525], .125, lineWidth, "brown");
 			this.drawPrim.drawCircleO([-.5, .475], .125, lineWidth, "brown", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawRectangleO([-.5, .25], [.25, .125], lineWidth, "green");
-			this.drawPrim.drawRectangleO([-.5, 0], [.25, .125], lineWidth, "green", ndcScale);
+			this.drawPrim.drawRectangleCenterO([-.5, .25], [.25, .125], lineWidth, "green");
+			this.drawPrim.drawRectangleCenterO([-.5, 0], [.25, .125], lineWidth, "green", ndcScale);
 			// circles fill
 			this.drawPrim.drawCircle([-.5, -.25], .0625, "brown");
 			this.drawPrim.drawCircle([-.5, -.3], .0625, "brown", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawRectangle([-.5, -.52], [.25, .125], "green");
-			this.drawPrim.drawRectangle([-.5, -.72], [.25, .125], "green", ndcScale);
+			this.drawPrim.drawRectangleCenter([-.5, -.52], [.25, .125], "green");
+			this.drawPrim.drawRectangleCenter([-.5, -.72], [.25, .125], "green", ndcScale);
 			// lines
 			this.drawPrim.drawLine([-.625, -.9125], [-.375, -.7875], lineWidth, "red");
 			this.drawPrim.drawLine([-.625, -1.0125], [-.375, -.8875], lineWidth, "red", ndcScale);
@@ -305,14 +305,14 @@ class MainApp {
 			this.drawPrim.drawCircleO([120, 180], 40, 5, "blue");
 			this.drawPrim.drawCircleO([120, 200], 40, 5, "blue", ndcScale);
 			// rectangles outline
-			this.drawPrim.drawRectangleO([120, 300], [80, 50], 5, "purple");
-			this.drawPrim.drawRectangleO([120, 370], [80, 50], 5, "purple", ndcScale);
+			this.drawPrim.drawRectangleCenterO([120, 300], [80, 50], 5, "purple");
+			this.drawPrim.drawRectangleCenterO([120, 370], [80, 50], 5, "purple", ndcScale);
 			// circles fill
 			this.drawPrim.drawCircle([120, 480], 20, "blue");
 			this.drawPrim.drawCircle([120, 500], 20, "blue", ndcScale);
 			// rectangles fill
-			this.drawPrim.drawRectangle([120, 600], [80, 50], "purple");
-			this.drawPrim.drawRectangle([120, 670], [80, 50], "purple", ndcScale);
+			this.drawPrim.drawRectangleCenter([120, 600], [80, 50], "purple");
+			this.drawPrim.drawRectangleCenter([120, 670], [80, 50], "purple", ndcScale);
 			// lines
 			this.drawPrim.drawLine([70, 720], [170, 780], 5, "red");
 			this.drawPrim.drawLine([70, 760], [170, 820], 5, "red", ndcScale);

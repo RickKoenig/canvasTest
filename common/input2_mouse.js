@@ -12,14 +12,6 @@ class Mouse {
 		this.mbutcur = [0,0,0];
 		this.mbutlast = [0,0,0];
 		this.mbuthold = [0,0,0];
-/*
-        this.mx = 0;
-        this.my = 0;
-        this.lmx = 0;
-        this.lmy = 0;
-        this.dmx = 0;
-        this.dmy = 0;
-*/
 		this.mxy = vec2.create();
 		this.lmxy = vec2.create();
 		this.dmxy = vec2.create();
@@ -210,11 +202,7 @@ class Mouse {
 		}
 		this.rawwheeldelta = 0;
 		vec2.sub(this.dmxy, this.mxy, this.lmxy);
-		//this.dmx = this.mx - this.lmx;
-		//this.dmy = this.my - this.lmy;
 		vec2.copy(this.lmxy, this.mxy);
-		//this.lmx = this.mx;
-		//this.lmy = this.my;
 		this.updateMouseStats();
    	}
 }

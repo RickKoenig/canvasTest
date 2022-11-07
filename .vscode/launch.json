@@ -47,6 +47,13 @@
             "webRoot": "${workspaceFolder}"
         },
         {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, test bitmaps",
+            "url": "http://localhost:88/plotter2d/testBitmaps/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "node-terminal",
             "name": "JavaScript Debug Terminal",
             "request": "launch",
