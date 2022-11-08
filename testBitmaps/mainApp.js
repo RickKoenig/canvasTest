@@ -4,9 +4,6 @@
 // TODO: for now, assume 60hz refresh rate
 class MainApp {
 	constructor() {
-
-		this.fixedSize = [800, 600];
-
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
 		this.eles = {}; // keep track of eles in vertical panel
@@ -35,7 +32,15 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.fixedSize = [800, 600];
 		this.useSliders = false;
+		this.rectSize = vec2.create();
+
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.avgFpsObj = new Runavg(500);
 
 		// some rectangle
 		this.sliderstartSize = vec2.fromValues(300, 200);
@@ -45,7 +50,7 @@ class MainApp {
 	}
 
 	#userBuildUI() {
-		// width slider combo
+		// width height slider combo
 		{
 			makeEle(this.vp, "hr");
 			// start width UI
@@ -70,14 +75,14 @@ class MainApp {
 				, (v) => {this.sliderSize[1] = v});
 			// end height UI
 		}
+
 		makeEle(this.vp, "hr");
 		makeEle(this.vp, "button", null, null, "Reset All"
 			, () => {this.widthEle.resetValue(); this.heightEle.resetValue(); }
 		);
 
 		makeEle(this.vp, "hr");
-
-		const ele = makeEle(this.vp, "span", null, "marg", "Use Sliders");
+		const ele = makeEle(this.vp, "span", null, "marg", "Use Sliders, Not mouse");
 		this.eles.checkboxUseSliders = makeEle(ele, "input", "checkboxUseSliders", null, "checkboxUseSliders", null, "checkbox");
 		this.eles.checkboxUseSliders.checked = this.useSliders; // UI checkbox toggle init
 
@@ -86,11 +91,37 @@ class MainApp {
 	}
 
 	#userProc() { // USER:
-		this.useSliders = this.eles.checkboxUseSliders.checked; // UI checkbox toggle init
-		this.rectSize = this.useSliders ? this.sliderSize : this.input.mouse.mxy;
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+
+		// test bitmap
+		this.#drawTestBitmap(this.ctx
+			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
+
+		const mxy = this.input.mouse.mxy;
+		this.useSliders = this.eles.checkboxUseSliders.checked; // poll, UI checkbox toggle use sliders
+		if (this.useSliders) { // rect size is from sliders
+			vec2.copy(this.rectSize, this.sliderSize);
+		} else { // rect size and sliders are from mouse
+			if (this.input.mouse.mbut[0]) {
+				vec2.copy(this.rectSize, mxy);
+				this.widthEle.setValue(mxy[0]);
+				this.heightEle.setValue(mxy[1]);
+			}
+		}
 		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
 		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
 
+		// checker board
 		const checkX = 16;
 		const checkY = 16;
 		for (let j = 0; j < checkY; ++j) {
@@ -107,7 +138,8 @@ class MainApp {
 		this.eles.info.innerText 
 			= "Info: width = " + this.rectSize[0]
 			+ "\nheight = " + this.rectSize[1]
-			+ "\narea = " + area;
+			+ "\narea = " + area
+			+ "\navg fps = " + this.avgFps.toFixed(2);
 	}
 
 	// proc
@@ -123,6 +155,23 @@ class MainApp {
 		 this.#userProc(); // proc and draw
 		// update UI, vertical panel text
 		this.#userUpdateInfo();
+	}
+
+	#drawTestBitmap(ctx, size) {
+		// test bitmaps (ImageData)
+		const width = size[0]
+		const height = size[1];
+		var ab = new ArrayBuffer(width * height * 4);
+		const arr = new Uint8ClampedArray(ab);
+		const arr4 = new Uint32Array(ab);
+		// Fill the array with the some RGBA values
+		for (let i = 0; i < arr4.length; ++i) {
+			arr4[i] = getRandomInt(256*256*256) + 256*256*256*255;
+		}
+		// Initialize a new ImageData object
+		let imageData = new ImageData(arr, size[0], size[1]);
+		// Draw image data to the canvas
+		ctx.putImageData(imageData, 0, 0);
 	}
 }
 
