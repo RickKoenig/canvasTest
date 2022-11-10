@@ -126,7 +126,14 @@ class Plotter2d {
     }
 
 	// given size of window or a fixed size set canvas size
+    static #once;
 	#calcCanvasSize() {
+        if (Plotter2d.#once) {
+            return;
+        }
+        // uncomment to set the canvas size just once
+        // this prevents the screen from refreshing
+        //Plotter2d.#once = true; 
         if (this.fixedSize) {
 			// set canvas size to a fixed size
 			this.canvas.width = this.fixedSize[0];

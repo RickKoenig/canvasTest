@@ -8,14 +8,19 @@ class MainApp {
 		this.vp = document.getElementById("verticalPanel");
 		this.eles = {}; // keep track of eles in vertical panel
 
-		// USER before UI built
-		this.#userInit();
-
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
+		// USER before UI built
+		this.#loadBitmaps();
+	}
+
+	// after assets loaded
+	// TODO: promise to learn promises
+	#isloaded() {
+		this.#userInit();
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
 		// only use screen space
@@ -47,6 +52,10 @@ class MainApp {
 		this.sliderSize = vec2.clone(this.sliderstartSize);
 		this.minSize = vec2.create();
 		this.maxSize = vec2.clone(this.fixedSize);
+
+		// bitmaps
+		//this.bm = new Bitmap32(this.ctx, this.fixedSize);
+		this.#initTestBitmaps(this.ctx, this.fixedSize);
 	}
 
 	#userBuildUI() {
@@ -103,10 +112,6 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
-		// test bitmap
-		this.#drawTestBitmap(this.ctx
-			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
-
 		const mxy = this.input.mouse.mxy;
 		this.useSliders = this.eles.checkboxUseSliders.checked; // poll, UI checkbox toggle use sliders
 		if (this.useSliders) { // rect size is from sliders
@@ -118,19 +123,24 @@ class MainApp {
 				this.heightEle.setValue(mxy[1]);
 			}
 		}
-		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
-		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
+		// test bitmap
+		this.#drawTestBitmap(this.ctx
+			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
 
-		// checker board
-		const checkX = 16;
-		const checkY = 16;
-		for (let j = 0; j < checkY; ++j) {
-			for (let i = 0; i < checkX; ++i) {
-				const color = (i & 1) ^ (j & 1) ? "white" : "black";
-				this.drawPrim.drawRectangle([400 + i, 400 + j], [1, 1], color);
+			this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
+			this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
+	
+			// checker board
+			const checkX = 16;
+			const checkY = 16;
+			for (let j = 0; j < checkY; ++j) {
+				for (let i = 0; i < checkX; ++i) {
+					const color = (i & 1) ^ (j & 1) ? "white" : "black";
+					this.drawPrim.drawRectangle([175 + i, 75 + j], [1, 1], color);
+				}
 			}
+	
 		}
-	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
@@ -157,10 +167,76 @@ class MainApp {
 		this.#userUpdateInfo();
 	}
 
-	#drawTestBitmap(ctx, size) {
+	#loadOne() {
+		++this.loadcnt;
+		if (this.loadcnt == this.reqcnt) {
+			// everything is now loaded
+			this.#isloaded();
+		}
+
+	}
+
+	#loadBitmaps() {
+		// TODO: promise to learn promises
+		this.imageNames = ["maptestnck.png", "panel.jpg", "Bark.png"];
+		this.images = {};
+		this.loadcnt = 0;
+		this.reqcnt = this.imageNames.length;
+
+		for (const imgName of this.imageNames) {
+			//console.log(`imgName = ${imgName}`);
+			const idx = imgName.indexOf(".");
+			const shortImg = imgName.slice(0, idx);
+			//console.log(`shortimg = ${shortImg}`);
+
+			const imgEle = new Image();
+			imgEle.src = "../bitmaps/" + imgName;
+			this.images[shortImg] = imgEle;
+			  
+			if (imgEle.complete) {
+				this.#loadOne();
+			} else {
+				imgEle.addEventListener('load', () => {
+					this.#loadOne();
+				})
+				imgEle.addEventListener('error', function() {
+					alert('error');
+				});
+			}
+		}
+	}
+
+	#initTestBitmaps() {
+		// TODO: promise to learn promises
+		this.imageData = {};
+		for (const image in this.images) {
+			console.log(`short name = ${image}`);
+			//this.imageData[image] = this.ctx.getImageData(0, 0, this.images[image].width, this.images[image].height);
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			const img = this.images[image];
+			canvas.width = img.width;
+			canvas.height = img.height;
+			context.drawImage(img, 0, 0 );
+			this.imageData[image] = context.getImageData(0, 0, img.width, img.height);
+		}
+	}
+
+	#drawTestBitmap() {
+		/*
+		var canvas = document.createElement('canvas');
+var context = canvas.getContext('2d');
+var img = document.getElementById('myimg');
+canvas.width = img.width;
+canvas.height = img.height;
+context.drawImage(img, 0, 0 );
+var myData = context.getImageData(0, 0, img.width, img.height);
+*/
+//		const bm = new Bitmap32(ctx, size); // NYI
+
 		// test bitmaps (ImageData)
-		const width = size[0]
-		const height = size[1];
+		const width = this.fixedSize[0]
+		const height = this.fixedSize[1];
 		var ab = new ArrayBuffer(width * height * 4);
 		const arr = new Uint8ClampedArray(ab);
 		const arr4 = new Uint32Array(ab);
@@ -169,9 +245,14 @@ class MainApp {
 			arr4[i] = getRandomInt(256*256*256) + 256*256*256*255;
 		}
 		// Initialize a new ImageData object
-		let imageData = new ImageData(arr, size[0], size[1]);
+		let imageData = new ImageData(arr, this.fixedSize[0], this.fixedSize[1]);
 		// Draw image data to the canvas
-		ctx.putImageData(imageData, 0, 0);
+		this.ctx.putImageData(imageData, 0, 0);
+		
+		this.ctx.putImageData(this.imageData.Bark, 0, 0);
+		this.ctx.putImageData(this.imageData.maptestnck, 512, 0);
+		this.ctx.putImageData(this.imageData.panel, 600, 0);
+		
 	}
 }
 
