@@ -1,10 +1,33 @@
 class Bitmap32 {
-    constructor(ctx, size, uInt8ClampedData) {
-        this.ctx = ctx;
-        this.size = vec2.clone(size);
-        this.data8 = uInt8ClampedData;
-        this.data32 = new Uint32Array(this.data8);
-        //this.imageData = new ImageData(size[0], size[1]);
+	// members:
+	//		size
+	//		uInt8ClampedData
+	//		Uint32Array, mirror of above
+	// built by:
+	//		size, uInt8ClampedData : data init
+	//		size : black init
+	//		<image> : image init
+    constructor(arg1, uInt8ClampedData) {
+		if (Array.isArray(arg1)) { // size and optional uInt8ClampedData
+			this.size = vect2.clone(arg1);
+			let imageData; // TODO: see if this.imageData is better for some methods
+			if (uInt8ClampedData) {
+				imageData = new ImageData(uInt8ClampedData, this.size[0], this.size[1]);
+			} else { // <image>
+				imageData = new ImageData(this.size[0], this.size[1]);
+			}
+			this.data8 = imageData.data;
+			this.data32 = new Uint32Array(this.data8);
+		} else {
+			const image = arg1;
+			const canvas = document.createElement('canvas');
+			canvas.width = image.width;
+			canvas.height = image.height;
+			const ctx = canvas.getContext('2d');
+			this.size = [canvas.width, canvas.height];
+			context.drawImage(image, 0, 0 );
+			this.imageData = ctx.getImageData(0, 0, img.width, img.height);
+		}
     }
 }
 
