@@ -18,8 +18,8 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userLoad() {
-		const imageNames = ["maptestnck.png", "panel.jpg", "Bark.png"];
-		this.#loadBitmaps(imageNames);
+		const imageNames = ["Bark.png", "panel.jpg", "maptestnck.png"];
+		this.#loadImages(imageNames);
 	}
 
 	// after user assets loaded
@@ -112,6 +112,7 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
+		// slider logic
 		const mxy = this.input.mouse.mxy;
 		this.useSliders = this.eles.checkboxUseSliders.checked; // poll, UI checkbox toggle use sliders
 		if (this.useSliders) { // rect size is from sliders
@@ -123,10 +124,11 @@ class MainApp {
 				this.heightEle.setValue(mxy[1]);
 			}
 		}
-		// test bitmap
+		// test bitmaps
 		this.#drawTestBitmaps(this.ctx
 			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
 
+		// some rectangles
 		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
 		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
 
@@ -174,7 +176,7 @@ class MainApp {
 		}
 	}
 
-	#loadBitmaps(imageNames) {
+	#loadImages(imageNames) {
 		// TODO: promise to learn promises
 		this.images = {};
 		this.loadcnt = 0;
@@ -182,11 +184,11 @@ class MainApp {
 
 		for (const imgName of imageNames) {
 			const idx = imgName.indexOf(".");
-			const shortImg = imgName.slice(0, idx);
+			const shortImgName = imgName.slice(0, idx);
 
 			const imgEle = new Image();
 			imgEle.src = "../bitmaps/" + imgName;
-			this.images[shortImg] = imgEle;
+			this.images[shortImgName] = imgEle;
 			  
 			if (imgEle.complete) {
 				this.#loadOneBitmap();
@@ -203,22 +205,65 @@ class MainApp {
 
 	#initTestBitmaps() {
 		// TODO: promise to learn promises
+		const a8 = new Uint8ClampedArray(16);
+		for (let i = 0; i < 16; ++i) {
+			a8[i] = 3 * i;
+		}
+		const ab = a8.buffer;//new ArrayBuffer(16);
+		//ab.
+		const a32 = new Uint32Array(ab);
 		//this.imageData = {};
 		this.bitmapData = {};
-		for (const image in this.images) {
-			console.log(`short name = ${image}`);
-			const canvas = document.createElement('canvas');
+		for (const imageName in this.images) {
+			//console.log(`short name = ${imageName}`);
+			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
+/*			const canvas = document.createElement('canvas');
 			const context = canvas.getContext('2d');
-			const img = this.images[image];
+			const img = this.images[imageName];
 			canvas.width = img.width;
 			canvas.height = img.height;
-			context.drawImage(img, 0, 0 );
-			//this.imageData[image] = context.getImageData(0, 0, img.width, img.height);
+			context.drawImage(img, 0, 0 ); */
+			//this.imageData[imageName] = context.getImageData(0, 0, img.width, img.height); */
 		}
+		this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.colorStrToRGBA("green", .0625));
+		//this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.colorStrToRGBA("yellow"));
+		//this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.color32(255));
+		this.bitmapData["blacky"] = new Bitmap32([200, 150]);
+		const c32blue = Bitmap32.colorStrToRGBA("blue");
+		const c32red = Bitmap32.colorStrToRGBA("red");
+		const c32green = Bitmap32.colorStrToRGBA("green");
+		const c32yellow = Bitmap32.colorStrToRGBA("yellow");
+		const c32pink = Bitmap32.colorStrToRGBA("pink");
+
+		const data = new Uint32Array(
+			[
+				c32blue, c32red, c32green, c32yellow,
+				c32pink, c32pink, c32pink, c32pink,
+				c32yellow, c32red, c32yellow, c32green,
+				c32green, c32pink, c32yellow, c32blue
+			]
+		);
+		this.bitmapData["data"] = new Bitmap32([4, 4]);
+
+
+		let out = Bitmap32.colorStrToRGBA("blue", .75);
+		console.log("std color = '" + out + "'");
+		out = Bitmap32.colorStrToRGBA("rgba(30,40,50,.75)");
+		console.log("std color = '" + out + "'");
+		out = Bitmap32.colorStrToRGBA("#345678");
+		console.log("std color = '" + out + "'");
 	}
 
 	#drawTestBitmaps() {
-		return;
+		let cnt = 0;
+		for (const imageName in this.bitmapData) {
+			let xo = cnt % 3;
+			let yo = Math.floor(cnt / 3);
+			this.ctx.putImageData(this.bitmapData[imageName].imageData, xo * 275, yo * 275);
+			++cnt;
+		}
+	}
+}
 		/*
 		var canvas = document.createElement('canvas');
 var context = canvas.getContext('2d');
@@ -228,6 +273,7 @@ canvas.height = img.height;
 context.drawImage(img, 0, 0 );
 var myData = context.getImageData(0, 0, img.width, img.height);
 */
+/*
 //		const bm = new Bitmap32(ctx, size); // NYI
 
 		// test bitmaps (ImageData)
@@ -250,6 +296,6 @@ var myData = context.getImageData(0, 0, img.width, img.height);
 		this.ctx.putImageData(this.imageData.panel, 600, 0);
 		
 	}
-}
+}*/
 
 const mainApp = new MainApp();
