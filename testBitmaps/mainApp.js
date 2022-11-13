@@ -205,35 +205,19 @@ class MainApp {
 
 	#initTestBitmaps() {
 		// TODO: promise to learn promises
-		const a8 = new Uint8ClampedArray(16);
-		for (let i = 0; i < 16; ++i) {
-			a8[i] = 3 * i;
-		}
-		const ab = a8.buffer;//new ArrayBuffer(16);
-		//ab.
-		const a32 = new Uint32Array(ab);
-		//this.imageData = {};
 		this.bitmapData = {};
 		for (const imageName in this.images) {
-			//console.log(`short name = ${imageName}`);
 			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
-/*			const canvas = document.createElement('canvas');
-			const context = canvas.getContext('2d');
-			const img = this.images[imageName];
-			canvas.width = img.width;
-			canvas.height = img.height;
-			context.drawImage(img, 0, 0 ); */
-			//this.imageData[imageName] = context.getImageData(0, 0, img.width, img.height); */
 		}
-		this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.colorStrToRGBA("green", .0625));
-		//this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.colorStrToRGBA("yellow"));
-		//this.bitmapData["solidColor"] = new Bitmap32([200, 150], Bitmap32.color32(255));
+		this.bitmapData["solidColor"] = new Bitmap32([200, 150], "green");
+		
 		this.bitmapData["blacky"] = new Bitmap32([200, 150]);
-		const c32blue = Bitmap32.colorStrToRGBA("blue");
-		const c32red = Bitmap32.colorStrToRGBA("red");
-		const c32green = Bitmap32.colorStrToRGBA("green");
-		const c32yellow = Bitmap32.colorStrToRGBA("yellow");
-		const c32pink = Bitmap32.colorStrToRGBA("pink");
+		
+		const c32blue = Bitmap32.strToColor32("blue");
+		const c32red = Bitmap32.strToColor32("red");
+		const c32green = Bitmap32.strToColor32("green");
+		const c32yellow = Bitmap32.strToColor32("yellow");
+		const c32pink = Bitmap32.strToColor32("pink");
 
 		const data = new Uint32Array(
 			[
@@ -243,15 +227,7 @@ class MainApp {
 				c32green, c32pink, c32yellow, c32blue
 			]
 		);
-		this.bitmapData["data"] = new Bitmap32([4, 4]);
-
-
-		let out = Bitmap32.colorStrToRGBA("blue", .75);
-		console.log("std color = '" + out + "'");
-		out = Bitmap32.colorStrToRGBA("rgba(30,40,50,.75)");
-		console.log("std color = '" + out + "'");
-		out = Bitmap32.colorStrToRGBA("#345678");
-		console.log("std color = '" + out + "'");
+		this.bitmapData["data"] = new Bitmap32([4, 4], data);
 	}
 
 	#drawTestBitmaps() {
@@ -264,38 +240,5 @@ class MainApp {
 		}
 	}
 }
-		/*
-		var canvas = document.createElement('canvas');
-var context = canvas.getContext('2d');
-var img = document.getElementById('myimg');
-canvas.width = img.width;
-canvas.height = img.height;
-context.drawImage(img, 0, 0 );
-var myData = context.getImageData(0, 0, img.width, img.height);
-*/
-/*
-//		const bm = new Bitmap32(ctx, size); // NYI
-
-		// test bitmaps (ImageData)
-		const width = this.fixedSize[0]
-		const height = this.fixedSize[1];
-		const ab = new ArrayBuffer(width * height * 4);
-		const arr = new Uint8ClampedArray(ab);
-		const arr4 = new Uint32Array(ab);
-		// Fill the array with the some RGBA values
-		for (let i = 0; i < arr4.length; ++i) {
-			arr4[i] = getRandomInt(256*256*256) + 256*256*256*255;
-		}
-		// Initialize a new ImageData object
-		const imageDataRandom = new ImageData(arr, this.fixedSize[0], this.fixedSize[1]);
-		// Draw image data to the canvas
-		this.ctx.putImageData(imageDataRandom, 0, 0);
-		
-		this.ctx.putImageData(this.imageData.Bark, 0, 0);
-		this.ctx.putImageData(this.imageData.maptestnck, 512, 0);
-		this.ctx.putImageData(this.imageData.panel, 600, 0);
-		
-	}
-}*/
 
 const mainApp = new MainApp();
