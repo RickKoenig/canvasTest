@@ -1,4 +1,6 @@
 class Bitmap32 {
+
+	static errorColor = Bitmap32.strToColor32("lightmagenta");
 	// members:
 	//		size : 2d array of dimensions
 	//		imageData : ImageData
@@ -91,4 +93,207 @@ class Bitmap32 {
 				   + b.toString(16).padStart(2, "0") 
 				   + a.toString(16).padStart(2, "0");
 	}
+
+/////////////////////// pixels ////////////////////////////////
+	pointClip(p) { // return 1 if in range of bitmap
+		const x = p[0];
+		const y = p[1];
+		if (x < 0)
+			return 0;
+		if (y < 0)
+			return 0;
+		if (x >= this.size[0])
+			return 0;
+		if (y >= this.size[1])
+			return 0;
+		return 1;
+	}
+
+	fastGetPixel32(p) {
+		return this.data32[p[0] + p[1] * this.size[0]];
+	}
+
+	clipGetPixel32(p) {
+		if (this.pointClip(p)) {
+			return this.data32[p[0] + p[1] * this.size[0]];
+		}
+		return Bitmap32.errorColor;
+	}
+
+	fastPutPixel32(p, color32) {
+		this.data32[p[0] + p[1] * this.size[0]] = color32;
+	}
+
+	clipPutPixel32(p, color32) {
+		if (this.pointClip(p)) {
+			this.data32[p[0] + p[1] * this.size[0]] = color32;
+		}
+	}
+
 }
+
+
+/*
+void clipblit32(const bitmap32* s,struct bitmap32* d,S32 sx,S32 sy,S32 dx,S32 dy,S32 tx,S32 ty)
+{
+	if (bclip32(s,d,&sx,&sy,&dx,&dy,&tx,&ty))
+		fastblit32(s,d,sx,sy,dx,dy,tx,ty);
+}
+
+void fastblit32(const bitmap32* s,struct bitmap32* d,S32 sx,S32 sy,S32 dx,S32 dy,S32 tx,S32 ty)
+{
+	S32 i,j;
+	U32 sinc,dinc;
+	register C32 *sp,*dp;
+	if (tx<=0 || ty<=0)
+		return;
+	sp=s->data+s->size.x*sy+sx;
+	dp=d->data+d->size.x*dy+dx;
+	sinc=s->size.x;
+	dinc=d->size.x;
+	for (j=0;j<ty;j++) {
+		for (i=0;i<tx;i++)
+			dp[i]=sp[i];
+//		memcpy(dp,sp,tx<<2);
+		sp+=sinc;
+		dp+=dinc;
+	}
+}
+
+bool bclip32(const struct bitmap32* s,const struct bitmap32* d,S32* sx,S32* sy,S32* dx,S32* dy,S32* tx,S32* ty)
+{
+	S32 move;
+// trivial check
+	if ((*tx<=0)||(*ty<=0))
+		return false;
+// left source
+	move = s->cliprect.topleft.x - *sx;
+	if (move>0) {
+		*sx += move;
+		*dx += move;
+		*tx -= move;
+	}
+	if (*tx <= 0)
+		return false;
+// left dest
+	move = d->cliprect.topleft.x - *dx;
+	if (move>0) {
+		*sx += move;
+		*dx += move;
+		*tx -= move;
+	}
+	if (*tx <= 0)
+		return false;
+// top source
+	move = s->cliprect.topleft.y - *sy;
+	if (move>0) {
+		*sy += move;
+		*dy += move;
+		*ty -= move;
+	}
+	if (*ty <= 0)
+		return false;
+// top dest
+	move = d->cliprect.topleft.y - *dy;
+	if (move>0) {
+		*sy += move;
+		*dy += move;
+		*ty -= move;
+	}
+	if (*ty <= 0)
+		return false;
+// right source
+	move = (*sx + *tx) - (s->cliprect.topleft.x + s->cliprect.size.x);
+	if (move>0)
+		*tx -= move;
+	if (*tx <= 0)
+		return false;
+// right dest
+	move = (*dx + *tx) - (d->cliprect.topleft.x + d->cliprect.size.x);
+	if (move>0)
+		*tx -= move;
+	if (*tx <= 0)
+		return false;
+// bottom source
+	move = (*sy + *ty) - (s->cliprect.topleft.y + s->cliprect.size.y);
+	if (move>0)
+		*ty -= move;
+	if (*ty <= 0)
+		return false;
+// bottom dest
+	move = (*dy + *ty) - (d->cliprect.topleft.y + d->cliprect.size.y);
+	if (move>0)
+		*ty -= move;
+	if (*ty <= 0)
+		return false;
+	return true;
+}
+
+void fastrect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
+{
+	S32 i,j;
+	U32 dinc;
+	register C32 *dp;
+	register C32 val=color;
+	dp=b32->data+b32->size.x*y0+x0;
+	dinc=b32->size.x;
+	for (j=0;j<sy;j++) {
+		for (i=0;i<sx;i++)
+			dp[i]=val;
+		dp+=dinc;
+	}
+}
+
+void cliprect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
+{
+	if (rclip32(b32,&x0,&y0,&sx,&sy))
+		fastrect32(b32,x0,y0,sx,sy,color);
+}
+
+static U32 rclip32(const struct bitmap32* b,S32* x,S32* y,S32* sx,S32* sy)
+{
+	S32 move;
+// trivial check
+	if (*sx == 0 || *sy == 0)
+		return 0;
+	if (*sx<0) {
+		*sx = - *sx;
+		*x -= *sx;
+	}
+	if (*sy<0) {
+		*sy = - *sy;
+		*y -= *sy;
+	}
+// left
+	move = b->cliprect.topleft.x - *x;
+	if (move>0) {
+		*x += move;
+		*sx -= move;
+	}
+	if (*sx <= 0)
+		return 0;
+// top
+	move = b->cliprect.topleft.y - *y;
+	if (move>0) {
+		*y += move;
+		*sy -= move;
+	}
+	if (*sy <= 0)
+		return 0;
+// right
+	move = (*x + *sx) - (b->cliprect.topleft.x + b->cliprect.size.x);
+	if (move>0)
+		*sx -= move;
+	if (*sx <= 0)
+		return 0;
+// bottom
+	move = (*y + *sy) - (b->cliprect.topleft.y + b->cliprect.size.y);
+	if (move>0)
+		*sy -= move;
+	if (*sy <= 0)
+		return 0;
+	return 1;
+}
+
+
+*/
