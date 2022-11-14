@@ -1,6 +1,6 @@
 class Bitmap32 {
 
-	static errorColor = Bitmap32.strToColor32("lightmagenta");
+	static errorColor = Bitmap32.strToColor32("hotpink");
 	// members:
 	//		size : 2d array of dimensions
 	//		imageData : ImageData
@@ -94,8 +94,12 @@ class Bitmap32 {
 				   + a.toString(16).padStart(2, "0");
 	}
 
-/////////////////////// pixels ////////////////////////////////
-	pointClip(p) { // return 1 if in range of bitmap
+	clear(color32) {
+		this.data32.fill(color32);
+	}
+
+	/////////////////////// pixels ////////////////////////////////
+	pointClip(p) { // return 1 if in range of bitmap, 0 otherwise
 		const x = p[0];
 		const y = p[1];
 		if (x < 0)
@@ -109,29 +113,100 @@ class Bitmap32 {
 		return 1;
 	}
 
-	fastGetPixel32(p) {
+	fastGetPixel(p) {
 		return this.data32[p[0] + p[1] * this.size[0]];
 	}
 
-	clipGetPixel32(p) {
+	clipGetPixel(p) {
 		if (this.pointClip(p)) {
 			return this.data32[p[0] + p[1] * this.size[0]];
 		}
 		return Bitmap32.errorColor;
 	}
 
-	fastPutPixel32(p, color32) {
+	fastPutPixel(p, color32) {
 		this.data32[p[0] + p[1] * this.size[0]] = color32;
 	}
 
-	clipPutPixel32(p, color32) {
+	clipPutPixel(p, color32) {
 		if (this.pointClip(p)) {
 			this.data32[p[0] + p[1] * this.size[0]] = color32;
 		}
 	}
 
+	/////////////////////// rectangles ////////////////////////////////
+	rectClip(p, s) { // return 1 if there's a rectangle to draw, 0 otherwise
+		// update p and s if clipped
+		// trivial check
+		if (s[0] == 0 || s[1] == 0) { // no size
+			return 0;
+		}
+		// negative sizes
+		if (s[0] < 0) {
+			s[0] = -s[0];
+			p[0] -= s[0];
+		}
+		if (s[1] < 0) {
+			s[1] = -s[1];
+			p[1] -= s[1];
+		}
+		// left
+		let move = -p[0];
+		if (move > 0) {
+			p[0] += move;
+			s[0] -= move;
+		}
+		if (s[0] <= 0) {
+			return 0;
+		}
+		// top
+		move = -p[1];
+		if (move > 0) {
+			p[1] += move;
+			s[1] -= move;
+		}
+		if (s[1] <= 0) {
+			return 0;
+		}
+		// right
+		move = p[0] + s[0] - this.size[0];
+		if (move > 0) {
+			s[0] -= move;
+		}
+		if (s[0] <= 0) {
+			return 0;
+		}
+		// bottom
+		move = p[1] + s[1] - this.size[1];
+		if (move > 0) {
+			s[1] -= move;
+		}
+		if (s[1] <= 0) {
+			return 0;
+		}
+		return 1;
+	}
+
+	fastRect(p, s, color32) {
+		//this.clipPutPixel(p, color32);
+		//return;
+		//this.data32.fill(0);
+		for (let j = p[1]; j < p[1] + s[1]; ++j) {
+			const start = p[0] + j * this.size[0];
+			const end = start + s[0];
+			this.data32.fill(color32, start, end);
+		}
+	}
 }
 
+/*void cliprect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
+{
+	if (rclip32(b32,&x0,&y0,&sx,&sy))
+		fastrect32(b32,x0,y0,sx,sy,color);
+}
+
+
+*/
 
 /*
 void clipblit32(const bitmap32* s,struct bitmap32* d,S32 sx,S32 sy,S32 dx,S32 dy,S32 tx,S32 ty)
@@ -228,72 +303,5 @@ bool bclip32(const struct bitmap32* s,const struct bitmap32* d,S32* sx,S32* sy,S
 		return false;
 	return true;
 }
-
-void fastrect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
-{
-	S32 i,j;
-	U32 dinc;
-	register C32 *dp;
-	register C32 val=color;
-	dp=b32->data+b32->size.x*y0+x0;
-	dinc=b32->size.x;
-	for (j=0;j<sy;j++) {
-		for (i=0;i<sx;i++)
-			dp[i]=val;
-		dp+=dinc;
-	}
-}
-
-void cliprect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
-{
-	if (rclip32(b32,&x0,&y0,&sx,&sy))
-		fastrect32(b32,x0,y0,sx,sy,color);
-}
-
-static U32 rclip32(const struct bitmap32* b,S32* x,S32* y,S32* sx,S32* sy)
-{
-	S32 move;
-// trivial check
-	if (*sx == 0 || *sy == 0)
-		return 0;
-	if (*sx<0) {
-		*sx = - *sx;
-		*x -= *sx;
-	}
-	if (*sy<0) {
-		*sy = - *sy;
-		*y -= *sy;
-	}
-// left
-	move = b->cliprect.topleft.x - *x;
-	if (move>0) {
-		*x += move;
-		*sx -= move;
-	}
-	if (*sx <= 0)
-		return 0;
-// top
-	move = b->cliprect.topleft.y - *y;
-	if (move>0) {
-		*y += move;
-		*sy -= move;
-	}
-	if (*sy <= 0)
-		return 0;
-// right
-	move = (*x + *sx) - (b->cliprect.topleft.x + b->cliprect.size.x);
-	if (move>0)
-		*sx -= move;
-	if (*sx <= 0)
-		return 0;
-// bottom
-	move = (*y + *sy) - (b->cliprect.topleft.y + b->cliprect.size.y);
-	if (move>0)
-		*sy -= move;
-	if (*sy <= 0)
-		return 0;
-	return 1;
-}
-
 
 */

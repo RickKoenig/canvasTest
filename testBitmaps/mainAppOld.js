@@ -27,6 +27,8 @@ class MainApp {
 	// TODO: promise to learn promises
 	#userInit() {
 		this.fixedSize = [1024, 768];
+		this.useSliders = false;
+		this.rectSize = vec2.create();
 
 		// measure frame rate
 		this.fps;
@@ -34,9 +36,14 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
+		// some rectangle
+		this.sliderstartSize = vec2.fromValues(300, 200);
+		this.sliderSize = vec2.clone(this.sliderstartSize);
+		this.minSize = vec2.create();
+		this.maxSize = vec2.clone(this.fixedSize);
+
 		// bitmaps
 		this.#initTestBitmaps(this.ctx, this.fixedSize);
-
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
 		// only use screen space
@@ -52,6 +59,42 @@ class MainApp {
 	}
 
 	#userBuildUI() {
+		// width height slider combo
+		{
+			makeEle(this.vp, "hr");
+			// start width UI
+			let label = "Width";
+			let min = this.minSize[0];
+			let max = this.maxSize[0];
+			let start = this.sliderstartSize[0];
+			let step = 1;
+			let precision = 0;
+			this.widthEle = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (v) => {this.sliderSize[0] = v});
+			// end width UI
+
+			// start height UI
+			label = "Height";
+			min = this.minSize[1];
+			max = this.maxSize[1];
+			start = this.sliderstartSize[1];
+			step = 1;
+			precision = 0;
+			this.heightEle = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (v) => {this.sliderSize[1] = v});
+			// end height UI
+		}
+
+		makeEle(this.vp, "hr");
+		makeEle(this.vp, "button", null, null, "Reset All"
+			, () => {this.widthEle.resetValue(); this.heightEle.resetValue(); }
+		);
+
+		makeEle(this.vp, "hr");
+		const ele = makeEle(this.vp, "span", null, "marg", "Use Sliders, Not mouse");
+		this.eles.checkboxUseSliders = makeEle(ele, "input", "checkboxUseSliders", null, "checkboxUseSliders", null, "checkbox");
+		this.eles.checkboxUseSliders.checked = this.useSliders; // UI checkbox toggle init
+
 		makeEle(this.vp, "hr");
 		this.eles.info = makeEle(this.vp, "pre", null, "Info");
 	}
@@ -69,9 +112,25 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
+		// slider logic
+		const mxy = this.input.mouse.mxy;
+		this.useSliders = this.eles.checkboxUseSliders.checked; // poll, UI checkbox toggle use sliders
+		if (this.useSliders) { // rect size is from sliders
+			vec2.copy(this.rectSize, this.sliderSize);
+		} else { // rect size and sliders are from mouse
+			if (this.input.mouse.mbut[0]) {
+				vec2.copy(this.rectSize, mxy);
+				this.widthEle.setValue(mxy[0]);
+				this.heightEle.setValue(mxy[1]);
+			}
+		}
 		// test bitmaps
 		this.#drawTestBitmaps(this.ctx
 			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
+
+		// some rectangles
+		this.drawPrim.drawRectangle([0, 0], this.rectSize, "red");
+		this.drawPrim.drawRectangleO([0, 0], this.rectSize, 5);
 
 		// checker board
 		const checkX = 16;
@@ -86,9 +145,12 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
+		const area = this.rectSize[0] * this.rectSize[1];
 		this.eles.info.innerText 
-		= "Avg fps = " + this.avgFps.toFixed(2)
-		+ "\nMouse = (" + this.input.mouse.mxy[0] + "," + this.input.mouse.mxy[1] + ")";
+			= "Info: width = " + this.rectSize[0]
+			+ "\nheight = " + this.rectSize[1]
+			+ "\narea = " + area
+			+ "\navg fps = " + this.avgFps.toFixed(2);
 	}
 
 	// proc
@@ -144,7 +206,7 @@ class MainApp {
 	#initTestBitmaps() {
 		// TODO: promise to learn promises
 		this.bitmapData = {};
-		for (const imageName in this.images) { // already fully loaded images
+		for (const imageName in this.images) {
 			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
 		}
 		this.bitmapData["solidColor"] = new Bitmap32([200, 150], "green");
@@ -165,46 +227,15 @@ class MainApp {
 				c32green, c32pink, c32yellow, c32blue
 			]
 		);
-		this.bitmapData["data"] = new Bitmap32([4, 4], data); // from uint32 data
-		this.bitmapData["putPixel"] = new Bitmap32([128, 64]); // Bitmap32 test draw methods
+		this.bitmapData["data"] = new Bitmap32([4, 4], data);
 	}
 
 	#drawTestBitmaps() {
-		// update putPixel test bitmap
-		/*
-		// pixel test
-		{
-			const bm = this.bitmapData["putPixel"];
-			const mt = this.bitmapData["maptestnck"];
-			//const color = this.bitmapData["maptestnck"].clipGetPixel(this.input.mouse.mxy);
-			const srcPos = vec2.create();
-			const offset = vec2.fromValues(-60, -40);
-			for (let j = 0; j < 10; ++j) {
-				for (let i = 0; i < 10; ++i) {
-					vec2.add(srcPos, this.input.mouse.mxy, offset);
-					vec2.add(srcPos, srcPos, [i, j]);
-					bm.clipPutPixel([20 + i, 10 + j], mt.clipGetPixel(srcPos));
-				}
-			}
-		}
-		*/
-		// rectangle test
-		{
-			const bm = this.bitmapData["putPixel"];
-			const p = vec2.create();
-			vec2.add(p, this.input.mouse.mxy, [-10, -10]);
-			const s = vec2.fromValues(30, 20);
-			bm.clear(Bitmap32.strToColor32("blue"));
-			bm.fastRect(p, s, Bitmap32.strToColor32("red"));
-			//console.log("done bm rect");
-		}
-		// draw all bitmaps in a grid onto canvas
 		let cnt = 0;
 		for (const imageName in this.bitmapData) {
 			let xo = cnt % 3;
 			let yo = Math.floor(cnt / 3);
-			this.ctx.putImageData(this.bitmapData[imageName].imageData
-				, xo * 275 + 10, yo * 275 + 10);
+			this.ctx.putImageData(this.bitmapData[imageName].imageData, xo * 275, yo * 275);
 			++cnt;
 		}
 	}
