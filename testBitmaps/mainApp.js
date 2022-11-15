@@ -171,10 +171,11 @@ class MainApp {
 
 	#drawTestBitmaps() {
 		// update putPixel test bitmap
-		/*
+		const dest = this.bitmapData["putPixel"];
+		dest.fill(Bitmap32.strToColor32("green"));
+		
 		// pixel test
 		{
-			const bm = this.bitmapData["putPixel"];
 			const mt = this.bitmapData["maptestnck"];
 			//const color = this.bitmapData["maptestnck"].clipGetPixel(this.input.mouse.mxy);
 			const srcPos = vec2.create();
@@ -183,22 +184,25 @@ class MainApp {
 				for (let i = 0; i < 10; ++i) {
 					vec2.add(srcPos, this.input.mouse.mxy, offset);
 					vec2.add(srcPos, srcPos, [i, j]);
-					bm.clipPutPixel([20 + i, 10 + j], mt.clipGetPixel(srcPos));
+					dest.clipPutPixel([100 + i, 10 + j], mt.clipGetPixel(srcPos));
 				}
 			}
 		}
-		*/
+		
 		// rectangle test
-		{
-			const bm = this.bitmapData["putPixel"];
-			const p = vec2.create();
-			vec2.add(p, this.input.mouse.mxy, [-10, -10]);
-			const s = vec2.fromValues(30, 20);
-			bm.clear(Bitmap32.strToColor32("blue"));
-			bm.fastRect(p, s, Bitmap32.strToColor32("red"));
-			//console.log("done bm rect");
-		}
-		// draw all bitmaps in a grid onto canvas
+		const p = vec2.create();
+		vec2.add(p, this.input.mouse.mxy, [-200, -200]);
+		const s = vec2.fromValues(30, 20);
+		dest.clipRect(p, s, Bitmap32.strToColor32("red"));
+		//console.log("done dest rect");
+		
+		// blit test
+		Bitmap32.clipBlit(this.bitmapData.maptestnck, [0,0]
+			,dest, [this.input.mouse.mxy[0] - 100, this.input.mouse.mxy[1] - 100]
+			, this.bitmapData.maptestnck.size);
+
+			
+		// draw all bitmaps in a grid onto the canvas
 		let cnt = 0;
 		for (const imageName in this.bitmapData) {
 			let xo = cnt % 3;

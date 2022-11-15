@@ -14,12 +14,10 @@ class Bitmap32 {
 	
     constructor(arg1, arg2) {
 		let isfillColor32 = false;
-		let isData32 = false;
 		let fillColor32 = Bitmap32.color32(); // opaque black is the default
 		if (Array.isArray(arg1)) { // size and optional uInt8ClampedData or color32
 			this.size = vec2.clone(arg1);
 			if (arg2 && arg2.constructor == Uint32Array) { // data
-				isData32 = true;
 				const u32a = arg2;
 				const ab = u32a.buffer;
 				const u8a = new Uint8ClampedArray(ab);
@@ -94,7 +92,7 @@ class Bitmap32 {
 				   + a.toString(16).padStart(2, "0");
 	}
 
-	clear(color32) {
+	fill(color32) {
 		this.data32.fill(color32);
 	}
 
@@ -102,15 +100,19 @@ class Bitmap32 {
 	pointClip(p) { // return 1 if in range of bitmap, 0 otherwise
 		const x = p[0];
 		const y = p[1];
-		if (x < 0)
-			return 0;
-		if (y < 0)
-			return 0;
-		if (x >= this.size[0])
-			return 0;
-		if (y >= this.size[1])
-			return 0;
-		return 1;
+		if (x < 0) {
+			return false;
+		}
+		if (y < 0) {
+			return false;
+		}
+		if (x >= this.size[0]) {
+			return false;
+		}
+		if (y >= this.size[1]) {
+			return false;
+		}
+		return true;
 	}
 
 	fastGetPixel(p) {
@@ -135,11 +137,11 @@ class Bitmap32 {
 	}
 
 	/////////////////////// rectangles ////////////////////////////////
-	rectClip(p, s) { // return 1 if there's a rectangle to draw, 0 otherwise
+	rectangleClip(p, s) { // return 1 if there's a rectangle to draw, 0 otherwise
 		// update p and s if clipped
 		// trivial check
 		if (s[0] == 0 || s[1] == 0) { // no size
-			return 0;
+			return false;
 		}
 		// negative sizes
 		if (s[0] < 0) {
@@ -157,7 +159,7 @@ class Bitmap32 {
 			s[0] -= move;
 		}
 		if (s[0] <= 0) {
-			return 0;
+			return false;
 		}
 		// top
 		move = -p[1];
@@ -166,7 +168,7 @@ class Bitmap32 {
 			s[1] -= move;
 		}
 		if (s[1] <= 0) {
-			return 0;
+			return false;
 		}
 		// right
 		move = p[0] + s[0] - this.size[0];
@@ -174,7 +176,7 @@ class Bitmap32 {
 			s[0] -= move;
 		}
 		if (s[0] <= 0) {
-			return 0;
+			return false;
 		}
 		// bottom
 		move = p[1] + s[1] - this.size[1];
@@ -182,126 +184,137 @@ class Bitmap32 {
 			s[1] -= move;
 		}
 		if (s[1] <= 0) {
-			return 0;
+			return false;
 		}
-		return 1;
+		return true;
 	}
 
 	fastRect(p, s, color32) {
-		//this.clipPutPixel(p, color32);
-		//return;
-		//this.data32.fill(0);
+		let start = p[0] + p[1] * this.size[0];
 		for (let j = p[1]; j < p[1] + s[1]; ++j) {
-			const start = p[0] + j * this.size[0];
 			const end = start + s[0];
 			this.data32.fill(color32, start, end);
+			start += this.size[0];
 		}
 	}
-}
 
-/*void cliprect32(const struct bitmap32* b32,S32 x0,S32 y0,S32 sx,S32 sy,C32 color)
-{
-	if (rclip32(b32,&x0,&y0,&sx,&sy))
-		fastrect32(b32,x0,y0,sx,sy,color);
-}
+	clipRect(pOrig, sOrig, color32) {
+		const p = vec2.clone(pOrig);
+		const s = vec2.clone(sOrig);
+		if (this.rectangleClip(p, s)) {
+			this.fastRect(p, s, color32);
+		}
+	}
 
+	/////////////////////// blits ////////////////////////////////
+	static fastBlit(sourceBM, sourceStart, destBM, destStart, xferSize) {
+		const srcData = sourceBM.data32;
+		const srcSize = sourceBM.size;
+		const dstData = destBM.data32;
+		const dstSize = destBM.size;
+		
+		let srcIdx = sourceStart[0] + srcSize[0] * sourceStart[1];
+		let dstIdx = destStart[0] + dstSize[0] * destStart[1];
+		const xferSizeX = xferSize[0];
+		try {
+			for (let j = 0; j < xferSize[1]; ++j) {
+				dstData.set(srcData.subarray(srcIdx, srcIdx + xferSizeX), dstIdx);
+				srcIdx += srcSize[0];
+				dstIdx += dstSize[0];
+			}
+		} catch(e) {
+			console.log("Blit Error: " + e);
+		}
+	}
 
-*/
+	static clipBlit(sourceBM, sourceStartOrig, destBM, destStartOrig, xferSizeOrig) {
+		const sourceStart = vec2.clone(sourceStartOrig);
+		const destStart = vec2.clone(destStartOrig);
+		const xferSize = vec2.clone(xferSizeOrig);
+		if (Bitmap32.blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize)) {
+			this.fastBlit(sourceBM, sourceStart, destBM, destStart, xferSize);
+		}
+	}
 
-/*
-void clipblit32(const bitmap32* s,struct bitmap32* d,S32 sx,S32 sy,S32 dx,S32 dy,S32 tx,S32 ty)
-{
-	if (bclip32(s,d,&sx,&sy,&dx,&dy,&tx,&ty))
-		fastblit32(s,d,sx,sy,dx,dy,tx,ty);
-}
-
-void fastblit32(const bitmap32* s,struct bitmap32* d,S32 sx,S32 sy,S32 dx,S32 dy,S32 tx,S32 ty)
-{
-	S32 i,j;
-	U32 sinc,dinc;
-	register C32 *sp,*dp;
-	if (tx<=0 || ty<=0)
-		return;
-	sp=s->data+s->size.x*sy+sx;
-	dp=d->data+d->size.x*dy+dx;
-	sinc=s->size.x;
-	dinc=d->size.x;
-	for (j=0;j<ty;j++) {
-		for (i=0;i<tx;i++)
-			dp[i]=sp[i];
-//		memcpy(dp,sp,tx<<2);
-		sp+=sinc;
-		dp+=dinc;
+	static blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize) {
+		// trivial check
+		if ((xferSize[0] <= 0) || (xferSize[1] <= 0)) {
+			return false;
+		}
+		const srcSize = sourceBM.size;
+		const dstSize = destBM.size;
+		// left source
+		let move = -sourceStart[0];
+		if (move > 0) {
+			sourceStart[0] += move;
+			destStart[0] += move;
+			xferSize[0] -= move;
+		}
+		if (xferSize[0] <= 0) {
+			return false;
+		}
+		// left dest
+		move = -destStart[0];
+		if (move > 0) {
+			sourceStart[0] += move;
+			destStart[0] += move;
+			xferSize[0] -= move;
+		}
+		if (xferSize[0] <= 0) {
+			return false;
+		}
+		// top source
+		move = -sourceStart[1];
+		if (move > 0) {
+			sourceStart[1] += move;
+			destStart[1] += move;
+			xferSize[1] -= move;
+		}
+		if (xferSize[1] <= 0) {
+			return false;
+		}
+		// top dest
+		move = -destStart[1];
+		if (move > 0) {
+			sourceStart[1] += move;
+			destStart[1] += move;
+			xferSize[1] -= move;
+		}
+		if (xferSize[1] <= 0) {
+			return false;
+		}
+		// right source
+		move = sourceStart[0] + xferSize[0] - srcSize[0];
+		if (move > 0) {
+			xferSize[0] -= move;
+		}
+		if (xferSize[0] <= 0) {
+			return false;
+		}
+		// right dest
+		move = destStart[0] + xferSize[0] - dstSize[0];
+		if (move > 0) {
+			xferSize[0] -= move;
+		}
+		if (xferSize[0] <= 0) {
+			return false;
+		}
+		// bottom source
+		move = sourceStart[1] + xferSize[1] - srcSize[1];
+		if (move > 0) {
+			xferSize[1] -= move;
+		}
+		if (xferSize[1] <= 0) {
+			return false;
+		}
+		// bottom dest
+		move = destStart[1] + xferSize[1] - dstSize[1];
+		if (move > 0) {
+			xferSize[1] -= move;
+		}
+		if (xferSize[1] <= 0) {
+			return false;
+		}
+		return true;
 	}
 }
-
-bool bclip32(const struct bitmap32* s,const struct bitmap32* d,S32* sx,S32* sy,S32* dx,S32* dy,S32* tx,S32* ty)
-{
-	S32 move;
-// trivial check
-	if ((*tx<=0)||(*ty<=0))
-		return false;
-// left source
-	move = s->cliprect.topleft.x - *sx;
-	if (move>0) {
-		*sx += move;
-		*dx += move;
-		*tx -= move;
-	}
-	if (*tx <= 0)
-		return false;
-// left dest
-	move = d->cliprect.topleft.x - *dx;
-	if (move>0) {
-		*sx += move;
-		*dx += move;
-		*tx -= move;
-	}
-	if (*tx <= 0)
-		return false;
-// top source
-	move = s->cliprect.topleft.y - *sy;
-	if (move>0) {
-		*sy += move;
-		*dy += move;
-		*ty -= move;
-	}
-	if (*ty <= 0)
-		return false;
-// top dest
-	move = d->cliprect.topleft.y - *dy;
-	if (move>0) {
-		*sy += move;
-		*dy += move;
-		*ty -= move;
-	}
-	if (*ty <= 0)
-		return false;
-// right source
-	move = (*sx + *tx) - (s->cliprect.topleft.x + s->cliprect.size.x);
-	if (move>0)
-		*tx -= move;
-	if (*tx <= 0)
-		return false;
-// right dest
-	move = (*dx + *tx) - (d->cliprect.topleft.x + d->cliprect.size.x);
-	if (move>0)
-		*tx -= move;
-	if (*tx <= 0)
-		return false;
-// bottom source
-	move = (*sy + *ty) - (s->cliprect.topleft.y + s->cliprect.size.y);
-	if (move>0)
-		*ty -= move;
-	if (*ty <= 0)
-		return false;
-// bottom dest
-	move = (*dy + *ty) - (d->cliprect.topleft.y + d->cliprect.size.y);
-	if (move>0)
-		*ty -= move;
-	if (*ty <= 0)
-		return false;
-	return true;
-}
-
-*/
