@@ -19,8 +19,9 @@ class Plotter2d {
         this.center[1] = this.startCenter[1];
     }
 
-    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize) {
+    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize, once) {
         this.canvas = canvas;
+        this.once = once; // update dimensions only once if true (no clearing)
         this.ctx = ctx; // only used for trans and scale, save and restore
         this.vp = vp;
         this.fixedSize = fixedSize;
@@ -133,7 +134,7 @@ class Plotter2d {
         }
         // uncomment to set the canvas size just once
         // this prevents the screen from refreshing
-        //Plotter2d.#once = true; 
+        Plotter2d.#once = this.once; 
         if (this.fixedSize) {
 			// set canvas size to a fixed size
 			this.canvas.width = this.fixedSize[0];

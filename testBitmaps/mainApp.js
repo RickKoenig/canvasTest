@@ -18,7 +18,11 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userLoad() {
-		const imageNames = ["Bark.png", "panel.jpg", "maptestnck.png"];
+		const imageNames = [
+			"Bark.png",
+			"panel.jpg",
+			"maptestnck.png"
+		];
 		this.#loadImages(imageNames);
 	}
 
@@ -35,12 +39,12 @@ class MainApp {
 		this.avgFpsObj = new Runavg(500);
 
 		// bitmaps
-		this.#initTestBitmaps(this.ctx, this.fixedSize);
+		this.#initBitmaps(this.ctx, this.fixedSize);
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
 		// only use screen space
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize); 
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize, true); 
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 
@@ -52,8 +56,9 @@ class MainApp {
 	}
 
 	#userBuildUI() {
+		// info bar
 		makeEle(this.vp, "hr");
-		this.eles.info = makeEle(this.vp, "pre", null, "Info");
+		this.eles.info = makeEle(this.vp, "pre", null, null, "Info");
 	}
 
 	#userProc() { // USER:
@@ -70,18 +75,7 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
 		// test bitmaps
-		this.#drawTestBitmaps(this.ctx
-			, [this.plotter2dCanvas.width, this.plotter2dCanvas.height]);
-
-		// checker board
-		const checkX = 16;
-		const checkY = 16;
-		for (let j = 0; j < checkY; ++j) {
-			for (let i = 0; i < checkX; ++i) {
-				const color = (i & 1) ^ (j & 1) ? "white" : "black";
-				this.drawPrim.drawRectangle([175 + i, 75 + j], [1, 1], color);
-			}
-		}
+		this.#drawBitmaps();
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -106,6 +100,8 @@ class MainApp {
 		this.#userUpdateInfo();
 	}
 
+	// async load images
+	// TODO: promise to learn promises
 	#loadOneBitmap() {
 		++this.loadcnt;
 		if (this.loadcnt == this.reqcnt) {
@@ -115,7 +111,6 @@ class MainApp {
 	}
 
 	#loadImages(imageNames) {
-		// TODO: promise to learn promises
 		this.images = {};
 		this.loadcnt = 0;
 		this.reqcnt = imageNames.length;
@@ -141,35 +136,60 @@ class MainApp {
 		}
 	}
 
-	#initTestBitmaps() {
-		// TODO: promise to learn promises
+	#initBitmaps() {
 		this.bitmapData = {};
-		for (const imageName in this.images) { // already fully loaded images
+		// draw everything here before sent to canvas
+		this.bitmapData.backgnd = new Bitmap32(this.fixedSize);
+
+		 // already fully loaded images
+		 for (const imageName in this.images) {
 			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
 		}
-		this.bitmapData["solidColor"] = new Bitmap32([200, 150], "green");
-		
-		this.bitmapData["blacky"] = new Bitmap32([200, 150]);
-		
-		const c32blue = Bitmap32.strToColor32("blue");
-		const c32red = Bitmap32.strToColor32("red");
-		const c32green = Bitmap32.strToColor32("green");
-		const c32yellow = Bitmap32.strToColor32("yellow");
-		const c32pink = Bitmap32.strToColor32("pink");
+		this.bitmapData.putPixel = new Bitmap32([128, 64]); // Bitmap32 test draw methods
 
-		const data = new Uint32Array(
-			[
-				c32blue, c32red, c32green, c32yellow,
-				c32pink, c32pink, c32pink, c32pink,
-				c32yellow, c32red, c32yellow, c32green,
-				c32green, c32pink, c32yellow, c32blue
-			]
-		);
-		this.bitmapData["data"] = new Bitmap32([4, 4], data); // from uint32 data
-		this.bitmapData["putPixel"] = new Bitmap32([128, 64]); // Bitmap32 test draw methods
+		// create a bitmap32 with some text on it
+		const cvs = document.createElement('canvas');
+		cvs.width = 192;
+		cvs.height = 64;
+		const ctxTxt = cvs.getContext("2d");
+		// clear ctx to color
+		ctxTxt.fillStyle = "blue";
+		ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
+		const centerX = cvs.width / 2;
+		const centerY = cvs.height / 2;
+		ctxTxt.textAlign = 'center';
+		ctxTxt.translate(centerX, centerY);
+		const textSize = 50;
+		ctxTxt.scale(textSize, textSize);
+		const adjCenter = .33; // hmm..
+		ctxTxt.translate(-centerX, -centerY + adjCenter);
+		ctxTxt.font = 'bold 1px serif';
+		ctxTxt.fillStyle = "yellow"; 
+		const text = "Hello!";
+		ctxTxt.fillText(text, centerX, centerY);
+		this.bitmapData.text = new Bitmap32([cvs.width, cvs.height]
+			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
+
+		// random bitmap
+		this.bitmapData.random = new Bitmap32([64, this.fixedSize[1]], "yellow");
+		const rndData = this.bitmapData.random.data32;
+		for (let i = 0; i < rndData.length; ++i) {
+			rndData[i] = 0xff000000 + 0x1000000 * Math.random();
+		}
+
+		// list all bitmaps created
+		const keys = Object.keys(this.bitmapData);
+		console.log("num bitmaps = " + keys.length);
+		for (let bmName of keys) {
+			const bm = this.bitmapData[bmName];
+			console.log("bitmap " 
+				+ bmName.padEnd(12," ") 
+				+ "dim (" + bm.size[0].toString().padStart(4) 
+				+ "," + bm.size[1].toString().padStart(4) + ")");
+		}
 	}
 
-	#drawTestBitmaps() {
+	#drawBitmaps() {
 		// update putPixel test bitmap
 		const dest = this.bitmapData["putPixel"];
 		dest.fill(Bitmap32.strToColor32("green"));
@@ -201,16 +221,21 @@ class MainApp {
 			,dest, [this.input.mouse.mxy[0] - 100, this.input.mouse.mxy[1] - 100]
 			, this.bitmapData.maptestnck.size);
 
-			
-		// draw all bitmaps in a grid onto the canvas
-		let cnt = 0;
-		for (const imageName in this.bitmapData) {
-			let xo = cnt % 3;
-			let yo = Math.floor(cnt / 3);
-			this.ctx.putImageData(this.bitmapData[imageName].imageData
-				, xo * 275 + 10, yo * 275 + 10);
-			++cnt;
-		}
+		// draw putPixel bm onto background
+		const mainBM = this.bitmapData.backgnd;
+		Bitmap32.clipBlit(dest, [0, 0]
+			, mainBM, [0, 0]
+			, dest.size);
+		// draw text bm onto background
+		Bitmap32.clipBlit(this.bitmapData.random, [0, 0]
+			, mainBM, [600, 0]
+			, this.bitmapData.random.size);
+		// draw text bm onto background
+		Bitmap32.clipBlit(this.bitmapData.text, [0, 0]
+			, mainBM, [300, 0]
+			, this.bitmapData.text.size);
+		// draw background onto canvas
+		this.ctx.putImageData(mainBM.imageData, 0, 0);
 	}
 }
 

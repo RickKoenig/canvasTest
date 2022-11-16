@@ -9,6 +9,7 @@ class Bitmap32 {
 	// constructor args:
 	//		<image> : image init, note: image should already be loaded
 	//		size, Uint32Array : data init from color32 values AABBGGRR (native)
+	//		size, Uint8ClampedArray : data init from R G B A  R G B A ... values (native)
 	//		size, color32 : uint32 solid color32 value AABBGGRR like 0xff008000 (native) OR a colorString value like "green"
 	//		size : default color solid opaque black, 0xff000000
 	
@@ -17,11 +18,16 @@ class Bitmap32 {
 		let fillColor32 = Bitmap32.color32(); // opaque black is the default
 		if (Array.isArray(arg1)) { // size and optional uInt8ClampedData or color32
 			this.size = vec2.clone(arg1);
-			if (arg2 && arg2.constructor == Uint32Array) { // data
+			if (arg2 && arg2.constructor == Uint32Array) { // data32
 				const u32a = arg2;
 				const ab = u32a.buffer;
 				const u8a = new Uint8ClampedArray(ab);
 				this.imageData = new ImageData(u8a, this.size[0], this.size[1]);
+			} else if (arg2 && arg2.constructor == Uint8ClampedArray) { // data8
+					const u8a = arg2;
+					const ab = u8a.buffer;
+					const u32a = new Uint32Array(ab);
+					this.imageData = new ImageData(u8a, this.size[0], this.size[1]);
 			} else { // no data so set fillColor32 to opaque black or arg2
 				isfillColor32 = true; // fill after we have data32
 				this.imageData = new ImageData(this.size[0], this.size[1]);
