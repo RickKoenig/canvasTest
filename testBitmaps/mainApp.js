@@ -30,6 +30,7 @@ class MainApp {
 	// before user UI built
 	// TODO: promise to learn promises
 	#userInit() {
+		this.triSize = 10; // alignment triangles
 		this.fixedSize = [1024, 768];
 
 		// measure frame rate
@@ -46,7 +47,7 @@ class MainApp {
 		// only use screen space
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize, true); 
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		this.drawPrim = new DrawPrimitives(this.plotter2d);
+		//this.drawPrim = new DrawPrimitives(this.plotter2d);
 
 		// USER build UI
 		this.#userBuildUI();
@@ -59,6 +60,17 @@ class MainApp {
 		// info bar
 		makeEle(this.vp, "hr");
 		this.eles.info = makeEle(this.vp, "pre", null, null, "Info");
+		makeEle(this.vp, "hr");
+		{
+			const label = "Separation";
+			const min = this.triSize * 2 - 1;
+			const max = 300;
+			const start = 32;
+			const step = 1;
+			//const precision = 1;
+			const callback = (v) => {this.separation = v};
+			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
+		}
 	}
 
 	#userProc() { // USER:
@@ -82,7 +94,8 @@ class MainApp {
 	#userUpdateInfo() {
 		this.eles.info.innerText 
 		= "Avg fps = " + this.avgFps.toFixed(2)
-		+ "\nMouse = (" + this.input.mouse.mxy[0] + "," + this.input.mouse.mxy[1] + ")";
+		+ "\nMouse = (" + this.input.mouse.mxy[0] 
+		+ "," + this.input.mouse.mxy[1] + ")";
 	}
 
 	// proc
@@ -139,13 +152,15 @@ class MainApp {
 	#initBitmaps() {
 		this.bitmapData = {};
 		// draw everything here before sent to canvas
+		const backgndColor = Bitmap32.strToColor32("lightblue");
 		this.bitmapData.backgnd = new Bitmap32(this.fixedSize);
 
-		 // already fully loaded images
-		 for (const imageName in this.images) {
+		// already fully loaded images
+		for (const imageName in this.images) {
 			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
 		}
-		this.bitmapData.putPixel = new Bitmap32([128, 64]); // Bitmap32 test draw methods
+		// Bitmap32 test draw methods
+		this.bitmapData.drawTest = new Bitmap32([128, 64]); 
 
 		// create a bitmap32 with some text on it
 		const cvs = document.createElement('canvas');
@@ -171,11 +186,18 @@ class MainApp {
 			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
 
 		// random bitmap
-		this.bitmapData.random = new Bitmap32([64, this.fixedSize[1]], "yellow");
+		this.bitmapData.random = new Bitmap32([400, this.fixedSize[1] - this.triSize]);
 		const rndData = this.bitmapData.random.data32;
 		for (let i = 0; i < rndData.length; ++i) {
 			rndData[i] = 0xff000000 + 0x1000000 * Math.random();
 		}
+
+		// triangle bitmap used for cross eye alignment
+		this.bitmapData.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], backgndColor);
+		for (let i = 0; i < this.triSize; ++i) {
+			this.bitmapData.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32.strToColor32("black"));
+		}
+	
 
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapData);
@@ -190,8 +212,14 @@ class MainApp {
 	}
 
 	#drawBitmaps() {
-		// update putPixel test bitmap
-		const dest = this.bitmapData["putPixel"];
+
+		// start with background
+		const mainBM = this.bitmapData.backgnd;
+		mainBM.fill(Bitmap32.strToColor32("lightblue"));
+
+		this.bit
+		// update drawTest test bitmap
+		const dest = this.bitmapData["drawTest"];
 		dest.fill(Bitmap32.strToColor32("green"));
 		
 		// pixel test
@@ -221,19 +249,34 @@ class MainApp {
 			,dest, [this.input.mouse.mxy[0] - 100, this.input.mouse.mxy[1] - 100]
 			, this.bitmapData.maptestnck.size);
 
-		// draw putPixel bm onto background
-		const mainBM = this.bitmapData.backgnd;
+		// draw drawTest bm onto background
 		Bitmap32.clipBlit(dest, [0, 0]
 			, mainBM, [0, 0]
 			, dest.size);
-		// draw text bm onto background
+
+		// draw random bm onto background
 		Bitmap32.clipBlit(this.bitmapData.random, [0, 0]
 			, mainBM, [600, 0]
 			, this.bitmapData.random.size);
+
 		// draw text bm onto background
 		Bitmap32.clipBlit(this.bitmapData.text, [0, 0]
 			, mainBM, [300, 0]
 			, this.bitmapData.text.size);
+
+		// draw alignment triangles onto backgound
+		const leftTriX = mainBM.size[0] / 2 - Math.floor((1 + this.separation) / 2);
+		const rightTriX = mainBM.size[0] / 2 + Math.floor(this.separation / 2);
+		Bitmap32.clipBlit(this.bitmapData.triangle, [0,0]
+			, mainBM, [leftTriX - this.bitmapData.triangle.size[1] + 1, mainBM.size[1] - this.bitmapData.triangle.size[1]]
+			, this.bitmapData.triangle.size);
+		Bitmap32.clipBlit(this.bitmapData.triangle, [0,0]
+			, mainBM, [rightTriX - this.bitmapData.triangle.size[1] + 1, mainBM.size[1] - this.bitmapData.triangle.size[1]]
+			, this.bitmapData.triangle.size);
+
+		mainBM.clipPutPixel(this.input.mouse.mxy, Bitmap32.strToColor32("red"));
+
+
 		// draw background onto canvas
 		this.ctx.putImageData(mainBM.imageData, 0, 0);
 	}
