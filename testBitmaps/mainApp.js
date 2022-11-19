@@ -63,11 +63,10 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		{
 			const label = "Separation";
-			const min = this.triSize * 2 - 1;
+			const min = this.triSize * 2;
 			const max = 300;
-			const start = 32;
+			const start = 100;
 			const step = 1;
-			//const precision = 1;
 			const callback = (v) => {this.separation = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
@@ -150,60 +149,63 @@ class MainApp {
 	}
 
 	#initBitmaps() {
-		this.bitmapData = {};
+		this.bitmapList = {};
 		// draw everything here before sent to canvas
 		const backgndColor = Bitmap32.strToColor32("lightblue");
-		this.bitmapData.backgnd = new Bitmap32(this.fixedSize);
+		this.bitmapList.backgnd = new Bitmap32(this.fixedSize);
 
 		// already fully loaded images
 		for (const imageName in this.images) {
-			this.bitmapData[imageName] = new Bitmap32(this.images[imageName]);
+			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 form
 		}
-		// Bitmap32 test draw methods
-		this.bitmapData.drawTest = new Bitmap32([128, 64]); 
 
 		// create a bitmap32 with some text on it
-		const cvs = document.createElement('canvas');
-		cvs.width = 192;
-		cvs.height = 64;
-		const ctxTxt = cvs.getContext("2d");
-		// clear ctx to color
-		ctxTxt.fillStyle = "blue";
-		ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
-		const centerX = cvs.width / 2;
-		const centerY = cvs.height / 2;
-		ctxTxt.textAlign = 'center';
-		ctxTxt.translate(centerX, centerY);
-		const textSize = 50;
-		ctxTxt.scale(textSize, textSize);
-		const adjCenter = .33; // hmm..
-		ctxTxt.translate(-centerX, -centerY + adjCenter);
-		ctxTxt.font = 'bold 1px serif';
-		ctxTxt.fillStyle = "yellow"; 
-		const text = "Hello!";
-		ctxTxt.fillText(text, centerX, centerY);
-		this.bitmapData.text = new Bitmap32([cvs.width, cvs.height]
-			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
+		{
+			const cvs = document.createElement('canvas');
+			cvs.width = 192;
+			cvs.height = 64;
+			const ctxTxt = cvs.getContext("2d");
+			// clear ctx to color
+			ctxTxt.fillStyle = "blue";
+			ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
+			const centerX = cvs.width / 2;
+			const centerY = cvs.height / 2;
+			ctxTxt.textAlign = 'center';
+			ctxTxt.translate(centerX, centerY);
+			const textSize = 50;
+			ctxTxt.scale(textSize, textSize);
+			const adjCenter = .33; // hmm..
+			ctxTxt.translate(-centerX, -centerY + adjCenter);
+			ctxTxt.font = 'bold 1px serif';
+			ctxTxt.fillStyle = "yellow"; 
+			const text = "Hello!";
+			ctxTxt.fillText(text, centerX, centerY);
+			this.bitmapList.text = new Bitmap32([cvs.width, cvs.height]
+				, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
+		}
+
+		// image bitmap
+		this.bitmapList.image = new Bitmap32([600, 400], "green");
 
 		// random bitmap
-		this.bitmapData.random = new Bitmap32([400, this.fixedSize[1] - this.triSize]);
-		const rndData = this.bitmapData.random.data32;
+		this.bitmapList.random = new Bitmap32([400, this.fixedSize[1] - this.triSize]);
+		const rndData = this.bitmapList.random.data32;
 		for (let i = 0; i < rndData.length; ++i) {
 			rndData[i] = 0xff000000 + 0x1000000 * Math.random();
 		}
 
 		// triangle bitmap used for cross eye alignment
-		this.bitmapData.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], backgndColor);
+		this.bitmapList.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], backgndColor);
 		for (let i = 0; i < this.triSize; ++i) {
-			this.bitmapData.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32.strToColor32("black"));
+			this.bitmapList.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32.strToColor32("black"));
 		}
 	
 
 		// list all bitmaps created
-		const keys = Object.keys(this.bitmapData);
+		const keys = Object.keys(this.bitmapList);
 		console.log("num bitmaps = " + keys.length);
 		for (let bmName of keys) {
-			const bm = this.bitmapData[bmName];
+			const bm = this.bitmapList[bmName];
 			console.log("bitmap " 
 				+ bmName.padEnd(12," ") 
 				+ "dim (" + bm.size[0].toString().padStart(4) 
@@ -212,67 +214,48 @@ class MainApp {
 	}
 
 	#drawBitmaps() {
-
 		// start with background
-		const mainBM = this.bitmapData.backgnd;
+		const mainBM = this.bitmapList.backgnd;
 		mainBM.fill(Bitmap32.strToColor32("lightblue"));
 
-		this.bit
-		// update drawTest test bitmap
-		const dest = this.bitmapData["drawTest"];
-		dest.fill(Bitmap32.strToColor32("green"));
-		
-		// pixel test
-		{
-			const mt = this.bitmapData["maptestnck"];
-			//const color = this.bitmapData["maptestnck"].clipGetPixel(this.input.mouse.mxy);
-			const srcPos = vec2.create();
-			const offset = vec2.fromValues(-60, -40);
-			for (let j = 0; j < 10; ++j) {
-				for (let i = 0; i < 10; ++i) {
-					vec2.add(srcPos, this.input.mouse.mxy, offset);
-					vec2.add(srcPos, srcPos, [i, j]);
-					dest.clipPutPixel([100 + i, 10 + j], mt.clipGetPixel(srcPos));
-				}
-			}
-		}
-		
-		// rectangle test
-		const p = vec2.create();
-		vec2.add(p, this.input.mouse.mxy, [-200, -200]);
-		const s = vec2.fromValues(30, 20);
-		dest.clipRect(p, s, Bitmap32.strToColor32("red"));
-		//console.log("done dest rect");
-		
-		// blit test
-		Bitmap32.clipBlit(this.bitmapData.maptestnck, [0,0]
-			,dest, [this.input.mouse.mxy[0] - 100, this.input.mouse.mxy[1] - 100]
-			, this.bitmapData.maptestnck.size);
 
-		// draw drawTest bm onto background
-		Bitmap32.clipBlit(dest, [0, 0]
-			, mainBM, [0, 0]
-			, dest.size);
 
 		// draw random bm onto background
-		Bitmap32.clipBlit(this.bitmapData.random, [0, 0]
-			, mainBM, [600, 0]
-			, this.bitmapData.random.size);
+		for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
+			Bitmap32.clipBlit(this.bitmapList.random, [0, 0]
+				, mainBM, [x, 0]
+				, [this.separation, this.bitmapList.random.size[1]]);
+		}
 
+		let drawText;
+		drawText = true;
 		// draw text bm onto background
-		Bitmap32.clipBlit(this.bitmapData.text, [0, 0]
-			, mainBM, [300, 0]
-			, this.bitmapData.text.size);
+		if (drawText) {
+			Bitmap32.clipBlit(this.bitmapList.text, [0, 0]
+				, mainBM, [10, 10]
+				, this.bitmapList.text.size);
+		}
+
+		let drawImage;
+		drawImage = true;
+		const imageOffset = [(this.fixedSize[0] - this.bitmapList.image.size[0]) / 2
+		, (this.fixedSize[1] - this.bitmapList.image.size[1]) / 2];
+		// draw image onto background
+		if (drawImage) {
+			Bitmap32.clipBlit(this.bitmapList.image, [0, 0]
+				, mainBM, imageOffset
+				, this.bitmapList.image.size);
+		}
 
 		// draw alignment triangles onto backgound
 		const leftTriX = mainBM.size[0] / 2 - Math.floor((1 + this.separation) / 2);
 		const rightTriX = mainBM.size[0] / 2 + Math.floor(this.separation / 2);
-		Bitmap32.clipBlit(this.bitmapData.triangle, [0,0]
-			, mainBM, [leftTriX - this.bitmapData.triangle.size[1] + 1, mainBM.size[1] - this.bitmapData.triangle.size[1]]
-			, this.bitmapData.triangle.size);
-		Bitmap32.clipBlit(this.bitmapData.triangle, [0,0]
-			, mainBM, [rightTriX - this.bitmapData.triangle.size[1] + 1, mainBM.size[1] - this.bitmapData.triangle.size[1]]
-			, this.bitmapData.triangle.size);
+		Bitmap32.clipBlit(this.bitmapList.triangle, [0,0]
+			, mainBM, [leftTriX - this.bitmapList.triangle.size[1] + 1, mainBM.size[1] - this.bitmapList.triangle.size[1]]
+			, this.bitmapList.triangle.size);
+		Bitmap32.clipBlit(this.bitmapList.triangle, [0,0]
+			, mainBM, [rightTriX - this.bitmapList.triangle.size[1] + 1, mainBM.size[1] - this.bitmapList.triangle.size[1]]
+			, this.bitmapList.triangle.size);
 
 		mainBM.clipPutPixel(this.input.mouse.mxy, Bitmap32.strToColor32("red"));
 
