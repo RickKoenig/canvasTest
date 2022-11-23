@@ -32,6 +32,8 @@ class MainApp {
 	#userInit() {
 		this.triSize = 10; // alignment triangles
 		this.fixedSize = [1024, 768];
+		this.maxSep = 300;
+		this.startDepthMul = 4;
 
 		// measure frame rate
 		this.fps;
@@ -64,12 +66,24 @@ class MainApp {
 		{
 			const label = "Separation";
 			const min = this.triSize * 2;
-			const max = 300;
-			const start = 100;
+			const max = this.maxSep;
+			const start = 150;
 			const step = 1;
 			const callback = (v) => {this.separation = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
+		{
+			const label = "Depth Mult";
+			const min = -32;
+			const max = 32;
+			const start = this.startDepthMul;
+			const step = 1;
+			const callback = (v) => {this.depthMul = v};
+			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
+		}
+		const ele = makeEle(this.vp, "span", "marg", null, "Show image");
+		this.eles.showImage = makeEle(ele, "input", "checkboxParametric", null, "checkboxParametric", null, "checkbox");
+		//this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
 	}
 
 	#userProc() { // USER:
@@ -162,22 +176,22 @@ class MainApp {
 		// create a bitmap32 with some text on it
 		{
 			const cvs = document.createElement('canvas');
-			cvs.width = 192;
-			cvs.height = 64;
+			cvs.width = 650;
+			cvs.height = 300;
 			const ctxTxt = cvs.getContext("2d");
 			// clear ctx to color
-			ctxTxt.fillStyle = "blue";
+			ctxTxt.fillStyle = "black";
 			ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
 			const centerX = cvs.width / 2;
 			const centerY = cvs.height / 2;
 			ctxTxt.textAlign = 'center';
 			ctxTxt.translate(centerX, centerY);
-			const textSize = 50;
+			const textSize = 250;
 			ctxTxt.scale(textSize, textSize);
 			const adjCenter = .33; // hmm..
 			ctxTxt.translate(-centerX, -centerY + adjCenter);
 			ctxTxt.font = 'bold 1px serif';
-			ctxTxt.fillStyle = "yellow"; 
+			ctxTxt.fillStyle = "lightgreen"; 
 			const text = "Hello!";
 			ctxTxt.fillText(text, centerX, centerY);
 			this.bitmapList.text = new Bitmap32([cvs.width, cvs.height]
@@ -185,10 +199,15 @@ class MainApp {
 		}
 
 		// image bitmap
-		this.bitmapList.image = new Bitmap32([600, 400], "green");
+		const mainBM = this.bitmapList.backgnd;
+		this.bitmapList.image = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize], "black");
+		this.bitmapList.image.clipRect([200,400],[500,300],Bitmap32.strToColor32("lightgreen"));
+		Bitmap32.clipBlit(this.bitmapList.text, [0 ,0]
+			, this.bitmapList.image, [100, 0]
+			, this.bitmapList.text.size);
 
 		// random bitmap
-		this.bitmapList.random = new Bitmap32([400, this.fixedSize[1] - this.triSize]);
+		this.bitmapList.random = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
 		const rndData = this.bitmapList.random.data32;
 		for (let i = 0; i < rndData.length; ++i) {
 			rndData[i] = 0xff000000 + 0x1000000 * Math.random();
@@ -219,16 +238,59 @@ class MainApp {
 		mainBM.fill(Bitmap32.strToColor32("lightblue"));
 
 
-
+		let drawRandom1 = false;
 		// draw random bm onto background
-		for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
-			Bitmap32.clipBlit(this.bitmapList.random, [0, 0]
-				, mainBM, [x, 0]
-				, [this.separation, this.bitmapList.random.size[1]]);
+		if (drawRandom1) {
+			for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
+				Bitmap32.clipBlit(this.bitmapList.random, [0, 0]
+					, mainBM, [x, 0]
+					, [this.separation, this.bitmapList.random.size[1]]);
+			}
 		}
 
-		let drawText;
-		drawText = true;
+		let drawRandom2 = true;
+		// draw random bm onto background
+		if (drawRandom2) {
+			const randBM = this.bitmapList.random;
+			//const randBMdata = randBM.data32;
+			const mainBMdata = mainBM.data32;
+			let destIdxRight = this.separation;
+			let destIdxStart = this.separation;
+			const image = this.bitmapList.image;
+			const imageData = image.data32;
+			let imageIdx = 0;
+			let imageIdxStart = imageIdx;
+
+			// copy 1 copy of random pattern to left to start things off
+			Bitmap32.clipBlit(randBM, [0, 0]
+				, mainBM, [0, 0]
+				, [this.separation, randBM.size[1]]);
+			// now copy pixel by pixel by an offset function/image
+			const greenVal = Bitmap32.strToColor32("lightgreen");
+			const blueVal = Bitmap32.strToColor32("blue");
+			for (let j = 0; j < randBM.size[1]; ++j) {
+				for (let i = 0; i < mainBM.size[0] - this.separation; ++i) {
+					const valCol = imageData[imageIdx++];
+					let depth = 0;
+					if (greenVal == valCol) {
+						depth = this.depthMul;
+					}
+					const dist = this.separation + depth;
+					const destIdxLeft = destIdxRight - dist
+					mainBMdata[destIdxRight++] =  mainBMdata[destIdxLeft];
+					//mainBMdata[destIdxRight++] =  depth ? greenVal : blueVal /*mainBMdata[destIdxLeft]*/;
+				}
+				destIdxStart += mainBM.size[0];
+				destIdxRight = destIdxStart;
+				imageIdxStart += image.size[0];
+				imageIdx = imageIdxStart;
+			}
+
+				//mainBMdata[mainBM.size[0] * 5 + 4] = Bitmap32.color32();
+			
+		}
+
+		let drawText = false;
 		// draw text bm onto background
 		if (drawText) {
 			Bitmap32.clipBlit(this.bitmapList.text, [0, 0]
@@ -236,10 +298,8 @@ class MainApp {
 				, this.bitmapList.text.size);
 		}
 
-		let drawImage;
-		drawImage = true;
-		const imageOffset = [(this.fixedSize[0] - this.bitmapList.image.size[0]) / 2
-		, (this.fixedSize[1] - this.bitmapList.image.size[1]) / 2];
+		let drawImage = this.eles.showImage.checked;
+		const imageOffset = [this.separation, 0];
 		// draw image onto background
 		if (drawImage) {
 			Bitmap32.clipBlit(this.bitmapList.image, [0, 0]
@@ -257,7 +317,17 @@ class MainApp {
 			, mainBM, [rightTriX - this.bitmapList.triangle.size[1] + 1, mainBM.size[1] - this.bitmapList.triangle.size[1]]
 			, this.bitmapList.triangle.size);
 
-		mainBM.clipPutPixel(this.input.mouse.mxy, Bitmap32.strToColor32("red"));
+		// very simple cursor
+		const p = this.input.mouse.mxy;
+		const p0 = [p[0] - 2, p[1]];
+		const p1 = [p[0] + 2, p[1]];
+		const p2 = [p[0], p[1] - 2];
+		const p3 = [p[0], p[1] + 2];
+		const colRed = Bitmap32.strToColor32("red");
+		mainBM.clipPutPixel(p0, colRed);
+		mainBM.clipPutPixel(p1, colRed);
+		mainBM.clipPutPixel(p2, colRed);
+		mainBM.clipPutPixel(p3, colRed);
 
 
 		// draw background onto canvas

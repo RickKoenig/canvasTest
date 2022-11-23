@@ -16,7 +16,7 @@ class Bitmap32 {
     constructor(arg1, arg2) {
 		let isfillColor32 = false;
 		let fillColor32 = Bitmap32.color32(); // opaque black is the default
-		if (Array.isArray(arg1)) { // size and optional uInt8ClampedData or color32
+		if (Array.isArray(arg1) || arg1.constructor == Float32Array) { // size and optional uInt8ClampedData or color32
 			this.size = vec2.clone(arg1);
 			if (arg2 && arg2.constructor == Uint32Array) { // data32
 				const u32a = arg2;
