@@ -41,6 +41,8 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
+		this.backgndColor = Bitmap32.strToColor32("lightblue");
+
 		// bitmaps
 		this.#initBitmaps(this.ctx, this.fixedSize);
 
@@ -62,6 +64,7 @@ class MainApp {
 		// info bar
 		makeEle(this.vp, "hr");
 		this.eles.info = makeEle(this.vp, "pre", null, null, "Info");
+		// separation
 		makeEle(this.vp, "hr");
 		{
 			const label = "Separation";
@@ -72,6 +75,7 @@ class MainApp {
 			const callback = (v) => {this.separation = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
+		// depth
 		{
 			const label = "Depth Mult";
 			const min = -32;
@@ -81,9 +85,9 @@ class MainApp {
 			const callback = (v) => {this.depthMul = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
-		const ele = makeEle(this.vp, "span", "marg", null, "Show image");
-		this.eles.showImage = makeEle(ele, "input", "checkboxParametric", null, "checkboxParametric", null, "checkbox");
-		//this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
+		// show depth map checkbox
+		const ele = makeEle(this.vp, "span", "marg", null, "Show depth map");
+		this.eles.showDepthmap = makeEle(ele, "input", null, null, null, null, "checkbox");
 	}
 
 	#userProc() { // USER:
@@ -165,60 +169,59 @@ class MainApp {
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
-		const backgndColor = Bitmap32.strToColor32("lightblue");
-		this.bitmapList.backgnd = new Bitmap32(this.fixedSize);
+		this.bitmapList.mainBM = new Bitmap32(this.fixedSize);
 
-		// already fully loaded images
+		// already fully loaded images, copy to bitmap list
 		for (const imageName in this.images) {
-			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 form
+			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
 		}
 
 		// create a bitmap32 with some text on it
-		{
-			const cvs = document.createElement('canvas');
-			cvs.width = 650;
-			cvs.height = 300;
-			const ctxTxt = cvs.getContext("2d");
-			// clear ctx to color
-			ctxTxt.fillStyle = "black";
-			ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
-			const centerX = cvs.width / 2;
-			const centerY = cvs.height / 2;
-			ctxTxt.textAlign = 'center';
-			ctxTxt.translate(centerX, centerY);
-			const textSize = 250;
-			ctxTxt.scale(textSize, textSize);
-			const adjCenter = .33; // hmm..
-			ctxTxt.translate(-centerX, -centerY + adjCenter);
-			ctxTxt.font = 'bold 1px serif';
-			ctxTxt.fillStyle = "lightgreen"; 
-			const text = "Hello!";
-			ctxTxt.fillText(text, centerX, centerY);
-			this.bitmapList.text = new Bitmap32([cvs.width, cvs.height]
-				, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
-		}
+		const textString = "Hello!";
+		// make a 2D context for the text
+		const cvs = document.createElement('canvas');
+		cvs.width = 650;
+		cvs.height = 300;
+		const ctxTxt = cvs.getContext("2d");
+		// clear ctx to color
+		ctxTxt.fillStyle = "black";
+		ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
+		// text position and size
+		const centerX = cvs.width / 2;
+		const centerY = cvs.height / 2;
+		ctxTxt.textAlign = 'center';
+		ctxTxt.translate(centerX, centerY);
+		const textSize = 250;
+		ctxTxt.scale(textSize, textSize);
+		const adjCenter = .33; // hmm..
+		ctxTxt.translate(-centerX, -centerY + adjCenter);
+		// text font and color
+		ctxTxt.font = 'bold 1px serif';
+		ctxTxt.fillStyle = "lightgreen"; 
+		ctxTxt.fillText(textString, centerX, centerY);
+		const textBM = new Bitmap32([cvs.width, cvs.height]
+			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
 
-		// image bitmap
-		const mainBM = this.bitmapList.backgnd;
-		this.bitmapList.image = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize], "black");
-		this.bitmapList.image.clipRect([200,400],[500,300],Bitmap32.strToColor32("lightgreen"));
-		Bitmap32.clipBlit(this.bitmapList.text, [0 ,0]
-			, this.bitmapList.image, [100, 0]
-			, this.bitmapList.text.size);
+		// depth bitmap
+		const mainBM = this.bitmapList.mainBM;
+		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize], "black");
+		this.bitmapList.depthmap.clipRect([200,400],[500,300],Bitmap32.strToColor32("lightgreen"));
+		Bitmap32.clipBlit(textBM, [0 ,0]
+			, this.bitmapList.depthmap, [100, 0]
+			, textBM.size);
 
-		// random bitmap
-		this.bitmapList.random = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
-		const rndData = this.bitmapList.random.data32;
-		for (let i = 0; i < rndData.length; ++i) {
-			rndData[i] = 0xff000000 + 0x1000000 * Math.random();
+		// pattern bitmap, for now use random
+		this.bitmapList.pattern = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
+		const patData = this.bitmapList.pattern.data32;
+		for (let i = 0; i < patData.length; ++i) {
+			patData[i] = 0xff000000 + 0x1000000 * Math.random();
 		}
 
 		// triangle bitmap used for cross eye alignment
-		this.bitmapList.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], backgndColor);
+		this.bitmapList.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], this.backgndColor);
 		for (let i = 0; i < this.triSize; ++i) {
 			this.bitmapList.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32.strToColor32("black"));
 		}
-	
 
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapList);
@@ -234,43 +237,40 @@ class MainApp {
 
 	#drawBitmaps() {
 		// start with background
-		const mainBM = this.bitmapList.backgnd;
-		mainBM.fill(Bitmap32.strToColor32("lightblue"));
+		const mainBM = this.bitmapList.mainBM;
+		mainBM.fill(this.backgndColor);
 
-
-		let drawRandom1 = false;
-		// draw random bm onto background
-		if (drawRandom1) {
+		let patternToStereo = false;
+		// draw pattern bm onto background, no depth
+		if (patternToStereo) {
 			for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
-				Bitmap32.clipBlit(this.bitmapList.random, [0, 0]
+				Bitmap32.clipBlit(this.bitmapList.pattern, [0, 0]
 					, mainBM, [x, 0]
-					, [this.separation, this.bitmapList.random.size[1]]);
+					, [this.separation, this.bitmapList.pattern.size[1]]);
 			}
 		}
 
-		let drawRandom2 = true;
+		let patternAndDepthToStereo = true;
 		// draw random bm onto background
-		if (drawRandom2) {
-			const randBM = this.bitmapList.random;
-			//const randBMdata = randBM.data32;
+		if (patternAndDepthToStereo) {
+			const patternBM = this.bitmapList.pattern;
 			const mainBMdata = mainBM.data32;
 			let destIdxRight = this.separation;
 			let destIdxStart = this.separation;
-			const image = this.bitmapList.image;
-			const imageData = image.data32;
+			const depthmap = this.bitmapList.depthmap;
+			const depthmapdata = depthmap.data32;
 			let imageIdx = 0;
 			let imageIdxStart = imageIdx;
 
-			// copy 1 copy of random pattern to left to start things off
-			Bitmap32.clipBlit(randBM, [0, 0]
+			// copy 1 copy of pattern to left to start things off
+			Bitmap32.clipBlit(patternBM, [0, 0]
 				, mainBM, [0, 0]
-				, [this.separation, randBM.size[1]]);
-			// now copy pixel by pixel by an offset function/image
+				, [this.separation, patternBM.size[1]]);
+			// now copy pixel by pixel by a depth bitmap
 			const greenVal = Bitmap32.strToColor32("lightgreen");
-			const blueVal = Bitmap32.strToColor32("blue");
-			for (let j = 0; j < randBM.size[1]; ++j) {
+			for (let j = 0; j < patternBM.size[1]; ++j) {
 				for (let i = 0; i < mainBM.size[0] - this.separation; ++i) {
-					const valCol = imageData[imageIdx++];
+					const valCol = depthmapdata[imageIdx++];
 					let depth = 0;
 					if (greenVal == valCol) {
 						depth = this.depthMul;
@@ -282,32 +282,21 @@ class MainApp {
 				}
 				destIdxStart += mainBM.size[0];
 				destIdxRight = destIdxStart;
-				imageIdxStart += image.size[0];
+				imageIdxStart += depthmap.size[0];
 				imageIdx = imageIdxStart;
 			}
-
-				//mainBMdata[mainBM.size[0] * 5 + 4] = Bitmap32.color32();
-			
 		}
 
-		let drawText = false;
-		// draw text bm onto background
-		if (drawText) {
-			Bitmap32.clipBlit(this.bitmapList.text, [0, 0]
-				, mainBM, [10, 10]
-				, this.bitmapList.text.size);
+		// draw pattern to mainBM
+		let drawDepthmap = this.eles.showDepthmap.checked;
+		if (drawDepthmap) {
+			const patternOffset = [this.separation, 0];
+			Bitmap32.clipBlit(this.bitmapList.depthmap, [0, 0]
+				, mainBM, patternOffset
+				, this.bitmapList.depthmap.size);
 		}
 
-		let drawImage = this.eles.showImage.checked;
-		const imageOffset = [this.separation, 0];
-		// draw image onto background
-		if (drawImage) {
-			Bitmap32.clipBlit(this.bitmapList.image, [0, 0]
-				, mainBM, imageOffset
-				, this.bitmapList.image.size);
-		}
-
-		// draw alignment triangles onto backgound
+		// draw alignment triangles to backgound
 		const leftTriX = mainBM.size[0] / 2 - Math.floor((1 + this.separation) / 2);
 		const rightTriX = mainBM.size[0] / 2 + Math.floor(this.separation / 2);
 		Bitmap32.clipBlit(this.bitmapList.triangle, [0,0]
@@ -329,8 +318,7 @@ class MainApp {
 		mainBM.clipPutPixel(p2, colRed);
 		mainBM.clipPutPixel(p3, colRed);
 
-
-		// draw background onto canvas
+		// finally draw background to canvas
 		this.ctx.putImageData(mainBM.imageData, 0, 0);
 	}
 }

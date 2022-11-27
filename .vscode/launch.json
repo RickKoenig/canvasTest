@@ -49,8 +49,8 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, test bitmaps",
-            "url": "http://localhost:88/plotter2d/testBitmaps/index.html",
+            "name": "Launch Chrome against localhost, Stereo Grams",
+            "url": "http://localhost:88/plotter2d/stereogram/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
