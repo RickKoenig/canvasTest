@@ -68,9 +68,9 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		{
 			const label = "Separation";
-			const min = this.triSize * 2;
+			const min = 50;//this.triSize * 2;
 			const max = this.maxSep;
-			const start = 150;
+			const start = 200;
 			const step = 1;
 			const callback = (v) => {this.separation = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
@@ -88,6 +88,7 @@ class MainApp {
 		// show depth map checkbox
 		const ele = makeEle(this.vp, "span", "marg", null, "Show depth map");
 		this.eles.showDepthmap = makeEle(ele, "input", null, null, null, null, "checkbox");
+		//this.eles.showDepthmap.checked = true;
 	}
 
 	#userProc() { // USER:
@@ -166,6 +167,47 @@ class MainApp {
 		}
 	}
 
+	#makeTextBM(depthColor32) {
+		// create a bitmap32 with some text on it
+		const textString = "Hello!";
+		// make a 2D context for the text
+		const cvs = document.createElement('canvas');
+		cvs.width = 650;
+		cvs.height = 180;
+		const ctxTxt = cvs.getContext("2d");
+		// clear ctx to color
+		ctxTxt.fillStyle = "black"; // background color
+		ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
+		// text position and size
+		const centerX = cvs.width / 2;
+		const centerY = cvs.height / 2;
+		ctxTxt.textAlign = 'center';
+		ctxTxt.translate(centerX, centerY);
+		const textSize = 225;
+		ctxTxt.scale(textSize, textSize);
+		const adjCenter = .33; // hmm..
+		ctxTxt.translate(-centerX, -centerY + adjCenter);
+		// text font and color
+		ctxTxt.font = 'bold 1px serif';
+		ctxTxt.fillStyle = Bitmap32.color32ToStr(depthColor32); // text color
+		ctxTxt.fillText(textString, centerX, centerY);
+		const textBM = new Bitmap32([cvs.width, cvs.height]
+			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
+		return textBM;
+	}
+
+	// -128 to 127
+	#depthToColor32(depth) {
+		let r = depth;
+		if (depth < 0) {
+			r = depth + 256;
+		}
+		let g = (r * 16) & 0xff;
+		let b = (r * 16) >> 4;
+		const col32 = Bitmap32.color32(r, g, b);
+		return col32;
+	}
+
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
@@ -176,40 +218,42 @@ class MainApp {
 			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
 		}
 
-		// create a bitmap32 with some text on it
-		const textString = "Hello!";
-		// make a 2D context for the text
-		const cvs = document.createElement('canvas');
-		cvs.width = 650;
-		cvs.height = 300;
-		const ctxTxt = cvs.getContext("2d");
-		// clear ctx to color
-		ctxTxt.fillStyle = "black";
-		ctxTxt.fillRect(0, 0, cvs.width, cvs.height);
-		// text position and size
-		const centerX = cvs.width / 2;
-		const centerY = cvs.height / 2;
-		ctxTxt.textAlign = 'center';
-		ctxTxt.translate(centerX, centerY);
-		const textSize = 250;
-		ctxTxt.scale(textSize, textSize);
-		const adjCenter = .33; // hmm..
-		ctxTxt.translate(-centerX, -centerY + adjCenter);
-		// text font and color
-		ctxTxt.font = 'bold 1px serif';
-		ctxTxt.fillStyle = "lightgreen"; 
-		ctxTxt.fillText(textString, centerX, centerY);
-		const textBM = new Bitmap32([cvs.width, cvs.height]
-			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
-
-		// depth bitmap
+		// depth bitmap, use red channel for depth
+		const testDepth = 1;
 		const mainBM = this.bitmapList.mainBM;
-		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize], "black");
-		this.bitmapList.depthmap.clipRect([200,400],[500,300],Bitmap32.strToColor32("lightgreen"));
+		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
+		const depthColor32 = this.#depthToColor32(testDepth);
+		// rectangles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(i);
+			this.bitmapList.depthmap.clipRect([200 + 15 * i,180 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
+		}
+		// more rectangles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(-i);
+			this.bitmapList.depthmap.clipRect([200 + 15 * i,450 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
+		}
+
+		// horizontal lines test
+		for (let i = 0; i < 16; ++i ) {
+			const dc32 = this.#depthToColor32(i + 1);
+			this.bitmapList.depthmap.clipHLine([100 + i, 200 + i * 2], 150 - i, dc32);
+			//clipRect([200 + 15 * i,450 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
+		}
+
+		// some text
+		const textBM = this.#makeTextBM(depthColor32);
 		Bitmap32.clipBlit(textBM, [0 ,0]
 			, this.bitmapList.depthmap, [100, 0]
 			, textBM.size);
-
+		/*
+		// test depth with lots of rectangles
+		for (let i = 0; i < 64; ++i) {
+			const j = (i - 32) * 4;
+			const dc = this.#depthToColor32(j);
+			this.bitmapList.depthmap.clipRect([10 + 11 * i, 300], [10, 10], dc);
+		}
+*/
 		// pattern bitmap, for now use random
 		this.bitmapList.pattern = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
 		const patData = this.bitmapList.pattern.data32;
@@ -266,19 +310,15 @@ class MainApp {
 			Bitmap32.clipBlit(patternBM, [0, 0]
 				, mainBM, [0, 0]
 				, [this.separation, patternBM.size[1]]);
-			// now copy pixel by pixel by a depth bitmap
-			const greenVal = Bitmap32.strToColor32("lightgreen");
+			// now copy pixel by pixel using a depth bitmap
 			for (let j = 0; j < patternBM.size[1]; ++j) {
 				for (let i = 0; i < mainBM.size[0] - this.separation; ++i) {
 					const valCol = depthmapdata[imageIdx++];
-					let depth = 0;
-					if (greenVal == valCol) {
-						depth = this.depthMul;
-					}
+					let depth = ((valCol + 0x80) & 0xff) - 0x80;
+					depth *= this.depthMul;
 					const dist = this.separation + depth;
 					const destIdxLeft = destIdxRight - dist
 					mainBMdata[destIdxRight++] =  mainBMdata[destIdxLeft];
-					//mainBMdata[destIdxRight++] =  depth ? greenVal : blueVal /*mainBMdata[destIdxLeft]*/;
 				}
 				destIdxStart += mainBM.size[0];
 				destIdxRight = destIdxStart;
@@ -287,7 +327,7 @@ class MainApp {
 			}
 		}
 
-		// draw pattern to mainBM
+		// draw depth bitmap to mainBM
 		let drawDepthmap = this.eles.showDepthmap.checked;
 		if (drawDepthmap) {
 			const patternOffset = [this.separation, 0];
@@ -317,6 +357,8 @@ class MainApp {
 		mainBM.clipPutPixel(p1, colRed);
 		mainBM.clipPutPixel(p2, colRed);
 		mainBM.clipPutPixel(p3, colRed);
+
+		mainBM.clipCircle(p, this.separation / 8, colRed);
 
 		// finally draw background to canvas
 		this.ctx.putImageData(mainBM.imageData, 0, 0);
