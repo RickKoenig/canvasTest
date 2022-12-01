@@ -127,23 +127,23 @@ class Bitmap32 {
 	}
 
 	fastGetPixel(p) {
-		return this.data32[p[0] + p[1] * this.size[0]];
+		return this.data32[p[0] + Math.round(p[1]) * this.size[0]];
 	}
 
 	clipGetPixel(p) {
 		if (this.pointClip(p)) {
-			return this.data32[p[0] + p[1] * this.size[0]];
+			return this.data32[p[0] + Math.round(p[1]) * this.size[0]];
 		}
 		return Bitmap32.errorColor;
 	}
 
 	fastPutPixel(p, color32) {
-		this.data32[p[0] + p[1] * this.size[0]] = color32;
+		this.data32[p[0] + Math.round(p[1]) * this.size[0]] = color32;
 	}
 
 	clipPutPixel(p, color32) {
 		if (this.pointClip(p)) {
-			this.data32[p[0] + p[1] * this.size[0]] = color32;
+			this.data32[p[0] + Math.round(p[1]) * this.size[0]] = color32;
 		}
 	}
 
@@ -201,7 +201,7 @@ class Bitmap32 {
 	}
 
 	fastRect(p, s, color32) {
-		let start = p[0] + p[1] * this.size[0];
+		let start = p[0] + Math.round(p[1]) * this.size[0];
 		for (let j = p[1]; j < p[1] + s[1]; ++j) {
 			const end = start + s[0];
 			this.data32.fill(color32, start, end);
@@ -224,8 +224,8 @@ class Bitmap32 {
 		const dstData = destBM.data32;
 		const dstSize = destBM.size;
 		
-		let srcIdx = sourceStart[0] + srcSize[0] * sourceStart[1];
-		let dstIdx = destStart[0] + dstSize[0] * destStart[1];
+		let srcIdx = sourceStart[0] + srcSize[0] * Math.round(sourceStart[1]);
+		let dstIdx = destStart[0] + dstSize[0] * Math.round(destStart[1]);
 		const xferSizeX = xferSize[0];
 		try {
 			for (let j = 0; j < xferSize[1]; ++j) {
@@ -255,8 +255,8 @@ class Bitmap32 {
 		const dstData = destBM.data32;
 		const dstSize = destBM.size;
 		
-		let srcIdx = sourceStart[0] + srcSize[0] * sourceStart[1];
-		let dstIdx = destStart[0] + dstSize[0] * destStart[1];
+		let srcIdx = sourceStart[0] + srcSize[0] * Math.round(sourceStart[1]);
+		let dstIdx = destStart[0] + dstSize[0] * Math.round(destStart[1]);
 		const xferSizeX = xferSize[0];
 		try {
 			for (let j = 0; j < xferSize[1]; ++j) {
@@ -368,177 +368,98 @@ class Bitmap32 {
 		this.clipRect(p, [x1 - p[0] + 1, 1], color32);
 	}
 
+	clipHLine2(p, xs, color32) {
+		this.clipRect(p, [xs, 1], color32);
+	}
+
 	// for now use x0, y0, and x1
 	// later use x0, y0 and xs
-	clipCircle(p, rad, color32) {
-		this.clipRect([p[0] - rad, p[1] - rad],[rad * 2,rad * 2],color32);
-		/*
-		void clipcircle32(const struct bitmap32* b,S32 x,S32 y,S32 r,C32 c)
-		{
-			S32 e;
-			if (r<=0) {
-				clipputpixel32(b,x,y,c);
-				return;
+	clipCircle(p, r, c) {
+		//let p = vec2.clone(pOrig);
+		let x = p[0];
+		let y = p[1];
+		let sx = this.size[0];
+		let sy = this.size[1];
+		// draw a dot for 0 or less radius
+		if (r <= 0) {
+			this.clipPutPixel(p,c);
+			return;
+		}
+		// circle completely off bitmap, don't draw
+		if (x - r >= sx) { // right
+			return;
+		}
+		if (x + r < 0) { // left
+			return;
+		}
+		if (y - r >= sy) { // bottom
+			return;
+		}
+		if (y + r < 0) { // top
+			return;
+		}
+		// draw a solid Bresenham circle
+		let cir_xorg = x;
+		let cir_yorg = y;
+		x = 0;
+		y = r;
+		let e = (y << 1) - 1;
+		while(x <= y) {
+			this.clipHLine([cir_xorg - y, cir_yorg - x], cir_xorg + y, c);
+			this.clipHLine([cir_xorg - y, cir_yorg + x], cir_xorg + y, c);
+			e -= (x << 2) + 2;
+			if (e < 0) {
+				e += (y << 2) + 2;
+				this.clipHLine([cir_xorg - x, cir_yorg - y], cir_xorg + x, c);
+				this.clipHLine([cir_xorg - x, cir_yorg + y], cir_xorg + x, c);
+				--y;
 			}
-			if (x-r>=b->cliprect.topleft.x+b->cliprect.size.x)
-				return;
-			if (x+r<b->cliprect.topleft.x)
-				return;
-			if (y-r>=b->cliprect.topleft.y+b->cliprect.size.y)
-				return;
-			if (y+r<b->cliprect.topleft.y)
-				return;	// circle completely off bitmap, don't draw
-			cir_xorg=x;
-			cir_yorg=y;
-			cir_color=c;
-			x=0;
-			y=r;
-			e=(y<<1)-1;
-			while(x<=y) {
-				cliphline32(b,cir_xorg-y,cir_yorg-x,cir_xorg+y,cir_color);
-				cliphline32(b,cir_xorg-y,cir_yorg+x,cir_xorg+y,cir_color);
-				e-=(x<<2)+2;
-				if (e<0) {
-					e+=(y<<2)+2;
-					cliphline32(b,cir_xorg-x,cir_yorg-y,cir_xorg+x,cir_color);
-					cliphline32(b,cir_xorg-x,cir_yorg+y,cir_xorg+x,cir_color);
-					y--;
-				}
-				x++;
+			++x;
+		}
+	}
+	// for now use x0, y0, and x1
+	// later use x0, y0 and xs
+	clipCircle2(p, r, c) {
+		//let p = vec2.clone(pOrig);
+		let x = p[0];
+		let y = p[1];
+		let sx = this.size[0];
+		let sy = this.size[1];
+		// draw a dot for 0 or less radius
+		if (r <= 0) {
+			this.clipPutPixel(p,c);
+			return;
+		}
+		// circle completely off bitmap, don't draw
+		if (x - r >= sx) { // right
+			return;
+		}
+		if (x + r < 0) { // left
+			return;
+		}
+		if (y - r >= sy) { // bottom
+			return;
+		}
+		if (y + r < 0) { // top
+			return;
+		}
+		// draw a solid Bresenham circle
+		let cir_xorg = x;
+		let cir_yorg = y;
+		x = 0;
+		y = r;
+		let e = (y << 1) - 1;
+		while(x <= y) {
+			this.clipHLine2([cir_xorg - y, cir_yorg - x], 2 * y + 1, c);
+			this.clipHLine2([cir_xorg - y, cir_yorg + x], 2 * y + 1, c);
+			e -= (x << 2) + 2;
+			if (e < 0) {
+				e += (y << 2) + 2;
+				this.clipHLine2([cir_xorg - x, cir_yorg - y], 2 * x + 1, c);
+				this.clipHLine2([cir_xorg - x, cir_yorg + y], 2 * x + 1, c);
+				--y;
 			}
-		}
-			*/
-		}
-
-}
-
-/*
-/////////// horizontal lines ////////////////////////////////////
-static U32 xclip(const struct bitmap32* b,S32* x0,S32* x1)
-{
-	S32 left,right;
-	if (*x0>*x1) {
-		exch(*x0,*x1);
-	}
-	left=b->cliprect.topleft.x;
-	right=b->cliprect.topleft.x+b->cliprect.size.x;
-	if (*x1<left)
-		return 0;
-	if (*x0>=right)
-		return 0;
-	if (*x0<left)
-		*x0=left;
-	if (*x1>=right)
-		*x1=right-1;
-	return 1;
-}
-
-void fasthline32(const struct bitmap32* b32,S32 x0,S32 y0,S32 x1,C32 color)
-{
-	STOSD(b32->data+x0+b32->size.x*y0,color.c32,x1-x0+1);
-}
-
-void cliphline32(const struct bitmap32* b32,S32 x0,S32 y0,S32 x1,C32 color)
-{
-	if (y0<b32->cliprect.topleft.y)
-		return;
-	if (y0>=b32->cliprect.topleft.y+b32->cliprect.size.y)
-		return;
-	if (xclip(b32,&x0,&x1))
-		fasthline32(b32,x0,y0,x1,color);
-}
-
-
-/////////// circles ////////////////////////////////////
-static S32 cir_xorg,cir_yorg;
-static C32 cir_color;
-
-void static octdot32o(struct bitmap32* b,S32 x,S32 y)
-{
-	S32 left1=cir_xorg-x;
-	S32 left2=cir_xorg-y;
-	S32 left3=cir_xorg+y;
-	S32 left4=cir_xorg+x;
-	S32 up1=cir_yorg-x;
-	S32 up2=cir_yorg-y;
-	S32 up3=cir_yorg+y;
-	S32 up4=cir_yorg+x;
-	clipputpixel32(b,left2,up1,cir_color);
-	clipputpixel32(b,left1,up2,cir_color);
-	clipputpixel32(b,left1,up3,cir_color);
-	clipputpixel32(b,left2,up4,cir_color);
-	clipputpixel32(b,left3,up1,cir_color);
-	clipputpixel32(b,left4,up2,cir_color);
-	clipputpixel32(b,left4,up3,cir_color);
-	clipputpixel32(b,left3,up4,cir_color);
-}
-
-void clipcircleo32(struct bitmap32* b,S32 x,S32 y,S32 r,C32 c)
-{
-	S32 e;
-	if (r<=0) {
-		clipputpixel32(b,x,y,c);
-		return;
-	}
-	if (x-r>=b->cliprect.topleft.x+b->cliprect.size.x)
-		return;
-	if (x+r<b->cliprect.topleft.x)
-		return;
-	if (y-r>=b->cliprect.topleft.y+b->cliprect.size.y)
-		return;
-	if (y+r<b->cliprect.topleft.y)
-		return;	// circle completely off bitmap, don't draw
-	cir_xorg=x;
-	cir_yorg=y;
-	cir_color=c;
-	x=0;
-	y=r;
-	e=(y<<1)-1;
-	while(x<=y) {
-		octdot32o(b,x,y);
-		e-=(x<<2)+2;
-		x++;
-		if (e<0) {
-			e+=(y<<2)+2;
-			y--;
+			++x;
 		}
 	}
 }
-
-void clipcircle32(const struct bitmap32* b,S32 x,S32 y,S32 r,C32 c)
-{
-	S32 e;
-	if (r<=0) {
-		clipputpixel32(b,x,y,c);
-		return;
-	}
-	if (x-r>=b->cliprect.topleft.x+b->cliprect.size.x)
-		return;
-	if (x+r<b->cliprect.topleft.x)
-		return;
-	if (y-r>=b->cliprect.topleft.y+b->cliprect.size.y)
-		return;
-	if (y+r<b->cliprect.topleft.y)
-		return;	// circle completely off bitmap, don't draw
-	cir_xorg=x;
-	cir_yorg=y;
-	cir_color=c;
-	x=0;
-	y=r;
-	e=(y<<1)-1;
-	while(x<=y) {
-		cliphline32(b,cir_xorg-y,cir_yorg-x,cir_xorg+y,cir_color);
-		cliphline32(b,cir_xorg-y,cir_yorg+x,cir_xorg+y,cir_color);
-		e-=(x<<2)+2;
-//		x++; // was here
-		if (e<0) {
-			e+=(y<<2)+2;
-			cliphline32(b,cir_xorg-x,cir_yorg-y,cir_xorg+x,cir_color);
-			cliphline32(b,cir_xorg-x,cir_yorg+y,cir_xorg+x,cir_color);
-			y--;
-		}
-		x++;	// now here
-	}
-}
-
-*/

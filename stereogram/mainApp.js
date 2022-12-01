@@ -32,6 +32,7 @@ class MainApp {
 	#userInit() {
 		this.triSize = 10; // alignment triangles
 		this.fixedSize = [1024, 768];
+		this.minSep = 50;
 		this.maxSep = 300;
 		this.startDepthMul = 4;
 
@@ -68,7 +69,7 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		{
 			const label = "Separation";
-			const min = 50;//this.triSize * 2;
+			const min = this.minSep; //this.triSize * 2;
 			const max = this.maxSep;
 			const start = 200;
 			const step = 1;
@@ -88,7 +89,7 @@ class MainApp {
 		// show depth map checkbox
 		const ele = makeEle(this.vp, "span", "marg", null, "Show depth map");
 		this.eles.showDepthmap = makeEle(ele, "input", null, null, null, null, "checkbox");
-		//this.eles.showDepthmap.checked = true;
+		this.eles.showDepthmap.checked = true;
 	}
 
 	#userProc() { // USER:
@@ -196,10 +197,10 @@ class MainApp {
 		return textBM;
 	}
 
-	// -128 to 127
+	// -128 to 127 on significant red channel, tracers on green and blue channels for 'show depth'
 	#depthToColor32(depth) {
 		let r = depth;
-		if (depth < 0) {
+		if (depth < 0) { // make unsigned
 			r = depth + 256;
 		}
 		let g = (r * 16) & 0xff;
@@ -218,11 +219,12 @@ class MainApp {
 			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
 		}
 
+
 		// depth bitmap, use red channel for depth
-		const testDepth = 1;
+		const testDepthText = 1;
 		const mainBM = this.bitmapList.mainBM;
 		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
-		const depthColor32 = this.#depthToColor32(testDepth);
+		const depthTextColor32 = this.#depthToColor32(testDepthText);
 		// rectangles
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(i);
@@ -233,27 +235,33 @@ class MainApp {
 			const dc32 = this.#depthToColor32(-i);
 			this.bitmapList.depthmap.clipRect([200 + 15 * i,450 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
 		}
-
 		// horizontal lines test
-		for (let i = 0; i < 16; ++i ) {
-			const dc32 = this.#depthToColor32(i + 1);
-			this.bitmapList.depthmap.clipHLine([100 + i, 200 + i * 2], 150 - i, dc32);
-			//clipRect([200 + 15 * i,450 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
+		for (let i = 0; i < 4; ++i ) {
+			const dc32 = this.#depthToColor32(i + 10);
+			this.bitmapList.depthmap.clipHLine([100 - i, 200 + i * 2], 100 + i, dc32);
 		}
-
+		// horizontal lines test2
+		for (let i = 0; i < 4; ++i ) {
+			const dc32 = this.#depthToColor32(i + 10);
+			this.bitmapList.depthmap.clipHLine2([100 - i, 212 + i * 2], 2 * i + 1, dc32);
+		}
+		// some circles test
+		for (let i = 0; i < 4; ++i ) {
+			const dc32 = this.#depthToColor32(i + 10);
+			this.bitmapList.depthmap.clipCircle([100, 250 + i * 20], 2 + i, dc32);
+		}
+		// some circles test2
+		for (let i = 0; i < 4; ++i ) {
+			const dc32 = this.#depthToColor32(i + 10);
+			this.bitmapList.depthmap.clipCircle2([110, 250 + i * 20], 2 + i, dc32);
+		}
 		// some text
-		const textBM = this.#makeTextBM(depthColor32);
+		const textBM = this.#makeTextBM(depthTextColor32);
 		Bitmap32.clipBlit(textBM, [0 ,0]
 			, this.bitmapList.depthmap, [100, 0]
 			, textBM.size);
-		/*
-		// test depth with lots of rectangles
-		for (let i = 0; i < 64; ++i) {
-			const j = (i - 32) * 4;
-			const dc = this.#depthToColor32(j);
-			this.bitmapList.depthmap.clipRect([10 + 11 * i, 300], [10, 10], dc);
-		}
-*/
+
+
 		// pattern bitmap, for now use random
 		this.bitmapList.pattern = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
 		const patData = this.bitmapList.pattern.data32;
@@ -316,7 +324,7 @@ class MainApp {
 					const valCol = depthmapdata[imageIdx++];
 					let depth = ((valCol + 0x80) & 0xff) - 0x80;
 					depth *= this.depthMul;
-					const dist = this.separation + depth;
+					const dist = this.separation - depth;
 					const destIdxLeft = destIdxRight - dist
 					mainBMdata[destIdxRight++] =  mainBMdata[destIdxLeft];
 				}
@@ -348,17 +356,15 @@ class MainApp {
 
 		// very simple cursor
 		const p = this.input.mouse.mxy;
+		const colRed = Bitmap32.strToColor32("red");
 		const p0 = [p[0] - 2, p[1]];
 		const p1 = [p[0] + 2, p[1]];
 		const p2 = [p[0], p[1] - 2];
 		const p3 = [p[0], p[1] + 2];
-		const colRed = Bitmap32.strToColor32("red");
 		mainBM.clipPutPixel(p0, colRed);
 		mainBM.clipPutPixel(p1, colRed);
 		mainBM.clipPutPixel(p2, colRed);
 		mainBM.clipPutPixel(p3, colRed);
-
-		mainBM.clipCircle(p, this.separation / 8, colRed);
 
 		// finally draw background to canvas
 		this.ctx.putImageData(mainBM.imageData, 0, 0);
