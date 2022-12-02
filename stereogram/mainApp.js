@@ -34,7 +34,8 @@ class MainApp {
 		this.fixedSize = [1024, 768];
 		this.minSep = 50;
 		this.maxSep = 300;
-		this.startDepthMul = 4;
+		this.startSep = 80;
+		this.startDepthMul = 2;
 
 		// measure frame rate
 		this.fps;
@@ -71,7 +72,7 @@ class MainApp {
 			const label = "Separation";
 			const min = this.minSep; //this.triSize * 2;
 			const max = this.maxSep;
-			const start = 200;
+			const start = this.startSep;
 			const step = 1;
 			const callback = (v) => {this.separation = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
@@ -173,7 +174,7 @@ class MainApp {
 		const textString = "Hello!";
 		// make a 2D context for the text
 		const cvs = document.createElement('canvas');
-		cvs.width = 650;
+		cvs.width = 590;
 		cvs.height = 180;
 		const ctxTxt = cvs.getContext("2d");
 		// clear ctx to color
@@ -221,45 +222,43 @@ class MainApp {
 
 
 		// depth bitmap, use red channel for depth
-		const testDepthText = 1;
+		const depthText = 1;
 		const mainBM = this.bitmapList.mainBM;
 		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
-		const depthTextColor32 = this.#depthToColor32(testDepthText);
-		// rectangles
-		for (let i = 0; i < 8; ++i ) {
-			const dc32 = this.#depthToColor32(i);
-			this.bitmapList.depthmap.clipRect([200 + 15 * i,180 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
-		}
-		// more rectangles
-		for (let i = 0; i < 8; ++i ) {
-			const dc32 = this.#depthToColor32(-i);
-			this.bitmapList.depthmap.clipRect([200 + 15 * i,450 + 15 * i],[500 - 30 * i,300 - 30 * i],dc32);
-		}
-		// horizontal lines test
-		for (let i = 0; i < 4; ++i ) {
-			const dc32 = this.#depthToColor32(i + 10);
-			this.bitmapList.depthmap.clipHLine([100 - i, 200 + i * 2], 100 + i, dc32);
-		}
-		// horizontal lines test2
-		for (let i = 0; i < 4; ++i ) {
-			const dc32 = this.#depthToColor32(i + 10);
-			this.bitmapList.depthmap.clipHLine2([100 - i, 212 + i * 2], 2 * i + 1, dc32);
-		}
-		// some circles test
-		for (let i = 0; i < 4; ++i ) {
-			const dc32 = this.#depthToColor32(i + 10);
-			this.bitmapList.depthmap.clipCircle([100, 250 + i * 20], 2 + i, dc32);
-		}
-		// some circles test2
-		for (let i = 0; i < 4; ++i ) {
-			const dc32 = this.#depthToColor32(i + 10);
-			this.bitmapList.depthmap.clipCircle2([110, 250 + i * 20], 2 + i, dc32);
-		}
+		const depthTextColor32 = this.#depthToColor32(depthText);
 		// some text
 		const textBM = this.#makeTextBM(depthTextColor32);
 		Bitmap32.clipBlit(textBM, [0 ,0]
 			, this.bitmapList.depthmap, [100, 0]
 			, textBM.size);
+
+		// rectangles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(i);
+			this.bitmapList.depthmap.clipRect([100 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
+		}
+		// more rectangles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(-i);
+			this.bitmapList.depthmap.clipRect([400 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
+		}
+		// circles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(i);
+			this.bitmapList.depthmap.clipCircle([815, 195], 75 - 5 * i, dc32);
+		}
+		// more circles
+		for (let i = 0; i < 8; ++i ) {
+			const dc32 = this.#depthToColor32(-i);
+			this.bitmapList.depthmap.clipCircle([815, 395], 75 - 5 * i, dc32);
+		}
+		// many circles
+		const dc32 = this.#depthToColor32(2);
+		for (let j = 0; j < 4; ++j) {
+			for (let i = 0; i < 8; ++i) {
+				this.bitmapList.depthmap.clipCircle([215 + 80 * i, 515 + 60 * j], 25, dc32);
+			}
+		}
 
 
 		// pattern bitmap, for now use random

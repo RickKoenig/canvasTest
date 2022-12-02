@@ -362,18 +362,10 @@ class Bitmap32 {
 		return true;
 	}
 
-	// for now use x0, y0, and x1
-	// later use x0, y0 and xs
-	clipHLine(p, x1, color32) {
-		this.clipRect(p, [x1 - p[0] + 1, 1], color32);
-	}
-
-	clipHLine2(p, xs, color32) {
+	clipHLine(p, xs, color32) {
 		this.clipRect(p, [xs, 1], color32);
 	}
-
-	// for now use x0, y0, and x1
-	// later use x0, y0 and xs
+	
 	clipCircle(p, r, c) {
 		//let p = vec2.clone(pOrig);
 		let x = p[0];
@@ -405,58 +397,13 @@ class Bitmap32 {
 		y = r;
 		let e = (y << 1) - 1;
 		while(x <= y) {
-			this.clipHLine([cir_xorg - y, cir_yorg - x], cir_xorg + y, c);
-			this.clipHLine([cir_xorg - y, cir_yorg + x], cir_xorg + y, c);
+			this.clipHLine([cir_xorg - y, cir_yorg - x], 2 * y + 1, c);
+			this.clipHLine([cir_xorg - y, cir_yorg + x], 2 * y + 1, c);
 			e -= (x << 2) + 2;
 			if (e < 0) {
 				e += (y << 2) + 2;
-				this.clipHLine([cir_xorg - x, cir_yorg - y], cir_xorg + x, c);
-				this.clipHLine([cir_xorg - x, cir_yorg + y], cir_xorg + x, c);
-				--y;
-			}
-			++x;
-		}
-	}
-	// for now use x0, y0, and x1
-	// later use x0, y0 and xs
-	clipCircle2(p, r, c) {
-		//let p = vec2.clone(pOrig);
-		let x = p[0];
-		let y = p[1];
-		let sx = this.size[0];
-		let sy = this.size[1];
-		// draw a dot for 0 or less radius
-		if (r <= 0) {
-			this.clipPutPixel(p,c);
-			return;
-		}
-		// circle completely off bitmap, don't draw
-		if (x - r >= sx) { // right
-			return;
-		}
-		if (x + r < 0) { // left
-			return;
-		}
-		if (y - r >= sy) { // bottom
-			return;
-		}
-		if (y + r < 0) { // top
-			return;
-		}
-		// draw a solid Bresenham circle
-		let cir_xorg = x;
-		let cir_yorg = y;
-		x = 0;
-		y = r;
-		let e = (y << 1) - 1;
-		while(x <= y) {
-			this.clipHLine2([cir_xorg - y, cir_yorg - x], 2 * y + 1, c);
-			this.clipHLine2([cir_xorg - y, cir_yorg + x], 2 * y + 1, c);
-			e -= (x << 2) + 2;
-			if (e < 0) {
-				e += (y << 2) + 2;
-				this.clipHLine2([cir_xorg - x, cir_yorg - y], 2 * x + 1, c);
-				this.clipHLine2([cir_xorg - x, cir_yorg + y], 2 * x + 1, c);
+				this.clipHLine([cir_xorg - x, cir_yorg - y], 2 * x + 1, c);
+				this.clipHLine([cir_xorg - x, cir_yorg + y], 2 * x + 1, c);
 				--y;
 			}
 			++x;
