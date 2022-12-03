@@ -46,6 +46,7 @@ class MainApp {
 		this.backgndColor = Bitmap32.strToColor32("lightblue");
 
 		// bitmaps
+		this.frame = 0;
 		this.#initBitmaps(this.ctx, this.fixedSize);
 
 		// fire up all instances of the classes that are needed
@@ -57,6 +58,7 @@ class MainApp {
 
 		// USER build UI
 		this.#userBuildUI();
+		
 
 		// start it off
 		this.#animate();
@@ -108,6 +110,10 @@ class MainApp {
 
 		// test bitmaps
 		this.#drawBitmaps();
+		++this.frame;
+		if (this.frame >= 512) {
+			this.frame -= 512;
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -210,28 +216,21 @@ class MainApp {
 		return col32;
 	}
 
-	#initBitmaps() {
-		this.bitmapList = {};
-		// draw everything here before sent to canvas
-		this.bitmapList.mainBM = new Bitmap32(this.fixedSize);
-
-		// already fully loaded images, copy to bitmap list
-		for (const imageName in this.images) {
-			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
-		}
-
-
+	#setDepthMap() {
 		// depth bitmap, use red channel for depth
 		const depthText = 1;
 		const mainBM = this.bitmapList.mainBM;
-		this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
+		if (!this.bitmapList.depthmap) {
+			this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
+		} else {
+			this.bitmapList.depthmap.fill();
+		}
 		const depthTextColor32 = this.#depthToColor32(depthText);
 		// some text
 		const textBM = this.#makeTextBM(depthTextColor32);
 		Bitmap32.clipBlit(textBM, [0 ,0]
 			, this.bitmapList.depthmap, [100, 0]
 			, textBM.size);
-
 		// rectangles
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(i);
@@ -252,13 +251,32 @@ class MainApp {
 			const dc32 = this.#depthToColor32(-i);
 			this.bitmapList.depthmap.clipCircle([815, 395], 75 - 5 * i, dc32);
 		}
-		// many circles
 		const dc32 = this.#depthToColor32(2);
+		/*
+		// many circles
 		for (let j = 0; j < 4; ++j) {
 			for (let i = 0; i < 8; ++i) {
 				this.bitmapList.depthmap.clipCircle([215 + 80 * i, 515 + 60 * j], 25, dc32);
 			}
 		}
+		*/
+		// animate a circle
+		this.bitmapList.depthmap.clipCircle([215 + 80 + this.frame * .025, 515 + 60], 25, dc32);
+
+	}
+
+	#initBitmaps() {
+		this.bitmapList = {};
+		// draw everything here before sent to canvas
+		this.bitmapList.mainBM = new Bitmap32(this.fixedSize);
+
+		// already fully loaded images, copy to bitmap list
+		for (const imageName in this.images) {
+			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
+		}
+		
+		// draw depth map
+		this.#setDepthMap();
 
 
 		// pattern bitmap, for now use random
@@ -287,12 +305,11 @@ class MainApp {
 	}
 
 	#drawBitmaps() {
-		// start with background
 		const mainBM = this.bitmapList.mainBM;
 		mainBM.fill(this.backgndColor);
-
+		// start with background
 		let patternToStereo = false;
-		// draw pattern bm onto background, no depth
+		// draw pattern bm onto background, no depthmap
 		if (patternToStereo) {
 			for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
 				Bitmap32.clipBlit(this.bitmapList.pattern, [0, 0]
@@ -302,8 +319,9 @@ class MainApp {
 		}
 
 		let patternAndDepthToStereo = true;
-		// draw random bm onto background
+		// draw random bm onto background with depthmap
 		if (patternAndDepthToStereo) {
+			this.#setDepthMap();
 			const patternBM = this.bitmapList.pattern;
 			const mainBMdata = mainBM.data32;
 			let destIdxRight = this.separation;

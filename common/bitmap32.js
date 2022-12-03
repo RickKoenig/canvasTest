@@ -103,7 +103,7 @@ class Bitmap32 {
 				   + a.toString(16).padStart(2, "0");
 	}
 
-	fill(color32) {
+	fill(color32 = Bitmap32.color32()) {
 		this.data32.fill(color32);
 	}
 
