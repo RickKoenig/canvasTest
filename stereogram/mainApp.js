@@ -34,8 +34,12 @@ class MainApp {
 		this.fixedSize = [1024, 768];
 		this.minSep = 50;
 		this.maxSep = 300;
-		this.startSep = 80;
+		this.startSep = 140;
 		this.startDepthMul = 2;
+
+		this.depthText = 1; // draw text at this depth
+
+		this.maxFrames = 512; // for animation
 
 		// measure frame rate
 		this.fps;
@@ -92,7 +96,7 @@ class MainApp {
 		// show depth map checkbox
 		const ele = makeEle(this.vp, "span", "marg", null, "Show depth map");
 		this.eles.showDepthmap = makeEle(ele, "input", null, null, null, null, "checkbox");
-		this.eles.showDepthmap.checked = true;
+		//this.eles.showDepthmap.checked = true;
 	}
 
 	#userProc() { // USER:
@@ -109,10 +113,14 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
 		// test bitmaps
+		const ff = this.frame * 2 * Math.PI / this.maxFrames;
+		this.sin = Math.sin(ff);
+		this.cos = Math.cos(ff);
+		this.cos5 = Math.cos(ff * 5);
 		this.#drawBitmaps();
-		++this.frame;
-		if (this.frame >= 512) {
-			this.frame -= 512;
+		this.frame += .0625;
+		if (this.frame >= this.maxFrames) {
+			this.frame -= this.maxFrames;
 		}
 	}
 
@@ -120,6 +128,7 @@ class MainApp {
 	#userUpdateInfo() {
 		this.eles.info.innerText 
 		= "Avg fps = " + this.avgFps.toFixed(2)
+		+ "\nFrame = (" + this.frame.toFixed(2) + "/" + this.maxFrames + ")"
 		+ "\nMouse = (" + this.input.mouse.mxy[0] 
 		+ "," + this.input.mouse.mxy[1] + ")";
 	}
@@ -206,63 +215,71 @@ class MainApp {
 
 	// -128 to 127 on significant red channel, tracers on green and blue channels for 'show depth'
 	#depthToColor32(depth) {
+		depth = Math.floor(depth);
 		let r = depth;
 		if (depth < 0) { // make unsigned
 			r = depth + 256;
 		}
-		let g = (r * 16) & 0xff;
-		let b = (r * 16) >> 4;
+		const r16 = r * 16;
+		let g = r16 & 0xff;
+		let b = (r16 >> 4) & 0xff;
 		const col32 = Bitmap32.color32(r, g, b);
 		return col32;
 	}
 
-	#setDepthMap() {
+	#drawBall(dmap, p, r, d, dmul) {
+		for (let y = 0; y <= r; ++y) {
+			let dep = d + y  * dmul;
+			if (dep < 0) {
+				dep = 0;
+			}
+			let dc32 = this.#depthToColor32(dep);
+			const x = Math.sqrt(r * r - y * y);
+			dmap.clipCircle(p, x, dc32);
+		}
+
+	}
+
+	#updateDepthMap() {
 		// depth bitmap, use red channel for depth
-		const depthText = 1;
 		const mainBM = this.bitmapList.mainBM;
 		if (!this.bitmapList.depthmap) {
 			this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
 		} else {
 			this.bitmapList.depthmap.fill();
 		}
-		const depthTextColor32 = this.#depthToColor32(depthText);
+		const depthmapBM = this.bitmapList.depthmap;
+		const depthTextColor32 = this.#depthToColor32(this.depthText);
 		// some text
 		const textBM = this.#makeTextBM(depthTextColor32);
 		Bitmap32.clipBlit(textBM, [0 ,0]
-			, this.bitmapList.depthmap, [100, 0]
+			, depthmapBM, [100, 0]
 			, textBM.size);
 		// rectangles
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(i);
-			this.bitmapList.depthmap.clipRect([100 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
+			depthmapBM.clipRect([100 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
 		}
 		// more rectangles
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(-i);
-			this.bitmapList.depthmap.clipRect([400 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
+			depthmapBM.clipRect([400 + 15 * i, 180 + 15 * i], [300 - 30 * i,300 - 30 * i], dc32);
 		}
-		// circles
+		// cone
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(i);
-			this.bitmapList.depthmap.clipCircle([815, 195], 75 - 5 * i, dc32);
+			depthmapBM.clipCircle([785, 195], 75 - 5 * i, dc32);
 		}
-		// more circles
+		// inverted cone
 		for (let i = 0; i < 8; ++i ) {
 			const dc32 = this.#depthToColor32(-i);
-			this.bitmapList.depthmap.clipCircle([815, 395], 75 - 5 * i, dc32);
+			depthmapBM.clipCircle([785, 395], 75 - 5 * i, dc32);
 		}
-		const dc32 = this.#depthToColor32(2);
-		/*
-		// many circles
-		for (let j = 0; j < 4; ++j) {
-			for (let i = 0; i < 8; ++i) {
-				this.bitmapList.depthmap.clipCircle([215 + 80 * i, 515 + 60 * j], 25, dc32);
-			}
-		}
-		*/
-		// animate a circle
-		this.bitmapList.depthmap.clipCircle([215 + 80 + this.frame * .025, 515 + 60], 25, dc32);
-
+		// animate some balls
+		this.#drawBall(depthmapBM, [115 + 80 + this.sin * 50, 485 + 60], 50, 2, .1);
+		this.#drawBall(depthmapBM, [365 + 80 , 485 + 60], 50, 2 + 6 * this.sin, .1);
+		this.#drawBall(depthmapBM, [615 + 80 + this.sin * 150, 555 + 60 + this.cos * 50], 50, 2, .1);
+		this.#drawBall(depthmapBM, [615 + 80 - this.sin * 150, 555 + 60 - this.cos * 50], 50, 2 + this.cos5 * 4, .1);
 	}
 
 	#initBitmaps() {
@@ -276,7 +293,7 @@ class MainApp {
 		}
 		
 		// draw depth map
-		this.#setDepthMap();
+		this.#updateDepthMap();
 
 
 		// pattern bitmap, for now use random
@@ -321,7 +338,7 @@ class MainApp {
 		let patternAndDepthToStereo = true;
 		// draw random bm onto background with depthmap
 		if (patternAndDepthToStereo) {
-			this.#setDepthMap();
+			this.#updateDepthMap();
 			const patternBM = this.bitmapList.pattern;
 			const mainBMdata = mainBM.data32;
 			let destIdxRight = this.separation;

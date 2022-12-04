@@ -367,7 +367,7 @@ class Bitmap32 {
 	}
 	
 	clipCircle(p, r, c) {
-		//let p = vec2.clone(pOrig);
+		r = Math.floor(r);
 		let x = p[0];
 		let y = p[1];
 		let sx = this.size[0];
