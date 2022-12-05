@@ -418,3 +418,83 @@ class MainApp {
 }
 
 const mainApp = new MainApp();
+
+/*
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <graph32\graph32.h>
+
+int x,y,a,b;
+int frames;
+char str[20];
+int val,count;
+int colors;
+
+void main()
+{
+struct bitmap v,b;
+mem_init();
+// 320 by 200
+alloc_bitmap(&b,XSIZE,YSIZE,0);
+make_video_bitmap(&v);
+randomize();
+while(1)
+	{
+	printf("input # of colors (0 to quit) > ");
+	scanf("%d",&colors);
+	frames=0;
+	if (colors==0)
+		break;
+	initgraph();
+	for (x=0;x<128;x++)
+		{
+		if (getkey())
+			break;
+		for (y=0;y<128;y++)
+			fastputpixel(&b,x,y,random(colors));
+		}
+	fastblit(&b,&v,0,0,0,0,XSIZE,YSIZE);
+	while(!getkey())
+		{
+		count=0;
+		for (x=0;x<128;x++)
+			for (y=0;y<128;y++)
+				{
+				val=fastgetpixel(&v,x,y)+1;
+				if (val==colors)
+					val=0;
+				if (fastgetpixel(&v,x,(y+1)&127)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,x,(y-1)&127)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,(x+1)&127,y)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,(x-1)&127,y)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				}
+		frames++;
+		fastrect(&b,0,YSIZE-24,XSIZE-1,YSIZE-1,black);
+		sprintf(str,"%5d",frames);
+		outtextxy(&b,20<<3,22<<3,str,white);
+		sprintf(str,"%5d/%5d",count,16384);
+		outtextxy(&b,20<<3,24<<3,str,white);
+		fastblit(&b,&v,0,0,0,0,XSIZE,YSIZE);
+		}
+	closegraph();
+	}
+free_bitmap(&b);
+}
+*/

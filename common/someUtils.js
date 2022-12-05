@@ -391,8 +391,8 @@ class makeEleCombo {
 		this.slider.min = min;
 		this.slider.max = max;
 		this.start = start;
-		this.slider.value = start;
 		this.slider.step = step;
+		this.slider.value = start;
 		this.precision = precision;
 		this.outerCallback = outerCallback;
 		this.#callbackSlider(); // fire off one callback at init
