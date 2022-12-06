@@ -409,4 +409,33 @@ class Bitmap32 {
 			++x;
 		}
 	}
+
+	static zoomBM(srcBM, destBM, zoomVal) {
+		const zoomX = zoomVal[0];
+		const zoomY = zoomVal[1];
+		const srcSizeX = srcBM.size[0];
+		const srcSizeY = srcBM.size[1];
+		if (srcSizeX * zoomX != destBM.size[0] || srcSizeY * zoomY != destBM.size[1]) {
+			return; // dimensions don't match
+		}
+		const srcData = srcBM.data32;
+		let srcIdx = 0;
+		const destData = destBM.data32;
+		let destIdx = 0;
+		const blueCol = Bitmap32.strToColor32("blue");
+		const stepBack = srcSizeX;
+		
+		for (let j = 0; j < srcSizeY; ++j) { // walk source Y
+			for (let n = 0; n < zoomY; ++n) { // repeat for this source Y
+				for (let i = 0; i < srcSizeX; ++i) { // walk source X
+					const val = srcData[srcIdx++];
+					for (let m = 0; m < zoomX; ++m) { // fill dest
+						destData[destIdx++] = val;
+					}
+				}
+				srcIdx -= stepBack;
+			}
+			srcIdx += stepBack; // cancel '-= stepBack'
+		}
+	}
 }

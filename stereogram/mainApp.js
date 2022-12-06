@@ -335,8 +335,8 @@ class MainApp {
 
 	#drawBitmaps() {
 		const mainBM = this.bitmapList.mainBM;
-		mainBM.fill(this.backgndColor);
 		// start with background
+		mainBM.fill(this.backgndColor);
 		let patternToStereo = false;
 		// draw pattern bm onto background, no depthmap
 		if (patternToStereo) {
