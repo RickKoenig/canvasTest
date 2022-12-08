@@ -21,7 +21,7 @@ class MainApp {
 		const imageNames = [
 			//"Bark.png",
 			//"panel.jpg",
-			"maptestnck.png",
+			//"maptestnck.png",
 			"dpaint2Palette.png"
 		];
 		this.#loadImages(imageNames);
@@ -38,10 +38,13 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
+		this.frame = 0;
+		this.fracFrame = 0;
+
 		this.backgndColor = Bitmap32.strToColor32("lightblue");
 
 		// bitmaps
-		this.#initBitmaps(this.ctx, this.fixedSize);
+		this.#initBitmaps();
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
@@ -61,6 +64,32 @@ class MainApp {
 		// info bar
 		makeEle(this.vp, "hr");
 		this.eles.info = makeEle(this.vp, "pre", null, null, "Info");
+		makeEle(this.vp, "hr");
+		// num colors
+		{
+			const label = "Set Num Colors";
+			this.numColorsMin = 1;
+			this.numColorsMax = 64;
+			this.numColorsCur = this.numColorsStart;
+			const min = this.numColorsMin;
+			const max = this.numColorsMax;
+			const start = this.numColorsStart;
+			const callback = (v) => {this.numColors = v};
+			new makeEleCombo(this.vp, label, min, max, start, 0, 0, callback);
+		}
+		// reset sim
+		makeEle(this.vp, "button", null, null, "Restart Sim",this.#restartSim.bind(this));
+		// sim speed
+		{
+			const label = "Sim Speed";
+			const step = .125;
+			const min = 0;
+			const max = 10;
+			const start = .125;
+			const prec = 3;
+			const callback = (v) => {this.simSpeed = v};
+			new makeEleCombo(this.vp, label, min, max, start, step, prec, callback);
+		}
 	}
 
 	#userProc() { // USER:
@@ -83,7 +112,11 @@ class MainApp {
 		this.eles.info.innerText 
 		= "Avg fps = " + this.avgFps.toFixed(2)
 		+ "\nMouse = (" + this.input.mouse.mxy[0] 
-		+ "," + this.input.mouse.mxy[1] + ")";
+		+ "," + this.input.mouse.mxy[1] + ")"
+		+ "\nNum Colors = " + this.numColorsCur
+		+ "\nFrame = " + this.frame
+		+ "\nEat Count = " + this.eatCount.toFixed().padStart(5) 
+		+ "/" + this.simBmSize * this.simBmSize;
 	}
 
 	// proc
@@ -140,31 +173,126 @@ class MainApp {
 		}
 	}
 
+	#buildSimBm() {
+		this.bitmapList.simBm = new Bitmap32([this.simBmSize, this.simBmSize]);
+		this.bitmapList.simBm2 = new Bitmap32([this.simBmSize, this.simBmSize]);
+		// for now random indices in 0 to numColors - 1, read red channel, make gray, palettize later
+	}
+
+	#restartSim() {
+		this.numColorsCur = this.numColors;
+		const simData = this.bitmapList.simBm.data32;
+		for (let i = 0; i < simData.length; ++i) {
+			 // alpha 0xff and the rest numColors
+			 simData[i] = 0xff000000 + 0x010101 * Math.floor(this.numColorsCur * Math.random());
+			 // straight value index
+			 simData[i] = Math.floor(this.numColorsCur * Math.random());
+		}
+		this.frame = 0;
+		this.fracFrame = 0;
+		this.eatCount = 0;
+	}
+
+	#runSim() {
+		this.fracFrame += this.simSpeed;
+		while(this.fracFrame >= 1) {
+			this.#runSimFrame();
+			--this.fracFrame;
+		}
+	}
+
+	#runSimFrame() {
+		const simBm = this.bitmapList.simBm; // current
+		const simBm2 = this.bitmapList.simBm2; // copy, read from simBm2 to update simBm
+		Bitmap32.clipBlit(simBm, [0, 0], simBm2, [0, 0], simBm.size);
+		this.eatCount = 0;
+
+		// run the simulation
+		for (let j = 0; j < this.simBmSize; ++j) {
+			for (let i = 0; i < this.simBmSize; ++i) {
+				let val = simBm2.fastGetPixel([i, j]) + 1; // eater color
+				if (val == this.numColorsCur) {
+					val = 0;
+				}
+				let eatMark = false;
+				if (simBm2.fastGetPixel([i, (j + 1) & (this.simBmSize - 1)]) == val) { // power of 2
+					eatMark = true;
+				} else if (simBm2.fastGetPixel([i, (j - 1) & (this.simBmSize - 1)]) == val) { // power of 2
+					eatMark = true;
+				} else if (simBm2.fastGetPixel([(i + 1)  & (this.simBmSize - 1), j]) == val) { // power of 2
+					eatMark = true;
+				} else if (simBm2.fastGetPixel([(i - 1)  & (this.simBmSize - 1), j]) == val) { // power of 2
+					eatMark = true;
+				}
+				if (eatMark) {
+					simBm.fastPutPixel([i, j], val);
+					++this.eatCount;
+				}
+			}
+	
+		}
+
+/*
+		for (x=0;x<128;x++)
+			for (y=0;y<128;y++)
+				{
+				val=fastgetpixel(&v,x,y)+1;
+				if (val==colors)
+					val=0;
+				if (fastgetpixel(&v,x,(y+1)&127)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,x,(y-1)&127)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,(x+1)&127,y)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				else if (fastgetpixel(&v,(x-1)&127,y)==val)
+					{
+					count++;
+					fastputpixel(&b,x,y,val);
+					}
+				}
+*/
+
+
+		++this.frame;
+	}
+
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
-		this.bitmapList.mainBM = new Bitmap32(this.fixedSize);
+		this.bitmapList.mainBm = new Bitmap32(this.fixedSize);
 
-		// already fully loaded images, copy to bitmap list
+		// already fully loaded images, copy images to bitmap list
 		for (const imageName in this.images) {
 			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
 		}
 
-		// build simBM
-		this.simBMsize = 128;
-		this.zoomRatio = 3;
-		this.bitmapList.simBM = new Bitmap32([this.simBMsize, this.simBMsize]);
-		// for now random pixels
-		const simData = this.bitmapList.simBM.data32;
-		for (let i = 0; i < simData.length; ++i) {
-			simData[i] = 0xff000000 + 0x1000000 * Math.random(); // alpha 0xff and the rest 2^24
-		}
+		// color management
+		this.numColorsMin = 1;
+		this.numColorsMax = 60;
+		this.numColorsStart = 20;
 
-		this.bitmapList.simBM = this.bitmapList.dpaint2Palette; // override temp
+		// build simBm
+		this.simBmSize = 128; // power of 2
+		this.zoomRatio = 5;
+		this.numColors = this.numColorsStart;
+		this.#buildSimBm();
+		this.#restartSim();
 
-		this.bitmapList.zoomSimBM =  new Bitmap32(
-			[this.bitmapList.simBM.size[0] * this.zoomRatio
-			, this.bitmapList.simBM.size[1] * this.zoomRatio]);
+		// create palletized simBM and zoomSimBmPal
+		this.bitmapList.simBmPal = new Bitmap32([this.simBmSize, this.simBmSize]);
+		this.bitmapList.zoomSimBmPal =  new Bitmap32(
+			[this.bitmapList.simBm.size[0] * this.zoomRatio
+			, this.bitmapList.simBm.size[1] * this.zoomRatio]);
 
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapList);
@@ -176,68 +304,84 @@ class MainApp {
 				+ "dim (" + bm.size[0].toString().padStart(4) 
 				+ "," + bm.size[1].toString().padStart(4) + ")");
 		}
-		this.bitmapList.samplerBM = new Bitmap32([16, 16]);
-	}
-
-	// collect color palette from an image that is 16 by 16 rectangles
-	#sampler() {
-		const mainBM = this.bitmapList.mainBM;
-		const samplerBM = this.bitmapList.samplerBM;
-		const offx = 14;
-		const offy = 16;
-		const stepx = 16;
-		const stepy = 10;
-		const paletteBM = new Bitmap32([16, 16]);
-		this.bitmapList.paletteBM = paletteBM;
-		for (let j = 0; j < 16; ++j) {
-			const posy = offy + stepy * j;
-			for (let i = 0; i < 16; ++i) {
-				const posx = offx + stepx * i;
-				const pos = [posx, posy];
-				const val = mainBM.clipGetPixel(pos);
-				mainBM.clipCircle(pos, 1, Bitmap32.strToColor32("lightgreen"));
-				mainBM.clipPutPixel(pos, val);
-				samplerBM.clipPutPixel([j, i], val); // switch X and Y
-			}
-		}
 	}
 
 	#drawBitmaps() {
-		const mainBM = this.bitmapList.mainBM;
+		const mainBm = this.bitmapList.mainBm;
 		// start with background
-		mainBM.fill(this.backgndColor);
+		mainBm.fill(this.backgndColor);
 
-		// zoom simBM to zoomSimBM
-		const simBM = this.bitmapList.simBM;
-		const zoomSimBM = this.bitmapList.zoomSimBM;
-		Bitmap32.zoomBM(simBM, zoomSimBM, [this.zoomRatio, this.zoomRatio]);
-		// draw simBM
-		Bitmap32.clipBlit(simBM, [0, 0]
-			, mainBM, [0, 0]
-			, simBM.size);
+		this.#runSim();
+
+		//const simBm = this.bitmapList.simBm;
+		const simBmPal = this.bitmapList.simBmPal;
+		const zoomSimBmPal = this.bitmapList.zoomSimBmPal;
+		const offSim = [(mainBm.size[0] - zoomSimBmPal.size[0]) / 2
+			, (mainBm.size[1] - zoomSimBmPal.size[1]) / 2];
+		const simBm = this.bitmapList.simBm;
+		this.hilit = -1;
+		{
+			const mxy = this.input.mouse.mxy;
+			const zoomSimBmPal = this.bitmapList.zoomSimBmPal;
+			if (mxy[0] >= offSim[0] 
+					&& mxy[1] >= offSim[1] 
+					&& mxy[0] < offSim[0] + zoomSimBmPal.size[0] 
+					&& mxy[1] < offSim[1] + zoomSimBmPal.size[1]) {
+				const px = Math.floor((mxy[0] - offSim[0]) / this.zoomRatio);
+				const py = Math.floor((mxy[1] - offSim[1]) / this.zoomRatio);
+				const pos = [px, py];
+				this.hilit = simBm.fastGetPixel(pos);
+			}
+		}
+		// draw paletteBm
+		const paletteBm = this.bitmapList.dpaint2Palette;
+		const paletteBmdata = paletteBm.data32;
+		for (let j = 0; j < this.numColorsCur; ++j) {
+			const val = paletteBmdata[j];
+			const x = Math.floor(j / 16);
+			const y = j % 16;
+			if (this.hilit == j) {
+				mainBm.clipRect([19 + 20 * x, 19 + 20 * y], [20, 20], Bitmap32.strToColor32("white"));
+			}
+			mainBm.clipRect([21 + 20 * x, 21 + 20 * y], [16, 16], val);
+
+		}
 		/*
-		// draw zoomSimBM
-		Bitmap32.clipBlit(zoomSimBM, [0, 0]
-			, mainBM, [(mainBM.size[0] - zoomSimBM.size[0]) / 2, (mainBM.size[1] - zoomSimBM.size[1]) / 2]
-			, zoomSimBM.size);
+		Bitmap32.clipBlit(paletteBm, [0, 0]
+			, mainBm, [0, 600]
+			, paletteBm.size);
 		*/
+		// palettize and zoom simBm
+		Bitmap32.palettize(this.bitmapList.simBm
+			, this.bitmapList.simBmPal
+			, this.bitmapList.dpaint2Palette.data32)
+		Bitmap32.zoomBM(simBmPal, zoomSimBmPal, [this.zoomRatio, this.zoomRatio]);
 
-		// sample 
-		this.#sampler(); // sample dpaint2Palette
+		/*
+		// palettize simBm to simBmPal
+		// zoom simBmPal to zoomSimBmPal
+		// draw simBm
+		Bitmap32.clipBlit(simBm, [0, 0]
+			, mainBm, [0, 0]
+			, simBm.size);
 
-		// draw sampler bitmap
-		Bitmap32.clipBlit(this.bitmapList.samplerBM, [0, 0]
-			, mainBM, [400, 500]
-			, this.bitmapList.samplerBM.size);
-
+		// draw simBmPal
+		Bitmap32.clipBlit(simBmPal, [0, 0]
+			, mainBm, [0, 300]
+			, simBm.size);
+*/
+		// draw zoomSimBmPal
+		Bitmap32.clipBlit(zoomSimBmPal, [0, 0]
+			, mainBm, offSim
+			, zoomSimBmPal.size);
 
 		// very simple cursor
 		const p = this.input.mouse.mxy;
 		const colRed = Bitmap32.strToColor32("red");
-		mainBM.clipCircle(p, 10, colRed);
+		mainBm.clipCircle(p, 1, colRed);
 
 		// finally draw background to canvas
-		this.ctx.putImageData(mainBM.imageData, 0, 0);
+		this.ctx.putImageData(mainBm.imageData, 0, 0);
 	}
 }
 

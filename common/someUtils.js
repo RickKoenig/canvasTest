@@ -397,7 +397,7 @@ class makeEleCombo {
 		this.outerCallback = outerCallback;
 		this.#callbackSlider(); // fire off one callback at init
 		// button
-		makeEle(parent, "button", "aButtonId", null, this.labelStr + " reset", this.#callbackResetButton.bind(this));
+		makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.#callbackResetButton.bind(this));
 	}
 
 	#callbackResetButton() {

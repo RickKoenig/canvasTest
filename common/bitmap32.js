@@ -422,7 +422,6 @@ class Bitmap32 {
 		let srcIdx = 0;
 		const destData = destBM.data32;
 		let destIdx = 0;
-		const blueCol = Bitmap32.strToColor32("blue");
 		const stepBack = srcSizeX;
 		
 		for (let j = 0; j < srcSizeY; ++j) { // walk source Y
@@ -436,6 +435,22 @@ class Bitmap32 {
 				srcIdx -= stepBack;
 			}
 			srcIdx += stepBack; // cancel '-= stepBack'
+		}
+	}
+
+	// convert an index bitmap(srcBM) to a palettized bitmap(destBM) using (palette)
+	static palettize(srcBM, destBM, palette) {
+		const srcSizeX = srcBM.size[0];
+		const srcSizeY = srcBM.size[1];
+		if (srcSizeX != destBM.size[0] || srcSizeY != destBM.size[1]) {
+			return; // dimensions don't match
+		}
+		const prod = srcSizeX * srcSizeY;
+		const srcData = srcBM.data32;
+		const destData = destBM.data32;
+		for (let i = 0; i < prod; ++i) {
+			const idx = srcData[i] & 0xff; // use the red channel
+			destData[i] = palette[idx];
 		}
 	}
 }
