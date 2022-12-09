@@ -379,7 +379,7 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 }
 
 class makeEleCombo {
-	constructor(parent, labelStr, min, max, start, step, precision, outerCallback) {
+	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, doButton = true) {
 		// break
 		//makeEle(parent, "hr");
 		// pre/span
@@ -396,8 +396,10 @@ class makeEleCombo {
 		this.precision = precision;
 		this.outerCallback = outerCallback;
 		this.#callbackSlider(); // fire off one callback at init
-		// button
-		makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.#callbackResetButton.bind(this));
+		if (doButton) {
+			// button
+			makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.#callbackResetButton.bind(this));
+		}
 	}
 
 	#callbackResetButton() {
