@@ -22,7 +22,8 @@ class MainApp {
 			//"Bark.png",
 			//"panel.jpg",
 			//"maptestnck.png",
-			"dpaint2Palette.png"
+			"roomsIdx.png",
+			"roomsPal.png"
 		];
 		this.#loadImages(imageNames);
 	}
@@ -65,18 +66,6 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		this.eles.info = makeEle(this.vp, "pre", null, null, "Info");
 		makeEle(this.vp, "hr");
-		// num colors
-		{
-			const label = "Set Num Colors";
-			this.numColorsMin = 1;
-			this.numColorsMax = 64;
-			this.numColorsCur = this.numColorsStart;
-			const min = this.numColorsMin;
-			const max = this.numColorsMax;
-			const start = this.numColorsStart;
-			const callback = (v) => {this.numColors = v};
-			new makeEleCombo(this.vp, label, min, max, start, 0, 0, callback);
-		}
 		// reset sim
 		makeEle(this.vp, "button", null, null, "Restart Sim",this.#restartSim.bind(this));
 		// sim speed
@@ -113,10 +102,7 @@ class MainApp {
 		= "Avg fps = " + this.avgFps.toFixed(2)
 		+ "\nMouse = (" + this.input.mouse.mxy[0] 
 		+ "," + this.input.mouse.mxy[1] + ")"
-		+ "\nNum Colors = " + this.numColorsCur
-		+ "\nFrame = " + this.frame
-		+ "\nEat Count = " + this.eatCount.toFixed().padStart(5) 
-		+ "/" + this.simBmSize * this.simBmSize;
+		+ "\nFrame = " + this.frame;
 	}
 
 	// proc
@@ -174,23 +160,11 @@ class MainApp {
 	}
 
 	#buildSimBm() {
-		// for now random indices in 0 to numColors - 1, read red channel, make gray, palettize later
-		this.bitmapList.simBm = new Bitmap32([this.simBmSize, this.simBmSize]);
-		this.bitmapList.simBm2 = new Bitmap32([this.simBmSize, this.simBmSize]);
 	}
 
 	#restartSim() {
-		this.numColorsCur = this.numColors;
-		const simData = this.bitmapList.simBm.data32;
-		for (let i = 0; i < simData.length; ++i) {
-			 // alpha 0xff and the rest numColors
-			 simData[i] = 0xff000000 + 0x010101 * Math.floor(this.numColorsCur * Math.random());
-			 // straight value index
-			 simData[i] = Math.floor(this.numColorsCur * Math.random());
-		}
 		this.frame = 0;
 		this.fracFrame = 0;
-		this.eatCount = 0;
 	}
 
 	#runSim() {
@@ -202,67 +176,7 @@ class MainApp {
 	}
 
 	#runSimFrame() {
-		const simBm = this.bitmapList.simBm; // current
-		const simBm2 = this.bitmapList.simBm2; // copy, read from simBm2 to update simBm
-		Bitmap32.clipBlit(simBm, [0, 0], simBm2, [0, 0], simBm.size);
-		this.eatCount = 0;
-
 		// run the simulation
-		for (let j = 0; j < this.simBmSize; ++j) {
-			for (let i = 0; i < this.simBmSize; ++i) {
-				let val = simBm2.fastGetPixel([i, j]) + 1; // eater color
-				if (val == this.numColorsCur) {
-					val = 0;
-				}
-				let eatMark = false;
-				if (simBm2.fastGetPixel([i, (j + 1) & (this.simBmSize - 1)]) == val) { // power of 2
-					eatMark = true;
-				} else if (simBm2.fastGetPixel([i, (j - 1) & (this.simBmSize - 1)]) == val) { // power of 2
-					eatMark = true;
-				} else if (simBm2.fastGetPixel([(i + 1)  & (this.simBmSize - 1), j]) == val) { // power of 2
-					eatMark = true;
-				} else if (simBm2.fastGetPixel([(i - 1)  & (this.simBmSize - 1), j]) == val) { // power of 2
-					eatMark = true;
-				}
-				if (eatMark) {
-					simBm.fastPutPixel([i, j], val);
-					++this.eatCount;
-				}
-			}
-	
-		}
-
-/*
-		for (x=0;x<128;x++)
-			for (y=0;y<128;y++)
-				{
-				val=fastgetpixel(&v,x,y)+1;
-				if (val==colors)
-					val=0;
-				if (fastgetpixel(&v,x,(y+1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,x,(y-1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x+1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x-1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				}
-*/
-
-
 		++this.frame;
 	}
 
@@ -276,23 +190,21 @@ class MainApp {
 			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
 		}
 
-		// color management
-		this.numColorsMin = 1;
-		this.numColorsMax = 60;
-		this.numColorsStart = 20;
+		// build rooms32 and zoom
+		this.zoomRatio = 6;
+		// build palettized Bm here
+		this.bitmapList.rooms32Bm = new Bitmap32(this.bitmapList.roomsIdx.size);
+		this.bitmapList.rooms32BmZoom = new Bitmap32(
+			[this.bitmapList.roomsIdx.size[0] * this.zoomRatio
+			, this.bitmapList.roomsIdx.size[1] * this.zoomRatio]);
 
-		// build simBm
-		this.simBmSize = 128; // power of 2
-		this.zoomRatio = 5;
-		this.numColors = this.numColorsStart;
+		const mainBm = this.bitmapList.mainBm;
+		const rooms32BmZoom = this.bitmapList.rooms32BmZoom;
+		this.offsetRoom = [
+			(mainBm.size[0] - rooms32BmZoom.size[0])/2
+			, (mainBm.size[1] - rooms32BmZoom.size[1])/2];
 		this.#buildSimBm();
 		this.#restartSim();
-
-		// create palletized simBM and zoomSimBmPal
-		this.bitmapList.simBmPal = new Bitmap32([this.simBmSize, this.simBmSize]);
-		this.bitmapList.zoomSimBmPal =  new Bitmap32(
-			[this.bitmapList.simBm.size[0] * this.zoomRatio
-			, this.bitmapList.simBm.size[1] * this.zoomRatio]);
 
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapList);
@@ -308,77 +220,26 @@ class MainApp {
 
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
+		const roomsPalBm = this.bitmapList.roomsPal;
+		const roomsPalBmData = roomsPalBm.data32;
+		const roomsIdxBm = this.bitmapList.roomsIdx;
+		const rooms32Bm = this.bitmapList.rooms32Bm;
+		const rooms32BmZoom = this.bitmapList.rooms32BmZoom;
 		// start with background
 		mainBm.fill(this.backgndColor);
 
 		this.#runSim();
-
-		//const simBm = this.bitmapList.simBm;
-		const simBmPal = this.bitmapList.simBmPal;
-		const zoomSimBmPal = this.bitmapList.zoomSimBmPal;
-		const offSim = [(mainBm.size[0] - zoomSimBmPal.size[0]) / 2
-			, (mainBm.size[1] - zoomSimBmPal.size[1]) / 2];
-		const simBm = this.bitmapList.simBm;
-		this.hilit = -1;
-		{
-			const mxy = this.input.mouse.mxy;
-			const zoomSimBmPal = this.bitmapList.zoomSimBmPal;
-			if (mxy[0] >= offSim[0] 
-					&& mxy[1] >= offSim[1] 
-					&& mxy[0] < offSim[0] + zoomSimBmPal.size[0] 
-					&& mxy[1] < offSim[1] + zoomSimBmPal.size[1]) {
-				const px = Math.floor((mxy[0] - offSim[0]) / this.zoomRatio);
-				const py = Math.floor((mxy[1] - offSim[1]) / this.zoomRatio);
-				const pos = [px, py];
-				this.hilit = simBm.fastGetPixel(pos);
-			}
-		}
-		// draw paletteBm
-		const paletteBm = this.bitmapList.dpaint2Palette;
-		const paletteBmdata = paletteBm.data32;
-		for (let j = 0; j < this.numColorsCur; ++j) {
-			const val = paletteBmdata[j];
-			const x = Math.floor(j / 16);
-			const y = j % 16;
-			if (this.hilit == j) {
-				mainBm.clipRect([19 + 20 * x, 19 + 20 * y], [20, 20], Bitmap32.strToColor32("white"));
-			}
-			mainBm.clipRect([21 + 20 * x, 21 + 20 * y], [16, 16], val);
-
-		}
-		/*
-		Bitmap32.clipBlit(paletteBm, [0, 0]
-			, mainBm, [0, 600]
-			, paletteBm.size);
-		*/
-		// palettize and zoom simBm
-		Bitmap32.palettize(this.bitmapList.simBm
-			, this.bitmapList.simBmPal
-			, this.bitmapList.dpaint2Palette.data32)
-		Bitmap32.zoomBM(simBmPal, zoomSimBmPal, [this.zoomRatio, this.zoomRatio]);
-
-		/*
-		// palettize simBm to simBmPal
-		// zoom simBmPal to zoomSimBmPal
-		// draw simBm
-		Bitmap32.clipBlit(simBm, [0, 0]
-			, mainBm, [0, 0]
-			, simBm.size);
-
-		// draw simBmPal
-		Bitmap32.clipBlit(simBmPal, [0, 0]
-			, mainBm, [0, 300]
-			, simBm.size);
-*/
-		// draw zoomSimBmPal
-		Bitmap32.clipBlit(zoomSimBmPal, [0, 0]
-			, mainBm, offSim
-			, zoomSimBmPal.size);
+		
+		// build and draw palettized rooms Bm
+		Bitmap32.palettize(roomsIdxBm, rooms32Bm, roomsPalBm.data32);
+		Bitmap32.zoomBM(rooms32Bm, rooms32BmZoom, [this.zoomRatio, this.zoomRatio]);
+		Bitmap32.clipBlit(rooms32BmZoom, [0, 0], mainBm, this.offsetRoom, rooms32BmZoom.size);
+		//Bitmap32.clipBlit(rooms32Bm, [0, 0], mainBm, [220, 150], rooms32Bm.size);
 
 		// very simple cursor
 		const p = this.input.mouse.mxy;
 		const colRed = Bitmap32.strToColor32("red");
-		mainBm.clipCircle(p, 1, colRed);
+		mainBm.clipCircle(p, 2, colRed);
 
 		// finally draw background to canvas
 		this.ctx.putImageData(mainBm.imageData, 0, 0);
@@ -386,6 +247,16 @@ class MainApp {
 }
 
 const mainApp = new MainApp();
+
+
+
+
+
+
+
+
+
+
 
 /*
 #include <stdio.h>
@@ -465,4 +336,360 @@ while(1)
 	}
 free_bitmap(&b);
 }
+*/
+
+/*
+// heat in a house
+#include <m_eng.h>
+
+#include "u_states.h"
+
+#define USENAMESPACE
+#ifdef USENAMESPACE
+namespace u_s_heat_house {
+#endif
+
+#define RX 128
+#define RY 96
+
+#define XSIZE 1024
+#define YSIZE 768
+
+bitmap8 *room,*bigroom; //,*heat,*oldheat;
+U32 *heat,*oldheat;
+C32 dacs[256];//,dacs2[256];
+U8 andor[512];
+
+S32 nthermostats;
+S32 nheaters;
+S32 nwindows;
+//S32 nwalls;
+pointi2 *thermostats;
+pointi2 *heaters;
+pointi2 *windows;
+//pointi2 *walls;
+
+S32 heateron;
+
+bitmap8* B8;
+
+void scanroom()
+{
+	S32 i,j,c;
+	nthermostats=nheaters=nwindows=0;
+	for (j=0;j<RY;j++)
+		for (i=0;i<RX;i++) {
+			c=fastgetpixel8(room,i,j);
+			if (c) {
+				switch (c) {
+				//case red:
+				case lightred:
+				case lightmagenta:
+					nheaters++;
+					break;
+				case lightgreen:
+					nthermostats++;
+					break;
+				case lightblue:
+					nwindows++;
+					break;
+//				case blue:
+//				case white:
+//					nwalls++;
+//					break;
+				}
+			}
+		}
+	if (thermostats)
+		delete[](thermostats);
+	thermostats=new pointi2[nthermostats+1];
+	if (heaters)
+		delete[](heaters);
+	heaters=new pointi2[nheaters+1];
+	if (windows)
+		delete[](windows);
+	windows=new pointi2[nwindows+1];
+//	if (walls)
+//		memfree(walls);
+//	walls=memalloc((nwalls+1)*sizeof(struct pointi2));
+	nthermostats=nheaters=nwindows=0;
+	for (j=0;j<RY;j++)
+		for (i=0;i<RX;i++) {
+			c=fastgetpixel8(room,i,j);
+			if (c) {
+				switch (c) {
+				//case red:
+				case lightred:
+				case lightmagenta:
+					heaters[nheaters].x=i;
+					heaters[nheaters++].y=j;
+					break;
+				case lightgreen:
+					thermostats[nthermostats].x=i;
+					thermostats[nthermostats++].y=j;
+					break;
+				case lightblue:
+					windows[nwindows].x=i;
+					windows[nwindows++].y=j;
+					break;
+//				case white:
+//				case blue:
+//					walls[nwalls].x=i;
+//					walls[nwalls++].y=j;
+//					break;
+				}
+			}
+		}
+}
+
+void setdacrange(S32 s,S32 e,C32 ds,C32 de)
+{
+	S32 i;
+	for (i=s;i<=e;i++) {
+		dacs[i].r=(de.r*(i-s)+ds.r*(e-i))/(e-s);
+		dacs[i].g=(de.g*(i-s)+ds.g*(e-i))/(e-s);
+		dacs[i].b=(de.b*(i-s)+ds.b*(e-i))/(e-s);
+	}
+}
+
+void doheat()
+{
+	U32 *t;
+	U32 *p,*p2;
+	U8 *w;
+	S32 i,j,c,x,y;
+	S32 lastheateron=heateron;
+	heateron = 0; // should be 0, test with 1
+	for (i=0;i<nthermostats;i++) {
+		x=thermostats[i].x;
+		y=thermostats[i].y;
+		c=heat[x+y*RX];
+		c>>=18;
+		//if (true) {
+		if (c<=135) {
+			heateron=1;
+			break;
+		}
+	}
+	if (heateron)
+		for (i=0;i<nheaters;i++)
+			fastputpixel8(room,heaters[i].x,heaters[i].y,lightmagenta);
+	else
+		for (i=0;i<nheaters;i++)
+			fastputpixel8(room,heaters[i].x,heaters[i].y,lightred);
+	if (heateron)
+		for (i=0;i<nheaters;i++)
+			heat[heaters[i].x+heaters[i].y*RX]=1023*65536;
+	for (i=0;i<nwindows;i++)
+		heat[windows[i].x+windows[i].y*RX]=64*65536;
+	t=oldheat;
+	oldheat=heat;
+	heat=t;
+	for (j=1;j<RY-1;j++) {
+		p=oldheat+RX*j+1;
+		p2=heat+RX*j+1;
+		w=room->data+RX*j+1;
+		for (i=1;i<RX-1;i++,p++,p2++,w++) {
+			if (w[1]==white || w[1]==lightblue)
+				c=p[0];
+			else
+				c=p[1];
+			if (w[-1]==white || w[-1]==lightblue)
+				c+=p[0];
+			else
+				c+=p[-1];
+			if (w[-RX]==white || w[-RX]==lightblue)
+				c+=p[0];
+			else
+				c+=p[-RX];
+			if (w[RX]==white || w[RX]==lightblue)
+				c+=p[0];
+			else
+				c+=p[RX];
+			c+=2;
+			c>>=2;
+			p2[0]=c;
+		}
+	}
+}
+
+void video_setpalette(const C32* dacs)
+{
+}
+
+#ifdef USENAMESPACE
+} /// end namespace u_s_heat_house
+using namespace u_s_heat_house;
+#endif
+
+
+void heathouseinit()
+{
+	S32 i;
+	S32 p=RX*RY;
+	video_setupwindow(XSIZE,YSIZE);
+	pushandsetdir("heathouse");
+	room = gfxread8("rooms.pcx",dacs);
+	logger("rooms size = %d, %d\n",room->size.x,room->size.y);
+	popdir();
+////////////////////////// main
+	bigroom=bitmap8alloc(XSIZE,YSIZE,-1);
+	B8=bitmap8alloc(XSIZE,YSIZE,blue);
+	heat=new U32[RX*RY];
+	oldheat=new U32[RX*RY];
+	for (i=0;i<p;i++) {
+		heat[i]=64*65536;
+		oldheat[i]=64*65536;
+	}
+	//memcpy(dacs,wininfo.stdpalette,sizeof(struct rgb24)*16);
+	copy(stdpalette,stdpalette+16,dacs);
+	setdacrange(16,80,C32BLUE,C32LIGHTGREEN);
+	setdacrange(80,160,C32LIGHTGREEN,C32YELLOW);
+	setdacrange(160,255,C32YELLOW,C32RED);
+	dacs[135]=C32MAGENTA;
+	for (i=16;i<=255;i++) {
+		if (i&1) {
+			dacs[i].r^=8;
+			dacs[i].g^=8;
+			dacs[i].b^=8;
+		}
+	}
+//	setdacrange(16,40,rgbblue,rgblightgreen);
+//	setdacrange(40,80,rgblightgreen,rgbyellow);
+//	setdacrange(80,135,rgbyellow,rgbred);
+//	setdacrange(136,255,rgbdarkgray,rgbwhite);
+//	for (i=16;i<=135;i++)
+//		dacs2[2*i-16]=dacs[i];
+//	for (i=136;i<=255;i++)
+//		dacs2[2*i-255]=dacs[i];
+	video_setpalette(dacs);
+	scanroom();
+#if 1
+	for (i = 0; i < 256; i++) {
+		andor[i] = 0x00;
+		andor[i + 256] = i;
+	}
+#if 1
+	andor[blue] = 0xff;
+	andor[blue + 256] = 0x00;
+	andor[black] = 0xff;
+	andor[black + 256] = 0x00;
+#endif
+#else
+	for (i = 0; i < 256; i++) {
+		andor[i] = 0;
+		andor[i + 256] = i;
+	}
+	andor[0] = 0xff;
+#endif
+}
+
+void heathouseproc()
+{
+	if (KEY==K_ESCAPE)
+		poporchangestate(STATE_MAINMENU);
+
+#if 1
+// draw background
+	S32 p;
+	static S32 oldbut;
+	S32 mx,my;
+	S32 col,newcol;
+	//video_lock();
+	if (MBUT&!oldbut) {
+		mx=MX/8;
+		my=MY/8;
+		col=clipgetpixel8(room,mx,my);
+		if (col!=black && col!=white) {
+			switch(col) {
+			case red:	
+				newcol=lightred;
+				break;
+			case lightred:
+			case lightmagenta:
+				newcol=red;
+				break;
+			case green:	
+				newcol=lightgreen;
+				break;
+			case lightgreen:
+				newcol=green;
+				break;
+			case blue:	
+				newcol=lightblue;
+				break;
+			case lightblue:
+				newcol=blue;
+				break;
+			}
+			clipfloodfill8(room,mx,my,newcol);
+			scanroom();
+		}
+	}
+	for (p=0;p<250;p++)
+		doheat();
+	oldbut=MBUT;
+#endif
+}
+
+void heathousedraw2d()
+{
+	S32 i,j,wv;
+	U32 *ip;
+	U8 v;
+	//clipclear32(B32,C32(0,0,255));	
+	for (j=0;j<RY;j++) {
+		ip=heat+RX*j;
+		for (i=0;i<RX;i++,ip++) {
+			wv=*ip>>18;
+//			if (wv>=200)
+//				v=200+(wv-200)*55/823;
+//			else
+//				v=wv;
+			v=wv;
+			fastrect8(B8,i<<3,j<<3,8,8,v);
+		}
+	}
+#if 1
+	clipscaleblit8(room,bigroom);
+
+	clipmask8(bigroom,B8,andor);
+	//clipblit8(bigroom, B8, 0, 0, 0, 0, bigroom->size.x, bigroom->size.y);
+
+	for (i=0;i<256;i++)
+		cliprect8(B8,i*4,0,i*4+4,16,i);
+	i=clipgetpixel8(B8,MX,MY);
+	clipline8(B8,i*4-1,0,i*4-1,15,black);
+	clipline8(B8,i*4-2,0,i*4-2,15,black);
+	clipline8(B8,i*4+4,0,i*4+4,15,black);
+	clipline8(B8,i*4+5,0,i*4+5,15,black);
+#endif
+	//bitmap32* b32 =
+	convert8to32(B8,dacs,B32);
+	//bitmap32* b32 = bitmap32alloc(B8->size.x,B8->size.y,C32GREEN);
+	//clipblit32(b32,B32,0,0,0,0,b32->size.x,b32->size.y);
+	//bitmap32free(b32);
+	outtextxyf32(B32,4,WY-8-4,C32WHITE,"Heat House");
+	//video_unlock();
+}
+
+void heathouseexit()
+{
+	C32* stddacs = stdpalette;	// get std palette
+	video_setpalette(stddacs);	// set it in window
+	bitmap8free(room);
+	bitmap8free(bigroom);
+	delete[] heat;
+	delete[] oldheat;
+	delete[] thermostats;
+	thermostats=0;
+	delete[] windows;
+	windows = 0;
+//	memfree(walls);
+//	walls=NULL;
+	delete[] heaters;
+	heaters = 0;
+	bitmap8free(B8);
+}
+
 */

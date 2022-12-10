@@ -231,38 +231,6 @@ class MainApp {
 			}
 	
 		}
-
-/*
-		for (x=0;x<128;x++)
-			for (y=0;y<128;y++)
-				{
-				val=fastgetpixel(&v,x,y)+1;
-				if (val==colors)
-					val=0;
-				if (fastgetpixel(&v,x,(y+1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,x,(y-1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x+1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x-1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				}
-*/
-
-
 		++this.frame;
 	}
 
@@ -346,30 +314,11 @@ class MainApp {
 			mainBm.clipRect([21 + 20 * x, 21 + 20 * y], [16, 16], val);
 
 		}
-		/*
-		Bitmap32.clipBlit(paletteBm, [0, 0]
-			, mainBm, [0, 600]
-			, paletteBm.size);
-		*/
 		// palettize and zoom simBm
 		Bitmap32.palettize(this.bitmapList.simBm
 			, this.bitmapList.simBmPal
 			, this.bitmapList.dpaint2Palette.data32)
 		Bitmap32.zoomBM(simBmPal, zoomSimBmPal, [this.zoomRatio, this.zoomRatio]);
-
-		/*
-		// palettize simBm to simBmPal
-		// zoom simBmPal to zoomSimBmPal
-		// draw simBm
-		Bitmap32.clipBlit(simBm, [0, 0]
-			, mainBm, [0, 0]
-			, simBm.size);
-
-		// draw simBmPal
-		Bitmap32.clipBlit(simBmPal, [0, 0]
-			, mainBm, [0, 300]
-			, simBm.size);
-*/
 		// draw zoomSimBmPal
 		Bitmap32.clipBlit(zoomSimBmPal, [0, 0]
 			, mainBm, offSim
@@ -386,83 +335,3 @@ class MainApp {
 }
 
 const mainApp = new MainApp();
-
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <graph32\graph32.h>
-
-int x,y,a,b;
-int frames;
-char str[20];
-int val,count;
-int colors;
-
-void main()
-{
-struct bitmap v,b;
-mem_init();
-// 320 by 200
-alloc_bitmap(&b,XSIZE,YSIZE,0);
-make_video_bitmap(&v);
-randomize();
-while(1)
-	{
-	printf("input # of colors (0 to quit) > ");
-	scanf("%d",&colors);
-	frames=0;
-	if (colors==0)
-		break;
-	initgraph();
-	for (x=0;x<128;x++)
-		{
-		if (getkey())
-			break;
-		for (y=0;y<128;y++)
-			fastputpixel(&b,x,y,random(colors));
-		}
-	fastblit(&b,&v,0,0,0,0,XSIZE,YSIZE);
-	while(!getkey())
-		{
-		count=0;
-		for (x=0;x<128;x++)
-			for (y=0;y<128;y++)
-				{
-				val=fastgetpixel(&v,x,y)+1;
-				if (val==colors)
-					val=0;
-				if (fastgetpixel(&v,x,(y+1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,x,(y-1)&127)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x+1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				else if (fastgetpixel(&v,(x-1)&127,y)==val)
-					{
-					count++;
-					fastputpixel(&b,x,y,val);
-					}
-				}
-		frames++;
-		fastrect(&b,0,YSIZE-24,XSIZE-1,YSIZE-1,black);
-		sprintf(str,"%5d",frames);
-		outtextxy(&b,20<<3,22<<3,str,white);
-		sprintf(str,"%5d/%5d",count,16384);
-		outtextxy(&b,20<<3,24<<3,str,white);
-		fastblit(&b,&v,0,0,0,0,XSIZE,YSIZE);
-		}
-	closegraph();
-	}
-free_bitmap(&b);
-}
-*/
