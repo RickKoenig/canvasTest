@@ -1,6 +1,7 @@
 class Bitmap32 {
 
-	static errorColor = Bitmap32.strToColor32("hotpink");
+	//static errorColor = Bitmap32.strToColor32("hotpink");
+	static errorColor = NaN;
 	// members:
 	//		size : 2d array of dimensions
 	//		imageData : ImageData
@@ -453,4 +454,78 @@ class Bitmap32 {
 			destData[i] = palette[idx];
 		}
 	}
+
+	// clipped flood fill
+	//#define STACK 2000
+	//static int stackx[STACK];
+	//static int stacky[STACK];
+	//static int sp=0,maxsp;
+
+	#fillStackSize() {
+		return this.fillStack.length;
+	}
+
+	#fillPush(x,y) {
+		this.fillStack.push([x, y]);
+	}
+
+	#fillPop() {
+		const ret = this.fillStack.pop();
+		return ret;
+	}
+
+	clipFloodFill(p, c) {
+		let x = p[0];
+		let y = p[1];
+		this.fillStack = [];
+		//int st,end,next,curr;
+		const r = this.clipGetPixel([x, y]);
+		if (r == c || isNaN(r) || r == Bitmap32.errorColor) { // TODO: don't rely on errorcolor for clipGetPixel error color
+			return;
+		}
+		this.#fillPush(x, y);
+		while(this.#fillStackSize()) {
+			//////// got work to do
+			const p = this.#fillPop();
+			x = p[0]; y = p[1];
+			this.clipPutPixel([x,y], c);
+			////// find start of run
+			let st = x;
+			while(true) {
+				if (this.clipGetPixel([--st, y]) != r) {
+					++st;
+					break;
+				}
+				this.clipPutPixel([st, y], c);
+			}
+			///// find end of run
+			let end = x;
+			while(true) {
+				if (this.clipGetPixel([++end, y]) !=r ) {
+					--end;
+					break;
+				}
+				this.clipPutPixel([end, y], c);
+			}
+			/////// scan for upper runs to do
+			let curr = this.clipGetPixel([st, y - 1]);
+			for (x = st; x <= end; ++x) {
+				const next = this.clipGetPixel([x + 1, y -1 ]);
+				if (((next != r) || (x == end)) && (curr == r)) {
+					this.#fillPush(x, y - 1);
+				}
+				curr = next;
+			}
+			////// scan for lower runs to do
+			curr = this.clipGetPixel([st,y + 1]);
+			for (x = st; x <= end; ++x) {
+				const next = this.clipGetPixel([x + 1, y + 1]);
+				if (((next != r) || (x == end)) && (curr == r)) {
+					this.#fillPush(x, y+ 1);
+				}
+				curr = next;
+			}
+		}
+	}
+
 }

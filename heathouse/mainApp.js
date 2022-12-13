@@ -160,35 +160,31 @@ class MainApp {
 	}
 
 	#buildSimBm() {
-		this.zoomRatio = 6;
-		// build palettized Bm here
-		this.bitmapList.rooms32Bm = new Bitmap32(this.bitmapList.roomsIdx.size);
-		this.bitmapList.rooms32BmZoom = new Bitmap32(
-			[this.bitmapList.roomsIdx.size[0] * this.zoomRatio
-			, this.bitmapList.roomsIdx.size[1] * this.zoomRatio]);
-
-		const mainBm = this.bitmapList.mainBm;
-		const rooms32BmZoom = this.bitmapList.rooms32BmZoom;
-		this.offsetRoom = [
-			(mainBm.size[0] - rooms32BmZoom.size[0])/2
-			, (mainBm.size[1] - rooms32BmZoom.size[1])/2];
 		this.RX = 128;
 		this.RY = 96;
 		this.p = this.RX * this.RY;
 		
 		this.XSIZE = 1024;
 		this.YSIZE = 768;
+		this.zoomRatio = 8;
+		// build palettized Bm here
+		this.bitmapList.room8Bm = new Bitmap32([this.RX, this.RY]);
+		this.bitmapList.room8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		//this.bitmapList.room32BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		const mainBm = this.bitmapList.mainBm;
+		//const room32BmZoom = this.bitmapList.room32BmZoom;
 
 		//bitmap8 *room,*bigroom; //,*heat,*oldheat;
 		//bitmap8* B8;
-		this.bitmapList.roomBm = new Bitmap32([this.RX, this.RY]);
 		this.heat = new Uint32Array(this.p);
 		this.oldheat = new Uint32Array(this.p);
-
+		this.heat.fill(64 * 65536);
+		this.oldheat.fill(64 * 65536);
 		//C32 dacs[256];
 		//U8 andor[512];
 		this.dacs = new Uint32Array(256);
 		this.andor = new Uint8Array(512);
+		//dstData.set(srcData.subarray(srcIdx, srcIdx + xferSizeX), dstIdx);
 
 		//S32 nthermostats;
 		//S32 nheaters;
@@ -218,7 +214,6 @@ class MainApp {
 	}
 
 	#runSimFrame() {
-		// run the simulation
 		++this.frame;
 	}
 
@@ -235,7 +230,22 @@ class MainApp {
 		// build rooms32 and zoom
 		this.#buildSimBm();
 		this.#restartSim();
-
+/*
+		// test flood fill
+		const bt = new Uint32Array([
+			3, 3, 3, 3, 3,
+			3, 4, 4, 4, 4,
+			4, 4, 4, 3, 4,
+			4, 4, 4, 3, 4,
+			3, 4, 3, 4, 4,
+		]);
+		this.bitmapList.testFF = new Bitmap32([5, 5], bt);
+		this.bitmapList.testFFflood = new Bitmap32(this.bitmapList.testFF.size);
+		Bitmap32.clipBlit(this.bitmapList.testFF, [0, 0]
+			, this.bitmapList.testFFflood, [0, 0]
+			, this.bitmapList.testFF.size);
+		this.bitmapList.testFFflood.clipFloodFill([2, 2], 17);
+*/
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapList);
 		console.log("num bitmaps = " + keys.length);
@@ -251,21 +261,30 @@ class MainApp {
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
 		const roomsPalBm = this.bitmapList.roomsPal;
-		const roomsPalBmData = roomsPalBm.data32;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
-		const rooms32Bm = this.bitmapList.rooms32Bm;
-		const rooms32BmZoom = this.bitmapList.rooms32BmZoom;
+		const room8Bm = this.bitmapList.room8Bm;
+		const room8BmZoom = this.bitmapList.room8BmZoom;
 		// start with background
 		mainBm.fill(this.backgndColor);
 
+		// run the simulation
 		this.#runSim();
-		
-		// build and draw palettized rooms Bm
-		Bitmap32.palettize(roomsIdxBm, rooms32Bm, roomsPalBm.data32);
-		Bitmap32.zoomBM(rooms32Bm, rooms32BmZoom, [this.zoomRatio, this.zoomRatio]);
-		Bitmap32.clipBlit(rooms32BmZoom, [0, 0], mainBm, this.offsetRoom, rooms32BmZoom.size);
-		//Bitmap32.clipBlit(rooms32Bm, [0, 0], mainBm, [220, 150], rooms32Bm.size);
 
+		// build and draw palettized rooms Bm
+		Bitmap32.zoomBM(roomsIdxBm, room8BmZoom, [this.zoomRatio, this.zoomRatio]);
+
+		// draw palette
+		for (let i = 0; i < 256; i++) {
+			room8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
+		}
+		/*
+		i=clipgetpixel8(B8,MX,MY);
+		clipline8(B8,i*4-1,0,i*4-1,15,black);
+		clipline8(B8,i*4-2,0,i*4-2,15,black);
+		clipline8(B8,i*4+4,0,i*4+4,15,black);
+		clipline8(B8,i*4+5,0,i*4+5,15,black); */
+
+		Bitmap32.palettize(room8BmZoom, mainBm, roomsPalBm.data32);
 		// very simple cursor
 		const p = this.input.mouse.mxy;
 		const colRed = Bitmap32.strToColor32("red");
