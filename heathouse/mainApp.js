@@ -159,6 +159,17 @@ class MainApp {
 		}
 	}
 
+	#setDacRange(dacs, sIdx, eIdx, sCol, eCol) {
+		sCol = Bitmap32.colorRGBA(sCol); // convert to .r, .g, .b, .a
+		eCol = Bitmap32.colorRGBA(eCol); // convert to .r, .g, .b, .a
+		for (let i = sIdx; i <= eIdx; ++i) {
+			const r = Math.floor((eCol.r * (i - sIdx) + sCol.r * (eIdx - i)) / (eIdx - sIdx));
+			const g = Math.floor((eCol.g * (i - sIdx) + sCol.g * (eIdx - i)) / (eIdx - sIdx));
+			const b = Math.floor((eCol.b * (i - sIdx) + sCol.b * (eIdx - i)) / (eIdx - sIdx));
+			dacs[i] = Bitmap32.color32(r, g, b);
+		}
+	}
+	
 	#buildSimBm() {
 		this.RX = 128;
 		this.RY = 96;
@@ -170,6 +181,7 @@ class MainApp {
 		// build palettized Bm here
 		this.bitmapList.room8Bm = new Bitmap32([this.RX, this.RY]);
 		this.bitmapList.room8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		const roomsDac = this.bitmapList.roomsPal.data32;
 		//this.bitmapList.room32BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
 		const mainBm = this.bitmapList.mainBm;
 		//const room32BmZoom = this.bitmapList.room32BmZoom;
@@ -184,7 +196,24 @@ class MainApp {
 		//U8 andor[512];
 		this.dacs = new Uint32Array(256);
 		this.andor = new Uint8Array(512);
-		//dstData.set(srcData.subarray(srcIdx, srcIdx + xferSizeX), dstIdx);
+
+		const C32BLUE = Bitmap32.color32(0,0,170);
+		const C32LIGHTGREEN = Bitmap32.color32(85,255,85);
+		const C32YELLOW = Bitmap32.color32(255,255,85);
+		const C32RED = Bitmap32.color32(170,0,0);
+		const C32MAGENTA = Bitmap32.color32(170,0,170);
+
+		//copy(stdpalette,stdpalette+16,dacs);
+		this.dacs.set(roomsDac.subarray(0, 16), 0);
+		this.#setDacRange(this.dacs, 16, 80, C32BLUE, C32LIGHTGREEN);
+		this.#setDacRange(this.dacs, 80, 160, C32LIGHTGREEN, C32YELLOW);
+		this.#setDacRange(this.dacs, 160, 255, C32YELLOW, C32RED);
+		this.dacs[135] = C32MAGENTA;
+		for (let i = 16; i <= 255; ++i) {
+			if (i&1) { // hi contrast gradient
+				this.dacs[i] ^= 0x80808;
+			}
+		}
 
 		//S32 nthermostats;
 		//S32 nheaters;
@@ -284,7 +313,7 @@ class MainApp {
 		clipline8(B8,i*4+4,0,i*4+4,15,black);
 		clipline8(B8,i*4+5,0,i*4+5,15,black); */
 
-		Bitmap32.palettize(room8BmZoom, mainBm, roomsPalBm.data32);
+		Bitmap32.palettize(room8BmZoom, mainBm, this.dacs);
 		// very simple cursor
 		const p = this.input.mouse.mxy;
 		const colRed = Bitmap32.strToColor32("red");

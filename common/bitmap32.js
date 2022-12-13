@@ -64,6 +64,18 @@ class Bitmap32 {
 		return 256 * (256 * (256 * a + b) + g) + r;
 	}
 
+	static colorRGBA(c32) {
+		const ret = {};
+		ret.r = c32 & 0xff;
+		c32 >>>= 8;
+		ret.g = c32 & 0xff;
+		c32 >>>= 8;
+		ret.b = c32 & 0xff;
+		c32 >>>= 8;
+		ret.a = c32 & 0xff;
+		return ret;
+	}
+
 	 // #rrggbb : hex 00 to ff, no alpha
 	 // OR
 	 // rgba(r,g,b,a)
