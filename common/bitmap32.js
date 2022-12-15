@@ -121,7 +121,7 @@ class Bitmap32 {
 	}
 
 	/////////////////////// pixels ////////////////////////////////
-	pointClip(p) { // return 1 if in range of bitmap, 0 otherwise
+	pointClip(p) { // return true if in range of bitmap, 0 otherwise
 		const x = p[0];
 		const y = p[1];
 		if (x < 0) {
@@ -160,8 +160,157 @@ class Bitmap32 {
 		}
 	}
 
+	/////////////////////// lines ////////////////////////////////
+	static swapPoints(p0, p1) {
+		[p0[0], p1[0]] = [p1[0], p0[0]];
+		[p0[1], p1[1]] = [p1[1], p0[1]];
+	}
+
+	lineClip(p0, p1) {
+		const bigClip = 30000;
+		if (p0[0] < -bigClip) {
+			return false;
+		}
+		if (p0[0] > bigClip) {
+			return false;
+		}
+		if (p0[1] < -bigClip) {
+			return false;
+		}
+		if (p0[1] > bigClip) {
+			return false;
+		}
+		if (p1[0] < -bigClip) {
+			return false;
+		}
+		if (p1[0] > bigClip) {
+			return false;
+		}
+		if (p1[1] < -bigClip) {
+			return false;
+		}
+		if (p1[1] > bigClip) {
+			return false;
+		}
+		//U32 code0,code1;
+		//S32 left,right,top,bot;
+		const left = 0;
+		const right = this.size[0];
+		const top = 0;
+		const bot = this.size[1];
+		while(true) {
+			let code0 = 0;
+			if (p0[0] < left) {
+				code0 = 1;
+			} else if (p0[0] >= right) {
+				code0 = 4;
+			}
+			if (p0[1] < top) {
+				code0 |= 2;
+			} else if (p0[1] >= bot) {
+				code0 |= 8;
+			}
+			let code1 = 0;
+			if (p1[0] < left) {
+				code1 = 1;
+			} else if (p1[0] >= right) {
+				code1 = 4;
+			}
+			if (p1[1] < top) {
+				code1 |= 2;
+			} else if (p1[1] >= bot) {
+				code1 |= 8;
+			}
+			if (!(code0 | code1)) {
+				return true;
+			}
+			if (code0 & code1) {
+				return false;
+			}
+			if (!code0) {
+				// swap points
+				//exch(p0[0], p1[0]);
+				//exch(p0[1], p1[1]);
+				Bitmap32.swapPoints(p0, p1);
+				// swap codes
+				//exch(code0, code1);
+				[code0, code1] = [code1, code0];
+			}
+			if (code0 & 1) { //left
+				//const ynew = p0[1];
+				const ynew = Math.floor((left - p0[0]), (p1[1] - p0[1]), (p1[0] - p0[0]));
+				p0[1] += ynew;
+				p0[0] = left;
+			} else if (code0 & 2) {	// top
+				//const xnew = p0[0];
+				const xnew = Math.floor((top - p0[1]), (p1[0] - p0[0]), (p1[1] - p0[1]));
+				p0[0] += xnew;
+				p0[1] = top;
+			} else if (code0 & 4) {	// right
+				//const ynew = p0[1];
+				const ynew = Math.floor((right - 1 - p0[0]), (p1[1] - p0[1]), (p1[0] - p0[0]));
+				p0[1] += ynew;
+				p0[0] = right - 1;
+			} else { // bottom
+				//const xnew = p0[0];
+				const xnew = Math.floor((bot - 1 - p0[1]), (p1[0] - p0[0]), (p1[1] - p0[1]));
+				p0[0] += xnew;
+				p0[1] = bot - 1;
+			}
+		}
+	}
+
+/*
+void clipline8(struct bitmap8* b8,S32 x0,S32 y0,S32 x1,S32 y1,S32 color)
+{
+	if (lclip8(b8,&x0,&y0,&x1,&y1))
+		fastline8(b8,x0,y0,x1,y1,color);
+}
+
+
+void fastline8(struct bitmap8* b8,S32 x0,S32 y0,S32 x1,S32 y1,S32 color)
+{
+	U8* ptr;
+	S32 dx=x1-x0;
+	S32 dy=y1-y0;
+	S32 ostep=b8->size.x;
+	S32 cstep=1;
+	S32 cnt;
+	S32 err;
+//	outtextxyf32(b8,x0,y0,color,"fastline from %d %d to %d %d",x0,y0,x1,y1);
+	if (dx<0) {
+		dx = -dx;
+		dy = -dy;
+		exch(x0,x1);
+		exch(y0,y1);
+	}
+	ptr=b8->data+x0+y0*b8->size.x;
+	if (dy<0) {
+		ostep=-ostep;
+		dy = -dy;
+	}
+	if (dx<dy) {
+		exch(x0,y0);
+		exch(x1,y1);
+		exch(dx,dy);
+		exch(ostep,cstep);
+	}
+	err=dx>>1;
+	cnt=dx;
+	do {
+		*ptr=color;
+		err-=dy;
+		if (err<0) {
+			err+=dx;
+			ptr+=ostep;
+		}
+		ptr+=cstep;
+	} while(cnt--);
+}
+*/
+
 	/////////////////////// rectangles ////////////////////////////////
-	rectangleClip(p, s) { // return 1 if there's a rectangle to draw, 0 otherwise
+	rectangleClip(p, s) { // return true if there's a rectangle to draw, 0 otherwise
 		// update p and s if clipped
 		// trivial check
 		if (s[0] == 0 || s[1] == 0) { // no size

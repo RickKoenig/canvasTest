@@ -28,6 +28,21 @@ class MainApp {
 		this.#loadImages(imageNames);
 	}
 
+	#testLine() {
+		console.log("TEST LINE");
+		let p0 = [3, 5];
+		let p1 = [-7, -11];
+		const smallBm = this.bitmapList.roomsIdx;
+		console.log("BM size = " + smallBm.size);
+		console.log ("IN  p0 = " + p0 + ", p1 = " + p1);
+		const res = this.bitmapList.roomsIdx.lineClip(p0, p1);
+		if (res) {
+			console.log ("OUT p0 = " + p0 + ", p1 = " + p1);
+		} else {
+			console.log ("false");
+		}
+	}
+
 	// after user assets loaded
 	// before user UI built
 	// TODO: promise to learn promises
@@ -170,7 +185,88 @@ class MainApp {
 		}
 	}
 	
+	#clipmask8(srcBm, dstBm, andArr, orArr) {
+		if (srcBm.size[0] != dstBm.size[0] || srcBm.size[1] != dstBm.size[1]) {
+			console.log("clipmask8 dim mismatch!");
+			return;
+		}
+		const p = srcBm.size[0] * srcBm.size[1];
+		const s = srcBm.data32;
+		const d = dstBm.data32;
+		for (let i = 0; i < p; ++i) {
+			const sin = s[i];// & 0xff;
+			const and8 = andArr[sin];
+			const or8 = orArr[sin];
+			d[i] = d[i] & and8 | or8;
+			//d[i] = vin;
+		}
+	}
+	
+	#scanRoom() {
+
+	}
+
+	#heatHouseUI() {
+		// toggle doors, windows, thermostats, and heaters
+		if (!this.input.mouse.mclick[Mouse.LEFT]) {
+			return;
+		}
+	// draw background
+		const mx = Math.floor(this.input.mouse.mxy[0] / 8);
+		const my = Math.floor(this.input.mouse.mxy[1] / 8);
+		//S32 col,newcol;
+		//video_lock();
+		//mx=MX/8;
+		//my=MY/8;
+		const roomsIdxBm = this.bitmapList.roomsIdx;
+		const col = roomsIdxBm.clipGetPixel([mx,my]);
+		const black = this.colorsEnum.black;
+		const white = this.colorsEnum.white;
+		const red = this.colorsEnum.red;
+		const lightred = this.colorsEnum.lightred;
+		const lightmagenta = this.colorsEnum.lightmagenta;
+		const green = this.colorsEnum.green;
+		const lightgreen = this.colorsEnum.lightgreen;
+		const blue = this.colorsEnum.blue;
+		const lightblue = this.colorsEnum.lightblue;
+		if (col != black && col != white) {
+			let newcol;
+			switch(col) {
+			case red:	
+				newcol = lightred;
+				break;
+			case lightred:
+			case lightmagenta:
+				newcol = red;
+				break;
+			case green:	
+				newcol = lightgreen;
+				break;
+			case lightgreen:
+				newcol = green;
+				break;
+			case blue:	
+				newcol = lightblue;
+				break;
+			case lightblue:
+				newcol = blue;
+				break;
+			}
+			//roomsIdxBm.clipPutPixel([mx, my], newcol);
+			roomsIdxBm.clipFloodFill([mx, my], newcol);
+			this.#scanRoom();
+		}
+	}
+	
 	#buildSimBm() {
+	// palette colors, 8 bit
+		const colors8 = [
+			"black", "blue", "green", "cyan",
+			"red", "magenta","brown","lightgray",
+			"darkgray","lightblue","lightgreen","lightcyan",
+			"lightred","lightmagenta","yellow","white"
+		];
+		this.colorsEnum = makeEnum(colors8);
 		this.RX = 128;
 		this.RY = 96;
 		this.p = this.RX * this.RY;
@@ -179,11 +275,22 @@ class MainApp {
 		this.YSIZE = 768;
 		this.zoomRatio = 8;
 		// build palettized Bm here
-		this.bitmapList.room8Bm = new Bitmap32([this.RX, this.RY]);
-		this.bitmapList.room8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		//this.bitmapList.roomsIdxBmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		this.bitmapList.work8Bm = new Bitmap32([this.RX, this.RY], this.colorsEnum.blue);
+		this.bitmapList.work8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
 		const roomsDac = this.bitmapList.roomsPal.data32;
+		// strip off tracer colors from room
+		const roomsIdxBm = this.bitmapList.roomsIdx;
+		const p = roomsIdxBm.size[0] * roomsIdxBm.size[1];
+		const data = roomsIdxBm.data32;
+		for (let i = 0; i < p; ++i) {
+			let p = data[i];
+			p &= 0xff;
+			data[i] = p;
+		}
+
 		//this.bitmapList.room32BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
-		const mainBm = this.bitmapList.mainBm;
+		//const mainBm = this.bitmapList.mainBm;
 		//const room32BmZoom = this.bitmapList.room32BmZoom;
 
 		//bitmap8 *room,*bigroom; //,*heat,*oldheat;
@@ -195,7 +302,8 @@ class MainApp {
 		//C32 dacs[256];
 		//U8 andor[512];
 		this.dacs = new Uint32Array(256);
-		this.andor = new Uint8Array(512);
+		this.andArr = new Uint8Array(256);
+		this.orArr = new Uint8Array(256);
 
 		const C32BLUE = Bitmap32.color32(0,0,170);
 		const C32LIGHTGREEN = Bitmap32.color32(85,255,85);
@@ -208,13 +316,26 @@ class MainApp {
 		this.#setDacRange(this.dacs, 16, 80, C32BLUE, C32LIGHTGREEN);
 		this.#setDacRange(this.dacs, 80, 160, C32LIGHTGREEN, C32YELLOW);
 		this.#setDacRange(this.dacs, 160, 255, C32YELLOW, C32RED);
-		this.dacs[135] = C32MAGENTA;
+		this.thresholdTemp = 135; // on or off at this temp
+		this.dacs[this.thresholdTemp] = C32MAGENTA;
 		for (let i = 16; i <= 255; ++i) {
-			if (i&1) { // hi contrast gradient
+			if (i&1) { // dither colors a little
 				this.dacs[i] ^= 0x80808;
 			}
 		}
 
+		this.#scanRoom();
+
+		// setup and or mask
+		for (let i = 0; i < 256; ++i) {
+			this.andArr[i] = 0x00;
+			this.orArr[i] = i;
+		}
+		this.andArr[this.colorsEnum.blue] = 0xff;
+		this.orArr[this.colorsEnum.blue] = 0x00;
+		this.andArr[this.colorsEnum.black] = 0xff;
+		this.orArr[this.colorsEnum.black] = 0x00;
+	
 		//S32 nthermostats;
 		//S32 nheaters;
 		//S32 nwindows;
@@ -243,6 +364,12 @@ class MainApp {
 	}
 
 	#runSimFrame() {
+		//for (p=0;p<250;p++)
+		//	doheat();
+		const work8Bm = this.bitmapList.work8Bm;
+
+		// temp, just work with a const cold temperature
+		work8Bm.clipRect([0,0], work8Bm.size, this.colorsEnum.blue);
 		++this.frame;
 	}
 
@@ -275,6 +402,10 @@ class MainApp {
 			, this.bitmapList.testFF.size);
 		this.bitmapList.testFFflood.clipFloodFill([2, 2], 17);
 */
+		this.#testLine();
+
+
+		/*
 		// list all bitmaps created
 		const keys = Object.keys(this.bitmapList);
 		console.log("num bitmaps = " + keys.length);
@@ -285,35 +416,51 @@ class MainApp {
 				+ "dim (" + bm.size[0].toString().padStart(4) 
 				+ "," + bm.size[1].toString().padStart(4) + ")");
 		}
+		*/
 	}
 
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
-		const roomsPalBm = this.bitmapList.roomsPal;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
-		const room8Bm = this.bitmapList.room8Bm;
-		const room8BmZoom = this.bitmapList.room8BmZoom;
+		const roomsIdxBmZoom = this.bitmapList.roomsIdxBmZoom;
+		const work8Bm = this.bitmapList.work8Bm;
+		const work8BmZoom = this.bitmapList.work8BmZoom;
 		// start with background
 		mainBm.fill(this.backgndColor);
 
 		// run the simulation
 		this.#runSim();
 
-		// build and draw palettized rooms Bm
-		Bitmap32.zoomBM(roomsIdxBm, room8BmZoom, [this.zoomRatio, this.zoomRatio]);
+		if (true) {
+			// build and draw palettized rooms Bm
+			//Bitmap32.zoomBM(roomsIdxBm, roomsIdxBmZoom, [this.zoomRatio, this.zoomRatio]);
 
+			//Bitmap32.clipBlit(roomsIdxBmZoom, [0,0], work8BmZoom, [0, 0], work8BmZoom.size);
+			this.#clipmask8(roomsIdxBm, work8Bm, this.andArr, this.orArr);
+			Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
+		} else {
+			// build and draw palettized rooms Bm
+			Bitmap32.zoomBM(roomsIdxBm, roomsIdxBmZoom, [this.zoomRatio, this.zoomRatio]);
+			Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
+
+			//Bitmap32.clipBlit(roomsIdxBmZoom, [0,0], work8BmZoom, [0, 0], work8BmZoom.size);
+			this.#clipmask8(roomsIdxBmZoom, work8BmZoom, this.andArr, this.orArr);
+		}
 		// draw palette
 		for (let i = 0; i < 256; i++) {
-			room8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
+			work8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
 		}
-		/*
+
+		this.#heatHouseUI(); // click on stuff inside the heat house bitmap
+		/* hilit current palette color
 		i=clipgetpixel8(B8,MX,MY);
 		clipline8(B8,i*4-1,0,i*4-1,15,black);
 		clipline8(B8,i*4-2,0,i*4-2,15,black);
 		clipline8(B8,i*4+4,0,i*4+4,15,black);
 		clipline8(B8,i*4+5,0,i*4+5,15,black); */
 
-		Bitmap32.palettize(room8BmZoom, mainBm, this.dacs);
+		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
+
 		// very simple cursor
 		const p = this.input.mouse.mxy;
 		const colRed = Bitmap32.strToColor32("red");
