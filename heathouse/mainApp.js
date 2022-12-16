@@ -28,21 +28,6 @@ class MainApp {
 		this.#loadImages(imageNames);
 	}
 
-	#testLine() {
-		console.log("TEST LINE");
-		let p0 = [3, 5];
-		let p1 = [-7, -11];
-		const smallBm = this.bitmapList.roomsIdx;
-		console.log("BM size = " + smallBm.size);
-		console.log ("IN  p0 = " + p0 + ", p1 = " + p1);
-		const res = this.bitmapList.roomsIdx.lineClip(p0, p1);
-		if (res) {
-			console.log ("OUT p0 = " + p0 + ", p1 = " + p1);
-		} else {
-			console.log ("false");
-		}
-	}
-
 	// after user assets loaded
 	// before user UI built
 	// TODO: promise to learn promises
@@ -402,21 +387,54 @@ class MainApp {
 			, this.bitmapList.testFF.size);
 		this.bitmapList.testFFflood.clipFloodFill([2, 2], 17);
 */
-		this.#testLine();
+		this.#initTestLine();
 
 
-		/*
-		// list all bitmaps created
-		const keys = Object.keys(this.bitmapList);
-		console.log("num bitmaps = " + keys.length);
-		for (let bmName of keys) {
-			const bm = this.bitmapList[bmName];
-			console.log("bitmap " 
-				+ bmName.padEnd(24," ") 
-				+ "dim (" + bm.size[0].toString().padStart(4) 
-				+ "," + bm.size[1].toString().padStart(4) + ")");
+		const listBitmaps = true;
+		if (listBitmaps) {
+			// list all bitmaps created
+			const keys = Object.keys(this.bitmapList);
+			console.log("num bitmaps = " + keys.length);
+			for (let bmName of keys) {
+				const bm = this.bitmapList[bmName];
+				console.log("bitmap " 
+					+ bmName.padEnd(24," ") 
+					+ "dim (" + bm.size[0].toString().padStart(4) 
+					+ "," + bm.size[1].toString().padStart(4) + ")");
+			}
 		}
-		*/
+	}
+
+	#initTestLine() {
+		this.lineP0 = [100, 200];
+		this.lineP1 = [400, 500];
+	}
+
+	#drawTestLine(mainBm) {
+		//console.log("TEST LINE");
+		let p0 = [5, 3];
+		let p1 = [-11, -7];
+		const smallBm = this.bitmapList.roomsIdx;
+		//console.log("BM size = " + smallBm.size);
+		//console.log ("IN  p0 = " + p0 + ", p1 = " + p1);
+		const res = this.bitmapList.roomsIdx.lineClip(p0, p1);
+		if (res) {
+			//console.log ("OUT p0 = " + p0 + ", p1 = " + p1);
+		} else {
+			//console.log ("false");
+		}
+		const mouse = this.input.mouse;
+		const mxy = mouse.mxy;
+		if (this.input.mouse.mbut[Mouse.LEFT]) {
+			vec2.copy(this.lineP0, mxy);
+		}
+		if (this.input.mouse.mbut[Mouse.RIGHT]) {
+			vec2.copy(this.lineP1, mxy);
+		}
+
+		mainBm.clipCircle(this.lineP0, 10, Bitmap32.strToColor32("red"));
+		mainBm.clipCircle(this.lineP1, 10, Bitmap32.strToColor32("yellow"));
+		mainBm.clipLine(this.lineP0, this.lineP1, Bitmap32.strToColor32("green"));
 	}
 
 	#drawBitmaps() {
@@ -461,10 +479,16 @@ class MainApp {
 
 		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
 
-		// very simple cursor
-		const p = this.input.mouse.mxy;
-		const colRed = Bitmap32.strToColor32("red");
-		mainBm.clipCircle(p, 2, colRed);
+		this.#drawTestLine(mainBm);
+
+		const drawCursor = true;
+		if (drawCursor) {
+			// very simple cursor
+			const mxy = this.input.mouse.mxy;
+			const colGreen = Bitmap32.strToColor32("green");
+			mainBm.clipCircle(mxy, 2, colGreen);
+		}
+
 
 		// finally draw background to canvas
 		this.ctx.putImageData(mainBm.imageData, 0, 0);
