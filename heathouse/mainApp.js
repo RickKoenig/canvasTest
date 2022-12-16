@@ -387,7 +387,7 @@ class MainApp {
 			, this.bitmapList.testFF.size);
 		this.bitmapList.testFFflood.clipFloodFill([2, 2], 17);
 */
-		this.#initTestLine();
+		//this.#initTestLine();
 
 
 		const listBitmaps = true;
@@ -404,10 +404,10 @@ class MainApp {
 			}
 		}
 	}
-
+/*
 	#initTestLine() {
-		this.lineP0 = [100, 200];
-		this.lineP1 = [400, 500];
+		this.lineP0 = [100, 80];
+		this.lineP1 = [400, 100];
 	}
 
 	#drawTestLine(mainBm) {
@@ -436,7 +436,7 @@ class MainApp {
 		mainBm.clipCircle(this.lineP1, 10, Bitmap32.strToColor32("yellow"));
 		mainBm.clipLine(this.lineP0, this.lineP1, Bitmap32.strToColor32("green"));
 	}
-
+*/
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
@@ -469,23 +469,26 @@ class MainApp {
 			work8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
 		}
 
-		this.#heatHouseUI(); // click on stuff inside the heat house bitmap
-		/* hilit current palette color
-		i=clipgetpixel8(B8,MX,MY);
-		clipline8(B8,i*4-1,0,i*4-1,15,black);
-		clipline8(B8,i*4-2,0,i*4-2,15,black);
-		clipline8(B8,i*4+4,0,i*4+4,15,black);
-		clipline8(B8,i*4+5,0,i*4+5,15,black); */
+		this.#heatHouseUI(); // click on stuff inside the heat house bitmap, effects source roomsIdxBm
+		// hilit current palette color
+		//const palIdx = 30;//clipgetpixel8(B8,MX,MY);
+		const mxy = this.input.mouse.mxy;
+		const palIdx = work8BmZoom.clipGetPixel(mxy);
+		// TODO: clipRectO
+		const black = this.colorsEnum.black;
+		work8BmZoom.clipLine([palIdx*4-1,0],[palIdx*4-1,15],black);
+		work8BmZoom.clipLine([palIdx*4-2,0],[palIdx*4-2,15],black);
+		work8BmZoom.clipLine([palIdx*4+4,0],[palIdx*4+4,15],black);
+		work8BmZoom.clipLine([palIdx*4+5,0],[palIdx*4+5,15],black);
 
 		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
 
-		this.#drawTestLine(mainBm);
+		//this.#drawTestLine(mainBm);
 
 		const drawCursor = true;
 		if (drawCursor) {
 			// very simple cursor
-			const mxy = this.input.mouse.mxy;
-			const colGreen = Bitmap32.strToColor32("green");
+			const colGreen = Bitmap32.strToColor32("red");
 			mainBm.clipCircle(mxy, 2, colGreen);
 		}
 

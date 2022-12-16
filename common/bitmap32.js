@@ -194,7 +194,7 @@ class Bitmap32 {
 		}
 		//U32 code0,code1;
 		//S32 left,right,top,bot;
-		const margin = 100;
+		const margin = 0; // 100 if testing
 		const left = margin;
 		const right = this.size[0] - margin;
 		const top = margin;
@@ -265,54 +265,52 @@ class Bitmap32 {
 	clipLine(p0orig, p1orig, color) {
 		const p0 = vec2.clone(p0orig);
 		const p1 = vec2.clone(p1orig);
-		//if (this.lineClip(p0, p1)) {
-		if (true) {
-				this.fastLine(p0, p1, color);
+		//if (true) {
+		if (this.lineClip(p0, p1)) {
+			//const str = "p0 = " + p0 + ", p1 = " + p1;
+			//console.log("str = '" + str + "'");
+			this.fastLine(p0, p1, color);
 		}
 	}
 
 	fastLine(p0, p1, color) {
-	/*
-	void fastline8(struct bitmap8* b8,S32 x0,S32 y0,S32 x1,S32 y1,S32 color)
-	{
-		U8* ptr;
-		S32 dx=x1-x0;
-		S32 dy=y1-y0;
-		S32 ostep=b8->size.x;
-		S32 cstep=1;
-		S32 cnt;
-		S32 err;
-	//	outtextxyf32(b8,x0,y0,color,"fastline from %d %d to %d %d",x0,y0,x1,y1);
-		if (dx<0) {
+		const data = this.data32;
+		let x0 = p0[0];
+		let y0 = p0[1];
+		let x1 = p1[0];
+		let y1 = p1[1];
+		let dx = x1 - x0;
+		let dy = y1 - y0;
+		let ostep = this.size[0];
+		let cstep = 1;
+		if (dx < 0) {
 			dx = -dx;
 			dy = -dy;
-			exch(x0,x1);
-			exch(y0,y1);
+			[x0, x1] = [x1, x0];
+			[y0, y1] = [y1, y0];
 		}
-		ptr=b8->data+x0+y0*b8->size.x;
-		if (dy<0) {
-			ostep=-ostep;
+		let idx = x0 + y0 * ostep;
+		if (dy < 0) {
+			ostep = -ostep;
 			dy = -dy;
 		}
-		if (dx<dy) {
-			exch(x0,y0);
-			exch(x1,y1);
-			exch(dx,dy);
-			exch(ostep,cstep);
+		if (dx < dy) {
+			[x0, y0] = [y0, x0];
+			[x1, y1] = [x1, y0];
+			[dx, dy] = [dy, dx];
+			[ostep, cstep] = [cstep, ostep];
 		}
-		err=dx>>1;
-		cnt=dx;
+		let err = dx >>> 1;
+		let cnt = dx;
 		do {
-			*ptr=color;
-			err-=dy;
-			if (err<0) {
-				err+=dx;
-				ptr+=ostep;
+			data[idx] = color;
+			err -= dy;
+			if (err < 0) {
+				err += dx;
+				idx += ostep;
 			}
-			ptr+=cstep;
+			idx += cstep;
 		} while(cnt--);
-	}
-	*/
 	}
 
 	/////////////////////// rectangles ////////////////////////////////
