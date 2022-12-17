@@ -70,7 +70,7 @@ class MainApp {
 			const step = .125;
 			const min = 0;
 			const max = 250;
-			const start = .125;
+			const start = 10;
 			const prec = 3;
 			const callback = (v) => {this.simSpeed = v};
 			new makeEleCombo(this.vp, label, min, max, start, step, prec, callback);
@@ -185,12 +185,10 @@ class MainApp {
 	#scanRoom() {
 		this.thermostats = [];
 		this.heaters = [];
-		this.windows = [];
 		const colEnum = this.colorsEnum;
 		const lightred = colEnum.lightred;
 		const lightmagenta = colEnum.lightmagenta;
 		const lightgreen = colEnum.lightgreen;
-		const lightblue = colEnum.lightblue;
 		const roomsIdx = this.bitmapList.roomsIdx;
 		for (let j = 0; j < this.RY; ++j) {
 			for (let i = 0; i < this.RX; ++i) {
@@ -205,10 +203,6 @@ class MainApp {
 				// thermostat enabled
 				case lightgreen:
 					this.thermostats.push(p);
-					break;
-				// window/door closed
-				case lightblue:
-					this.windows.push(p)
 					break;
 				}
 			}
@@ -292,10 +286,10 @@ class MainApp {
 			data[i] = p;
 		}
 
-		this.heat = new Uint32Array(this.p);
-		this.oldheat = new Uint32Array(this.p);
-		this.heat.fill(64 * 65536);
-		this.oldheat.fill(64 * 65536);
+		this.heat = new Float32Array(this.p);
+		this.oldheat = new Float32Array(this.p);
+		this.heat.fill(16);
+		this.oldheat.fill(16);
 		this.dacs = new Uint32Array(256);
 		this.andArr = new Uint8Array(256);
 		this.orArr = new Uint8Array(256);
@@ -334,8 +328,8 @@ class MainApp {
 	}
 
 	#restartSim() {
-		this.heat.fill(64 * 65536);
-		this.oldheat.fill(64 * 65536);
+		this.heat.fill(16);
+		this.oldheat.fill(16);
 		this.frame = 0;
 		this.fracFrame = 0;
 	}
@@ -355,8 +349,7 @@ class MainApp {
 			const x = thermo[0];
 			const y = thermo[1];
 			let c = this.heat[x + y * this.RX];
-			c >>= 18;
-			if (c <= this.thresholdTemp) {
+			if (c < this.thresholdTemp + 1) { // turn on heater when threshold hit
 				this.heateron = true;
 				break;
 			}
@@ -367,11 +360,8 @@ class MainApp {
 			roomsIdx.fastPutPixel(this.heaters[i], heatCol);
 		if (this.heateron) {
 			for (let i = 0; i < this.heaters.length; ++i) { // hot
-				this.heat[this.heaters[i][0] + this.heaters[i][1] * this.RX] = 1023 << 16;
+				this.heat[this.heaters[i][0] + this.heaters[i][1] * this.RX] = 255.75;
 			}
-		}
-		for (let i = 0; i < this.windows.length; ++i) { // cold
-			this.heat[this.windows[i][0] + this.windows[i][1] * this.RX] = 64 << 16;
 		}
 
 		[this.heat, this.oldheat] = [this.oldheat, this.heat];
@@ -419,9 +409,7 @@ class MainApp {
 					c += oldheat[idx - RX];
 				}
 
-				c += 2;
-				c >>>= 2;
-				heat[idx] = c;
+				heat[idx] = c * .25; // average
 			}
 		}
 	}
@@ -433,7 +421,7 @@ class MainApp {
 		const workData = work8Bm.data32;
 		const heatData = this.heat;
 		for (let i = 0; i < this.p; ++i) {
-			workData[i] = heatData[i] >>> 18;
+			workData[i] = heatData[i]; // float32 to uint32
 		}
 		++this.frame;
 	}
@@ -470,7 +458,6 @@ class MainApp {
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
-		const roomsIdxBmZoom = this.bitmapList.roomsIdxBmZoom;
 		const work8Bm = this.bitmapList.work8Bm;
 		const work8BmZoom = this.bitmapList.work8BmZoom;
 		// start with background
