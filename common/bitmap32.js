@@ -192,9 +192,7 @@ class Bitmap32 {
 		if (p1[1] > bigClip) {
 			return false;
 		}
-		//U32 code0,code1;
-		//S32 left,right,top,bot;
-		const margin = 0; // 100 if testing
+		const margin = 0; // 100 if testing clipping
 		const left = margin;
 		const right = this.size[0] - margin;
 		const top = margin;
@@ -229,31 +227,23 @@ class Bitmap32 {
 				return false; // don't draw line that can't be seen
 			}
 			if (!code0) {
-				// swap points
-				//exch(p0[0], p1[0]);
-				//exch(p0[1], p1[1]);
 				Bitmap32.swapPoints(p0, p1);
 				// swap codes
-				//exch(code0, code1);
 				[code0, code1] = [code1, code0];
 			}
 			if (code0 & 1) { //left
-				//const ynew = p0[1];
 				const ynew = Math.floor((left - p0[0]) * (p1[1] - p0[1]) / (p1[0] - p0[0]));
 				p0[1] += ynew;
 				p0[0] = left;
 			} else if (code0 & 2) {	// top
-				//const xnew = p0[0];
 				const xnew = Math.floor((top - p0[1]) * (p1[0] - p0[0]) / (p1[1] - p0[1]));
 				p0[0] += xnew;
 				p0[1] = top;
 			} else if (code0 & 4) {	// right
-				//const ynew = p0[1];
 				const ynew = Math.floor((right - 1 - p0[0]) * (p1[1] - p0[1]) / (p1[0] - p0[0]));
 				p0[1] += ynew;
 				p0[0] = right - 1;
 			} else { // bottom
-				//const xnew = p0[0];
 				const xnew = Math.floor((bot - 1 - p0[1]) * (p1[0] - p0[0]) / (p1[1] - p0[1]));
 				p0[0] += xnew;
 				p0[1] = bot - 1;
@@ -261,14 +251,10 @@ class Bitmap32 {
 		}
 	}
 
-
 	clipLine(p0orig, p1orig, color) {
 		const p0 = vec2.clone(p0orig);
 		const p1 = vec2.clone(p1orig);
-		//if (true) {
 		if (this.lineClip(p0, p1)) {
-			//const str = "p0 = " + p0 + ", p1 = " + p1;
-			//console.log("str = '" + str + "'");
 			this.fastLine(p0, p1, color);
 		}
 	}
@@ -410,39 +396,6 @@ class Bitmap32 {
 		const xferSize = vec2.clone(xferSizeOrig);
 		if (Bitmap32.blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize)) {
 			this.fastBlit(sourceBM, sourceStart, destBM, destStart, xferSize);
-		}
-	}
-
-	// TODO: NYI
-	// 1 bit alpha
-	static fastBlitAlpha1(sourceBM, sourceStart, destBM, destStart, xferSize) {
-		const srcData = sourceBM.data32;
-		const srcSize = sourceBM.size;
-		const dstData = destBM.data32;
-		const dstSize = destBM.size;
-		
-		let srcIdx = sourceStart[0] + srcSize[0] * Math.round(sourceStart[1]);
-		let dstIdx = destStart[0] + dstSize[0] * Math.round(destStart[1]);
-		const xferSizeX = xferSize[0];
-		try {
-			for (let j = 0; j < xferSize[1]; ++j) {
-				dstData.set(srcData.subarray(srcIdx, srcIdx + xferSizeX), dstIdx);
-				srcIdx += srcSize[0];
-				dstIdx += dstSize[0];
-			}
-		} catch(e) {
-			console.log("Blit Error: " + e);
-		}
-	}
-
-	// TODO: NYI
-	// 1 bit alpha
-	static clipBlitAlpha1(sourceBM, sourceStartOrig, destBM, destStartOrig, xferSizeOrig) {
-		const sourceStart = vec2.clone(sourceStartOrig);
-		const destStart = vec2.clone(destStartOrig);
-		const xferSize = vec2.clone(xferSizeOrig);
-		if (Bitmap32.blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize)) {
-			this.fastBlitAlpha1(sourceBM, sourceStart, destBM, destStart, xferSize);
 		}
 	}
 
@@ -621,11 +574,6 @@ class Bitmap32 {
 	}
 
 	// clipped flood fill
-	//#define STACK 2000
-	//static int stackx[STACK];
-	//static int stacky[STACK];
-	//static int sp=0,maxsp;
-
 	#fillStackSize() {
 		return this.fillStack.length;
 	}
@@ -643,9 +591,8 @@ class Bitmap32 {
 		let x = p[0];
 		let y = p[1];
 		this.fillStack = [];
-		//int st,end,next,curr;
 		const r = this.clipGetPixel([x, y]);
-		if (r == c || isNaN(r) || r == Bitmap32.errorColor) { // TODO: don't rely on errorcolor for clipGetPixel error color
+		if (r == c || isNaN(r) || r == Bitmap32.errorColor) {
 			return;
 		}
 		this.#fillPush(x, y);

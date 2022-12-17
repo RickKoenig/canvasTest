@@ -19,9 +19,6 @@ class MainApp {
 	// USER: add more members or classes to MainApp
 	#userLoad() {
 		const imageNames = [
-			//"Bark.png",
-			//"panel.jpg",
-			//"maptestnck.png",
 			"roomsIdx.png",
 			"roomsPal.png"
 		];
@@ -56,7 +53,6 @@ class MainApp {
 		// USER build UI
 		this.#userBuildUI();
 		
-
 		// start it off
 		this.#animate();
 	}
@@ -179,16 +175,44 @@ class MainApp {
 		const s = srcBm.data32;
 		const d = dstBm.data32;
 		for (let i = 0; i < p; ++i) {
-			const sin = s[i];// & 0xff;
+			const sin = s[i];
 			const and8 = andArr[sin];
 			const or8 = orArr[sin];
 			d[i] = d[i] & and8 | or8;
-			//d[i] = vin;
 		}
 	}
 	
 	#scanRoom() {
-
+		this.thermostats = [];
+		this.heaters = [];
+		this.windows = [];
+		const colEnum = this.colorsEnum;
+		const lightred = colEnum.lightred;
+		const lightmagenta = colEnum.lightmagenta;
+		const lightgreen = colEnum.lightgreen;
+		const lightblue = colEnum.lightblue;
+		const roomsIdx = this.bitmapList.roomsIdx;
+		for (let j = 0; j < this.RY; ++j) {
+			for (let i = 0; i < this.RX; ++i) {
+				const p = [i, j];
+				const c = roomsIdx.fastGetPixel(p);
+				switch (c) {
+				// heater enabled
+				case lightred:
+				case lightmagenta:
+					this.heaters.push(p);
+					break;
+				// thermostat enabled
+				case lightgreen:
+					this.thermostats.push(p);
+					break;
+				// window/door closed
+				case lightblue:
+					this.windows.push(p)
+					break;
+				}
+			}
+		}
 	}
 
 	#heatHouseUI() {
@@ -199,10 +223,6 @@ class MainApp {
 	// draw background
 		const mx = Math.floor(this.input.mouse.mxy[0] / 8);
 		const my = Math.floor(this.input.mouse.mxy[1] / 8);
-		//S32 col,newcol;
-		//video_lock();
-		//mx=MX/8;
-		//my=MY/8;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
 		const col = roomsIdxBm.clipGetPixel([mx,my]);
 		const black = this.colorsEnum.black;
@@ -237,7 +257,6 @@ class MainApp {
 				newcol = blue;
 				break;
 			}
-			//roomsIdxBm.clipPutPixel([mx, my], newcol);
 			roomsIdxBm.clipFloodFill([mx, my], newcol);
 			this.#scanRoom();
 		}
@@ -260,7 +279,6 @@ class MainApp {
 		this.YSIZE = 768;
 		this.zoomRatio = 8;
 		// build palettized Bm here
-		//this.bitmapList.roomsIdxBmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
 		this.bitmapList.work8Bm = new Bitmap32([this.RX, this.RY], this.colorsEnum.blue);
 		this.bitmapList.work8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
 		const roomsDac = this.bitmapList.roomsPal.data32;
@@ -274,18 +292,10 @@ class MainApp {
 			data[i] = p;
 		}
 
-		//this.bitmapList.room32BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
-		//const mainBm = this.bitmapList.mainBm;
-		//const room32BmZoom = this.bitmapList.room32BmZoom;
-
-		//bitmap8 *room,*bigroom; //,*heat,*oldheat;
-		//bitmap8* B8;
 		this.heat = new Uint32Array(this.p);
 		this.oldheat = new Uint32Array(this.p);
 		this.heat.fill(64 * 65536);
 		this.oldheat.fill(64 * 65536);
-		//C32 dacs[256];
-		//U8 andor[512];
 		this.dacs = new Uint32Array(256);
 		this.andArr = new Uint8Array(256);
 		this.orArr = new Uint8Array(256);
@@ -296,7 +306,7 @@ class MainApp {
 		const C32RED = Bitmap32.color32(170,0,0);
 		const C32MAGENTA = Bitmap32.color32(170,0,170);
 
-		//copy(stdpalette,stdpalette+16,dacs);
+		// setup dacs
 		this.dacs.set(roomsDac.subarray(0, 16), 0);
 		this.#setDacRange(this.dacs, 16, 80, C32BLUE, C32LIGHTGREEN);
 		this.#setDacRange(this.dacs, 80, 160, C32LIGHTGREEN, C32YELLOW);
@@ -308,7 +318,6 @@ class MainApp {
 				this.dacs[i] ^= 0x80808;
 			}
 		}
-
 		this.#scanRoom();
 
 		// setup and or mask
@@ -321,21 +330,12 @@ class MainApp {
 		this.andArr[this.colorsEnum.black] = 0xff;
 		this.orArr[this.colorsEnum.black] = 0x00;
 	
-		//S32 nthermostats;
-		//S32 nheaters;
-		//S32 nwindows;
-		//pointi2 *thermostats;
-		//pointi2 *heaters;
-		//pointi2 *windows;
-		this.thermostats = [];
-		this.heaters = [];
-		this.windows = [];
-		
-		//S32 heateron;
 		this.heateron = false;
 	}
 
 	#restartSim() {
+		this.heat.fill(64 * 65536);
+		this.oldheat.fill(64 * 65536);
 		this.frame = 0;
 		this.fracFrame = 0;
 	}
@@ -347,14 +347,91 @@ class MainApp {
 			--this.fracFrame;
 		}
 	}
+	
+	#doHeat() {
+		this.heateron = false; // should be false, test with true
+		for (let i = 0; i < this.thermostats.length; ++i) {
+			const thermo = this.thermostats[i];
+			const x = thermo[0];
+			const y = thermo[1];
+			let c = this.heat[x + y * this.RX];
+			c >>= 18;
+			if (c <= this.thresholdTemp) {
+				this.heateron = true;
+				break;
+			}
+		}
+		const roomsIdx = this.bitmapList.roomsIdx;
+		const heatCol = this.heateron ? this.colorsEnum.lightmagenta : this.colorsEnum.lightred;
+		for (let i = 0; i < this.heaters.length; ++i)
+			roomsIdx.fastPutPixel(this.heaters[i], heatCol);
+		if (this.heateron) {
+			for (let i = 0; i < this.heaters.length; ++i) { // hot
+				this.heat[this.heaters[i][0] + this.heaters[i][1] * this.RX] = 1023 << 16;
+			}
+		}
+		for (let i = 0; i < this.windows.length; ++i) { // cold
+			this.heat[this.windows[i][0] + this.windows[i][1] * this.RX] = 64 << 16;
+		}
+
+		[this.heat, this.oldheat] = [this.oldheat, this.heat];
+		const heat = this.heat;
+		const oldheat = this.oldheat;
+		const room = roomsIdx.data32;
+		for (let j = 1; j < this.RY - 1; ++j) {
+			for (let i = 1; i < this.RY - 1; ++i) {
+
+			}
+		}
+			/*
+		const t = 0;//U32 *t;
+		const p = 0;
+		const p2 = 0; //U32 *p,*p2;
+		const w = 0;//U8 *w;
+		const j = 0;
+		for (j=1;j<RY-1;j++) {
+			p=oldheat+RX*j+1;
+			p2=heat+RX*j+1;
+			w=room->data+RX*j+1;
+			for (i=1;i<RX-1;i++,p++,p2++,w++) {
+				if (w[1]==white || w[1]==lightblue) {
+					c=p[0];
+				} else {
+					c=p[1];
+				}
+				if (w[-1]==white || w[-1]==lightblue) {
+					c+=p[0];
+				} else {
+					c+=p[-1];
+				}
+				if (w[-RX]==white || w[-RX]==lightblue) {
+					c+=p[0];
+				} else {
+					c+=p[-RX];
+				} 
+				if (w[RX]==white || w[RX]==lightblue) {
+					c+=p[0];
+				} else {
+					c+=p[RX];
+				}
+				c+=2;
+				c>>=2;
+				p2[0]=c;
+			}
+		}
+	}
+	*/
+	}
 
 	#runSimFrame() {
-		//for (p=0;p<250;p++)
-		//	doheat();
+		this.#doHeat();
 		const work8Bm = this.bitmapList.work8Bm;
 
-		// temp, just work with a const cold temperature
-		work8Bm.clipRect([0,0], work8Bm.size, this.colorsEnum.blue);
+		const workData = work8Bm.data32;
+		const heatData = this.heat;
+		for (let i = 0; i < this.p; ++i) {
+			workData[i] = heatData[i] >>> 18;
+		}
 		++this.frame;
 	}
 
@@ -371,24 +448,6 @@ class MainApp {
 		// build rooms32 and zoom
 		this.#buildSimBm();
 		this.#restartSim();
-/*
-		// test flood fill
-		const bt = new Uint32Array([
-			3, 3, 3, 3, 3,
-			3, 4, 4, 4, 4,
-			4, 4, 4, 3, 4,
-			4, 4, 4, 3, 4,
-			3, 4, 3, 4, 4,
-		]);
-		this.bitmapList.testFF = new Bitmap32([5, 5], bt);
-		this.bitmapList.testFFflood = new Bitmap32(this.bitmapList.testFF.size);
-		Bitmap32.clipBlit(this.bitmapList.testFF, [0, 0]
-			, this.bitmapList.testFFflood, [0, 0]
-			, this.bitmapList.testFF.size);
-		this.bitmapList.testFFflood.clipFloodFill([2, 2], 17);
-*/
-		//this.#initTestLine();
-
 
 		const listBitmaps = true;
 		if (listBitmaps) {
@@ -404,39 +463,7 @@ class MainApp {
 			}
 		}
 	}
-/*
-	#initTestLine() {
-		this.lineP0 = [100, 80];
-		this.lineP1 = [400, 100];
-	}
 
-	#drawTestLine(mainBm) {
-		//console.log("TEST LINE");
-		let p0 = [5, 3];
-		let p1 = [-11, -7];
-		const smallBm = this.bitmapList.roomsIdx;
-		//console.log("BM size = " + smallBm.size);
-		//console.log ("IN  p0 = " + p0 + ", p1 = " + p1);
-		const res = this.bitmapList.roomsIdx.lineClip(p0, p1);
-		if (res) {
-			//console.log ("OUT p0 = " + p0 + ", p1 = " + p1);
-		} else {
-			//console.log ("false");
-		}
-		const mouse = this.input.mouse;
-		const mxy = mouse.mxy;
-		if (this.input.mouse.mbut[Mouse.LEFT]) {
-			vec2.copy(this.lineP0, mxy);
-		}
-		if (this.input.mouse.mbut[Mouse.RIGHT]) {
-			vec2.copy(this.lineP1, mxy);
-		}
-
-		mainBm.clipCircle(this.lineP0, 10, Bitmap32.strToColor32("red"));
-		mainBm.clipCircle(this.lineP1, 10, Bitmap32.strToColor32("yellow"));
-		mainBm.clipLine(this.lineP0, this.lineP1, Bitmap32.strToColor32("green"));
-	}
-*/
 	#drawBitmaps() {
 		const mainBm = this.bitmapList.mainBm;
 		const roomsIdxBm = this.bitmapList.roomsIdx;
@@ -449,21 +476,9 @@ class MainApp {
 		// run the simulation
 		this.#runSim();
 
-		if (true) {
-			// build and draw palettized rooms Bm
-			//Bitmap32.zoomBM(roomsIdxBm, roomsIdxBmZoom, [this.zoomRatio, this.zoomRatio]);
-
-			//Bitmap32.clipBlit(roomsIdxBmZoom, [0,0], work8BmZoom, [0, 0], work8BmZoom.size);
-			this.#clipmask8(roomsIdxBm, work8Bm, this.andArr, this.orArr);
-			Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
-		} else {
-			// build and draw palettized rooms Bm
-			Bitmap32.zoomBM(roomsIdxBm, roomsIdxBmZoom, [this.zoomRatio, this.zoomRatio]);
-			Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
-
-			//Bitmap32.clipBlit(roomsIdxBmZoom, [0,0], work8BmZoom, [0, 0], work8BmZoom.size);
-			this.#clipmask8(roomsIdxBmZoom, work8BmZoom, this.andArr, this.orArr);
-		}
+		// build and draw palettized rooms Bm
+		this.#clipmask8(roomsIdxBm, work8Bm, this.andArr, this.orArr);
+		Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
 		// draw palette
 		for (let i = 0; i < 256; i++) {
 			work8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
@@ -471,19 +486,16 @@ class MainApp {
 
 		this.#heatHouseUI(); // click on stuff inside the heat house bitmap, effects source roomsIdxBm
 		// hilit current palette color
-		//const palIdx = 30;//clipgetpixel8(B8,MX,MY);
 		const mxy = this.input.mouse.mxy;
 		const palIdx = work8BmZoom.clipGetPixel(mxy);
 		// TODO: clipRectO
 		const black = this.colorsEnum.black;
-		work8BmZoom.clipLine([palIdx*4-1,0],[palIdx*4-1,15],black);
-		work8BmZoom.clipLine([palIdx*4-2,0],[palIdx*4-2,15],black);
-		work8BmZoom.clipLine([palIdx*4+4,0],[palIdx*4+4,15],black);
-		work8BmZoom.clipLine([palIdx*4+5,0],[palIdx*4+5,15],black);
+		work8BmZoom.clipLine([palIdx *4 - 1, 0], [palIdx *4 - 1, 15], black);
+		work8BmZoom.clipLine([palIdx *4 - 2, 0], [palIdx *4 - 2, 15], black);
+		work8BmZoom.clipLine([palIdx *4 + 4, 0], [palIdx *4 + 4, 15], black);
+		work8BmZoom.clipLine([palIdx *4 + 5, 0], [palIdx *4 + 5, 15], black);
 
 		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
-
-		//this.#drawTestLine(mainBm);
 
 		const drawCursor = true;
 		if (drawCursor) {
@@ -491,7 +503,6 @@ class MainApp {
 			const colGreen = Bitmap32.strToColor32("red");
 			mainBm.clipCircle(mxy, 2, colGreen);
 		}
-
 
 		// finally draw background to canvas
 		this.ctx.putImageData(mainBm.imageData, 0, 0);
