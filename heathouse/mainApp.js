@@ -69,7 +69,7 @@ class MainApp {
 			const label = "Sim Speed";
 			const step = .125;
 			const min = 0;
-			const max = 10;
+			const max = 250;
 			const start = .125;
 			const prec = 3;
 			const callback = (v) => {this.simSpeed = v};
@@ -375,52 +375,55 @@ class MainApp {
 		}
 
 		[this.heat, this.oldheat] = [this.oldheat, this.heat];
+
 		const heat = this.heat;
 		const oldheat = this.oldheat;
 		const room = roomsIdx.data32;
+		
+		const RX = this.RX;
+		const white = this.colorsEnum.white;
+		const lightblue = this.colorsEnum.lightblue;
 		for (let j = 1; j < this.RY - 1; ++j) {
-			for (let i = 1; i < this.RY - 1; ++i) {
+			let idx = RX * j + 1;
+			for (let i = 1; i < RX - 1; ++i, ++idx) {
+				let c;
+				let valScan;
+				// add up the 4 directions from this pixel, also handle walls and windows
+				const oldPixel = oldheat[idx];
+				// right
+				valScan = room[idx + 1];
+				if (valScan == white || valScan == lightblue) {
+					c = oldPixel;
+				} else {
+					c = oldheat[idx + 1];
+				}
+				// left
+				valScan = room[idx - 1];
+				if (valScan == white || valScan == lightblue) {
+					c += oldPixel;
+				} else {
+					c += oldheat[idx - 1];
+				}
+				// bottom
+				valScan = room[idx + RX];
+				if (valScan == white || valScan == lightblue) {
+					c += oldPixel;
+				} else {
+					c += oldheat[idx + RX];
+				}
+				// top
+				valScan = room[idx - RX];
+				if (valScan == white || valScan == lightblue) {
+					c += oldPixel;
+				} else {
+					c += oldheat[idx - RX];
+				}
 
+				c += 2;
+				c >>>= 2;
+				heat[idx] = c;
 			}
 		}
-			/*
-		const t = 0;//U32 *t;
-		const p = 0;
-		const p2 = 0; //U32 *p,*p2;
-		const w = 0;//U8 *w;
-		const j = 0;
-		for (j=1;j<RY-1;j++) {
-			p=oldheat+RX*j+1;
-			p2=heat+RX*j+1;
-			w=room->data+RX*j+1;
-			for (i=1;i<RX-1;i++,p++,p2++,w++) {
-				if (w[1]==white || w[1]==lightblue) {
-					c=p[0];
-				} else {
-					c=p[1];
-				}
-				if (w[-1]==white || w[-1]==lightblue) {
-					c+=p[0];
-				} else {
-					c+=p[-1];
-				}
-				if (w[-RX]==white || w[-RX]==lightblue) {
-					c+=p[0];
-				} else {
-					c+=p[-RX];
-				} 
-				if (w[RX]==white || w[RX]==lightblue) {
-					c+=p[0];
-				} else {
-					c+=p[RX];
-				}
-				c+=2;
-				c>>=2;
-				p2[0]=c;
-			}
-		}
-	}
-	*/
 	}
 
 	#runSimFrame() {
