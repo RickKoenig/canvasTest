@@ -10,6 +10,7 @@ class MainApp {
 	}
 
 	constructor() {
+		javaScriptTests();
 		console.log("creating instance of MainApp");
 		++MainApp.#numInstances;
 
