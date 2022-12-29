@@ -97,29 +97,60 @@ function inheritanceTests() {
 
 
 // returns an array of the dimensions of the input array
+// an array of a[3][4][5] will return [5, 4, 3]
 function arrDim(arr) {
     let ret = [];
     while(Array.isArray(arr)) {
         ret.push(arr.length);
         arr = arr[0];
     }
-    return ret;
+    return ret.reverse();
 }
+
+function readIndex(arr, pnt) { // arr[z][y][x], where x = pnt[0], y = pnt[1], z = pnt[2] etc.
+    for (let idx = pnt.length - 1; idx >= 0; --idx) {
+        arr = arr[pnt[idx]];
+    }
+    return arr; // no longer an Array
+}
+
+function writeIndex(arr, pnt, val) { // arr[z][y][x], where x = pnt[0], y = pnt[1], z = pnt[2] etc.
+    for (let idx = pnt.length - 1; idx > 0; --idx) {
+        arr = arr[pnt[idx]];
+    }
+    arr[pnt[0]] = val; // writing to a 1 dimensional array
+}
+
 
 // 0 E, 1 W, 2 N, 3 S, 4 A, 5 D etc.
 function doMove(topo, keys, edges, /*visited, */curState, dir) {
-    const newPos = curState.pos.slice();
+    const oldPos = curState.pos;
+    const newPos = oldPos.slice();
     const pm = 1 - 2 * (dir % 2); // plus minus +1 or -1
     const idx = Math.floor(dir / 2);
-    const idx2 = newPos.length - idx - 1; // other way
+
+    //const idx2 = newPos.length - idx - 1; // other way
     let val = newPos[idx];
     val += pm;
     if (val < 0) { // out of bounds
         return null;
-    } else if (val >= topo[idx2]) {
+    } else if (val >= topo[idx]) {
         return null;
     }
     newPos[idx] = val;
+
+    let cmd;
+    const con = [idx]; // the 4th dimension for x,y,z direction
+    if (pm == 1) {
+        // use old pos for edge idx (bigger)
+        cmd = readIndex(edges, oldPos.concat(con));
+
+    } else { //pm == -1
+        // use new pos for edge (smaller)
+        cmd = readIndex(edges, newPos.concat(con));
+    }
+    console.log("cmd = " + cmd);
+
     const newState = {
         pos: newPos,
         gold: curState.gold
@@ -130,13 +161,19 @@ function doMove(topo, keys, edges, /*visited, */curState, dir) {
 function runSim(mazeData) {
     const startPos = mazeData.startPos;
     const finishPos = mazeData.finishPos;
-    const keys = mazeData.keys;
+    const keys = mazeData.keys; // switch between normal and revers for gold arrows
     const edges = mazeData.edges;
 
     // get dimensions of keys, this will give the complete structure of the maze
-    const topo = arrDim(keys); // topology, start with (not curGold, is curGold) [g][z][y][x]
-    const visited = createArray([2].concat(topo));
-    fillArray(visited, false); // [g][z][y][x]
+    let topo = arrDim(keys);//.concat([2]); // topology, start with (not curGold, is curGold) [g][z][y][x]
+    //let topoR = topo.slice().reverse();
+    //const visited = createArray(topoR); // gold has 2 states [g][z][y][x]
+    //console.log("visited");
+    //console.log(visited);
+    //topo.reverse(); // now 3,2,2,2
+    console.log("topo = " + topo);
+    //console.log("topor = " + topoR);
+    //fillArray(visited, false); // [g][z][y][x]
 
     const curState = {
         pos : startPos.slice(),
@@ -164,13 +201,12 @@ function rudolphSim() {
 
     
     // mazeData
-
     const mazeData1 = {
         startPos: 
-            [0, 0, 0],
+            [1, 1, 1],
         finishPos:
             [2, 0, 0],
-        keys: [
+        keys: [ // 2, 2, 3
             [
                 [false, false, false],
                 [false, false, false]
@@ -181,31 +217,31 @@ function rudolphSim() {
             ]
         ],
         edges: [
-            // move in x
+            // move in x // 2, 2, 2
             [
                 [
-                    [ E.n,  E.n],
-                    [ E.n,  E.n]
+                    [ 3, 5],
+                    [ 7, 9]
                 ],
                 [
-                    [ E.n,  E.n],
-                    [ E.n,  E.n]
+                    [ 11, 13],
+                    [ 15, 17]
                 ]
             ],
-            // move in y
+            // move in y // 2, 1, 3
             [
                 [
-                    [ E.n,  E.n,  E.n]
+                    [ 30, 50, 70]
                 ],
                 [
-                    [ E.n,  E.n,  E.n]
+                    [ 90, 110, 130]
                 ]
             ],
-            // move in z
+            // move in z // 1, 2, 3
             [
                 [
-                    [ E.n,  E.n,  E.n],
-                    [ E.n,  E.n,  E.n]
+                    [ -3, -5, -7],
+                    [ -9, -11, -13]
                 ]
             ]
         ]
@@ -220,5 +256,44 @@ function javaScriptTests() {
     console.log("javacript tests!");
     //inheritanceTests();
     rudolphSim();
+
+
+    const arr = [ // [2][3][4], (z,y,x)
+        [
+            [
+                2, 3, 5, 7
+            ],
+            [
+                11, 13, 17, 19
+            ],
+            [
+                23, 29, 31, 37
+            ]
+        ],
+        [
+            [
+                41, 43, 47, 53
+            ],
+            [
+                59, 61, 67, 71
+            ],
+            [
+                73, 79, 83, 89
+            ]
+        ]
+    ]
+    const dim = arrDim(arr);
+    console.log("test dim = " + dim);
+    console.log(arr[1][2][3]);
+    const pnt = [3, 2, 1];
+    writeIndex(arr, pnt, 555);
+    writeIndex(arr, [1,2,1], 666);
+    const val2 = readIndex(arr, [1,2,1]);
+    console.log("val2 = " + val2);
+    const val = readIndex(arr, pnt);
+    console.log(val);
+    console.log(arr);
+
+
     console.log("");
 }
