@@ -123,7 +123,7 @@ function writeIndex(arr, pnt, val) { // arr[z][y][x], where x = pnt[0], y = pnt[
 
 
 // 0 E, 1 W, 2 N, 3 S, 4 A, 5 D etc.
-function doMove(topo, keys, edges, /*visited, */curState, dir) {
+function doMove(topo, keys, edges, /*visited, */curState, dir, E) {
     const oldPos = curState.pos;
     const newPos = oldPos.slice();
     const pm = 1 - 2 * (dir % 2); // plus minus +1 or -1
@@ -139,17 +139,20 @@ function doMove(topo, keys, edges, /*visited, */curState, dir) {
     }
     newPos[idx] = val;
 
-    let cmd;
-    const con = [idx]; // the 4th dimension for x,y,z direction
+    let cmd = 'placeHolder';
+    const conct = [idx]; // the 4th dimension for x,y,z direction
     if (pm == 1) {
         // use old pos for edge idx (bigger)
-        cmd = readIndex(edges, oldPos.concat(con));
+        //cmd = readIndex(edges, oldPos.concat(conct));
+        if (cmd == E.n) { // none
+            //return null;
+        }
 
     } else { //pm == -1
         // use new pos for edge (smaller)
-        cmd = readIndex(edges, newPos.concat(con));
+        //cmd = readIndex(edges, newPos.concat(con));
     }
-    console.log("cmd = " + cmd);
+    //console.log("cmd = " + cmd);
 
     const newState = {
         pos: newPos,
@@ -158,7 +161,30 @@ function doMove(topo, keys, edges, /*visited, */curState, dir) {
     return newState;
 }
 
-function runSim(mazeData) {
+// 0 E, 1 W, 2 N, 3 S, 4 A, 5 D etc.
+function doMoveSeq(topo, keys, edges, /*visited, */curState, moveList, E, dirStr) {
+    let newState;
+    for (let mv of moveList) {
+        newState = doMove(topo, keys, edges, /*visited, */curState, mv, E);
+        //console.log("moveSeq = " + dirStr[mv] + ", newState = " + JSON.stringify(newState));
+        if (!newState) {
+            return null;
+        }
+        curState = newState;
+    }
+    return newState;
+}
+
+function moveSeqStr(moveList, dirStr) {
+    const ret = [];
+    for (let mv of moveList) {
+        ret.push(dirStr[mv]);
+    }
+    return ret;
+}
+
+
+function runSim(mazeData, edgeEnum) {
     const startPos = mazeData.startPos;
     const finishPos = mazeData.finishPos;
     const keys = mazeData.keys; // switch between normal and revers for gold arrows
@@ -166,30 +192,83 @@ function runSim(mazeData) {
 
     // get dimensions of keys, this will give the complete structure of the maze
     let topo = arrDim(keys);//.concat([2]); // topology, start with (not curGold, is curGold) [g][z][y][x]
-    //let topoR = topo.slice().reverse();
-    //const visited = createArray(topoR); // gold has 2 states [g][z][y][x]
+    let topoR = topo.slice().reverse();
+    const visited = createArray(topoR); // gold has 2 states [g][z][y][x]
     //console.log("visited");
     //console.log(visited);
     //topo.reverse(); // now 3,2,2,2
     console.log("topo = " + topo);
     //console.log("topor = " + topoR);
-    //fillArray(visited, false); // [g][z][y][x]
+    fillArray(visited, -1); // [g][z][y][x]
+    console.log(visited);
 
-    const curState = {
+    const startState = {
         pos : startPos.slice(),
         gold : 0
     };
-    console.log("curState = " + JSON.stringify(curState) + "\n");
+    console.log("startState = " + JSON.stringify(startState) + "\n");
     // move
-    curState.pos = startPos;
     const dirStr = ['E', 'W', 'N', 'S', 'A', 'D'];
     const dirEnum = makeEnum(dirStr);
     const numDims = startPos.length;
     const dir = dirEnum.D;
-    for (let i = 0; i < startPos.length * 2; ++i) {
-        const newState = doMove(topo, keys, edges, /*visited, */curState, i)
-        console.log("move = " + dirStr[i] + ", newState = " + JSON.stringify(newState));
+    //const newState = doMoveSequence(topo, keys, edges, startState, [0, 0, 2, 2, 1, 1, 3, 3], edgeEnum, dirStr);
+    //console.log("newState = " + JSON.stringify(newState));
+/* something like 
+    [ 
+        [ [0],[1] ], // 1st move, list of 1 move sequences
+        [ [0, 0], [0, 1], [1, 0], [1, 1] ] // 1st and 2nd move, list of 2 move sequences
+    ]; 
+    */
+   
+    const maxMoves = 10;
+    const moveLists = [[[]]]; // 0th move has a list of no moves
+    writeIndex(visited, startPos, 0); // visited start position
+    console.log("num moves = 0");
+    console.log("total for 0 moves = 1");
+
+    // calculate moves
+    for (let numMoves = 1; numMoves <= maxMoves; ++numMoves) {
+        console.log("");
+        console.log("num moves = " + numMoves);
+        const newMoveListN = []; // list of moves of 'numMoves' size
+        // iterate over prev move list, and add new moves to each
+        const prevMoveListN = moveLists[numMoves - 1];
+        for (let prevMove of prevMoveListN) {
+            //console.log("numMoves = " + numMoves + " movePrevList = " + JSON.stringify(prevMove));
+            for (let mv = 0; mv < numDims * 2; ++mv) {
+                const newMoveSeq = prevMove.concat([mv]);
+                const newState = doMoveSeq(topo, keys, edges, startState, newMoveSeq, edgeEnum, dirStr);
+                if (newState) {
+                    const nm = readIndex(visited, newState.pos);
+                    if (nm == -1 || numMoves <= nm) {
+                        writeIndex(visited, newState.pos, numMoves);
+                        newMoveListN.push(newMoveSeq);
+                        console.log("moveSeq = " + moveSeqStr(newMoveSeq, dirStr)
+                            + ", newState = " + JSON.stringify(newState));
+                    }
+                }
+            }
+        }
+        console.log(`total for ${numMoves} moves = ${newMoveListN.length}`);
+        moveLists.push(newMoveListN);
+        if (!newMoveListN.length) {
+            console.log("No More Moves !!!");
+            break;
+        }
+        //console.log(moveLists);
     }
+
+   /*
+    for (let numMoves = 0; numMoves < maxMoves; ++numMoves) {
+        for (let mv = 0; mv < startPos.length * 2; ++mv) {
+            const newState = doMove(topo, keys, edges, startState, mv, edgeEnum)
+            console.log("move = " + dirStr[mv] + ", newState = " + JSON.stringify(newState));
+            if (newState) {
+
+            }
+        }
+    }*/
 }
 
 
@@ -201,9 +280,32 @@ function rudolphSim() {
 
     
     // mazeData
-    const mazeData1 = {
+    const mazeDataTest = {
         startPos: 
-            [1, 1, 1],
+            [0, 0],
+        finishPos:
+            [1, 1],
+        keys: [ // 2, 2
+            [false, false],
+            [false, false],
+        ],
+        edges: [
+            // move in x // 1, 2
+            [
+                [ 3],
+                [ 7]
+            ],
+            // move in y // 2, 1
+            [
+                [ 30, 50]
+            ]
+        ]
+    }
+
+    // mazeData
+    const mazeDataReal = {
+        startPos: 
+            [0, 1, 0],
         finishPos:
             [2, 0, 0],
         keys: [ // 2, 2, 3
@@ -212,42 +314,42 @@ function rudolphSim() {
                 [false, false, false]
             ],
             [
-                [false, false, false],
-                [false, false, false]
+                [true, false, false],
+                [false, false, true]
             ]
         ],
         edges: [
             // move in x // 2, 2, 2
             [
                 [
-                    [ 3, 5],
-                    [ 7, 9]
+                    [E.p , E.m ],
+                    [E.p , E.m ]
                 ],
                 [
-                    [ 11, 13],
-                    [ 15, 17]
+                    [E.gm, E.gm],
+                    [E.gp, E.gp]
                 ]
             ],
             // move in y // 2, 1, 3
             [
                 [
-                    [ 30, 50, 70]
+                    [ E.gm, E.p, E.gm]
                 ],
                 [
-                    [ 90, 110, 130]
+                    [ E.gp, E.p, E.p]
                 ]
             ],
             // move in z // 1, 2, 3
             [
                 [
-                    [ -3, -5, -7],
-                    [ -9, -11, -13]
+                    [E.m , E.gp, E.gp],
+                    [E.gp, E.gp, E.gp]
                 ]
             ]
         ]
     }
 
-    runSim(mazeData1);
+    runSim(mazeDataTest, E); // pass in the enums for edge types
 }
 
 
@@ -257,7 +359,7 @@ function javaScriptTests() {
     //inheritanceTests();
     rudolphSim();
 
-
+/*
     const arr = [ // [2][3][4], (z,y,x)
         [
             [
@@ -293,7 +395,7 @@ function javaScriptTests() {
     const val = readIndex(arr, pnt);
     console.log(val);
     console.log(arr);
-
+*/
 
     console.log("");
 }
