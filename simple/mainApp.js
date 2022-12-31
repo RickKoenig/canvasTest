@@ -1,10 +1,12 @@
 'use strict';
 
+	let codeWord;
 	function javaScriptTests() {
 		// test out features of javascript here
 		console.log("javacript tests!");
 		//inheritanceTests();
-		rudolphSim();
+		codeWord = rudolphSim();
+		console.log("codeword = '" + codeWord + "'");
 	}
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
@@ -137,7 +139,10 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		const countStr = "Count = " + this.count;
+		let countStr = "Count = " + this.count;
+		if (codeWord) {
+			countStr += "\nCodeword = '" + codeWord + "'";
+		}
 		this.eles.textInfoLog.innerText = countStr;
 	}
 

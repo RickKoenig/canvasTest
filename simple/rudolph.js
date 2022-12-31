@@ -116,6 +116,7 @@ function moveSeqStr(moveList, dirStr) {
 }
 
 function runSim(mazeData, edgeEnum) {
+    let ret;
     const startPos = mazeData.startPos;
     const finishPos = mazeData.finishPos;  // goal
     const keys = mazeData.keys; // switch between normal and revers for gold arrows
@@ -183,7 +184,8 @@ function runSim(mazeData, edgeEnum) {
                         if (arrayEquals(newState.pos, finishPos)) {
                             goal = true;
                         }
-                        console.log("moveSeq = " + moveSeqStr(newMoveSeq, dirStr)
+                        ret = moveSeqStr(newMoveSeq, dirStr);
+                        console.log("moveSeq = " + ret
                             + ", newState = " + JSON.stringify(newState) + (goal ? " GOAL" : ""));
                         if (goal) {
                             hitGoal = true;
@@ -197,15 +199,16 @@ function runSim(mazeData, edgeEnum) {
         if (hitGoal) {
             console.log("Goal Reached in " + numSeq + " moves !!! " + (stopWhenGoal ? "DONE" : ""));
             if (stopWhenGoal) {
-                return;
+                return ret;
             }
         }
         if (!newMoveListN.length) {
             console.log("No More Sequences Left DONE");
-            return;
+            return ret;
         }
     }
     console.log("Hit Max Sequence length = " + maxSeq + " !!! DONE");
+    return ret;
 }
 
 function rudolphSim() {
@@ -284,5 +287,6 @@ function rudolphSim() {
         ]
     }
 
-    runSim(mazeDataReal, E); // pass in the enums for edge types
+    const code = runSim(mazeDataReal, E); // pass in the enums for edge types
+    return code.join("");
 }
