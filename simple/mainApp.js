@@ -1,5 +1,12 @@
 'use strict';
 
+	function javaScriptTests() {
+		// test out features of javascript here
+		console.log("javacript tests!");
+		//inheritanceTests();
+		rudolphSim();
+	}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
@@ -11,7 +18,7 @@ class MainApp {
 
 	constructor() {
 		javaScriptTests();
-		console.log("creating instance of MainApp");
+		console.log("\n############# creating instance of MainApp");
 		++MainApp.#numInstances;
 
 		// vertical panel UI
