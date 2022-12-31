@@ -121,6 +121,7 @@ function runSim(mazeData, edgeEnum) {
     const keys = mazeData.keys; // switch between normal and revers for gold arrows
     const edges = mazeData.edges;
     const stopWhenGoal = false;
+    const maxSeq = 10;
 
     // get dimensions of keys, this will give the complete structure of the maze
     let topo = arrDim(keys);//.concat([2]); // topology, start with (not curGold, is curGold) [g][z][y][x]
@@ -149,7 +150,6 @@ function runSim(mazeData, edgeEnum) {
     ]; 
     */
     const moveLists = [[[]]]; // 0th move has a list of no moves, wow
-    const maxSeq = 4;
 
     writeIndex(visited, startPos.concat([startState.gold]), 0); // visited start position
     console.log("num seq = 0");
@@ -157,7 +157,9 @@ function runSim(mazeData, edgeEnum) {
 
     if (arrayEquals(startPos, finishPos)) {
         console.log("Goal Reached in Zero Moves");
-        return;
+        if (stopWhenGoal) {
+            return;
+        }
     }
 
     // calculate moves
@@ -174,7 +176,6 @@ function runSim(mazeData, edgeEnum) {
                 if (newState) {
                     const visitIdx = newState.pos.concat([newState.gold]);
                     const nm = readIndex(visited, visitIdx);
-                    //const nm = -1;
                     if (nm == -1 || numSeq <= nm) {
                         writeIndex(visited, visitIdx, numSeq);
                         newMoveListN.push(newMoveSeq);
@@ -194,17 +195,17 @@ function runSim(mazeData, edgeEnum) {
         console.log(`total for ${numSeq} moves = ${newMoveListN.length}`);
         moveLists.push(newMoveListN);
         if (hitGoal) {
-            console.log("Goal Reached in " + numSeq + " moves !!!");
+            console.log("Goal Reached in " + numSeq + " moves !!! " + (stopWhenGoal ? "DONE" : ""));
             if (stopWhenGoal) {
                 return;
             }
         }
         if (!newMoveListN.length) {
-            console.log("No More Sequences Left");
+            console.log("No More Sequences Left DONE");
             return;
         }
     }
-    console.log("Hit Max Sequence length = " + maxSeq + " !!!");
+    console.log("Hit Max Sequence length = " + maxSeq + " !!! DONE");
 }
 
 function rudolphSim() {
@@ -213,19 +214,19 @@ function rudolphSim() {
     const E = makeEnum(["n", "a", "p", "m", "gp", "gm"]); // shorthand
     // Y is inverted between 'UP' visual, and 'DOWN' the code array declarations
     // mazeData
-    const mazeDataTest = {
+    const mazeDataTest1 = {
         startPos: 
             [0, 0],
         finishPos:
             [1, 1],
         keys: [ // 2, 2
             [false, false],
-            [false, false],
+            [false, true],
         ],
         edges: [
             // move in x // 1, 2
             [
-                [ E.a],
+                [ E.n],
                 [ E.a]
             ],
             // move in y // 2, 1
@@ -283,5 +284,5 @@ function rudolphSim() {
         ]
     }
 
-    runSim(mazeDataTest, E); // pass in the enums for edge types
+    runSim(mazeDataReal, E); // pass in the enums for edge types
 }
