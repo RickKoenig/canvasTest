@@ -2,8 +2,35 @@
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now, assume 60hz refresh rate
+class Node {
+	constructor(x, y, n) {
+		this.x = x;
+		this.y = y;
+		this.n = n;
+		this.next = []; // next x, 1 or 2
+		this.prev = []; // prev x, 0 or 1
+	}
+
+	draw(drawPrim, doExpand) {
+		const rad = .15;
+		const pnt = [this.x * .5 + .5, this.y * .5 + .5];
+		const pnt2 = [3, 4];
+		drawPrim.drawLine(pnt, pnt2, .01, "red");
+		drawPrim.drawCircleO(pnt, rad, .01, "black");
+		drawPrim.drawCircle(pnt, rad, "beige");
+		const str = this.n.toString();
+		const scl = rad * 4.5 / (str.length + 1);
+		const txtcol = !doExpand && this.n == 1 && this.y != 0 ? "cyan" : "black";
+		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
+	}
+}
+
 class MainApp {
 	constructor() {
+		console.log("mainapp hail");
+
+		this.doLevels = true; // else doNodes
+		this.doExpand = false;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -24,7 +51,8 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp);
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas
+			, this.ctx, this.vp, [3, 3], .25);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -36,16 +64,82 @@ class MainApp {
 		this.#animate();
 	}
 
+	#initLevels() {
+		this.levels = []; // array of level, level is array of nodes
+		for (let lev = 0; lev <= 4; ++lev) { // 11
+			const level = [];
+			if (lev == 0) {
+				// start if off with one node with value of 1
+				const node = new Node(0, 0, 1);
+				level.push(node);
+			} else {
+				const prevLevel = this.levels[lev - 1];
+				// run through all nodes in prev level to make new nodes for current level
+				for (let prevNode of prevLevel) {
+					const val = prevNode.n;
+					if (this.doExpand || val != 1 || lev != 3) { // handle special case for 1 2 1 loop
+						const node = new Node(level.length, lev, val * 2);
+						level.push(node);
+					}
+					if (val % 3 == 2) {
+						const node = new Node(level.length, lev, (val * 2 - 1) / 3);
+						level.push(node);
+					}
+				}
+			}
+			this.levels[lev] = level;
+		}
+	}
+
+	#initNodes() {
+		this.nodes = [];
+		let val = 1;
+		for (let i = 0; i <= 10; ++i) {
+			const nod = new Node(0, i, val);
+			this.nodes.push(nod);
+			val *= 2;
+		}
+	}
+
+	#drawLevels() {
+		for (let level of this.levels) {
+			for (let node of level) {
+				node.draw(this.drawPrim, this.doExpand);
+			}
+		}
+
+	}
+
+	#drawNodes() {
+		for (let node of this.nodes) {
+			node.draw(this.drawPrim, this.doExpand);
+		}
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		if (this.doLevels) {
+			this.#initLevels();
+		} else {
+			this.#initNodes();
+		}
 	}
 
 	#userBuildUI() {
 	}
 
 	#userProc() { // USER:
+		/*
 		this.drawPrim.drawCircle([.75, .5], .08, "green");
-		this.drawPrim.drawCircle([this.plotter2d.userMouse[0], this.plotter2d.userMouse[1]], .08, "green");
+		this.drawPrim.drawCircle([this.plotter2d.userMouse[0]
+			, this.plotter2d.userMouse[1]], .08, "green");
+		*/
+		//let col = Bitmap32.strToColor32("hddi");
+		if (this.doLevels) {
+			this.#drawLevels();
+		} else {
+			this.#drawNodes();
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
