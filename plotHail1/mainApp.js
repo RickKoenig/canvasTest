@@ -28,8 +28,6 @@ class Node {
 class MainApp {
 	constructor() {
 		console.log("mainapp hail");
-
-		this.doLevels = true; // else doNodes
 		this.doExpand = false;
 
 		// vertical panel UI
@@ -69,35 +67,29 @@ class MainApp {
 		for (let lev = 0; lev <= 4; ++lev) { // 11
 			const level = [];
 			if (lev == 0) {
-				// start if off with one node with value of 1
+				// start if off with one node with value of 1 and no connections
 				const node = new Node(0, 0, 1);
 				level.push(node);
-			} else {
+			} else { // go back to prev level and connect the nodes
 				const prevLevel = this.levels[lev - 1];
 				// run through all nodes in prev level to make new nodes for current level
 				for (let prevNode of prevLevel) {
 					const val = prevNode.n;
 					if (this.doExpand || val != 1 || lev != 3) { // handle special case for 1 2 1 loop
-						const node = new Node(level.length, lev, val * 2);
+						const node = new Node(level.length, lev, val * 2); // doubling PATH, inv 1/2 * input
 						level.push(node);
+						node.prev.push(prevNode);
+						prevNode.next.push(node);
 					}
-					if (val % 3 == 2) {
+					if (val % 3 == 2) { // inv 3/2 * input + 1/2 // three PATH
 						const node = new Node(level.length, lev, (val * 2 - 1) / 3);
 						level.push(node);
+						node.prev.push(prevNode);
+						prevNode.next.push(node);
 					}
 				}
 			}
 			this.levels[lev] = level;
-		}
-	}
-
-	#initNodes() {
-		this.nodes = [];
-		let val = 1;
-		for (let i = 0; i <= 10; ++i) {
-			const nod = new Node(0, i, val);
-			this.nodes.push(nod);
-			val *= 2;
 		}
 	}
 
@@ -110,19 +102,9 @@ class MainApp {
 
 	}
 
-	#drawNodes() {
-		for (let node of this.nodes) {
-			node.draw(this.drawPrim, this.doExpand);
-		}
-	}
-
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		if (this.doLevels) {
-			this.#initLevels();
-		} else {
-			this.#initNodes();
-		}
+		this.#initLevels();
 	}
 
 	#userBuildUI() {
@@ -135,11 +117,7 @@ class MainApp {
 			, this.plotter2d.userMouse[1]], .08, "green");
 		*/
 		//let col = Bitmap32.strToColor32("hddi");
-		if (this.doLevels) {
-			this.#drawLevels();
-		} else {
-			this.#drawNodes();
-		}
+		this.#drawLevels();
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
