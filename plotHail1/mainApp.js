@@ -13,9 +13,8 @@ class Node {
 
 	draw(drawPrim, doExpand) {
 		const rad = .15;
+		// TODO: refactor .5 stuff somehow
 		const pnt = [this.x * .5 + .5, this.y * .5 + .5];
-		const pnt2 = [3, 4];
-		drawPrim.drawLine(pnt, pnt2, .01, "red");
 		drawPrim.drawCircleO(pnt, rad, .01, "black");
 		drawPrim.drawCircle(pnt, rad, "beige");
 		const str = this.n.toString();
@@ -28,7 +27,6 @@ class Node {
 class MainApp {
 	constructor() {
 		console.log("mainapp hail");
-		this.doExpand = false;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -63,8 +61,10 @@ class MainApp {
 	}
 
 	#initLevels() {
+		this.doExpand = false; // draw the loop 1-2-1-2 etc.
+		this.numLevels = 16;
 		this.levels = []; // array of level, level is array of nodes
-		for (let lev = 0; lev <= 4; ++lev) { // 11
+		for (let lev = 0; lev < this.numLevels; ++lev) { // 11
 			const level = [];
 			if (lev == 0) {
 				// start if off with one node with value of 1 and no connections
@@ -94,12 +94,32 @@ class MainApp {
 	}
 
 	#drawLevels() {
-		for (let level of this.levels) {
+		for (let i = 0; i < this.levels.length; ++i) {
+			let level = this.levels[i];
+			// draw line to prev nodes
+			for (let node of level) {
+				for (let prevNode of node.prev) {
+					const pnt = [node.x * .5 + .5, node.y * .5 + .5];
+					const pntPrev = [prevNode.x * .5 + .5, prevNode.y * .5 + .5];
+					this.drawPrim.drawLine(pnt, pntPrev, .01, "red");
+				}
+			}
+			// draw line to next nodes
+			for (let node of level) {
+				for (let nextNode of node.next) {
+					const pnt = [node.x * .5 + .5 + .05, node.y * .5 + .5];
+					const pntNext = [nextNode.x * .5 + .5 + .05, nextNode.y * .5 + .5];
+					this.drawPrim.drawLine(pnt, pntNext, .01, "green");
+				}
+			}
+		}
+		for (let i = 0; i < this.levels.length; ++i) {
+				let level = this.levels[i];
+				// draw the nodes for this level
 			for (let node of level) {
 				node.draw(this.drawPrim, this.doExpand);
 			}
 		}
-
 	}
 
 	// USER: add more members or classes to MainApp
