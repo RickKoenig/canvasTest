@@ -3,23 +3,26 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now, assume 60hz refresh rate
 class Node {
-	constructor(x, y, n) {
-		this.x = x;
-		this.y = y;
+	constructor(x, y, n, rad) {
+		this.p = vec2.fromValues(x * .5 + .5, y * .5 + .5);
 		this.n = n;
+		this.r = rad;
 		this.next = []; // next x, 1 or 2
 		this.prev = []; // prev x, 0 or 1
 	}
 
-	draw(drawPrim, doExpand) {
-		const rad = .15;
-		// TODO: refactor .5 stuff somehow
-		const pnt = [this.x * .5 + .5, this.y * .5 + .5];
-		drawPrim.drawCircleO(pnt, rad, .01, "black");
-		drawPrim.drawCircle(pnt, rad, "beige");
+	draw(drawPrim, doExpand, hilit) {
+		const pnt = this.p;
+		if (hilit) {
+			drawPrim.drawCircleO(pnt, this.r, .08, "green");
+		} else {
+			drawPrim.drawCircleO(pnt, this.r, .01, "black");
+		}
+		drawPrim.drawCircle(pnt, this.r, "beige");
 		const str = this.n.toString();
-		const scl = rad * 4.5 / (str.length + 1);
-		const txtcol = !doExpand && this.n == 1 && this.y != 0 ? "cyan" : "black";
+		const scl = this.r * 4.5 / (str.length + 1); // text smaller for large numbers
+		// brighter node for other '1' that's not the root 1 - 2 - '1'
+		const txtcol = !doExpand && this.n == 1 && this.prev.length != 0 ? "cyan" : "black";
 		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
 	}
 }
@@ -61,14 +64,17 @@ class MainApp {
 	}
 
 	#initLevels() {
+		this.nodeRad = .15;
 		this.doExpand = false; // draw the loop 1-2-1-2 etc.
-		this.numLevels = 16;
+		this.numLevels = 10;
 		this.levels = []; // array of level, level is array of nodes
+		this.nodes = []; // all the nodes location
 		for (let lev = 0; lev < this.numLevels; ++lev) { // 11
 			const level = [];
 			if (lev == 0) {
 				// start if off with one node with value of 1 and no connections
-				const node = new Node(0, 0, 1);
+				const node = new Node(0, 0, 1, this.nodeRad);
+				this.nodes.push(node);
 				level.push(node);
 			} else { // go back to prev level and connect the nodes
 				const prevLevel = this.levels[lev - 1];
@@ -76,13 +82,15 @@ class MainApp {
 				for (let prevNode of prevLevel) {
 					const val = prevNode.n;
 					if (this.doExpand || val != 1 || lev != 3) { // handle special case for 1 2 1 loop
-						const node = new Node(level.length, lev, val * 2); // doubling PATH, inv 1/2 * input
+						const node = new Node(level.length, lev, val * 2, this.nodeRad); // times two PATH, inv (1/2 * input)
+						this.nodes.push(node);
 						level.push(node);
 						node.prev.push(prevNode);
 						prevNode.next.push(node);
 					}
-					if (val % 3 == 2) { // inv 3/2 * input + 1/2 // three PATH
-						const node = new Node(level.length, lev, (val * 2 - 1) / 3);
+					if (val % 3 == 2) { // inv (3/2 * input + 1/2) divide by three PATH
+						const node = new Node(level.length, lev, (val * 2 - 1) / 3, this.nodeRad);
+						this.nodes.push(node);
 						level.push(node);
 						node.prev.push(prevNode);
 						prevNode.next.push(node);
@@ -91,6 +99,8 @@ class MainApp {
 			}
 			this.levels[lev] = level;
 		}
+		this.nodePnts = new Array(this.nodes.length);
+		this.editPnts = new EditPnts(this.nodePnts, this.nodeRad);
 	}
 
 	#drawLevels() {
@@ -99,26 +109,38 @@ class MainApp {
 			// draw line to prev nodes
 			for (let node of level) {
 				for (let prevNode of node.prev) {
-					const pnt = [node.x * .5 + .5, node.y * .5 + .5];
-					const pntPrev = [prevNode.x * .5 + .5, prevNode.y * .5 + .5];
+					const pnt = node.p;
+					const pntPrev = prevNode.p;
 					this.drawPrim.drawLine(pnt, pntPrev, .01, "red");
 				}
 			}
 			// draw line to next nodes
 			for (let node of level) {
 				for (let nextNode of node.next) {
-					const pnt = [node.x * .5 + .5 + .05, node.y * .5 + .5];
-					const pntNext = [nextNode.x * .5 + .5 + .05, nextNode.y * .5 + .5];
+					const pnt = node.p;
+					const pntNext = nextNode.p;
 					this.drawPrim.drawLine(pnt, pntNext, .01, "green");
 				}
 			}
 		}
-		for (let i = 0; i < this.levels.length; ++i) {
-				let level = this.levels[i];
-				// draw the nodes for this level
-			for (let node of level) {
-				node.draw(this.drawPrim, this.doExpand);
-			}
+		
+		// draw the nodes from nodes array
+		const hilitIdx = this.editPnts.getHilitIdx();
+		for (let i = 0; i < this.nodes.length; ++i) {
+			const nod = this.nodes[i];
+			nod.draw(this.drawPrim, this.doExpand, i == hilitIdx);
+		}
+	}
+
+	#nodeToPnts() {
+		for (let i = 0; i < this.nodes.length; ++i) {
+			this.nodePnts[i] = this.nodes[i].p;
+		}
+	}
+
+	#pntsToNode() {
+		for (let i = 0; i < this.nodes.length; ++i) {
+			this.nodes[i].p = this.nodePnts[i];
 		}
 	}
 
@@ -131,6 +153,9 @@ class MainApp {
 	}
 
 	#userProc() { // USER:
+		this.#nodeToPnts();
+		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.#pntsToNode();
 		/*
 		this.drawPrim.drawCircle([.75, .5], .08, "green");
 		this.drawPrim.drawCircle([this.plotter2d.userMouse[0]
@@ -149,7 +174,7 @@ class MainApp {
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse);
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
