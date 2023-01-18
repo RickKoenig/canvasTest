@@ -87,9 +87,6 @@ class DrawPrimitives {
         let sy = size[1] * ndcZoom;
         // invert the font scale y for NDC and USER spaces for they run y from bottom to top
         this.ctx.scale(sy, this.plotter2d.curSpace == Plotter2d.spaces.SCREEN ? sy : -sy);
-        //sy = .5 + .01 * sy;
-        //this.ctx.scale(sy, -sy);
-        //console.log("scale = [" + sy + "," + -sy + "]");
         const adjCenter = .33; // TODO: no magic numbers, comes from font
         this.ctx.translate(-center[0], -center[1] + adjCenter);
         this.ctx.font = 'bold ' + textYSize + 'px serif';

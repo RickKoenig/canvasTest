@@ -66,7 +66,8 @@ class MainApp {
 	#initLevels() {
 		this.nodeRad = .15;
 		this.doExpand = false; // draw the loop 1-2-1-2 etc.
-		this.numLevels = 10;
+		this.noThrees = true; // don't expand 3-6-12, 9-18-36 etc.
+		this.numLevels = 15;
 		this.levels = []; // array of level, level is array of nodes
 		this.nodes = []; // all the nodes location
 		for (let lev = 0; lev < this.numLevels; ++lev) { // 11
@@ -82,11 +83,13 @@ class MainApp {
 				for (let prevNode of prevLevel) {
 					const val = prevNode.n;
 					if (this.doExpand || val != 1 || lev != 3) { // handle special case for 1 2 1 loop
-						const node = new Node(level.length, lev, val * 2, this.nodeRad); // times two PATH, inv (1/2 * input)
-						this.nodes.push(node);
-						level.push(node);
-						node.prev.push(prevNode);
-						prevNode.next.push(node);
+						if (!this.noThrees || val % 3 != 0) {
+							const node = new Node(level.length, lev, val * 2, this.nodeRad); // times two PATH, inv (1/2 * input)
+							this.nodes.push(node);
+							level.push(node);
+							node.prev.push(prevNode);
+							prevNode.next.push(node);
+						}
 					}
 					if (val % 3 == 2) { // inv (3/2 * input + 1/2) divide by three PATH
 						const node = new Node(level.length, lev, (val * 2 - 1) / 3, this.nodeRad);
