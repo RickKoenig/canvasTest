@@ -18,7 +18,7 @@ class Node {
 		} else {
 			drawPrim.drawCircleO(pnt, this.r, .01, "black");
 		}
-		drawPrim.drawCircle(pnt, this.r, "beige");
+		drawPrim.drawCircle(pnt, this.r, this.n % 3 ? "lightgray" : "lightblue");
 		const str = this.n.toString();
 		const scl = this.r * 4.5 / (str.length + 1); // text smaller for large numbers
 		// brighter node for other '1' that's not the root 1 - 2 - '1'
@@ -64,13 +64,17 @@ class MainApp {
 	}
 
 	#initLevels() {
+		// params
 		this.nodeRad = .15;
-		this.doExpand = false; // draw the loop 1-2-1-2 etc.
-		this.noThrees = true; // don't expand 3-6-12, 9-18-36 etc.
-		this.numLevels = 15;
+		//this.doExpand = true; // draw the loop 1-2-1-2 etc.
+		//this.doThrees = true; // don't create multiples of 3
+		this.drawThrees = true; // don't expand 3-6-12, 9-18-36 etc.
+		this.loose = true; // make look cleaner
+		this.numLevels = 20;
+
 		this.levels = []; // array of level, level is array of nodes
 		this.nodes = []; // all the nodes location
-		for (let lev = 0; lev < this.numLevels; ++lev) { // 11
+		for (let lev = 0; lev < this.numLevels; ++lev) {
 			const level = [];
 			if (lev == 0) {
 				// start if off with one node with value of 1 and no connections
@@ -83,7 +87,7 @@ class MainApp {
 				for (let prevNode of prevLevel) {
 					const val = prevNode.n;
 					if (this.doExpand || val != 1 || lev != 3) { // handle special case for 1 2 1 loop
-						if (!this.noThrees || val % 3 != 0) {
+						if (this.drawThrees || val % 3 != 0) {
 							const node = new Node(level.length, lev, val * 2, this.nodeRad); // times two PATH, inv (1/2 * input)
 							this.nodes.push(node);
 							level.push(node);
@@ -92,15 +96,32 @@ class MainApp {
 						}
 					}
 					if (val % 3 == 2) { // inv (3/2 * input + 1/2) divide by three PATH
-						const node = new Node(level.length, lev, (val * 2 - 1) / 3, this.nodeRad);
-						this.nodes.push(node);
-						level.push(node);
-						node.prev.push(prevNode);
-						prevNode.next.push(node);
+						const newVal = (val * 2 - 1) / 3;
+						if (this.doThrees || newVal % 3 != 0) {
+							const node = new Node(level.length, lev, newVal, this.nodeRad);
+							this.nodes.push(node);
+							level.push(node);
+							node.prev.push(prevNode);
+							prevNode.next.push(node);
+						}
 					}
 				}
 			}
 			this.levels[lev] = level;
+		}
+		// more spacing
+		if (this.loose) {
+			const level = this.levels[this.numLevels - 1];
+			for (let lev = 0; lev < level.length; ++lev) {
+				let node = level[lev];
+				let x = node.p[0];
+				while(node.n % 2 == 0) {
+					//x -= .25;
+					node = node.prev[0];
+					node.p[0] = x;
+				}
+				//node.p[0] -= 1;
+			}
 		}
 		this.nodePnts = new Array(this.nodes.length);
 		this.editPnts = new EditPnts(this.nodePnts, this.nodeRad);
