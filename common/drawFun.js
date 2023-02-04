@@ -3,7 +3,7 @@
 class DrawFun {
     constructor(graphPaper) {
         this.ctx = graphPaper.dp.ctx; // canvas 2D context
-        this.dp = graphPaper.dp;
+        this.dp = graphPaper.dp; // draw primitives
 		this.plotter2d = graphPaper.dp.plotter2d;
     }
 

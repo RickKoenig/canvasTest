@@ -3,8 +3,11 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now, assume 60hz refresh rate
 class Node {
+
+	static offset = 20;
+
 	constructor(x, y, n, rad) {
-		this.p = vec2.fromValues(x * .5 + .5, y * .5 + .5);
+		this.p = vec2.fromValues(x * .5 + Node.offset + .5, y * .5 + Node.offset + .5);
 		this.n = n;
 		this.r = rad;
 		this.next = []; // next x, 1 or 2
@@ -28,8 +31,72 @@ class Node {
 }
 
 class MainApp {
+
+	#plotPowers() {
+
+	}
+
+	// count number of trailing zeros in a string
+	static #trailingZerosStr(str) {
+		if (typeof(str) !== 'string') {
+			return 0;
+		}
+		let ret = 0;
+		for (let pos = str.length - 1; pos >= 0; --pos) {
+			if (str[pos] != '0') {
+				return ret;
+			} else {
+				++ret;
+			}
+		}
+		return ret;
+	}
+
+	static #hailStep(bn) {
+		if (bn % 2n == 0) { // even
+			return bn / 2n;
+		} else { // odd
+			return (3n * bn + 1n) / 2n;
+		}
+	}
+
+	static #countHailSteps(bn) {
+		let ret = 0;
+		while(bn != 1) {
+			bn = MainApp.#hailStep(bn);
+			++ret;
+		}
+		return ret;
+	}
+
+	#hailStats() {
+		console.log("Hail Stats");
+		console.log("2^n - 1 START");
+		const maxHailPow = 200;
+		const checkPow = 500;
+		let bestRat = 0;
+		for (let hp = 1; hp <= maxHailPow; ++hp) {
+			if (hp % checkPow == 0) {
+				console.log(`#### checking ${hp}`);
+			}
+			const n = 2n ** BigInt(hp) - 1n;
+			const hs = MainApp.#countHailSteps(n);
+			const ns = n > 1000000 ? "big" : n;
+			let rat = hs / hp;
+			if (rat > bestRat) {
+				bestRat = rat;
+			}
+			if (rat >= bestRat) {
+				const ratStr = rat.toFixed(5);
+				console.log(`Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
+			}
+		}
+		console.log("2^n - 1 DONE");
+	}
+
 	constructor() {
 		console.log("mainapp hail");
+		this.#hailStats();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -51,7 +118,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [3, 3], .25);
+			, this.ctx, this.vp, [Node.offset + 3, Node.offset + 3], .25);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
