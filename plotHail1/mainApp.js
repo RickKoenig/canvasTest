@@ -4,7 +4,7 @@
 // TODO: for now, assume 60hz refresh rate
 class Node {
 
-	static offset = 20;
+	static offset = 20; // draw node tree starting at position 20,20
 
 	constructor(x, y, n, rad) {
 		this.p = vec2.fromValues(x * .5 + Node.offset + .5, y * .5 + Node.offset + .5);
@@ -31,9 +31,38 @@ class Node {
 }
 
 class MainApp {
+	#initPowers() {
+		console.log("Hail Stats");
+		console.log("2^n - 1 START");
 
-	#plotPowers() {
+		const maxHailPow = 400;
+		const checkPow = 10;
+		const verbose = true;
+		this.arrHailRatio = [];
 
+		let bestRatio = 0;
+		for (let hp = 1; hp <= maxHailPow; ++hp) {
+			if (hp % checkPow == 0 && !verbose) {
+				console.log(`#### checking ${hp}`);
+			}
+			const n = 2n ** BigInt(hp) - 1n;
+			const hs = MainApp.#countHailSteps(n);
+			const ns = n > 1000000 ? "big" : n;
+			let ratio = hs / hp;
+			this.arrHailRatio.push(ratio);
+			if (ratio > bestRatio) {
+				bestRatio = ratio;
+			}
+			if (ratio >= bestRatio || verbose) {
+				const ratStr = ratio.toFixed(5);
+				console.log(`Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
+			}
+		}
+		console.log("2^n - 1 DONE");
+	}
+
+	#drawPowers() {
+		this.drawPrim.drawLinesSimple(this.arrHailRatio, .125, .2, 1, 1, "green", "black");
 	}
 
 	// count number of trailing zeros in a string
@@ -69,34 +98,8 @@ class MainApp {
 		return ret;
 	}
 
-	#hailStats() {
-		console.log("Hail Stats");
-		console.log("2^n - 1 START");
-		const maxHailPow = 200;
-		const checkPow = 500;
-		let bestRat = 0;
-		for (let hp = 1; hp <= maxHailPow; ++hp) {
-			if (hp % checkPow == 0) {
-				console.log(`#### checking ${hp}`);
-			}
-			const n = 2n ** BigInt(hp) - 1n;
-			const hs = MainApp.#countHailSteps(n);
-			const ns = n > 1000000 ? "big" : n;
-			let rat = hs / hp;
-			if (rat > bestRat) {
-				bestRat = rat;
-			}
-			if (rat >= bestRat) {
-				const ratStr = rat.toFixed(5);
-				console.log(`Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
-			}
-		}
-		console.log("2^n - 1 DONE");
-	}
-
 	constructor() {
 		console.log("mainapp hail");
-		this.#hailStats();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -118,7 +121,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [Node.offset + 3, Node.offset + 3], .25);
+			, this.ctx, this.vp, [35, 20], .04);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -237,6 +240,7 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.#initPowers();
 		this.#initLevels();
 	}
 
@@ -253,6 +257,7 @@ class MainApp {
 			, this.plotter2d.userMouse[1]], .08, "green");
 		*/
 		//let col = Bitmap32.strToColor32("hddi");
+		this.#drawPowers();
 		this.#drawLevels();
 	}
 

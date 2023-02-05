@@ -75,6 +75,82 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
+    // an array of y values
+    // connected line and optional circles on vertices
+    drawLinesSimple(pntsY, lineWidth = .01, circleSize = .01
+        , startX = 0, stepX = 1
+        , lineColor = "black", circleColor = "red", ndcScale = false) {
+        if (pntsY.length < 2) {
+            return;
+        }
+        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        if (lineWidth > 0) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(startX, pntsY[0]);
+            let idx = 1;
+            let X = startX;
+            while(idx < pntsY.length) {
+                X += stepX;
+                this.ctx.lineTo(X, pntsY[idx++]);
+            }
+            this.ctx.lineWidth = lineWidth * ndcZoom;
+            this.ctx.strokeStyle = lineColor;
+            this.ctx.stroke();
+        }
+
+        // optional draw circles on vertices
+        if (circleSize > 0) {
+            let X = startX;
+            this.ctx.fillStyle = circleColor;
+            for (let idx = 0; idx < pntsY.length; ++idx) {
+                this.ctx.beginPath();
+                this.ctx.arc(X, pntsY[idx], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+                this.ctx.fill();
+                X += stepX;
+            }
+        }
+    }
+
+    // an array of x,y values, if close is true, connect first point to last point
+    drawLinesParametric(pnts, lineWidth = .01, circleSize = .01, close = false
+        , lineColor = "black", circleColor = "red", ndcScale = false) {
+        if (pnts.length < 2) {
+            return;
+        }
+        if (lineColor == "blue") {
+            return;
+        }
+        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        if (lineWidth > 0) {
+            this.ctx.beginPath();
+            const pnt = pnts[0];
+            this.ctx.moveTo(pnt[0], pnt[1]);
+            let idx = 1;
+            while(idx < pnts.length) {
+                const pnt = pnts[idx];
+                this.ctx.lineTo(pnt[0], pnt[1]);
+                ++idx;
+            }
+            if (close) {
+                this.ctx.closePath();
+            }
+            this.ctx.lineWidth = lineWidth * ndcZoom;
+            this.ctx.strokeStyle = lineColor;
+            this.ctx.stroke();
+        }
+
+        // optional draw circles on vertices
+        if (circleSize > 0) {
+            this.ctx.fillStyle = circleColor;
+            for (let idx = 0; idx < pnts.length; ++idx) {
+                const pnt = pnts[idx];
+                this.ctx.beginPath();
+                this.ctx.arc(pnt[0], pnt[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+                this.ctx.fill();
+            }
+        }
+    }
+
     drawText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {
         let textYSize = 1;
         if (back) {
