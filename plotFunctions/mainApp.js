@@ -36,7 +36,7 @@ class MainApp {
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom, this.fixedSize);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim);
+		this.graphPaper = new GraphPaper(this.drawPrim, [-400, -400], [400, 400]);
 
 		this.drawFun = new DrawFun(this.graphPaper);
 

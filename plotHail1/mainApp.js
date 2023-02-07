@@ -35,9 +35,9 @@ class MainApp {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
 
-		const maxHailPow = 400;
+		const maxHailPow = 2000;
 		const checkPow = 10;
-		const verbose = true;
+		const verbose = false;
 		this.arrHailRatio = [];
 
 		let bestRatio = 0;
@@ -124,7 +124,7 @@ class MainApp {
 			, this.ctx, this.vp, [35, 20], .04);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim);
+		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
 
 		// USER build UI
 		this.#userBuildUI();
@@ -240,14 +240,30 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.avgFpsObj = new Runavg(500);
 		this.#initPowers();
 		this.#initLevels();
 	}
 
 	#userBuildUI() {
+		// text info log
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
 	}
 
 	#userProc() { // USER:
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+
 		this.#nodeToPnts();
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.#pntsToNode();
@@ -263,6 +279,14 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
+		if (!this.vp) {
+			return;
+		}
+
+		const p = this.plotter2d;
+		// show inputEventsStats
+		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n";
+		this.eles.textInfoLog.innerText = fpsStr;
 	}
 
 	// proc

@@ -48,6 +48,8 @@ class Plotter2d {
         this.zoom= 1;
         this.invZoom= 1;
         this.logZoom= 0;
+        this.minLogZoom = -6.6;
+        this.maxLogZoom = 4;
 
         this.scaleReset();
         // good state is one ctx.default in the stack and some active current state
@@ -186,10 +188,8 @@ class Plotter2d {
                 if (mouse.mbut[Mouse.MIDDLE]) { // faster wheel mouse when middle button held down
                     lzoomspeed *= 4;
                 }
-                const minLogZoom = -5;
-                const maxLogZoom = 4;
                 this.logZoom += m * lzoomspeed;
-                this.logZoom = range(minLogZoom, this.logZoom, maxLogZoom);
+                this.logZoom = range(this.minLogZoom, this.logZoom, this.maxLogZoom);
                 this.zoom = Math.exp(this.logZoom);
                 this.invZoom = 1 / this.zoom;
     
@@ -219,13 +219,17 @@ class Plotter2d {
         
         if (this.vp) {
             // xtrans
-            this.pieces.xTrans.textInfoEle.innerText = "center[0] = " + this.center[0].toFixed(2);
+            this.pieces.xTrans.textInfoEle.innerText = "center[0] = " 
+                + this.center[0].toFixed(2);
             // ytrans
-            this.pieces.yTrans.textInfoEle.innerText = "center[1] = " + this.center[1].toFixed(2);
+            this.pieces.yTrans.textInfoEle.innerText = "center[1] = " 
+                + this.center[1].toFixed(2);
             // scale
-            this.pieces.scale.textInfoEle.innerText = "zoom = " + this.zoom.toFixed(2) + ", logZ = " + this.logZoom.toFixed(2);
+            this.pieces.scale.textInfoEle.innerText = "zoom = " 
+                + this.zoom.toFixed(4) + ", logZ = " + this.logZoom.toFixed(4);
             // mouse
-            this.pieces.mouse.textInfoEle.innerText = "Mouse = (" + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
+            this.pieces.mouse.textInfoEle.innerText = "Mouse = (" 
+                + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
         }
     }
 

@@ -1,31 +1,39 @@
 'use strict';
 
 class GraphPaper {
-    constructor(drawPrims) {
+    static levels = [
+        {step: 100, fix: 0, xGap: .5, yGap: .5, lineWidth: .08, color: "rgb(22, 100, 180)", lessTextZoom: .01, lessGridZoom: .01},
+        {step: 10, fix: 0, xGap: .5, yGap: .5, lineWidth: .02, color: "rgb(74, 184, 231)", lessTextZoom: .1, lessGridZoom: .1},
+        {step: 1, fix: 0, xGap: .5, yGap: .5, lineWidth: .008, color: "rgb(96,204,252)", lessTextZoom: .7, lessGridZoom: .7},
+        {step: .25, fix: 2, xGap: 1.1, yGap: .5, lineWidth: .005, color: "rgb(133, 216, 252)"},
+    ];
+
+    constructor(drawPrims, minGrid = [-100, -100], maxGrid = [100, 100]) {
         this.dp = drawPrims;
         this.ctx = drawPrims.ctx;
         this.plotter2d = drawPrims.plotter2d;
 
-        this.minGrid = [-100, -100];
-        this.maxGrid = [100, 100];
+        this.minGrid = vec2.clone(minGrid);
+        this.maxGrid = vec2.clone(maxGrid);
         this.shrink = .05; // clip a little in NDC space to add axis labels X and Y
+        this.minZoom = .00025; // don't draw thin lines
     }
 
 // draw in user/cam space
     #drawOneGrid(spacing, lineWidth, color) {
         this.ctx.beginPath();
-        // horizontal lines
-        for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += spacing) {
-            if (j >= this.plotter2d.camMin[1] && j <= this.plotter2d.camMax[1]) {
-                this.ctx.moveTo(this.minGrid[0], j);
-                this.ctx.lineTo(this.maxGrid[0], j);
-            }
-        }
         // vertical lines
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += spacing) {
             if (i >= this.plotter2d.camMin[0] && i <= this.plotter2d.camMax[0]) {
                 this.ctx.moveTo(i, this.minGrid[1]);
                 this.ctx.lineTo(i, this.maxGrid[1]);
+            }
+        }
+        // horizontal lines
+        for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += spacing) {
+            if (j >= this.plotter2d.camMin[1] && j <= this.plotter2d.camMax[1]) {
+                this.ctx.moveTo(this.minGrid[0], j);
+                this.ctx.lineTo(this.maxGrid[0], j);
             }
         }
         this.ctx.strokeStyle = color;
@@ -34,31 +42,20 @@ class GraphPaper {
     }
 
     #drawGrid() {
-        // in ctx clip
-        let fine = .25;
-        let med = 1;
-        let larger = 10;
-        // fine grid
-        this.#drawOneGrid(fine, .005, "rgb(133, 216, 252)");
-        // medium grid
-        this.#drawOneGrid(med, .0075, "rgb(96,204,252)");
-        // larger grid
-        this.#drawOneGrid(larger, .01, "rgb(74, 184, 231)");
-        // axis
-        this.ctx.beginPath();
-        this.ctx.lineTo(this.minGrid[0], 0);
-        this.ctx.lineTo(this.maxGrid[0], 0);
-        this.ctx.moveTo(0, this.minGrid[1]);
-        this.ctx.lineTo(0, this.maxGrid[1]);
-        this.ctx.strokeStyle = "rgb(68, 109, 126)";
-        this.ctx.lineWidth = .0125;
-        this.ctx.stroke();
+        for (let i = GraphPaper.levels.length - 1; i >= 0; --i) {
+            const level = GraphPaper.levels[i];
+            if (level.lineWidth * this.plotter2d.zoom >= this.minZoom || i == 0) {
+                if (i != 0 || this.plotter2d.zoom < .1) {
+                    this.#drawOneGrid(level.step, level.lineWidth, level.color); // don't draw 100's when zoomed in
+                }
+            }
+        }
     }
 
     #drawAxis() {
         // axis
         this.ctx.beginPath();
-        this.ctx.lineTo(this.minGrid[0] * 2, 0);
+        this.ctx.moveTo(this.minGrid[0] * 2, 0);
         this.ctx.lineTo(this.maxGrid[0] * 2, 0);
         this.ctx.moveTo(0, this.minGrid[1] * 2);
         this.ctx.lineTo(0, this.maxGrid[1] * 2);
@@ -66,37 +63,43 @@ class GraphPaper {
         this.ctx.lineWidth = .0125;
         this.ctx.stroke();
 
-        // axis numbers
-        let tensSize = .05;
+        // axis text numbers
+        let textSize = .05;
         let level;
-        let levels = [
-            {step: 10, fix: 0, xGap: .5, yGap: .5, lessZoom: .1},
-            {step: 1, fix: 0, xGap: .5, yGap: .5, lessZoom: .6},
-            {step: .25, fix: 2, xGap: 1.2, yGap: .5},
-        ];
         let i;
-        for (i = 0; i < levels.length - 1; ++i) {
-            level = levels[i];
-            if (this.plotter2d.zoom < level.lessZoom) {
+        for (i = 0; i < GraphPaper.levels.length - 1; ++i) {
+            level = GraphPaper.levels[i];
+            if (this.plotter2d.zoom < level.lessTextZoom) {
                 break;
             }
         }
-        level = levels[i];
+        level = GraphPaper.levels[i];
 
+        const slack = .5 * this.plotter2d.invZoom; // slight overdraw for clipping
+        // horizontal
         for (let i = this.minGrid[0]; i <= this.maxGrid[0]; i += level.step) {
+            // clip
+            if (i < this.plotter2d.camMin[0] - slack || i > this.plotter2d.camMax[0] + slack) { // a little slack
+                continue;
+            }
             this.dp.drawText(
-                  [i + tensSize * this.plotter2d.invZoom * level.xGap, -tensSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
-                , [tensSize, tensSize]
+                  [i + textSize * this.plotter2d.invZoom * level.xGap, -textSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
+                , [textSize, textSize]
                 , i.toFixed(level.fix)
                 , "blue"
                 , undefined
                 , true
             );
         }
+        // vertical
         for (let j = this.minGrid[1]; j <= this.maxGrid[1]; j += level.step) {
+            // clip
+            if (j < this.plotter2d.camMin[1] - slack || j > this.plotter2d.camMax[1] + slack) { // a little slack
+                continue;
+            }
             this.dp.drawText(
-                  [ tensSize * this.plotter2d.invZoom * level.xGap, j - tensSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
-                , [tensSize, tensSize]
+                  [ textSize * this.plotter2d.invZoom * level.xGap, j - textSize * this.plotter2d.invZoom * level.yGap] // offset away slightly from grid
+                , [textSize, textSize]
                 , j.toFixed(level.fix)
                 , "blue"
                 , undefined
