@@ -34,8 +34,17 @@ class MainApp {
 	#initPowers() {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
+		// test worker threads
+		if (window.Worker) {
+			const hailWorker = new Worker("worker.js");
 
-		const maxHailPow = 2000;
+			hailWorker.onmessage = (e) => {
+				const result = e.data;
+				console.log(`Message received from worker '${result}'`);
+			  }			
+		}
+		// done test worker threads
+		const maxHailPow = 600;
 		const checkPow = 10;
 		const verbose = false;
 		this.arrHailRatio = [];
