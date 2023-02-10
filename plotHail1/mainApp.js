@@ -34,18 +34,31 @@ class MainApp {
 	#initPowers() {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
+
 		// test worker threads
 		if (window.Worker) {
 			const hailWorker = new Worker("worker.js");
+			// send a message to the worker
+			hailWorker.postMessage(["worker task sent from main thread", 100, 30]);
 
 			hailWorker.onmessage = (e) => {
-				const result = e.data;
-				console.log(`Message received from worker '${result}'`);
+				let result = e.data;
+				if (result.constructor == ArrayBuffer) {
+					result = new Float32Array(result);
+					let str = "";
+					for(let v of result) {
+						str += v.toFixed(2) + " ";
+					}
+					console.log("Message 'ArrayBuffer' received " + str);
+				} else {
+					console.log(`Message received from worker '${result}'`);
+				}
 			  }			
 		}
 		// done test worker threads
-		const maxHailPow = 600;
-		const checkPow = 10;
+		
+		const maxHailPow = 200;
+		const checkPow = 25;
 		const verbose = false;
 		this.arrHailRatio = [];
 
@@ -64,7 +77,7 @@ class MainApp {
 			}
 			if (ratio >= bestRatio || verbose) {
 				const ratStr = ratio.toFixed(5);
-				console.log(`Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
+				console.log(`Best Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
 			}
 		}
 		console.log("2^n - 1 DONE");
@@ -72,6 +85,32 @@ class MainApp {
 
 	#drawPowers() {
 		this.drawPrim.drawLinesSimple(this.arrHailRatio, .125, .2, 1, 1, "green", "black");
+	}
+
+	#initFreeGroup() {
+		this.fgNode = [100, 110];
+
+	}
+
+	#drawFreeGroup() {
+		this.drawPrim.drawCircle(this.fgNode, 5);
+		//drawCircle(pnt, rad, color = "magenta", ndcScale = false);
+
+/*
+		const pnt = this.p;
+		if (hilit) {
+			drawPrim.drawCircleO(pnt, this.r, .08, "green");
+		} else {
+			drawPrim.drawCircleO(pnt, this.r, .01, "black");
+		}
+		drawPrim.drawCircle(pnt, this.r, this.n % 3 ? "lightgray" : "lightblue");
+		const str = this.n.toString();
+		const scl = this.r * 4.5 / (str.length + 1); // text smaller for large numbers
+		// brighter node for other '1' that's not the root 1 - 2 - '1'
+		const txtcol = !doExpand && this.n == 1 && this.prev.length != 0 ? "cyan" : "black";
+		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
+*/
+
 	}
 
 	// count number of trailing zeros in a string
@@ -251,6 +290,7 @@ class MainApp {
 	#userInit() {
 		this.avgFpsObj = new Runavg(500);
 		this.#initPowers();
+		this.#initFreeGroup();
 		this.#initLevels();
 	}
 
@@ -283,6 +323,7 @@ class MainApp {
 		*/
 		//let col = Bitmap32.strToColor32("hddi");
 		this.#drawPowers();
+		this.#drawFreeGroup();
 		this.#drawLevels();
 	}
 
