@@ -3,7 +3,6 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now, assume 60hz refresh rate
 class Node {
-
 	static offset = 20; // draw node tree starting at position 20,20
 
 	constructor(x, y, n, rad) {
@@ -35,51 +34,31 @@ class MainApp {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
 
-		// test worker threads
+		const maxHailBlocks = 20;
+		const hailBlockSize = 25;
+		this.arrHailRatio = [];
+		// setup worker thread
 		if (window.Worker) {
-			const hailWorker = new Worker("worker.js");
-			// send a message to the worker
-			hailWorker.postMessage(["worker task sent from main thread", 100, 30]);
-
-			hailWorker.onmessage = (e) => {
+			this.hailWorker = new Worker("worker.js");
+			// get back results from worker
+			this.hailWorker.onmessage = (e) => {
 				let result = e.data;
 				if (result.constructor == ArrayBuffer) {
-					result = new Float32Array(result);
-					let str = "";
-					for(let v of result) {
-						str += v.toFixed(2) + " ";
+					result = new Float32Array(result); // convert ArrayBuffer to Float32Array
+					result = Array.from(result); // convert Float32Array to Array
+					this.arrHailRatio = this.arrHailRatio.concat(result);
+					if (this.arrHailRatio.length == maxHailBlocks * hailBlockSize) {
+						console.log("Kill worker");
+						this.hailWorker.terminate();
 					}
-					console.log("Message 'ArrayBuffer' received " + str);
 				} else {
-					console.log(`Message received from worker '${result}'`);
+					console.log(`Message received from worker NOT AN FLOAT32ARRAY'${result}'`);
 				}
-			  }			
+			}
+			// send a task message to the worker
+			this.hailWorker.postMessage([maxHailBlocks, hailBlockSize]);
 		}
-		// done test worker threads
-		
-		const maxHailPow = 200;
-		const checkPow = 25;
-		const verbose = false;
-		this.arrHailRatio = [];
-
-		let bestRatio = 0;
-		for (let hp = 1; hp <= maxHailPow; ++hp) {
-			if (hp % checkPow == 0 && !verbose) {
-				console.log(`#### checking ${hp}`);
-			}
-			const n = 2n ** BigInt(hp) - 1n;
-			const hs = MainApp.#countHailSteps(n);
-			const ns = n > 1000000 ? "big" : n;
-			let ratio = hs / hp;
-			this.arrHailRatio.push(ratio);
-			if (ratio > bestRatio) {
-				bestRatio = ratio;
-			}
-			if (ratio >= bestRatio || verbose) {
-				const ratStr = ratio.toFixed(5);
-				console.log(`Best Hail steps for 2^${hp} = ${ns} is ${hs}, steps/pow = ${ratStr}`);
-			}
-		}
+		// done setup worker thread
 		console.log("2^n - 1 DONE");
 	}
 
@@ -234,11 +213,9 @@ class MainApp {
 				let node = level[lev];
 				let x = node.p[0];
 				while(node.n % 2 == 0) {
-					//x -= .25;
 					node = node.prev[0];
 					node.p[0] = x;
 				}
-				//node.p[0] -= 1;
 			}
 		}
 		this.nodePnts = new Array(this.nodes.length);
@@ -286,7 +263,7 @@ class MainApp {
 		}
 	}
 
-	// USER: add more members or classes to MainApp
+	// USER: add more members or classes to mainApp
 	#userInit() {
 		this.avgFpsObj = new Runavg(500);
 		this.#initPowers();
@@ -316,12 +293,7 @@ class MainApp {
 		this.#nodeToPnts();
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.#pntsToNode();
-		/*
-		this.drawPrim.drawCircle([.75, .5], .08, "green");
-		this.drawPrim.drawCircle([this.plotter2d.userMouse[0]
-			, this.plotter2d.userMouse[1]], .08, "green");
-		*/
-		//let col = Bitmap32.strToColor32("hddi");
+
 		this.#drawPowers();
 		this.#drawFreeGroup();
 		this.#drawLevels();
@@ -332,7 +304,6 @@ class MainApp {
 		if (!this.vp) {
 			return;
 		}
-
 		const p = this.plotter2d;
 		// show inputEventsStats
 		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n";

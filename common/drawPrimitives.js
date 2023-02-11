@@ -80,11 +80,8 @@ class DrawPrimitives {
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = .01
         , startX = 0, stepX = 1
         , lineColor = "black", circleColor = "red", ndcScale = false) {
-        if (pntsY.length < 2) {
-            return;
-        }
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
-        if (lineWidth > 0) {
+        if (lineWidth > 0 && pntsY.length >= 2) {
             this.ctx.beginPath();
             this.ctx.moveTo(startX, pntsY[0]);
             let idx = 1;
@@ -99,7 +96,7 @@ class DrawPrimitives {
         }
 
         // optional draw circles on vertices
-        if (circleSize > 0) {
+        if (circleSize > 0 && pntsY.length >= 1) {
             let X = startX;
             this.ctx.fillStyle = circleColor;
             for (let idx = 0; idx < pntsY.length; ++idx) {

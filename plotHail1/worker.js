@@ -1,29 +1,36 @@
 'use strict';
 
-onmessage = (e) => {
-    console.log('Message received from main script' + e.data);
-    //const workerResult = `Result: ${e.data[0] * e.data[1]}`;
-    console.log('Posting message back to main script');
-    //postMessage('workerResult');
-    postMessage(e.data);
+importScripts("hailCommon.js");
 
-    console.log("W: worker start!");
-    postMessage("worker start!");
-    let i = 0;
-    for (let i = 0; i <= 2_000; ++i) {
-        if (i % 1_000 == 0) {
-            postMessage(`from worker message ${i}`);
+onmessage = (e) => {
+    console.log("W: 2^n - 1   Start");
+    console.log('W: Message received from main script: ' + e.data);
+    const maxHailBlocks = e.data[0];
+    const hailBlockSize = e.data[1];
+    let bestRatio = 0;
+    let hp = 1;
+    for (let blockNum = 0; blockNum < maxHailBlocks; ++blockNum) {
+        console.log(`W: #### checking ${hp}`);
+        let sendData = new Float32Array(hailBlockSize);
+        for (let blockIdx = 0; blockIdx < hailBlockSize; ++blockIdx) {
+            const n = 2n ** BigInt(hp) - 1n;
+            const hs = countHailSteps(n);
+            const ns = n > 1000000 ? "big" : n;
+            let ratio = hs / hp;
+            sendData[blockIdx] = ratio;
+            if (ratio > bestRatio) {
+                bestRatio = ratio;
+            }
+            if (ratio >= bestRatio) {
+                const ratStr = ratio.toFixed(5);
+                console.log(`W: Best Hail steps for 2^${hp} - 1 = ${ns} is ${hs}, steps/pow = ${ratStr}`);
+            }
+            ++hp;
+        }
+        console.log(`W: #### checking 'DONE' 1 to ${hp - 1}`);
+        if (sendData.length > 0) {
+            postMessage(sendData.buffer, [sendData.buffer]);
         }
     }
-    
-    const fb = new Float32Array(10);
-    for (let i = 0; i < 10; ++i) {
-        fb[i] = .3 * i;
-    }
-    
-    console.log("len before post = " + fb.length);
-    postMessage(fb.buffer, [fb.buffer]);
-    console.log("len after post = " + fb.length);
-    console.log("W: worker finish!");
-    postMessage("worker finish!");
+    console.log("W: 2^n - 1   Finished");
 }
