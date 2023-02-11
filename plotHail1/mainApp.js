@@ -67,14 +67,26 @@ class MainApp {
 	}
 
 	#initFreeGroup() {
-		this.fgNode = [100, 110];
-
+		this.fgNode = [10, 30];
 	}
 
 	#drawFreeGroup() {
-		this.drawPrim.drawCircle(this.fgNode, 5);
-		//drawCircle(pnt, rad, color = "magenta", ndcScale = false);
-
+		// UI
+		switch(this.input.keyboard.key) {
+			case keyTable.keycodes.RIGHT:
+				this.fgNode[0] += 1;
+				break;
+			case keyTable.keycodes.LEFT:
+				this.fgNode[0] -= 1;
+				break;
+			case keyTable.keycodes.UP:
+				this.fgNode[1] += 1;
+				break;
+			case keyTable.keycodes.DOWN:
+				this.fgNode[1] -= 1;
+				break;
+		}
+		this.drawPrim.drawCircle(this.fgNode, .25);
 /*
 		const pnt = this.p;
 		if (hilit) {
@@ -89,7 +101,6 @@ class MainApp {
 		const txtcol = !doExpand && this.n == 1 && this.prev.length != 0 ? "cyan" : "black";
 		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
 */
-
 	}
 
 	// count number of trailing zeros in a string
@@ -128,6 +139,7 @@ class MainApp {
 	constructor() {
 		console.log("mainapp hail");
 
+		this.fpsScreen = 60;
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
 		//this.vp = null; // OR, no vertical panel UI
@@ -148,7 +160,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [35, 20], .04);
+			, this.ctx, this.vp, [10, 30], .14);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
@@ -275,6 +287,7 @@ class MainApp {
 		// text info log
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
+		this.eles.editFunctionG = makeEle(this.vp, "textarea", "editFunctionG", "editbox", 27);
 	}
 
 	#userProc() { // USER:
@@ -306,7 +319,8 @@ class MainApp {
 		}
 		const p = this.plotter2d;
 		// show inputEventsStats
-		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n";
+		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n"
+			+ "Use the arrow keys\nto navigate\nthe Free Group";
 		this.eles.textInfoLog.innerText = fpsStr;
 	}
 

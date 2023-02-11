@@ -28,12 +28,10 @@ hr{
 
 span{
 	margin:0;
-	display: inline-block;
 }
 
 .slidecontainer{
 	text-align: center;
-	margin:0;
 }
 
 .slider{
@@ -46,7 +44,6 @@ span{
 }
 
 div{
-	margin: 0;
 	outline: none;
 	padding: none;
 	position: relative;
@@ -54,14 +51,12 @@ div{
 }
 
 canvas{
-	margin: 0;
 	outline: none;
 	border: none;
 	background: lightgray;
 }
 
 #verticalPanel{
-	width: 250px;
 	text-align: center;
 	margin-left: 10px;
 	margin-top: 5px;
@@ -78,8 +73,8 @@ button{
 
 .editbox{
 	text-align: center;
-	width: 300px;
-	height: 60px;
+	width: 200px;
+	height: 20px;
 	border: none;
 	border-radius: 5px;
 	margin: 4px 4px 4px 4px;
@@ -96,11 +91,16 @@ button:hover{
 	margin: 50px;
 }
 
-.textFunction{
+.parsedFunction{
 	font-size: 130%;
 	background: rgb(146, 171, 190);
 }
 
-test{
-	background: rgb(74, 184, 231)
+.textInfo{
+	color:rgb(11, 60, 235);
+	font-style: italic;
+	font-size: 120%;
+}
+.marg{
+	margin-right: 10px;
 }

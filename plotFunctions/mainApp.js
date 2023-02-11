@@ -59,7 +59,7 @@ class MainApp {
 		this.avgFps = 0;
 		this.oldTime; // for delta time
 		this.fpsScreen = 60; // DONE: make work with different refresh rates
-		this.useAvgFps = true; // in proc, copy fpsAvgFps to fpsScreen instead of 60
+		this.useAvgFps = true; // in proc, copy avgFps to fpsScreen instead of 60
 
 		// speed of frame update as a fraction from 0 to 1
 		this.num = 1;
