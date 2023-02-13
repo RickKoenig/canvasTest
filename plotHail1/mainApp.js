@@ -30,6 +30,8 @@ class Node {
 }
 
 class MainApp {
+
+	static dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 	#initPowers() {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
@@ -66,41 +68,91 @@ class MainApp {
 		this.drawPrim.drawLinesSimple(this.arrHailRatio, .125, .2, 1, 1, "green", "black");
 	}
 
+
+
+	#hailMove(val, dirX, dirY) {
+		if (dirX == 0) {
+			if (dirY == 1) { // up
+				return 2 * val;
+			} else if (dirY == -1) { // down
+				return val / 2;
+			}
+		} else if (dirY == 0) {
+			if (dirX == 1) { // right
+				return (2 * val - 1) / 3;
+			} else if (dirX == -1) { // left
+				return (3 * val + 1) / 2;
+			}
+		}
+		return val;
+	}
+
 	#initFreeGroup() {
 		this.fgNode = [10, 30];
+		this.fgValue = 7;
+		this.fgLevels = 4;
+		this.fgSep = 4;
+		this.fgSepRatio = .51;
+		this.fgSizeRatio = .6;
+	}
+
+	#updateValue() {
+		const val = Number(this.eles.fgEdit.value);
+		if (Number.isNaN(val)) {
+			this.eles.fgEdit.value = this.fgValue;
+			return;
+		}
+		this.fgValue = val;
+	}
+
+	#drawNodeFg(pos, value, rad, sep, level = 0, dir = [0, 0]) {
+		// draw
+		if (level != this.fgLevels) {
+			for (let pntNext of MainApp.dirs) {
+				if (pntNext[0] == -dir[0] && pntNext[1] == -dir[1]) {
+					continue;
+				}
+				let newPos = vec2.create();
+				let pntSep = vec2.create();
+				vec2.scale(pntSep, pntNext, sep);
+				//vec2.scale(pntNext, pntNext, this.fgSep);
+				//vec2.scale(newPos, newPos, this.fgSep);
+				vec2.add(newPos, pos, pntSep);
+				this.drawPrim.drawLine(pos, newPos, .015, "black");
+				this.#drawNodeFg(newPos, value, rad * this.fgSizeRatio, sep * this.fgSepRatio, level + 1, pntNext);
+			}
+		}
+		this.drawPrim.drawCircleO(pos, rad, .08, "black");
+		this.drawPrim.drawCircle(pos, rad, "lightgray");
+		const str = value.toFixed(2).toString();
+		const scl = rad * 4.5 / (str.length + 1); // text smaller for large numbers
+		this.drawPrim.drawText(pos, [scl, scl], str, "black");
 	}
 
 	#drawFreeGroup() {
 		// UI
+		let dirX = 0;
+		let dirY = 0;
 		switch(this.input.keyboard.key) {
 			case keyTable.keycodes.RIGHT:
-				this.fgNode[0] += 1;
+				dirX = 1;
 				break;
 			case keyTable.keycodes.LEFT:
-				this.fgNode[0] -= 1;
+				dirX = -1;
 				break;
 			case keyTable.keycodes.UP:
-				this.fgNode[1] += 1;
+				dirY = 1;
 				break;
 			case keyTable.keycodes.DOWN:
-				this.fgNode[1] -= 1;
+				dirY = -1;
 				break;
 		}
-		this.drawPrim.drawCircle(this.fgNode, .25);
-/*
-		const pnt = this.p;
-		if (hilit) {
-			drawPrim.drawCircleO(pnt, this.r, .08, "green");
-		} else {
-			drawPrim.drawCircleO(pnt, this.r, .01, "black");
+		if (dirX != 0 || dirY != 0) {
+			this.fgValue = this.#hailMove(this.fgValue, dirX, dirY, this.sep);
+			this.eles.fgEdit.value = this.fgValue;
 		}
-		drawPrim.drawCircle(pnt, this.r, this.n % 3 ? "lightgray" : "lightblue");
-		const str = this.n.toString();
-		const scl = this.r * 4.5 / (str.length + 1); // text smaller for large numbers
-		// brighter node for other '1' that's not the root 1 - 2 - '1'
-		const txtcol = !doExpand && this.n == 1 && this.prev.length != 0 ? "cyan" : "black";
-		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
-*/
+
+		this.#drawNodeFg(this.fgNode, this.fgValue, 1, this.fgSep);
 	}
 
 	// count number of trailing zeros in a string
@@ -160,7 +212,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [10, 30], .14);
+			, this.ctx, this.vp, [10, 30], .09);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
@@ -286,8 +338,12 @@ class MainApp {
 	#userBuildUI() {
 		// text info log
 		makeEle(this.vp, "hr");
+		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
-		this.eles.editFunctionG = makeEle(this.vp, "textarea", "editFunctionG", "editbox", 27);
+		// value
+		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", this.fgValue);
+		// submit value
+		makeEle(this.vp, "button", null, null, "Update value",this.#updateValue.bind(this));
 	}
 
 	#userProc() { // USER:
