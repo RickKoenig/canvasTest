@@ -31,7 +31,6 @@ class Node {
 
 class MainApp {
 
-	static dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 	#initPowers() {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
@@ -70,27 +69,41 @@ class MainApp {
 
 
 
+	// use bigFraction
+	static big2o3 = fraction.create(2, 3);
+	static big3o2 = fraction.create(3, 2);
+	static big2 = fraction.create(2);
+	static big1o2 = fraction.create(1, 2);
+	static big1o3 = fraction.create(1, 3);
 	#hailMove(val, dirX, dirY) {
-		// TODO: make work with bigFraction
+		const f = fraction;
+		const ma = MainApp;
+		let ret = f.clone(val);
 		if (dirX == 0) {
 			if (dirY == 1) { // up
-				return 2 * val;
+				// ret = 2 * val
+				return f.mul(ret, ret, ma.big2);
 			} else if (dirY == -1) { // down
-				return val / 2;
+				// ret = 1/2 * val
+				return f.mul(ret, ret, ma.big1o2);
 			}
 		} else if (dirY == 0) {
 			if (dirX == 1) { // right
+				// ret = (2 * val - 1) / 3
+				// ret = 2/3 * val - 1/3
 				return (2 * val - 1) / 3;
 			} else if (dirX == -1) { // left
-				return (3 * val + 1) / 2;
+				// ret = (3 * val + 1) / 2
+				// ret = 3/2 * val + 1/2
+				return f.add(ret, f.mul(ret, ret, ma.big3o2), ma.big1o2);
 			}
 		}
-		return val;
+		return ret;
 	}
 
 	#initFreeGroup() {
 		this.fgNode = [10, 30];
-		this.fgValue = 7; // TODO: make work with bigFraction
+		this.fgValue = fraction.create(7);
 		this.fgLevels = 4;
 		this.fgSep = 4;
 		this.fgSepRatio = .51;
@@ -98,15 +111,10 @@ class MainApp {
 	}
 
 	#updateValue() {
-		// TODO: make work with bigFraction
-		const val = Number(this.eles.fgEdit.value);
-		if (Number.isNaN(val)) {
-			this.eles.fgEdit.value = this.fgValue;
-			return;
-		}
-		this.fgValue = val;
+		this.fgValue = fraction.create(this.eles.fgEdit.value);
 	}
 
+	static dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 	#drawNodeFg(pos, value, rad, sep, level = 0, dir = [0, 0]) {
 		// draw
 		if (level != this.fgLevels) {
@@ -126,7 +134,7 @@ class MainApp {
 		}
 		this.drawPrim.drawCircleO(pos, rad, .08, "black");
 		this.drawPrim.drawCircle(pos, rad, "lightgray");
-		const str = value.toFixed(2).toString();
+		const str = fraction.toString(value, false);
 		const scl = rad * 4.5 / (str.length + 1); // text smaller for large numbers
 		this.drawPrim.drawText(pos, [scl, scl], str, "black");
 	}
@@ -149,10 +157,9 @@ class MainApp {
 				dirY = -1;
 				break;
 		}
-		// TODO: make work with bigFraction
 		if (dirX != 0 || dirY != 0) {
 			this.fgValue = this.#hailMove(this.fgValue, dirX, dirY, this.sep);
-			this.eles.fgEdit.value = this.fgValue;
+			this.eles.fgEdit.value = fraction.toString(this.fgValue);
 		}
 
 		this.#drawNodeFg(this.fgNode, this.fgValue, 1, this.fgSep);
@@ -344,8 +351,7 @@ class MainApp {
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
 		// value
-		// TODO: make work with bigFraction
-		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", this.fgValue);
+		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", fraction.toString(this.fgValue, false));
 		// submit value
 		makeEle(this.vp, "button", null, null, "Update value",this.#updateValue.bind(this));
 	}
