@@ -71,6 +71,7 @@ class MainApp {
 
 
 	#hailMove(val, dirX, dirY) {
+		// TODO: make work with bigFraction
 		if (dirX == 0) {
 			if (dirY == 1) { // up
 				return 2 * val;
@@ -89,7 +90,7 @@ class MainApp {
 
 	#initFreeGroup() {
 		this.fgNode = [10, 30];
-		this.fgValue = 7;
+		this.fgValue = 7; // TODO: make work with bigFraction
 		this.fgLevels = 4;
 		this.fgSep = 4;
 		this.fgSepRatio = .51;
@@ -97,6 +98,7 @@ class MainApp {
 	}
 
 	#updateValue() {
+		// TODO: make work with bigFraction
 		const val = Number(this.eles.fgEdit.value);
 		if (Number.isNaN(val)) {
 			this.eles.fgEdit.value = this.fgValue;
@@ -115,11 +117,11 @@ class MainApp {
 				let newPos = vec2.create();
 				let pntSep = vec2.create();
 				vec2.scale(pntSep, pntNext, sep);
-				//vec2.scale(pntNext, pntNext, this.fgSep);
-				//vec2.scale(newPos, newPos, this.fgSep);
 				vec2.add(newPos, pos, pntSep);
 				this.drawPrim.drawLine(pos, newPos, .015, "black");
-				this.#drawNodeFg(newPos, value, rad * this.fgSizeRatio, sep * this.fgSepRatio, level + 1, pntNext);
+				this.#drawNodeFg(newPos, value
+					, rad * this.fgSizeRatio, sep * this.fgSepRatio
+					, level + 1, pntNext);
 			}
 		}
 		this.drawPrim.drawCircleO(pos, rad, .08, "black");
@@ -147,6 +149,7 @@ class MainApp {
 				dirY = -1;
 				break;
 		}
+		// TODO: make work with bigFraction
 		if (dirX != 0 || dirY != 0) {
 			this.fgValue = this.#hailMove(this.fgValue, dirX, dirY, this.sep);
 			this.eles.fgEdit.value = this.fgValue;
@@ -341,6 +344,7 @@ class MainApp {
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
 		// value
+		// TODO: make work with bigFraction
 		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", this.fgValue);
 		// submit value
 		makeEle(this.vp, "button", null, null, "Update value",this.#updateValue.bind(this));
