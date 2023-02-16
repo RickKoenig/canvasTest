@@ -63,7 +63,7 @@ canvas{
 }
 
 button{
-	width: 200px;
+	width: 250px;
 	border: none;
 	border-radius: 10px;
 	margin: 4px 4px 5px 4px;
@@ -97,7 +97,7 @@ button:hover{
 }
 
 .textInfo{
-	color:rgb(11, 60, 235);
+	color:rgb(15, 81, 20);
 	font-style: italic;
 	font-size: 120%;
 }

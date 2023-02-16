@@ -368,6 +368,11 @@ fraction.toString = function(a, mixed) {
 	}
 };
 
+fraction.isWhole = function(f) {
+	return f[1] == 1n;
+
+}
+
 // test the many methods of fraction
 fraction.test = function() {
 	logger("unit test of fraction\n");

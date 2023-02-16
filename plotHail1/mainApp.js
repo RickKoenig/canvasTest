@@ -91,7 +91,7 @@ class MainApp {
 			if (dirX == 1) { // right
 				// ret = (2 * val - 1) / 3
 				// ret = 2/3 * val - 1/3
-				return (2 * val - 1) / 3;
+				return f.sub(ret, f.mul(ret, ret, ma.big2o3), ma.big1o3);
 			} else if (dirX == -1) { // left
 				// ret = (3 * val + 1) / 2
 				// ret = 3/2 * val + 1/2
@@ -105,9 +105,6 @@ class MainApp {
 		this.fgNode = [10, 30];
 		this.fgValue = fraction.create(7);
 		this.fgLevels = 4;
-		this.fgSep = 4;
-		this.fgSepRatio = .51;
-		this.fgSizeRatio = .6;
 	}
 
 	#updateValue() {
@@ -115,27 +112,31 @@ class MainApp {
 	}
 
 	static dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-	#drawNodeFg(pos, value, rad, sep, level = 0, dir = [0, 0]) {
+	#drawNodeFg(pos, value, textSize, sep, level = 0, dir = [0, 0]) {
 		// draw
+		const mainWhole = fraction.isWhole(value);
+		const hilitColor = "green";
 		if (level != this.fgLevels) {
 			for (let pntNext of MainApp.dirs) {
+				//  recurse
 				if (pntNext[0] == -dir[0] && pntNext[1] == -dir[1]) {
-					continue;
+					continue; // don't go back to where we came from
 				}
 				let newPos = vec2.create();
 				let pntSep = vec2.create();
 				vec2.scale(pntSep, pntNext, sep);
 				vec2.add(newPos, pos, pntSep);
 				this.drawPrim.drawLine(pos, newPos, .015, "black");
-				this.#drawNodeFg(newPos, value
-					, rad * this.fgSizeRatio, sep * this.fgSepRatio
+				const newValue = this.#hailMove(value, pntNext[0], pntNext[1]);
+				this.#drawNodeFg(newPos, newValue
+					, textSize * this.textRatio, sep * this.lineRatio
 					, level + 1, pntNext);
 			}
 		}
-		this.drawPrim.drawCircleO(pos, rad, .08, "black");
-		this.drawPrim.drawCircle(pos, rad, "lightgray");
+		this.drawPrim.drawCircleO(pos, textSize, .04, "black");
+		this.drawPrim.drawCircle(pos, textSize, mainWhole ? hilitColor : "lightgray");
 		const str = fraction.toString(value, false);
-		const scl = rad * 4.5 / (str.length + 1); // text smaller for large numbers
+		const scl = textSize * 4.5 / (str.length + 1); // text smaller for large numbers
 		this.drawPrim.drawText(pos, [scl, scl], str, "black");
 	}
 
@@ -162,7 +163,7 @@ class MainApp {
 			this.eles.fgEdit.value = fraction.toString(this.fgValue);
 		}
 
-		this.#drawNodeFg(this.fgNode, this.fgValue, 1, this.fgSep);
+		this.#drawNodeFg(this.fgNode, this.fgValue, this.textSize, this.lineSize);
 	}
 
 	// count number of trailing zeros in a string
@@ -345,15 +346,116 @@ class MainApp {
 		this.#initLevels();
 	}
 
+	#showPow2(e) {
+		console.log("show pow 2 " + e.target.checked);
+	}
+
 	#userBuildUI() {
 		// text info log
 		makeEle(this.vp, "hr");
+		
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
+		
 		// value
 		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", fraction.toString(this.fgValue, false));
 		// submit value
 		makeEle(this.vp, "button", null, null, "Update value",this.#updateValue.bind(this));
+		
+		// check boxes
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show nodes");
+		this.eles.showNodes = makeEle(this.vp, "input", "showNodes", null, "hy", null, "checkbox");
+		this.eles.showNodes.checked = false;
+		
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show powers of 2");
+		this.eles.checkboxPow2 = makeEle(this.vp, "input", "checkboxPow2", null, "hi", null, "checkbox");
+		this.eles.checkboxPow2.checked = false;
+
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show freeGroup");
+		this.eles.freeGroup = makeEle(this.vp, "input", "freeGroup", null, "hu", null, "checkbox");
+		this.eles.freeGroup.checked = true;
+/*		
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show freeGroup fractions");
+		this.eles.freeGroupFractions = makeEle(this.vp, "input", "freeGroupFractions", null, "hu", null, "checkbox");
+		this.eles.freeGroupFractions.checked = true;
+*/		
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show graph paper");
+		this.eles.showGraph = makeEle(this.vp, "input", "showGraphpaper", null, "ho", null, "checkbox");
+		this.eles.showGraph.checked = false;
+
+		// freegroup start text size slider combo
+		{
+			this.minStartTextSize = .125;
+			this.maxStartTextSize = 8;
+			this.startTextSize = 1;
+			makeEle(this.vp, "hr");
+			// start lineStep UI
+			const label = "freeGroup start Text size";
+			const min = this.minStartTextSize;
+			const max = this.maxStartTextSize;
+			const start = this.startTextSize;
+			const step = .01;
+			const precision = 2;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textSize = v});
+			// end lineStep UI
+		}
+
+		// freegroup text ratio slider combo
+		{
+			this.minTextRatio = .125;
+			this.maxTextRatio = 8;
+			this.startTextRatio = .6;
+			makeEle(this.vp, "hr");
+			// start lineStep UI
+			const label = "freeGroup Text Ratio";
+			const min = this.minTextRatio;
+			const max = this.maxTextRatio;
+			const start = this.startTextRatio;
+			const step = .01;
+			const precision = 2;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textRatio = v});
+			// end lineStep UI
+		}
+
+		// freegroup start line size slider combo
+		{
+			this.minstartLineSize = .125;
+			this.maxstartLineSize = 8;
+			this.startLineSize = 5;
+			makeEle(this.vp, "hr");
+			// start lineStep UI
+			const label = "freeGroup start Line size";
+			const min = this.minstartLineSize;
+			const max = this.maxstartLineSize;
+			const start = this.startLineSize;
+			const step = .01;
+			const precision = 2;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineSize = v});
+			// end lineStep UI
+		}
+		// freegroup line ratio slider combo
+		{
+			this.minlineRatio = .125;
+			this.maxlineRatio = 8;
+			this.startlineRatio = .5;
+			makeEle(this.vp, "hr");
+			// start lineStep UI
+			const label = "freeGroup Line Ratio";
+			const min = this.minlineRatio;
+			const max = this.maxlineRatio;
+			const start = this.startlineRatio;
+			const step = .01;
+			const precision = 2;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineRatio = v});
+			// end lineStep UI
+		}
+
+		makeEle(this.vp, "hr");
 	}
 
 	#userProc() { // USER:
@@ -373,9 +475,15 @@ class MainApp {
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.#pntsToNode();
 
-		this.#drawPowers();
-		this.#drawFreeGroup();
-		this.#drawLevels();
+		if (this.eles.checkboxPow2.checked) {
+			this.#drawPowers();
+		}
+		if (this.eles.freeGroup.checked) {
+			this.#drawFreeGroup();
+		}
+		if (this.eles.showNodes.checked) {
+			this.#drawLevels();
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -399,7 +507,9 @@ class MainApp {
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
-		this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		if (this.eles.showGraph.checked) {
+			this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		}
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 
