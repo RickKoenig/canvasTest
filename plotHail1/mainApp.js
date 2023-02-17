@@ -223,7 +223,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [10, 30], .09);
+			, this.ctx, this.vp, [13.4, 30], .0958);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
@@ -409,7 +409,7 @@ class MainApp {
 		{
 			this.minTextRatio = .125;
 			this.maxTextRatio = 8;
-			this.startTextRatio = .6;
+			this.startTextRatio = .68;
 			makeEle(this.vp, "hr");
 			// start lineStep UI
 			const label = "freeGroup Text Ratio";
@@ -442,7 +442,7 @@ class MainApp {
 		{
 			this.minlineRatio = .125;
 			this.maxlineRatio = 8;
-			this.startlineRatio = .5;
+			this.startlineRatio = .49;
 			makeEle(this.vp, "hr");
 			// start lineStep UI
 			const label = "freeGroup Line Ratio";
