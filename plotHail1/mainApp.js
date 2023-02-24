@@ -22,7 +22,7 @@ class Node {
 		}
 		drawPrim.drawCircle(pnt, this.r, this.n % 3 ? "lightgray" : "lightblue");
 		const str = this.n.toString();
-		const scl = this.r * 4.5 / (str.length + 1); // text smaller for large numbers
+		const scl = this.r * 4.05 / (str.length + 1); // text smaller for large numbers
 		// brighter node for other '1' that's not the root 1 - 2 - '1'
 		const txtcol = !doExpand && this.n == 1 && this.prev.length != 0 ? "cyan" : "black";
 		drawPrim.drawText(pnt, [scl, scl], str, txtcol);
@@ -136,7 +136,7 @@ class MainApp {
 		this.drawPrim.drawCircleO(pos, textSize, .04, "black");
 		this.drawPrim.drawCircle(pos, textSize, mainWhole ? hilitColor : "lightgray");
 		const str = fraction.toString(value, false);
-		const scl = textSize * 4.5 / (str.length + 1); // text smaller for large numbers
+		const scl = textSize * 4.05 / (str.length + 1); // text smaller for large numbers
 		this.drawPrim.drawText(pos, [scl, scl], str, "black");
 	}
 
@@ -161,9 +161,13 @@ class MainApp {
 		if (dirX != 0 || dirY != 0) {
 			this.fgValue = this.#hailMove(this.fgValue, dirX, dirY, this.sep);
 			this.eles.fgEdit.value = fraction.toString(this.fgValue);
+			//this.dirty = true;
+		//} else {
+			//return;
 		}
-
-		this.#drawNodeFg(this.fgNode, this.fgValue, this.textSize, this.lineSize);
+		//if (this.dirty) {
+			this.#drawNodeFg(this.fgNode, this.fgValue, this.textSize, this.lineSize);
+		//}
 	}
 
 	// count number of trailing zeros in a string
@@ -223,7 +227,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [13.4, 30], .0958);
+			, this.ctx, this.vp, [13.4, 30], .0958, false, false);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
@@ -454,7 +458,6 @@ class MainApp {
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineRatio = v});
 			// end lineStep UI
 		}
-
 		makeEle(this.vp, "hr");
 	}
 
@@ -470,6 +473,7 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+		//this.dirty = false;
 
 		this.#nodeToPnts();
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
@@ -514,7 +518,7 @@ class MainApp {
 		requestAnimationFrame(() => this.#animate());
 
 		// USER: do USER stuff
-		 this.#userProc(); // proc and draw
+		this.#userProc(); // proc and draw
 		// update UI, vertical panel text
 		this.#userUpdateInfo();
 	}
