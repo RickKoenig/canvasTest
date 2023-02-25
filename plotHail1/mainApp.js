@@ -403,7 +403,7 @@ class MainApp {
 			const start = this.startTextSize;
 			const step = .01;
 			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textSize = v});
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textSize = v; this.dirty = true});
 			// end lineStep UI
 		}
 
@@ -420,7 +420,7 @@ class MainApp {
 			const start = this.startTextRatio;
 			const step = .01;
 			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textRatio = v});
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.textRatio = v; this.dirty = true});
 			// end lineStep UI
 		}
 
@@ -437,7 +437,7 @@ class MainApp {
 			const start = this.startLineSize;
 			const step = .01;
 			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineSize = v});
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineSize = v; this.dirty = true});
 			// end lineStep UI
 		}
 		// freegroup line ratio slider combo
@@ -453,7 +453,7 @@ class MainApp {
 			const start = this.startlineRatio;
 			const step = .01;
 			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineRatio = v});
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineRatio = v; this.dirty = true});
 			// end lineStep UI
 		}
 		makeEle(this.vp, "hr");
