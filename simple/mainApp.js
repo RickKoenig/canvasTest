@@ -182,7 +182,7 @@ class MainApp {
 				this.dirtyCount = 0;
 			}
 		}
-		this.dirty = false; // turn off drawing unless something changed
+		this.dirty = false; // turn off drawing unless something changes
 
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());

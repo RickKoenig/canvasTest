@@ -36,7 +36,7 @@ class MainApp {
 		console.log("2^n - 1 START");
 
 		const maxHailBlocks = 20;
-		const hailBlockSize = 25;
+		const hailBlockSize = 100;
 		this.arrHailRatio = [];
 		// setup worker thread
 		if (window.Worker) {
@@ -53,6 +53,7 @@ class MainApp {
 						console.log("Kill worker");
 						this.hailWorker.terminate();
 					}
+					this.dirty = true;
 				} else {
 					console.log(`Message received from worker NOT AN FLOAT32ARRAY'${result}'`);
 				}
@@ -105,11 +106,12 @@ class MainApp {
 	#initFreeGroup() {
 		this.fgNode = [10, 30];
 		this.fgValue = fraction.create(7);
-		this.fgLevels = 4;
+		this.fgLevels = 6;
 	}
 
 	#updateValue() {
 		this.fgValue = fraction.create(this.eles.fgEdit.value);
+		this.dirty = true;
 	}
 
 	static dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
@@ -141,7 +143,7 @@ class MainApp {
 		this.drawPrim.drawText(pos, [scl, scl], str, "black");
 	}
 
-	#drawFreeGroup() {
+	#procFreeGroup() {
 		// UI
 		let dirX = 0;
 		let dirY = 0;
@@ -162,13 +164,12 @@ class MainApp {
 		if (dirX != 0 || dirY != 0) {
 			this.fgValue = this.#hailMove(this.fgValue, dirX, dirY, this.sep);
 			this.eles.fgEdit.value = fraction.toString(this.fgValue);
-			//this.dirty = true;
-		//} else {
-			//return;
+			this.dirty = true;
 		}
-		//if (this.dirty) {
-			this.#drawNodeFg(this.fgNode, this.fgValue, this.textSize, this.lineSize);
-		//}
+	}
+
+	#drawFreeGroup() {
+		this.#drawNodeFg(this.fgNode, this.fgValue, this.textSize, this.lineSize);
 	}
 
 	// count number of trailing zeros in a string
@@ -227,8 +228,12 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		const center = [10, 30]; // focus on freegroup
+		const zoom = .0958;
+		//const center = [800, 100]; // focus on powers of 2
+		//const zoom = .0014;
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
-			, this.ctx, this.vp, [13.4, 30], .0958, false, false);
+			, this.ctx, this.vp, center, zoom, false, false);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
@@ -466,15 +471,16 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
-		this.dirty = true;
 
+		if (this.eles.freeGroup.checked) {
+			this.#procFreeGroup();
+		}
 		this.#nodeToPnts();
-		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.dirty = this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.#pntsToNode();
 	}
 
 	#userDraw() {
-
 		if (this.eles.showGraph.checked) {
 			this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
 		}
@@ -508,7 +514,7 @@ class MainApp {
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT) || this.dirty;
 		this.#userProc(); // proc
 
 		// draw when dirty
@@ -534,11 +540,10 @@ class MainApp {
 				this.dirtyCount = 0;
 			}
 		}
-		this.dirty = false; // turn off drawing unless something changed
+		this.dirty = false; // turn off drawing unless something changes
 
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
-
 	}
 }
 
