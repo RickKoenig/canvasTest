@@ -56,13 +56,11 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
 		// only use screen space
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize, true); 
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize); 
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
-		//this.drawPrim = new DrawPrimitives(this.plotter2d);
 
 		// USER build UI
 		this.#userBuildUI();
-		
 
 		// start it off
 		this.#animate();
@@ -127,13 +125,16 @@ class MainApp {
 		this.sin = Math.sin(ff);
 		this.cos = Math.cos(ff);
 		this.cos5 = Math.cos(ff * 5);
-		this.#drawBitmaps();
 		this.frame += .0625 * this.animSpeed;
 		if (this.frame >= this.maxFrames) {
 			this.frame -= this.maxFrames;
 		} else if (this.frame < 0) {
 			this.frame += this.maxFrames;
 		}
+	}
+
+	#userDraw() {
+		this.#drawBitmaps();
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -147,6 +148,7 @@ class MainApp {
 
 	// proc
 	#animate() {
+		//  proc
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
@@ -157,6 +159,10 @@ class MainApp {
 		// USER: do USER stuff
 		 this.#userProc(); // proc and draw
 		// update UI, vertical panel text
+
+		// draw
+		this.#userDraw();
+
 		this.#userUpdateInfo();
 	}
 

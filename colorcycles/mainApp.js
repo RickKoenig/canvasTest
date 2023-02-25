@@ -49,12 +49,11 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER, no vp means don't use any ui for trans and scale
 		// only use screen space
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize, true); 
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize); 
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 
 		// USER build UI
 		this.#userBuildUI();
-		
 
 		// start it off
 		this.#animate();
@@ -104,6 +103,9 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+	}
+
+	#userDraw() {
 		this.#drawBitmaps();
 	}
 
@@ -121,15 +123,21 @@ class MainApp {
 
 	// proc
 	#animate() {
+		// proc
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
 		this.plotter2d.proc(this.vp, this.input.mouse);
+
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 
 		// USER: do USER stuff
-		 this.#userProc(); // proc and draw
+		this.#userProc(this.vp, this.input.mouse, Mouse.RIGHT); // proc
+
+		// always draw
+		this.#userDraw(); // draw
+
 		// update UI, vertical panel text
 		this.#userUpdateInfo();
 	}
@@ -183,8 +191,6 @@ class MainApp {
 		this.numColorsCur = this.numColors;
 		const simData = this.bitmapList.simBm.data32;
 		for (let i = 0; i < simData.length; ++i) {
-			 // alpha 0xff and the rest numColors
-			 simData[i] = 0xff000000 + 0x010101 * Math.floor(this.numColorsCur * Math.random());
 			 // straight value index
 			 simData[i] = Math.floor(this.numColorsCur * Math.random());
 		}

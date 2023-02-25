@@ -49,6 +49,7 @@ class MainApp {
 					result = Array.from(result); // convert Float32Array to Array
 					this.arrHailRatio = this.arrHailRatio.concat(result);
 					if (this.arrHailRatio.length == maxHailBlocks * hailBlockSize) {
+						// got all the data transferred over, kill worker
 						console.log("Kill worker");
 						this.hailWorker.terminate();
 					}
@@ -236,6 +237,8 @@ class MainApp {
 		this.#userBuildUI();
 
 		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
 		this.#animate();
 	}
 
@@ -350,10 +353,6 @@ class MainApp {
 		this.#initLevels();
 	}
 
-	#showPow2(e) {
-		console.log("show pow 2 " + e.target.checked);
-	}
-
 	#userBuildUI() {
 		// text info log
 		makeEle(this.vp, "hr");
@@ -369,27 +368,21 @@ class MainApp {
 		// check boxes
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show nodes");
-		this.eles.showNodes = makeEle(this.vp, "input", "showNodes", null, "hy", null, "checkbox");
+		this.eles.showNodes = makeEle(this.vp, "input", "showNodes", null, "hy", () => this.dirty = true, "checkbox");
 		this.eles.showNodes.checked = false;
 		
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show powers of 2");
-		this.eles.checkboxPow2 = makeEle(this.vp, "input", "checkboxPow2", null, "hi", null, "checkbox");
+		this.eles.checkboxPow2 = makeEle(this.vp, "input", "checkboxPow2", null, "hi", () => this.dirty = true, "checkbox");
 		this.eles.checkboxPow2.checked = false;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show freeGroup");
-		this.eles.freeGroup = makeEle(this.vp, "input", "freeGroup", null, "hu", null, "checkbox");
+		this.eles.freeGroup = makeEle(this.vp, "input", "freeGroup", null, "hu", () => this.dirty = true, "checkbox");
 		this.eles.freeGroup.checked = true;
-/*		
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "Show freeGroup fractions");
-		this.eles.freeGroupFractions = makeEle(this.vp, "input", "freeGroupFractions", null, "hu", null, "checkbox");
-		this.eles.freeGroupFractions.checked = true;
-*/		
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show graph paper");
-		this.eles.showGraph = makeEle(this.vp, "input", "showGraphpaper", null, "ho", null, "checkbox");
+		this.eles.showGraph = makeEle(this.vp, "input", "showGraphpaper", null, "ho", () => this.dirty = true, "checkbox");
 		this.eles.showGraph.checked = false;
 
 		// freegroup start text size slider combo
@@ -473,12 +466,18 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
-		//this.dirty = false;
+		this.dirty = true;
 
 		this.#nodeToPnts();
 		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
 		this.#pntsToNode();
+	}
 
+	#userDraw() {
+
+		if (this.eles.showGraph.checked) {
+			this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		}
 		if (this.eles.checkboxPow2.checked) {
 			this.#drawPowers();
 		}
@@ -498,29 +497,48 @@ class MainApp {
 		const p = this.plotter2d;
 		// show inputEventsStats
 		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n"
-			+ "Use the arrow keys\nto navigate\nthe Free Group";
+			+ "\nUse the arrow keys\nto navigate\nthe Free Group\n"
+			+ "\nDirty Count = " + this.dirtyCount + "\n ";
 		this.eles.textInfoLog.innerText = fpsStr;
 	}
 
 	// proc
 	#animate() {
+		// proc
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
 		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		if (this.eles.showGraph.checked) {
-			this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
+		this.#userProc(); // proc
+
+		// draw when dirty
+		//this.dirty = true;
+		if (this.dirty) {
+			this.plotter2d.clearCanvas();
+			// goto user/cam space
+			this.plotter2d.setSpace(Plotter2d.spaces.USER);
+			// now in user/cam space
+			// USER: do USER stuff
+			this.#userDraw(); // proc and draw
 		}
+
+		// update UI, vertical panel text
+		this.#userUpdateInfo();
+
+
+		if (this.dirty) {
+			this.dirtyCount = 100;
+		} else {
+			--this.dirtyCount;
+			if (this.dirtyCount < 0) {
+				this.dirtyCount = 0;
+			}
+		}
+		this.dirty = false; // turn off drawing unless something changed
+
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 
-		// USER: do USER stuff
-		this.#userProc(); // proc and draw
-		// update UI, vertical panel text
-		this.#userUpdateInfo();
 	}
 }
 

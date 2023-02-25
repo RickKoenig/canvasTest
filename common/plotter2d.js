@@ -9,24 +9,27 @@ class Plotter2d {
         this.zoom = this.startZoom;
 		this.invZoom = 1 / this.zoom;
         this.logZoom = Math.log(this.zoom);
+        this.coordReset = true;
     }
 
     xTransReset() {
         this.center[0] = this.startCenter[0];
+        this.coordReset = true;
     }
 
     yTransReset() {
         this.center[1] = this.startCenter[1];
+        this.coordReset = true;
     }
 
-    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize, once) {
+    constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize) {
         this.canvas = canvas;
-        this.once = once; // update dimensions only once if true (no clearing)
         this.ctx = ctx; // only used for trans and scale, save and restore
         this.vp = vp;
         this.fixedSize = fixedSize;
         // mouse in user/cam space
         this.userMouse = vec2.create(); // current mouse coords in user/cam space
+        this.coordReset = false;
     
         // screen space dimensions of <canvas> / <div>
         this.W = vec2.create();
@@ -128,33 +131,44 @@ class Plotter2d {
         return zoom;
     }
 
+    // set canvas to its background color by setting its dimensions
+    clearCanvas() {
+        this.canvas.width = this.canvas.width;
+        this.canvas.height = this.canvas.height;
+    }
+
 	// given size of window or a fixed size set canvas size
-    static #once;
 	#calcCanvasSize() {
-        if (Plotter2d.#once) {
-            return;
-        }
-        // uncomment to set the canvas size just once
-        // this prevents the screen from refreshing
-        Plotter2d.#once = this.once; 
+        let wid;
+        let hit;
         if (this.fixedSize) {
 			// set canvas size to a fixed size
-			this.canvas.width = this.fixedSize[0];
-			this.canvas.height = this.fixedSize[1];
+			wid = this.fixedSize[0];
+			hit = this.fixedSize[1];
 		} else {
 			// set canvas size depending on window size
 			// TODO: get rid of magic numbers
-			const wid = window.innerWidth - 450; // window is global
-			const hit = window.innerHeight - 100;
-			this.canvas.width = Math.max(200, wid);
-			this.canvas.height = Math.max(750, hit);
+			wid = window.innerWidth - 450; // window is global
+			hit = window.innerHeight - 100;
+			wid = Math.max(200, wid);
+			hit = Math.max(750, hit);
 		}
-	}
+        if (this.canvas.width == wid && this.canvas.height) {
+            return false;
+        }
+        this.canvas.width = wid;
+        this.canvas.height = hit;
+        return true;
+    }
 
     proc(vp, mouse, whichBut = Mouse.LEFT) {
+        let dirt = this.#calcCanvasSize();
+        if (this.coordReset) {
+            dirt = true;
+            this.coordReset = false;
+        }
         this.W[0] = this.canvas.width;
         this.W[1] = this.canvas.height;
-        this.#calcCanvasSize();
 
         this.WMin = Math.min(this.W[0], this.W[1]);
         // use the mouse to navigate the user/cam space
@@ -195,6 +209,7 @@ class Plotter2d {
     
                 // zoom to where the mouse is
                 this.#newcenter(pnt, this.userMouse);
+                dirt = true;
             }
     
             if (mouse.mbut[whichBut]) {
@@ -202,14 +217,10 @@ class Plotter2d {
                 // where is the mouse in float coords
                 this.center[0] -= mouse.dmxy[0]*f;
                 this.center[1] += mouse.dmxy[1]*f;
+                dirt = true;
             }
         } 
-/*
-        this.camMin[0] = this.ndcMin[0] * this.invZoom + this.center[0];
-        this.camMin[1] = this.ndcMin[1] * this.invZoom + this.center[1];
-        this.camMax[0] = this.ndcMax[0] * this.invZoom + this.center[0];
-        this.camMax[1] = this.ndcMax[1] * this.invZoom + this.center[1];
-*/
+
         let temp = vec2.create();
 
         vec2.scale(temp, this.ndcMin, this.invZoom);
@@ -231,10 +242,11 @@ class Plotter2d {
             this.pieces.mouse.textInfoEle.innerText = "Mouse = (" 
                 + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";
         }
+        return dirt;
     }
 
     setSpace(space) {
-        // canvas stack set to default every frame maybe TODO: verify
+        // canvas stack set to default every frame
         // back to canvas/screen space
         this.ctx.restore(); // stack now empty and ctx set back to defaults
         this.ctx.save(); // screen space/defaults saved on stack

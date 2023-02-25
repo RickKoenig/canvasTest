@@ -279,6 +279,7 @@ class EditPnts {
 	}
 
 	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
+		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
 		let butDown = mouse.mbut[Mouse.LEFT];
@@ -287,7 +288,7 @@ class EditPnts {
 		// hilit hover
 		// check topmost points first
 		for (let i = this.numPnts - 1; i >= 0; --i) {
-			const isInside 
+			const isInside
 				= vec2.squaredDistance(this.pnts[i], userMouse) 
 				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
 			if (isInside) {
@@ -305,7 +306,9 @@ class EditPnts {
 				}
 			}
 		}
-		if (!butDown) {
+		if (butDown) {
+			dirt = true;
+		} else {
 			//deselect point when mouse not pressed
 			this.curPntIdx = -1;
 		}
@@ -313,6 +316,7 @@ class EditPnts {
 		if (this.curPntIdx >= 0) {
 			this.pnts[this.curPntIdx] = userMouse;
 		}
+		return dirt;
 	}
 
 	getHilitIdx() {
@@ -380,8 +384,6 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 
 class makeEleCombo {
 	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, doButton = true) {
-		// break
-		//makeEle(parent, "hr");
 		// pre/span
 		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;

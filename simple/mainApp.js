@@ -1,19 +1,18 @@
 'use strict';
 
-	let codeWord;
-	function javaScriptTests() {
-		// test out features of javascript here
-		console.log("javacript tests!");
-		//inheritanceTests();
-		codeWord = rudolphSim();
-		console.log("codeword = '" + codeWord + "'");
-	}
+let codeWord;
+function javaScriptTests() {
+	// test out features of javascript here
+	console.log("javacript tests!");
+	//inheritanceTests();
+	//codeWord = rudolphSim();
+	//console.log("codeword = '" + codeWord + "'");
+}
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	static #numInstances = 0; // test static members
-
 	static getNumInstances() { // test static methods
 		return MainApp.#numInstances;
 	}
@@ -51,13 +50,15 @@ class MainApp {
 		this.#userBuildUI();
 
 		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
 		this.#animate();
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
-		this.count = 0;
+		this.count = 0; // frame counter
 
 		this.numPnts = 5;
 		this.pntRad = .05; // size of point
@@ -108,9 +109,12 @@ class MainApp {
 		// proc
 		++this.count;
 		// pass in the buttons and the user/cam space mouse from drawPrim
-		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
-		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.dirty = this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		this.dirty = this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 
+	}
+
+	#userDraw() {
 		// draw with hilits on some points
 		const hilitPntIdx = this.editPnts.getHilitIdx();
 		for (let i = 0; i < this.numPnts; ++i) {
@@ -139,30 +143,49 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let countStr = "Count = " + this.count;
+		let countStr = "Frame Count = " + this.count;
 		if (codeWord) {
 			countStr += "\nCodeword = '" + codeWord + "'";
 		}
+		countStr += "\nDirty Count = " + this.dirtyCount;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
 	// proc
 	#animate() {
+		// proc
 		// update input system
 		this.input.proc();
-		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		this.graphPaper.draw("X", "Y");
-		// keep animation going
-		requestAnimationFrame(() => this.#animate());
-
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT) || this.dirty;
 		// USER: do USER stuff
-		this.#userProc(); // proc and draw
+		this.#userProc(); // proc
+
+		// draw when dirty
+		if (this.dirty) {
+			this.plotter2d.clearCanvas();
+			// interact with mouse, calc all spaces
+			// goto user/cam space
+			this.plotter2d.setSpace(Plotter2d.spaces.USER);
+			// now in user/cam space
+			this.graphPaper.draw("X", "Y");
+			// USER: do USER stuff
+			this.#userDraw(); //draw
+		}
 		// update UI, text
 		this.#userUpdateInfo();
+
+		if (this.dirty) {
+			this.dirtyCount = 100;
+		} else {
+			--this.dirtyCount;
+			if (this.dirtyCount < 0) {
+				this.dirtyCount = 0;
+			}
+		}
+		this.dirty = false; // turn off drawing unless something changed
+
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
 	}
 
 	#resetCounter() {

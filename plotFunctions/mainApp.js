@@ -233,7 +233,9 @@ class MainApp {
 				}
 			}
 		}
+	}
 
+	#userDraw() {
 		this.drawFun.draw(this.doParametric, this.lineStep, this.phase, this.graphPaper);
 		if (this.doDebug) {
 			// test new drawPrimitives class in user/cam space
@@ -367,17 +369,22 @@ class MainApp {
 		if (this.cur >= this.num) {
 			this.cur -= this.den;
 
+			// proc
 			// update input system
 			this.input.proc();
 			// interact with mouse, calc all spaces
 			this.plotter2d.proc(this.vp, this.input.mouse);
+			this.#userProc(); // proc and draw
+
+			// draw
+			this.plotter2d.clearCanvas();
 			// goto user/cam space
 			this.plotter2d.setSpace(Plotter2d.spaces.USER);
 			// now in user/cam space
 			this.graphPaper.draw(this.doParametric ? "X" : "T", "Y");
-
 			// USER: do USER stuff
-			this.#userProc(); // proc and draw
+			this.#userDraw(); // proc and draw
+
 			// update UI, text
 			this.#userUpdateInfo();
 		}

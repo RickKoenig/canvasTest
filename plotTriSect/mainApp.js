@@ -36,6 +36,9 @@ class MainApp {
 		this.#userBuildUI();
 
 		// start it off
+		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
 		this.#animate();
 	}
 
@@ -83,10 +86,12 @@ class MainApp {
 	#userProc() {
 		// proc
 		// pass in the buttons and the user/cam space mouse from drawPrim
-		this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse);
-		this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse);
+		this.dirty = this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		this.dirty = this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 
+	}
 
+	#userDraw() {
 		// 1st set of points
 		// draw with hilits on some points
 		const hilitPntIdx = this.editPnts.getHilitIdx();
@@ -159,26 +164,44 @@ class MainApp {
 		this.eles.triInfo.innerText = "Perimeter " 
 			+ this.#calcTriPerimeter(this.pnts).toFixed(3) 
 			+ "\nArea: "
-			+ this.#calcTriArea(this.pnts).toFixed(3);
+			+ this.#calcTriArea(this.pnts).toFixed(3)
+			+ "\nDirty Count = " + this.dirtyCount;
 	}
 
 	// process every frame
 	#animate() {
+		//  proc
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		this.graphPaper.draw("X", "Y");
-		// keep animation going
-		requestAnimationFrame(() => this.#animate());
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT) || this.dirty;
+		this.#userProc();
 
-		// USER: do USER stuff
-		this.#userProc(); // proc and draw
+		// draw when dirty
+		if (this.dirty) {
+			this.plotter2d.clearCanvas();
+			// goto user/cam space
+			this.plotter2d.setSpace(Plotter2d.spaces.USER);
+			// now in user/cam space
+			this.graphPaper.draw("X", "Y");
+			// USER: do USER stuff
+			this.#userDraw(); // draw
+		}
+
 		// update UI, text
 		this.#userUpdateInfo();
+
+		if (this.dirty) {
+			this.dirtyCount = 100;
+		} else {
+			--this.dirtyCount;
+			if (this.dirtyCount < 0) {
+				this.dirtyCount = 0;
+			}
+		}
+		this.dirty = false; // turn off drawing unless something changed
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
 	}
 	
 	// USER: update some of the UI in vertical panel if there is some in the HTML
