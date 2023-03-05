@@ -296,6 +296,20 @@ vec2.negate = function(out, a) {
 };
 
 /**
+ * rotate the components of a vec2 90 degrees
+ *
+ * @param {vec2} out the receiving vector
+ * @param {vec2} a vector to rotate 90 degrees
+ * @returns {vec2} out
+ */
+vec2.perp = function(out, a) {
+    var t = a[0];
+    out[0] = -a[1];
+    out[1] = t;
+    return out;
+};
+
+/**
  * Normalize a vec2
  *
  * @param {vec2} out the receiving vector

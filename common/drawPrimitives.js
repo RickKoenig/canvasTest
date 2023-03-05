@@ -109,7 +109,7 @@ class DrawPrimitives {
     }
 
     // an array of x,y values, if close is true, connect first point to last point
-    drawLinesParametric(pnts, lineWidth = .01, circleSize = .01, close = false
+    drawLinesParametric(pnts, close = false, lineWidth = .01, circleSize = .015
         , lineColor = "black", circleColor = "red", ndcScale = false) {
         if (pnts.length < 2) {
             return;
