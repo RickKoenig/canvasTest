@@ -51,7 +51,7 @@ class MainApp {
 		this.pnt2Rad = .1; // size of point
 		this.pnts = [[1/4, 1/4], [9/8, 1/4], [5/4, 5/4], [11/8, 1/4], [9/4, 1/4]];
 		// interactive edit of points
-		this.editPnts = new EditPnts(this.pnts, this.pntRad);
+		this.editPnts = new EditPnts(null, this.pnts, this.pntRad);
 
 		// before firing up Plotter2d
 		this.startCenter = [1, .5];

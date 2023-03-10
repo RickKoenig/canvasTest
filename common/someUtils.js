@@ -270,9 +270,9 @@ class Runavg {
 
 // drag points around
 class EditPnts {
-	constructor(pnts, pntRad) {
+	constructor(drawPrim, pnts, pntRad) {
+		this.drawPrim = drawPrim;
 		this.pnts = pnts;
-		this.numPnts = pnts.length;
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
 		this.pntRad = pntRad;	
@@ -287,7 +287,7 @@ class EditPnts {
 
 		// hilit hover
 		// check topmost points first
-		for (let i = this.numPnts - 1; i >= 0; --i) {
+		for (let i = this.pnts.length - 1; i >= 0; --i) {
 			const isInside
 				= vec2.squaredDistance(this.pnts[i], userMouse) 
 				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
@@ -322,6 +322,16 @@ class EditPnts {
 	getHilitIdx() {
 		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
 		return hilitIdx;
+	}
+
+	drawPoints() {
+		// draw with hilits on some points
+		const hilitPntIdx2 = this.getHilitIdx();
+		for (let i = 0; i < this.pnts.length; ++i) {
+			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
+			let doHilit = i == hilitPntIdx2;
+			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
+		}
 	}
 }
 
