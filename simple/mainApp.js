@@ -36,15 +36,15 @@ class MainApp {
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
+		// USER before UI built
+		this.#userInit();
+
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
-
-		// USER before UI built
-		this.#userInit();
 
 		// USER build UI
 		this.#userBuildUI();
@@ -67,18 +67,18 @@ class MainApp {
 			this.pnts[i] = [.25 + .5 * i, .5 + .25 * i];
 		}
 
-		this.numPnts2 = 3; // 3 editable points
+		this.numPnts2 = 6; // some more editable points, test add remove and generic draw
 		this.pntRad2 = .15; // size of point
 		this.pnts2 = createArray(this.numPnts2, 2); // array of 'two' dimensional points
 		for (let i = 0; i < this.pnts2.length; ++i) {
-			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i];
+			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i - .375 * (i % 2)];
 		}
 		// interactive edit of points
-		this.editPnts = new EditPnts(this.drawPrim, this.pnts, this.pntRad);
-		this.editPnts2 = new EditPnts(this.drawPrim, this.pnts2, this.pntRad2);
+		this.editPnts = new EditPnts(this.pnts, this.pntRad);
+		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, true);
 
 		// before firing up Plotter2d
-		this.startCenter = [.5, .5];
+		this.startCenter = [0, 1];
 		this.startZoom = .5;
 	}
 
@@ -132,7 +132,7 @@ class MainApp {
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
 
-		this.editPnts2.drawPoints();
+		this.editPnts2.draw(this.drawPrim);
 		/*
 		// draw with hilits on some points2
 		const hilitPntIdx2 = this.editPnts2.getHilitIdx();

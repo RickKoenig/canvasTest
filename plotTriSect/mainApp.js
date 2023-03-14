@@ -54,7 +54,7 @@ class MainApp {
 		this.numPnts = this.pnts.length;
 
 		// interactive edit of points
-		this.editPnts = new EditPnts(null, this.pnts, this.pntRad);
+		this.editPnts = new EditPnts(this.pnts, this.pntRad);
 
 		// 2nd triangle
 		this.pntRad2 = .07; // size of point
@@ -66,7 +66,7 @@ class MainApp {
 		this.numPnts2 = this.pnts2.length;
 
 		// interactive edit of points
-		this.editPnts2 = new EditPnts(null, this.pnts2, this.pntRad2);
+		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2);
 		
 		// before firing up Plotter2d
 		this.startCenter = [.5, .5];

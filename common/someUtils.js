@@ -270,20 +270,20 @@ class Runavg {
 
 // drag points around
 class EditPnts {
-	constructor(drawPrim, pnts, pntRad) {
-		this.drawPrim = drawPrim;
+	constructor(pnts, pntRad, addRemove = false) {
 		this.pnts = pnts;
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
-		this.pntRad = pntRad;	
+		this.pntRad = pntRad;
+		this.addRemove = addRemove;
 	}
 
 	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
-		let butDown = mouse.mbut[Mouse.LEFT];
-		let lastButDown = mouse.lmbut[Mouse.LEFT];
+		let but = mouse.mbut[Mouse.LEFT];
+		let lastBut = mouse.lmbut[Mouse.LEFT];
 
 		// hilit hover
 		// check topmost points first
@@ -300,13 +300,13 @@ class EditPnts {
 			// nothing selected
 			if (this.hilitPntIdx >= 0) {
 				// something hilighted
-				if (butDown && !lastButDown) {
-					//mouse button pressed
+				if (but && !lastBut) {
+					//mouse button down
 					this.curPntIdx = this.hilitPntIdx;
 				}
 			}
 		}
-		if (butDown) {
+		if (but) {
 			dirt = true;
 		} else {
 			//deselect point when mouse not pressed
@@ -316,6 +316,17 @@ class EditPnts {
 		if (this.curPntIdx >= 0) {
 			this.pnts[this.curPntIdx] = userMouse;
 		}
+		if (this.addRemove && mouse.mclick[Mouse.MIDDLE]) {
+			// delete a point, TODO: add a point
+			console.log('middle clicked');
+			const selPnt = this.getHilitIdx();
+			if (selPnt >= 0) {
+				this.pnts.splice(selPnt, 1);
+				this.curPntIdx = -1;
+				this.hilitPntIdx = -1;
+			}
+			dirt = true;
+		}
 		return dirt;
 	}
 
@@ -324,17 +335,27 @@ class EditPnts {
 		return hilitIdx;
 	}
 
-	drawPoints() {
+	draw(drawPrim) {
 		// draw with hilits on some points
+		for (let i = 0; i < this.pnts.length - 1; ++i) {
+			const pnt0 = this.pnts[i];
+			const pnt1 = this.pnts[i + 1];
+			drawPrim.drawLine(pnt0, pnt1, this.pntRad * .1);
+		}
 		const hilitPntIdx2 = this.getHilitIdx();
 		for (let i = 0; i < this.pnts.length; ++i) {
-			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
+			drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
 			let doHilit = i == hilitPntIdx2;
-			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
+			drawPrim.drawCircleO(this.pnts[i], this.pntRad, this.pntRad * .2, doHilit ? "yellow" : "black");
+			if (this.addRemove && doHilit) {
+				drawPrim.drawCircleO(this.pnts[i], this.pntRad * 1.5, this.pntRad * .2, "red");
+				if (i > 0 && i < this.pnts.length - 1) {
+					drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * .1, "red");
+				}
+			}
 		}
 	}
 }
-
 
 // html helpers
 // put all elements with id from parent to dest object
