@@ -57,25 +57,26 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		const startAddRemovePoints = true;
 		// user init section
 		this.count = 0; // frame counter
 
 		this.numPnts = 5;
-		this.pntRad = .05; // size of point
+		this.pntRad = .15; // size of point
 		this.pnts = createArray(this.numPnts, 2); // array of 'two' dimensional points
 		for (let i = 0; i < this.numPnts; ++i) {
 			this.pnts[i] = [.25 + .5 * i, .5 + .25 * i];
 		}
 
 		this.numPnts2 = 6; // some more editable points, test add remove and generic draw
-		this.pntRad2 = .15; // size of point
+		this.pntRad2 = .05; // size of point
 		this.pnts2 = createArray(this.numPnts2, 2); // array of 'two' dimensional points
 		for (let i = 0; i < this.pnts2.length; ++i) {
 			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i - .375 * (i % 2)];
 		}
 		// interactive edit of points
 		this.editPnts = new EditPnts(this.pnts, this.pntRad);
-		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, true);
+		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, startAddRemovePoints);
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 1];
@@ -103,6 +104,14 @@ class MainApp {
 			const callback = null;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
 		}
+		makeEle(this.vp, "hr");
+		makeEle(this.vp, "span", null, "marg", "Add remove points");
+		this.eles.addRemovePoints = makeEle(this.vp, "input", "addRemovePoints", null, "ho", (val) => {
+			console.log("checkbox addRemovePoints, value = " + val);
+			this.editPnts2.setAddRemove(val);
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.addRemovePoints.checked = this.editPnts2.getAddRemove();
 	}		
 	
 	#userProc() {
@@ -132,7 +141,7 @@ class MainApp {
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
 
-		this.editPnts2.draw(this.drawPrim);
+		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);
 		/*
 		// draw with hilits on some points2
 		const hilitPntIdx2 = this.editPnts2.getHilitIdx();

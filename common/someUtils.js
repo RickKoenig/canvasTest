@@ -276,6 +276,41 @@ class EditPnts {
 		this.hilitPntIdx = -1; // hover over
 		this.pntRad = pntRad;
 		this.addRemove = addRemove;
+		//this.addAtStart = true;
+		this.addAtMiddle = true;
+		this.addDynamic = true;
+	}
+
+	setAddRemove(ar) {
+		this.addRemove = ar;
+	}
+
+	getAddRemove() {
+		return this.addRemove;
+	}
+
+	// midpoints or past endpoints
+	#calcAddIdx(userMouse) {
+		let ret;
+		if (this.addDynamic) {
+			ret = 1;
+		} else if (this.addAtMiddle) {
+			//this.pnts.unshift(userMouse);
+			ret = Math.floor(this.pnts.length / 2);
+			//if (ret > 0) {
+			//	--ret;
+			//}
+		} else if (this.addAtStart) {
+			ret = 0;
+		} else { // add at end
+			ret = this.pnts.length;
+		}
+		return ret;
+	}
+
+	getHilitIdx() {
+		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
+		return hilitIdx;
 	}
 
 	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
@@ -313,29 +348,51 @@ class EditPnts {
 			this.curPntIdx = -1;
 		}
 			
+		//  move selected point
 		if (this.curPntIdx >= 0) {
 			this.pnts[this.curPntIdx] = userMouse;
 		}
-		if (this.addRemove && mouse.mclick[Mouse.MIDDLE]) {
-			// delete a point, TODO: add a point
-			console.log('middle clicked');
-			const selPnt = this.getHilitIdx();
-			if (selPnt >= 0) {
-				this.pnts.splice(selPnt, 1);
-				this.curPntIdx = -1;
-				this.hilitPntIdx = -1;
+		if (this.addRemove) {
+			if (mouse.mclick[Mouse.MIDDLE]) {
+				console.log('add remove middle clicked');
+				// remove point if hovering over a point
+				const selPnt = this.getHilitIdx();
+				if (selPnt >= 0) {
+					this.pnts.splice(selPnt, 1);
+					this.curPntIdx = -1;
+					this.hilitPntIdx = -1;
+					dirt = true;
+				// add point
+				} else {
+					const addIdx = this.#calcAddIdx(userMouse);
+					/*
+					if (this.addAtMiddle) {
+						//this.pnts.unshift(userMouse);
+						let mid = Math.floor(this.pnts.length / 2);
+						if (mid > 0) {
+							--mid;
+						}
+						this.pnts.splice(mid + 1, 0, userMouse);
+						this.curPntIdx = 0;
+					} else if (this.addAtStart) {
+						this.pnts.unshift(userMouse);
+						this.curPntIdx = 0;
+					} else { // add at end
+						this.pnts.push(userMouse);
+						this.curPntIdx = this.pnts.length - 1;
+					}
+					*/
+					this.pnts.splice(addIdx, 0, userMouse);
+					//this.pnts.unshift(userMouse);
+					this.curPntIdx = addIdx;
+					dirt = true;
+				}
 			}
-			dirt = true;
 		}
 		return dirt;
 	}
 
-	getHilitIdx() {
-		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
-		return hilitIdx;
-	}
-
-	draw(drawPrim) {
+	draw(drawPrim, userMouse) {
 		// draw with hilits on some points
 		for (let i = 0; i < this.pnts.length - 1; ++i) {
 			const pnt0 = this.pnts[i];
@@ -343,14 +400,51 @@ class EditPnts {
 			drawPrim.drawLine(pnt0, pnt1, this.pntRad * .1);
 		}
 		const hilitPntIdx2 = this.getHilitIdx();
+		let isOver = false;
 		for (let i = 0; i < this.pnts.length; ++i) {
 			drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
+			const size = this.pntRad * 2;
+			drawPrim.drawText(this.pnts[i], [size, size], i, "white");
 			let doHilit = i == hilitPntIdx2;
 			drawPrim.drawCircleO(this.pnts[i], this.pntRad, this.pntRad * .2, doHilit ? "yellow" : "black");
-			if (this.addRemove && doHilit) {
-				drawPrim.drawCircleO(this.pnts[i], this.pntRad * 1.5, this.pntRad * .2, "red");
-				if (i > 0 && i < this.pnts.length - 1) {
-					drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * .1, "red");
+			if (this.addRemove) {
+				// remove
+				if (doHilit) {
+					drawPrim.drawCircleO(this.pnts[i], this.pntRad * 1.5, this.pntRad * .2, "red");
+					if (i > 0 && i < this.pnts.length - 1) {
+						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * .1, "red");
+					}
+					isOver = true;
+				}
+			}
+		}
+		// add
+		if (this.addRemove && !isOver) {
+			drawPrim.drawCircleO(userMouse, this.pntRad * 1.5, this.pntRad * .2, "green");
+			//add point at the end for now
+			if (this.pnts.length > 0) {
+				const addIdx = this.#calcAddIdx(userMouse);
+				/*
+				if (this.addAtMiddle) {
+					let mid = Math.floor(this.pnts.length / 2);
+					if (mid > 0) {
+						--mid;
+					}
+					if (this.pnts.length > 1) {
+						drawPrim.drawLine(userMouse, this.pnts[mid + 1], this.pntRad * .1, "green");
+					}
+					drawPrim.drawLine(userMouse, this.pnts[mid], this.pntRad * .1, "green");
+				} else if (this.addAtStart) {
+					drawPrim.drawLine(userMouse, this.pnts[0], this.pntRad * .1, "green");
+				} else { // add at end
+					drawPrim.drawLine(userMouse, this.pnts[this.pnts.length - 1], this.pntRad * .1, "green");
+				}*/
+				//drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * .1, "green");
+				if (addIdx > 0) { // before point
+					drawPrim.drawLine(userMouse, this.pnts[addIdx - 1], this.pntRad * .1, "green");
+				}
+				if (addIdx < this.pnts.length) { // after point
+					drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * .1, "green");
 				}
 			}
 		}
@@ -397,22 +491,33 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 		if (kind == 'input') {
 			if (type == 'range') {
 				eventType = 'input'; // slider
-			} else if (type == 'checkbox') { // checkbox
-				eventType = 'change';
+			} else if (type == 'checkbox') {
+				eventType = 'change'; // checkbox
 			}
 
-		} else if (kind == 'button') { // button
-			eventType = 'click';
-		} else if (kind == 'textarea') { // textarea
-			eventType = 'keyup';
+		} else if (kind == 'button') {
+			eventType = 'click'; // button
+		} else if (kind == 'textarea') {
+			eventType = 'keyup'; // textarea
 		}
-		if (eventType) {
+		if (eventType =='input') {
+			ele.addEventListener(eventType, (event) => {
+				console.log("CALLBACK SLIDER");
+				callback(event.target.value);
+			});
+		} else if (eventType =='change') {
+			ele.addEventListener(eventType, (event) => {
+				console.log("CALLBACK CHECKBOX");
+				callback(event.target.checked);
+			});
+		} else if (eventType == 'click') {
 			ele.addEventListener(eventType, callback);
 		}
 	}
 	return ele;
 }
 
+// text, slider and a reset button
 class makeEleCombo {
 	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, doButton = true) {
 		// pre/span

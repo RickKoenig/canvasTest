@@ -83,8 +83,8 @@ class MainApp {
 			const start = 4;
 			const step = 1;
 			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {
-				this.depth = v;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
+				this.depth = val;
 				this.dirty = true;});
 			// end depth UI
 		}
