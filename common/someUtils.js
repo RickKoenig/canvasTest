@@ -270,6 +270,13 @@ class Runavg {
 
 // drag points around
 class EditPnts {
+
+	// all based on pntRad
+	static lineWidth = .1;
+	static circleWidth = .2;
+	static editCircleSize = 1.5;
+	static addPointDist = 20; // how far away to select point for adding
+
 	constructor(pnts, pntRad, addRemove = false) {
 		this.pnts = pnts;
 		this.curPntIdx = -1; // current select point for edit
@@ -291,9 +298,50 @@ class EditPnts {
 
 	// midpoints or past endpoints
 	#calcAddIdx(userMouse) {
-		let ret;
+		let ret = -1;
 		if (this.addDynamic) {
-			ret = 1;
+			if (this.pnts.length == 0) {
+				// just add a point into an empty array of points anywhere (no dist check)
+				ret = 0;
+			} else if (this.pnts.length == 1) {
+				// just add a point at the end of a 1 point array if close enough
+				// point in array
+				let dist2 = vec2.sqrDist(userMouse, this.pnts[0]);
+				const addRange = EditPnts.addPointDist * this.pntRad;
+
+				if (dist2 < addRange * addRange) {
+					ret = this.pnts.length;
+				}
+			} else {
+					// find closest distance to mouse
+				// start point
+				let bestDist2 = vec2.sqrDist(userMouse, this.pnts[0]);
+				let bestIdx2 = 0;
+				// end point
+				let dist2 = vec2.sqrDist(userMouse, this.pnts[this.pnts.length - 1]);
+				if (dist2 < bestDist2) {
+					bestDist2 = dist2;
+					bestIdx2 = this.pnts.length;
+				}
+				// middle points
+				for (let i = 0 ; i < this.pnts.length - 1; ++i) {
+					const p0 = this.pnts[i];
+					const p1 = this.pnts[i + 1];
+					let mid = vec2.create();
+					vec2.add(mid, p0, p1);
+					vec2.scale(mid, mid, .5);
+					const dist2 = vec2.sqrDist(userMouse, mid);
+					if (dist2 < bestDist2) {
+						bestDist2 = dist2;
+						bestIdx2 = i + 1;
+					}
+				}
+				
+				const addRange = EditPnts.addPointDist * this.pntRad;
+				if (bestDist2 < addRange * addRange) {
+					ret = bestIdx2;
+				}
+			}
 		} else if (this.addAtMiddle) {
 			//this.pnts.unshift(userMouse);
 			ret = Math.floor(this.pnts.length / 2);
@@ -382,10 +430,12 @@ class EditPnts {
 						this.curPntIdx = this.pnts.length - 1;
 					}
 					*/
-					this.pnts.splice(addIdx, 0, userMouse);
-					//this.pnts.unshift(userMouse);
-					this.curPntIdx = addIdx;
-					dirt = true;
+					if (addIdx >= 0) {
+						this.pnts.splice(addIdx, 0, userMouse);
+						//this.pnts.unshift(userMouse);
+						this.curPntIdx = addIdx;
+						dirt = true;
+					}
 				}
 			}
 		}
@@ -397,7 +447,7 @@ class EditPnts {
 		for (let i = 0; i < this.pnts.length - 1; ++i) {
 			const pnt0 = this.pnts[i];
 			const pnt1 = this.pnts[i + 1];
-			drawPrim.drawLine(pnt0, pnt1, this.pntRad * .1);
+			drawPrim.drawLine(pnt0, pnt1, this.pntRad * EditPnts.lineWidth);
 		}
 		const hilitPntIdx2 = this.getHilitIdx();
 		let isOver = false;
@@ -406,13 +456,13 @@ class EditPnts {
 			const size = this.pntRad * 2;
 			drawPrim.drawText(this.pnts[i], [size, size], i, "white");
 			let doHilit = i == hilitPntIdx2;
-			drawPrim.drawCircleO(this.pnts[i], this.pntRad, this.pntRad * .2, doHilit ? "yellow" : "black");
+			drawPrim.drawCircleO(this.pnts[i], this.pntRad, this.pntRad * EditPnts.circleWidth, doHilit ? "yellow" : "black");
 			if (this.addRemove) {
 				// remove
 				if (doHilit) {
-					drawPrim.drawCircleO(this.pnts[i], this.pntRad * 1.5, this.pntRad * .2, "red");
+					drawPrim.drawCircleO(this.pnts[i], this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "red");
 					if (i > 0 && i < this.pnts.length - 1) {
-						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * .1, "red");
+						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * EditPnts.lineWidth, "red");
 					}
 					isOver = true;
 				}
@@ -420,7 +470,7 @@ class EditPnts {
 		}
 		// add
 		if (this.addRemove && !isOver) {
-			drawPrim.drawCircleO(userMouse, this.pntRad * 1.5, this.pntRad * .2, "green");
+			drawPrim.drawCircleO(userMouse, this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "green");
 			//add point at the end for now
 			if (this.pnts.length > 0) {
 				const addIdx = this.#calcAddIdx(userMouse);
@@ -431,20 +481,20 @@ class EditPnts {
 						--mid;
 					}
 					if (this.pnts.length > 1) {
-						drawPrim.drawLine(userMouse, this.pnts[mid + 1], this.pntRad * .1, "green");
+						drawPrim.drawLine(userMouse, this.pnts[mid + 1], this.pntRad * EditPnts.lineWidth, "green");
 					}
-					drawPrim.drawLine(userMouse, this.pnts[mid], this.pntRad * .1, "green");
+					drawPrim.drawLine(userMouse, this.pnts[mid], this.pntRad * EditPnts.lineWidth, "green");
 				} else if (this.addAtStart) {
-					drawPrim.drawLine(userMouse, this.pnts[0], this.pntRad * .1, "green");
+					drawPrim.drawLine(userMouse, this.pnts[0], this.pntRad * EditPnts.lineWidth, "green");
 				} else { // add at end
-					drawPrim.drawLine(userMouse, this.pnts[this.pnts.length - 1], this.pntRad * .1, "green");
+					drawPrim.drawLine(userMouse, this.pnts[this.pnts.length - 1], this.pntRad * EditPnts.lineWidth, "green");
 				}*/
-				//drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * .1, "green");
+				//drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * EditPnts.lineWidth, "green");
 				if (addIdx > 0) { // before point
-					drawPrim.drawLine(userMouse, this.pnts[addIdx - 1], this.pntRad * .1, "green");
+					drawPrim.drawLine(userMouse, this.pnts[addIdx - 1], this.pntRad * EditPnts.lineWidth, "green");
 				}
-				if (addIdx < this.pnts.length) { // after point
-					drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * .1, "green");
+				if (addIdx != -1 && addIdx < this.pnts.length) { // after point
+					drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * EditPnts.lineWidth, "green");
 				}
 			}
 		}

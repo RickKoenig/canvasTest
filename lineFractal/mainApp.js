@@ -59,6 +59,9 @@ class MainApp {
 	}
 
 	#calcFractalDimension(pnts) {
+		if (pnts.length < 2) {
+			return 0;
+		}
 		const first = pnts[0];
 		const last = pnts[pnts.length - 1];
 		const lenOverall = vec2.dist(first, last);
@@ -97,6 +100,13 @@ class MainApp {
 		this.eles.showEditPoints = makeEle(this.vp, "input", "showEditPoints", null, "ho", () => this.dirty = true, "checkbox");
 		this.eles.showEditPoints.checked = true;
 		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Add remove points");
+		this.eles.addRemovePoints = makeEle(this.vp, "input", "addRemovePoints", null, "ho", (v) => {
+			this.dirty = true;;
+			this.editPnts.setAddRemove(v);
+		}, "checkbox");
+		this.eles.addRemovePoints.checked = false;
+		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show graph paper");
 		this.eles.showGraphPaper = makeEle(this.vp, "input", "showGraphPaper", null, "ho", () => this.dirty = true, "checkbox");
 		this.eles.showGraphPaper.checked = true;
@@ -124,7 +134,6 @@ class MainApp {
 		vec2.perp(pInR, pIn);
 		let pOutR = vec2.create();
 		vec2.perp(pOutR, pOut);
-		//matA[0] = 
 		let matA= [pIn[0], pIn[1], pInR[0], pInR[1]];
 		mat2.invert(matA, matA);
 		let matB= [pOut[0], pOut[1], pOutR[0], pOutR[1]];
@@ -168,12 +177,14 @@ class MainApp {
 	#userDraw() {
 		// draw with hilits on some points
 		if (this.eles.showEditPoints.checked) {
+			/*
 			const hilitPntIdx = this.editPnts.getHilitIdx();
 			for (let i = 0; i < this.pnts.length; ++i) {
 				this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
 				let doHilit = i == hilitPntIdx;
 				this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
-			}
+			}*/
+			this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
 		}
 		this.#drawFractal(this.pntsOff, this.pnts, this.depth);
 	}
