@@ -268,24 +268,23 @@ class Runavg {
 	}
 }
 
-// drag points around
+// drag points around and add and remove them
 class EditPnts {
 
 	// all based on pntRad
 	static lineWidth = .1;
 	static circleWidth = .2;
 	static editCircleSize = 1.5;
-	static addPointDist = 20; // how far away to select point for adding
+	static addPointDist = 50; // how far away to select point for adding
 
-	constructor(pnts, pntRad, addRemove = false) {
+	constructor(pnts, pntRad, addRemove = false, minPnts = 0, maxPnts = -1) {
 		this.pnts = pnts;
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
 		this.pntRad = pntRad;
 		this.addRemove = addRemove;
-		//this.addAtStart = true;
-		this.addAtMiddle = true;
-		this.addDynamic = true;
+		this.minPnts = minPnts;
+		this.maxPnts = maxPnts; // if -1 then no limit
 	}
 
 	setAddRemove(ar) {
@@ -299,59 +298,48 @@ class EditPnts {
 	// midpoints or past endpoints
 	#calcAddIdx(userMouse) {
 		let ret = -1;
-		if (this.addDynamic) {
-			if (this.pnts.length == 0) {
-				// just add a point into an empty array of points anywhere (no dist check)
-				ret = 0;
-			} else if (this.pnts.length == 1) {
-				// just add a point at the end of a 1 point array if close enough
-				// point in array
-				let dist2 = vec2.sqrDist(userMouse, this.pnts[0]);
-				const addRange = EditPnts.addPointDist * this.pntRad;
-
-				if (dist2 < addRange * addRange) {
-					ret = this.pnts.length;
-				}
-			} else {
-					// find closest distance to mouse
-				// start point
-				let bestDist2 = vec2.sqrDist(userMouse, this.pnts[0]);
-				let bestIdx2 = 0;
-				// end point
-				let dist2 = vec2.sqrDist(userMouse, this.pnts[this.pnts.length - 1]);
+		if (this.maxPnts != -1 && this.pnts.length >= this.maxPnts) {
+			// do nothing if too many points
+		} else if (this.pnts.length == 0) {
+			// just add a point into an empty array of points anywhere (no dist check)
+			ret = 0;
+		} else if (this.pnts.length == 1) {
+			// just add a point at the end of a 1 point array if close enough
+			// point in array
+			let dist2 = vec2.sqrDist(userMouse, this.pnts[0]);
+			const addRange = EditPnts.addPointDist * this.pntRad;
+			if (dist2 < addRange * addRange) {
+				ret = this.pnts.length;
+			}
+		} else {
+			// find closest distance to mouse
+			// start point
+			let bestDist2 = vec2.sqrDist(userMouse, this.pnts[0]);
+			let bestIdx2 = 0;
+			// end point
+			let dist2 = vec2.sqrDist(userMouse, this.pnts[this.pnts.length - 1]);
+			if (dist2 < bestDist2) {
+				bestDist2 = dist2;
+				bestIdx2 = this.pnts.length;
+			}
+			// middle points
+			for (let i = 0 ; i < this.pnts.length - 1; ++i) {
+				const p0 = this.pnts[i];
+				const p1 = this.pnts[i + 1];
+				let mid = vec2.create();
+				vec2.add(mid, p0, p1);
+				vec2.scale(mid, mid, .5);
+				const dist2 = vec2.sqrDist(userMouse, mid);
 				if (dist2 < bestDist2) {
 					bestDist2 = dist2;
-					bestIdx2 = this.pnts.length;
-				}
-				// middle points
-				for (let i = 0 ; i < this.pnts.length - 1; ++i) {
-					const p0 = this.pnts[i];
-					const p1 = this.pnts[i + 1];
-					let mid = vec2.create();
-					vec2.add(mid, p0, p1);
-					vec2.scale(mid, mid, .5);
-					const dist2 = vec2.sqrDist(userMouse, mid);
-					if (dist2 < bestDist2) {
-						bestDist2 = dist2;
-						bestIdx2 = i + 1;
-					}
-				}
-				
-				const addRange = EditPnts.addPointDist * this.pntRad;
-				if (bestDist2 < addRange * addRange) {
-					ret = bestIdx2;
+					bestIdx2 = i + 1;
 				}
 			}
-		} else if (this.addAtMiddle) {
-			//this.pnts.unshift(userMouse);
-			ret = Math.floor(this.pnts.length / 2);
-			//if (ret > 0) {
-			//	--ret;
-			//}
-		} else if (this.addAtStart) {
-			ret = 0;
-		} else { // add at end
-			ret = this.pnts.length;
+			// add a point if close enough
+			const addRange = EditPnts.addPointDist * this.pntRad;
+			if (bestDist2 < addRange * addRange) {
+				ret = bestIdx2;
+			}
 		}
 		return ret;
 	}
@@ -402,37 +390,20 @@ class EditPnts {
 		}
 		if (this.addRemove) {
 			if (mouse.mclick[Mouse.MIDDLE]) {
-				console.log('add remove middle clicked');
-				// remove point if hovering over a point
 				const selPnt = this.getHilitIdx();
 				if (selPnt >= 0) {
-					this.pnts.splice(selPnt, 1);
-					this.curPntIdx = -1;
-					this.hilitPntIdx = -1;
-					dirt = true;
-				// add point
-				} else {
-					const addIdx = this.#calcAddIdx(userMouse);
-					/*
-					if (this.addAtMiddle) {
-						//this.pnts.unshift(userMouse);
-						let mid = Math.floor(this.pnts.length / 2);
-						if (mid > 0) {
-							--mid;
-						}
-						this.pnts.splice(mid + 1, 0, userMouse);
-						this.curPntIdx = 0;
-					} else if (this.addAtStart) {
-						this.pnts.unshift(userMouse);
-						this.curPntIdx = 0;
-					} else { // add at end
-						this.pnts.push(userMouse);
-						this.curPntIdx = this.pnts.length - 1;
+					// remove point if hovering over a point
+					if (this.pnts.length > this.minPnts) {
+						this.pnts.splice(selPnt, 1);
+						this.curPntIdx = -1;
+						this.hilitPntIdx = -1;
+						dirt = true;
 					}
-					*/
+				} else {
+					// add point
+					const addIdx = this.#calcAddIdx(userMouse);
 					if (addIdx >= 0) {
 						this.pnts.splice(addIdx, 0, userMouse);
-						//this.pnts.unshift(userMouse);
 						this.curPntIdx = addIdx;
 						dirt = true;
 					}
@@ -459,7 +430,7 @@ class EditPnts {
 			drawPrim.drawCircleO(this.pnts[i], this.pntRad, this.pntRad * EditPnts.circleWidth, doHilit ? "yellow" : "black");
 			if (this.addRemove) {
 				// remove
-				if (doHilit) {
+				if (doHilit && this.pnts.length > this.minPnts) {
 					drawPrim.drawCircleO(this.pnts[i], this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "red");
 					if (i > 0 && i < this.pnts.length - 1) {
 						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * EditPnts.lineWidth, "red");
@@ -470,26 +441,10 @@ class EditPnts {
 		}
 		// add
 		if (this.addRemove && !isOver) {
-			drawPrim.drawCircleO(userMouse, this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "green");
-			//add point at the end for now
+			drawPrim.drawCircleO(userMouse
+				, this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "green");
 			if (this.pnts.length > 0) {
 				const addIdx = this.#calcAddIdx(userMouse);
-				/*
-				if (this.addAtMiddle) {
-					let mid = Math.floor(this.pnts.length / 2);
-					if (mid > 0) {
-						--mid;
-					}
-					if (this.pnts.length > 1) {
-						drawPrim.drawLine(userMouse, this.pnts[mid + 1], this.pntRad * EditPnts.lineWidth, "green");
-					}
-					drawPrim.drawLine(userMouse, this.pnts[mid], this.pntRad * EditPnts.lineWidth, "green");
-				} else if (this.addAtStart) {
-					drawPrim.drawLine(userMouse, this.pnts[0], this.pntRad * EditPnts.lineWidth, "green");
-				} else { // add at end
-					drawPrim.drawLine(userMouse, this.pnts[this.pnts.length - 1], this.pntRad * EditPnts.lineWidth, "green");
-				}*/
-				//drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * EditPnts.lineWidth, "green");
 				if (addIdx > 0) { // before point
 					drawPrim.drawLine(userMouse, this.pnts[addIdx - 1], this.pntRad * EditPnts.lineWidth, "green");
 				}
@@ -552,12 +507,10 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 		}
 		if (eventType =='input') {
 			ele.addEventListener(eventType, (event) => {
-				console.log("CALLBACK SLIDER");
 				callback(event.target.value);
 			});
 		} else if (eventType =='change') {
 			ele.addEventListener(eventType, (event) => {
-				console.log("CALLBACK CHECKBOX");
 				callback(event.target.checked);
 			});
 		} else if (eventType == 'click') {

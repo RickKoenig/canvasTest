@@ -50,8 +50,10 @@ class MainApp {
 		this.pntRad = .04; // size of point
 		this.pnt2Rad = .1; // size of point
 		this.pnts = [[1/4, 1/4], [9/8, 1/4], [5/4, 5/4], [11/8, 1/4], [9/4, 1/4]];
+		const minPnts = 0;
+		const maxPnts = 20;
 		// interactive edit of points
-		this.editPnts = new EditPnts(this.pnts, this.pntRad);
+		this.editPnts = new EditPnts(this.pnts, this.pntRad, false, minPnts, maxPnts);
 
 		// before firing up Plotter2d
 		this.startCenter = [1, .5];
@@ -59,18 +61,24 @@ class MainApp {
 	}
 
 	#calcFractalDimension(pnts) {
-		if (pnts.length < 2) {
+		// TODO: works for equal line segments lengths, make work in general case
+		if (pnts.length <= 1) {
 			return 0;
 		}
+		if (pnts.length == 2) {
+			return 1;
+		}
 		const first = pnts[0];
+		const next = pnts[1];
 		const last = pnts[pnts.length - 1];
 		const lenOverall = vec2.dist(first, last);
+		const lenFirst = vec2.dist(first, next);
 		let lenDeeper = 0;
 		for (let i = 0; i < pnts.length - 1; ++i) {
 			const lenSegment = vec2.dist(pnts[i], pnts[i + 1]);
 			lenDeeper += lenSegment;
 		}
-		return lenDeeper / lenOverall;
+		return Math.log(lenDeeper / lenFirst) / Math.log(lenOverall / lenFirst);
 	}
 
 	#userBuildUI() {
@@ -142,7 +150,7 @@ class MainApp {
 		return matP;
 	}
 
-	#drawFractal(pntsOff, pnts, level) {
+	#drawFractal(pnts, level) {
 		if (level <= 0) {
 			return; // nothing to draw
 		}
@@ -169,7 +177,7 @@ class MainApp {
 					deepPnts[j] = pOut;
 		
 				}
-				this.#drawFractal(pntsOff, deepPnts, level - 1);
+				this.#drawFractal(deepPnts, level - 1);
 			}
 		}
 	}
@@ -177,16 +185,9 @@ class MainApp {
 	#userDraw() {
 		// draw with hilits on some points
 		if (this.eles.showEditPoints.checked) {
-			/*
-			const hilitPntIdx = this.editPnts.getHilitIdx();
-			for (let i = 0; i < this.pnts.length; ++i) {
-				this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
-				let doHilit = i == hilitPntIdx;
-				this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
-			}*/
 			this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
 		}
-		this.#drawFractal(this.pntsOff, this.pnts, this.depth);
+		this.#drawFractal(this.pnts, this.depth);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

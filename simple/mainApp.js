@@ -58,6 +58,8 @@ class MainApp {
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		const startAddRemovePoints = true;
+		const minPnts = 4;
+		const maxPnts = 8;
 		// user init section
 		this.count = 0; // frame counter
 
@@ -65,7 +67,7 @@ class MainApp {
 		this.pntRad = .15; // size of point
 		this.pnts = createArray(numPnts, 2); // array of 'two' dimensional points
 		for (let i = 0; i < numPnts; ++i) {
-			this.pnts[i] = [.25 + .5 * i, .5 + .25 * i];
+			this.pnts[i] = [.25 + .5 * i, .5 - .25 * i + .1 * i * i];
 		}
 
 		const numPnts2 = 6; // some more editable points, test add remove and generic draw
@@ -75,8 +77,8 @@ class MainApp {
 			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i - .375 * (i % 2)];
 		}
 		// interactive edit of points
-		this.editPnts = new EditPnts(this.pnts, this.pntRad, startAddRemovePoints);
-		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, startAddRemovePoints);
+		this.editPnts = new EditPnts(this.pnts, this.pntRad); // defaults, no add remove points
+		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, startAddRemovePoints, minPnts, maxPnts);
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 1];
@@ -92,7 +94,6 @@ class MainApp {
 				this.count = 10000;
 			}
 		);
-
 		makeEle(this.vp, "hr");
 		{
 			const label = "test combo";
@@ -108,7 +109,6 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "Add remove points");
 		this.eles.addRemovePoints = makeEle(this.vp, "input", "addRemovePoints", null, "ho", (val) => {
 			console.log("checkbox addRemovePoints, value = " + val);
-			this.editPnts.setAddRemove(val);
 			this.editPnts2.setAddRemove(val);
 			this.dirty = true;
 		}, "checkbox");
@@ -124,36 +124,18 @@ class MainApp {
 	}
 
 	#userDraw() {
-		/*
-		// draw with hilits on some points
-		for (let i = 0; i < this.pnts.length; ++i) {
-			this.drawPrim.drawCircle(this.pnts[i], this.pntRad, "green");
-			const hilitPntIdx = this.editPnts.getHilitIdx();
-			let doHilit = i == hilitPntIdx;
-			this.drawPrim.drawCircleO(this.pnts[i], this.pntRad, .01, doHilit ? "yellow" : "black");
-		}
-		*/
-		// draw some extra stuff like lines and midpoints
+		// draw some extra stuff like midpoints
 		const mid = vec2.create();
-		for (let i = 0; i < this.pnts.length - 1; ++i) {
+		for (let i = 0; i < this.pnts.length; ++i) {
 			const p0 = this.pnts[i];
-			//const p1 = this.pnts[(i + 1) % this.pnts.length];
-			const p1 = this.pnts[i + 1];
+			const p1 = this.pnts[(i + 1) % this.pnts.length];
+			//const p1 = this.pnts[i + 1];
 			this.drawPrim.drawLine(p0, p1, "darkgray");
 			midPnt(mid, p0, p1);
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
 		this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
-
 		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);
-		/*
-		// draw with hilits on some points2
-		const hilitPntIdx2 = this.editPnts2.getHilitIdx();
-		for (let i = 0; i < this.pnts2.length; ++i) {
-			this.drawPrim.drawCircle(this.pnts2[i], this.pntRad2, "green");
-			let doHilit = i == hilitPntIdx2;
-			this.drawPrim.drawCircleO(this.pnts2[i], this.pntRad2, .01, doHilit ? "yellow" : "black");
-		} */
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
