@@ -1,7 +1,6 @@
 'use strict';
 
-// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
-// TODO: for now, assume 60hz refresh rate
+// draw a tree of hail nodes
 class Node {
 	static offset = 20; // draw node tree starting at position 20,20
 
@@ -29,6 +28,8 @@ class Node {
 	}
 }
 
+// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
+// TODO: for now, assume 60hz refresh rate
 class MainApp {
 
 	#initPowers() {

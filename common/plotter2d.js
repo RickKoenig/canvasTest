@@ -236,8 +236,8 @@ class Plotter2d {
             this.pieces.yTrans.textInfoEle.innerText = "center[1] = " 
                 + this.center[1].toFixed(2);
             // scale
-            this.pieces.scale.textInfoEle.innerText = "zoom = " 
-                + this.zoom.toFixed(4) + ", logZ = " + this.logZoom.toFixed(4);
+            this.pieces.scale.textInfoEle.innerText = "zoom=" 
+                + this.zoom.toFixed(4) + ", logZ=" + this.logZoom.toFixed(4);
             // mouse
             this.pieces.mouse.textInfoEle.innerText = "Mouse = (" 
                 + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")";

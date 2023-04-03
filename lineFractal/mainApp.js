@@ -91,7 +91,7 @@ class MainApp {
 			const label = "Fractal depth";
 			const min = 0;
 			const max = 8;
-			const start = 4;
+			const start = 5;
 			const step = 1;
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
@@ -158,7 +158,7 @@ class MainApp {
 			const p0 = pnts[i];
 			const p1 = pnts[i + 1];
 			if (this.eles.showAllLevels.checked || level == 1) {
-				this.drawPrim.drawLine(p0, p1, .005, "black");
+				this.drawPrim.drawLine(p0, p1, .001, "black");
 			}
 			if (level > 1) {
 				// go deeper

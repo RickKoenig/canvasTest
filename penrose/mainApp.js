@@ -1,10 +1,27 @@
 'use strict';
 
+// a Penrose tile
+class Tile {
+	constructor(pos, rot = 0, fat = false) {
+		if (pos) {
+			this.pos = vec2.clone(pos);
+		} else {
+			this.pos = vec2.create();
+		}
+		this.rot = rot;
+		this.fat = fat;
+	}
+
+	draw(drawPrim) {
+		drawPrim.drawCircleO(this.pos, .05, .008, "green");
+	}
+}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	constructor() {
-		console.log("build line fractal main app");
+		console.log("Play with Penrose tiles");
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
 		//this.vp = null; // OR, no vertical panel UI
@@ -47,74 +64,19 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.pntRad = .04; // size of point
-		this.pnt2Rad = .1; // size of point
+		//this.pntRad = .04; // size of point
 		this.pnts = [[1/4, 1/4], [9/8, 1/4], [5/4, 5/4], [11/8, 1/4], [9/4, 1/4]];
-		const minPnts = 0;
-		const maxPnts = 20;
-		// interactive edit of points
-		this.editPnts = new EditPnts(this.pnts, this.pntRad, false, minPnts, maxPnts);
+		this.startZoom = .5;
 
-		// before firing up Plotter2d
-		this.startCenter = [1, .5];
-		this.startZoom = 1;
-	}
-
-	#calcFractalDimension(pnts) {
-		// TODO: works for equal line segments lengths, make work in general case
-		if (pnts.length <= 1) {
-			return 0;
-		}
-		if (pnts.length == 2) {
-			return 1;
-		}
-		const first = pnts[0];
-		const next = pnts[1];
-		const last = pnts[pnts.length - 1];
-		const lenOverall = vec2.dist(first, last);
-		const lenFirst = vec2.dist(first, next);
-		let lenDeeper = 0;
-		for (let i = 0; i < pnts.length - 1; ++i) {
-			const lenSegment = vec2.dist(pnts[i], pnts[i + 1]);
-			lenDeeper += lenSegment;
-		}
-		return Math.log(lenDeeper / lenFirst) / Math.log(lenOverall / lenFirst);
+		this.tiles = [];
+		this.tiles.push(new Tile([.5,.5], 0, false));
+		this.tiles.push(new Tile([.75, .5], 0, true));
 	}
 
 	#userBuildUI() {
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		// line step slider combo
-		{
-			makeEle(this.vp, "hr");
-			// start depth UI
-			const label = "Fractal depth";
-			const min = 0;
-			const max = 8;
-			const start = 4;
-			const step = 1;
-			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
-				this.depth = val;
-				this.dirty = true;});
-			// end depth UI
-		}
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "Show all levels");
-		this.eles.showAllLevels = makeEle(this.vp, "input", "showAllLevels", null, "ho", () => this.dirty = true, "checkbox");
-		this.eles.showAllLevels.checked = false;
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "Show edit points");
-		this.eles.showEditPoints = makeEle(this.vp, "input", "showEditPoints", null, "ho", () => this.dirty = true, "checkbox");
-		this.eles.showEditPoints.checked = true;
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "Add remove points");
-		this.eles.addRemovePoints = makeEle(this.vp, "input", "addRemovePoints", null, "ho", (v) => {
-			this.dirty = true;;
-			this.editPnts.setAddRemove(v);
-		}, "checkbox");
-		this.eles.addRemovePoints.checked = false;
-		makeEle(this.vp, "br");
+		makeEle(this.vp, "hr");
 		makeEle(this.vp, "span", null, "marg", "Show graph paper");
 		this.eles.showGraphPaper = makeEle(this.vp, "input", "showGraphPaper", null, "ho", () => this.dirty = true, "checkbox");
 		this.eles.showGraphPaper.checked = true;
@@ -133,70 +95,19 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
-		// pass in the buttons and the user/cam space mouse from drawPrim
-		this.dirty = this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
-	}
-
-	#buildMat(pIn, pOut) {
-		let pInR = vec2.create();
-		vec2.perp(pInR, pIn);
-		let pOutR = vec2.create();
-		vec2.perp(pOutR, pOut);
-		let matA= [pIn[0], pIn[1], pInR[0], pInR[1]];
-		mat2.invert(matA, matA);
-		let matB= [pOut[0], pOut[1], pOutR[0], pOutR[1]];
-		let matP = mat2.create();
-		mat2.mul(matP, matB, matA);
-		return matP;
-	}
-
-	#drawFractal(pnts, level) {
-		if (level <= 0) {
-			return; // nothing to draw
-		}
-		for (let i = 0; i < pnts.length - 1; ++i) {
-			const p0 = pnts[i];
-			const p1 = pnts[i + 1];
-			if (this.eles.showAllLevels.checked || level == 1) {
-				this.drawPrim.drawLine(p0, p1, .005, "black");
-			}
-			if (level > 1) {
-				// go deeper
-				let pntsOff = vec2.create();
-				let pnts2Off = vec2.create();
-				vec2.sub(pntsOff, pnts[pnts.length - 1], pnts[0]);
-				vec2.sub(pnts2Off, pnts[i + 1], pnts[i]);
-				let mat = this.#buildMat(pntsOff, pnts2Off);
-				const deepPnts = new Array(pnts.length);
-				for (let j = 0; j < pnts.length; ++j) {
-					let pIn = vec2.clone(pnts[j]);
-					vec2.sub(pIn, pIn, pnts[0]);
-					let pOut = vec2.create();
-					vec2.transformMat2(pOut, pIn, mat);
-					vec2.add(pOut, pOut, pnts[i]);
-					deepPnts[j] = pOut;
-		
-				}
-				this.#drawFractal(deepPnts, level - 1);
-			}
-		}
 	}
 
 	#userDraw() {
-		// draw with hilits on some points
-		if (this.eles.showEditPoints.checked) {
-			this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.drawPrim.drawLinesParametric(this.pnts);
+		for (let tile of this.tiles) {
+			tile.draw(this.drawPrim);
 		}
-		this.#drawFractal(this.pnts, this.depth);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		this.fractalDimension = this.#calcFractalDimension(this.pnts);
 		let countStr = "Dirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
-		countStr += "\nFractal dimension = " + this.fractalDimension.toFixed(3);
-		countStr += "\nFractal draw depth = " + this.depth;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
@@ -241,3 +152,126 @@ class MainApp {
 }
 
 const mainApp = new MainApp();
+
+/*
+#define MAKEPENROSE
+#ifdef MAKEPENROSE
+bitmap32* ptfat,*ptthin;
+const S32 PRX = 128;
+const S32 PRY = 128;
+const float angfat  = 72*PIOVER180; // 72 degrees
+const float angthin = 36*PIOVER180; // 36 degrees
+const S32 border = 3;
+const float circlesize = 15;
+
+struct circleinfo {
+	bool right;
+	bool bottom;
+	bool big;
+};
+struct tileinfo {
+	C32 backcolor;
+	float ang;
+	circleinfo cis[2];
+	C8* fname;
+};
+tileinfo tilethin = {
+	C32GREEN,
+	angthin,
+	{
+		{true,false,false}, // blue
+		{false,true,false} // red
+	},
+	"thin.png"
+};
+tileinfo tilefat = {
+	C32LIGHTGREEN,
+	angfat,
+	{
+		{false,false,false}, // blue
+		{true,true,true} // red
+	},
+	"fat.png"
+};
+
+bitmap32* maketile(const tileinfo& ti)
+{
+	const S32 minn = 1;
+	const S32 mind = 5;
+	const S32 maxn = 4;
+	const S32 maxd = 5;
+
+	static const C32 circol[2] = {C32BLUE,C32RED};
+	bitmap32* ret;
+	S32 i,j;
+	S32 maxj = (S32)(PRY*sinf(ti.ang));
+	ret = bitmap32alloc(PRX*2,PRY*2,C32(0,0,0,0)); // background color
+	S32 minim = (S32)(maxj/tanf(ti.ang));
+	for (j=0;j<PRY;++j) {
+		S32 mini = (S32)(j/tanf(ti.ang));
+		S32 maxi = mini + PRX;
+		S32 borderx = (S32)(border/sinf(ti.ang));
+		for (i=0;i<PRX*2;++i) {
+			if (j<maxj && i>= mini && i<maxi) {
+				C32 c = ti.backcolor; // base tile color, maybe pass in
+				if (j<border || j>=maxj-border)
+					c = C32BLACK;
+				if (i<mini+borderx || i>=maxi-borderx)
+					c = C32BLACK;
+				// do rules, blue and red circles
+				int k;
+				for (k=0;k<2;++k) {
+					S32 tvi = i;
+					S32 tvj = j;
+					if (ti.cis[k].right) {
+						tvi -= PRX;
+					}
+					if (ti.cis[k].bottom) {
+						tvi -= minim;
+						tvj -= maxj;
+					}
+					S32 d2 = tvi*tvi + tvj*tvj;
+					S32 d2min;
+					S32 d2max;
+					if (ti.cis[k].big) {
+						d2min = (S32)(maxn*PRX/maxd-circlesize/2);
+						d2max = (S32)(maxn*PRX/maxd+circlesize/2);
+					} else {
+						d2min = (S32)(minn*PRX/mind-circlesize/2);
+						d2max = (S32)(minn*PRX/mind+circlesize/2);
+					}
+					d2min *= d2min;
+					d2max *= d2max;
+	//				if (d2<PRX/4+circlesize/2 && d2>=PRX/4-circlesize/2)
+					if (d2>=d2min && d2<d2max)
+						c = circol[k];
+					clipputpixel32(ret,i,j,c);
+				}
+			}
+		}
+	} 
+	pushandsetdir("penrose");
+	gfxwrite32(ti.fname,ret);
+	popdir();
+	return ret;
+}
+
+void makepenrose()
+{
+	ptthin = maketile(tilethin);
+	ptfat = maketile(tilefat);
+}
+
+void drawpenrose()
+{
+	clipblit32(ptthin,B32,0,0,10,10,ptthin->size.x,ptthin->size.y);
+	clipblit32(ptfat,B32,0,0,10+2*PRX+10,10,ptfat->size.x,ptfat->size.y);
+}
+
+void exitpenrose()
+{
+	bitmap32free(ptfat);
+	bitmap32free(ptthin);
+}
+#endif
+*/

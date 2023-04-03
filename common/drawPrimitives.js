@@ -77,12 +77,13 @@ class DrawPrimitives {
 
     // an array of y values
     // connected line and optional circles on vertices
-    drawLinesSimple(pntsY, lineWidth = .01, circleSize = .01
+    drawLinesSimple(pntsY, lineWidth = .01, circleSize = .02
         , startX = 0, stepX = 1
-        , lineColor = "black", circleColor = "red", ndcScale = false) {
+        , lineColor = "black", circleColor = "green", ndcScale = false) {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         if (lineWidth > 0 && pntsY.length >= 2) {
             this.ctx.beginPath();
+            this.ctx.lineJoin = "round";
             this.ctx.moveTo(startX, pntsY[0]);
             let idx = 1;
             let X = startX;
@@ -109,8 +110,8 @@ class DrawPrimitives {
     }
 
     // an array of x,y values, if close is true, connect first point to last point
-    drawLinesParametric(pnts, close = false, lineWidth = .01, circleSize = .015
-        , lineColor = "black", circleColor = "red", ndcScale = false) {
+    drawLinesParametric(pnts, close = false, lineWidth = .01, circleSize = .02
+        , lineColor = "black", circleColor = "green", ndcScale = false) {
         if (pnts.length < 2) {
             return;
         }
@@ -120,6 +121,7 @@ class DrawPrimitives {
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         if (lineWidth > 0) {
             this.ctx.beginPath();
+            this.ctx.lineJoin = "round";
             const pnt = pnts[0];
             this.ctx.moveTo(pnt[0], pnt[1]);
             let idx = 1;
