@@ -158,7 +158,7 @@ class MainApp {
 			const p0 = pnts[i];
 			const p1 = pnts[i + 1];
 			if (this.eles.showAllLevels.checked || level == 1) {
-				this.drawPrim.drawLine(p0, p1, .001, "black");
+				this.drawPrim.drawLine(p0, p1, .002, "black", true);
 			}
 			if (level > 1) {
 				// go deeper

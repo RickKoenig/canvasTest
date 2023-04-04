@@ -75,7 +75,7 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
-    // an array of y values
+    // an array of y values, x steps to the right
     // connected line and optional circles on vertices
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = .02
         , startX = 0, stepX = 1
@@ -115,9 +115,6 @@ class DrawPrimitives {
         if (pnts.length < 2) {
             return;
         }
-        if (lineColor == "blue") {
-            return;
-        }
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         if (lineWidth > 0) {
             this.ctx.beginPath();
@@ -147,6 +144,52 @@ class DrawPrimitives {
                 this.ctx.arc(pnt[0], pnt[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
                 this.ctx.fill();
             }
+        }
+    }
+
+    // draw a polygon with optional outline
+    drawPoly(pnts, outlineRatio = 0 
+        , fillColor = "black", outLineColor = "green") {
+        if (pnts.length < 3) {
+            return;
+        }
+        const outerColor = outlineRatio > 0 ? outLineColor : fillColor;
+        //const ndcZoom = this.plotter2d.getZoom(ndcScale);
+
+        // first pass, outlinecolor  if outlineRatio > 0  or fillcolor
+        this.ctx.beginPath();
+        this.ctx.lineJoin = "round";
+        const pnt = pnts[0];
+        this.ctx.moveTo(pnt[0], pnt[1]);
+        let idx = 1;
+        while(idx < pnts.length) {
+            const pnt = pnts[idx];
+            this.ctx.lineTo(pnt[0], pnt[1]);
+            ++idx;
+        }
+        this.ctx.closePath();
+        this.ctx.fillStyle = outerColor;
+        this.ctx.fill();
+
+        // second pass, fillcolor, only if outlineRatio > 0
+        if (outlineRatio > 0) {
+            this.ctx.save();
+            const scl = 1 - outlineRatio;
+            this.ctx.scale(scl, scl);
+            this.ctx.beginPath();
+            this.ctx.lineJoin = "round";
+            const pnt = pnts[0];
+            this.ctx.moveTo(pnt[0], pnt[1]);
+            let idx = 1;
+            while(idx < pnts.length) {
+                const pnt = pnts[idx];
+                this.ctx.lineTo(pnt[0], pnt[1]);
+                ++idx;
+            }
+            this.ctx.closePath();
+            this.ctx.fillStyle = fillColor;
+            this.ctx.fill();
+            this.ctx.restore();
         }
     }
 

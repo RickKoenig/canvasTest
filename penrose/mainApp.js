@@ -10,10 +10,37 @@ class Tile {
 		}
 		this.rot = rot;
 		this.fat = fat;
+		let ang;
+		if (fat) {
+			ang = 72;
+			this.col = "green";
+		} else {
+			ang = 36;
+			this.col = "red";
+		}
+		ang = degToRad(ang);
+		const sa = .5 * Math.sin(ang);
+		const ca = .5 * Math.cos(ang);
+
+		this.pnts = [
+			[-.5 - ca, -sa],
+			[-.5 + ca,  sa],
+			[ .5 + ca,  sa],
+			[ .5 - ca, -sa]
+		];
 	}
 
 	draw(drawPrim) {
-		drawPrim.drawCircleO(this.pos, .05, .008, "green");
+		//const aPoly = [[-.5, 0], [0, .25], [.5, 0], [0, -.25]];
+		drawPrim.ctx.save();
+		drawPrim.ctx.translate(this.pos[0], this.pos[1]);
+		drawPrim.ctx.rotate(this.rot);
+		drawPrim.drawPoly(this.pnts, .025, this.col, "blue");
+		for (let pnt of this.pnts) {
+			drawPrim.drawCircleO(pnt, .2, .05, "magenta");
+		}
+		drawPrim.ctx.restore();
+		drawPrim.drawCircleO(this.pos, .1, .005, "brown", );
 	}
 }
 
@@ -64,13 +91,13 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		//this.pntRad = .04; // size of point
-		this.pnts = [[1/4, 1/4], [9/8, 1/4], [5/4, 5/4], [11/8, 1/4], [9/4, 1/4]];
 		this.startZoom = .5;
 
 		this.tiles = [];
-		this.tiles.push(new Tile([.5,.5], 0, false));
-		this.tiles.push(new Tile([.75, .5], 0, true));
+		this.tiles.push(new Tile([-1.5,.75], degToRad(0), false));
+		this.tiles.push(new Tile([.75, .5], degToRad(0), true));
+		this.tiles.push(new Tile([-1.5,-1], degToRad(-18), false));
+		this.tiles.push(new Tile([.75, -1.25], degToRad(-36), true));
 	}
 
 	#userBuildUI() {
@@ -98,7 +125,6 @@ class MainApp {
 	}
 
 	#userDraw() {
-		this.drawPrim.drawLinesParametric(this.pnts);
 		for (let tile of this.tiles) {
 			tile.draw(this.drawPrim);
 		}

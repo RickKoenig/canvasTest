@@ -198,6 +198,14 @@ function getIntSect(A, B, C, D) {
 	return null;
 }
 
+function degToRad(a) {
+	return a * (Math.PI / 180);
+}
+
+function radToDeg(a) {
+	return a * (180 / Math.PI);
+}
+
 // 0 <= a < 2 * PI
 function normAngRadUnsigned(a) {
 	let watchDog = 10;
