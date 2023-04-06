@@ -164,8 +164,8 @@ class MainApp {
 	}
 
 	#setDacRange(dacs, sIdx, eIdx, sCol, eCol) {
-		sCol = Bitmap32.colorRGBA(sCol); // convert to .r, .g, .b, .a
-		eCol = Bitmap32.colorRGBA(eCol); // convert to .r, .g, .b, .a
+		sCol = Bitmap32.color32ToRGBA(sCol); // convert to .r, .g, .b, .a
+		eCol = Bitmap32.color32ToRGBA(eCol); // convert to .r, .g, .b, .a
 		for (let i = sIdx; i <= eIdx; ++i) {
 			const r = Math.floor((eCol.r * (i - sIdx) + sCol.r * (eIdx - i)) / (eIdx - sIdx));
 			const g = Math.floor((eCol.g * (i - sIdx) + sCol.g * (eIdx - i)) / (eIdx - sIdx));

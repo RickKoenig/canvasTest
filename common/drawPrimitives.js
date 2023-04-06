@@ -17,10 +17,14 @@ class DrawPrimitives {
     }
 
     drawCircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
+        this.drawArcO(pnt, rad, lineWidth, 0, Math.PI * 2, color, ndcScale);
+    }
+
+    drawArcO(pnt, rad, lineWidth = .01, arcStart, arcEnd, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
-        this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, Math.PI * 2);
+        this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, arcStart, arcEnd);
         this.ctx.strokeStyle = color;
         this.ctx.stroke();
     }
@@ -110,7 +114,7 @@ class DrawPrimitives {
     }
 
     // an array of x,y values, if close is true, connect first point to last point
-    drawLinesParametric(pnts, close = false, lineWidth = .01, circleSize = .02
+    drawLinesParametric(pnts, lineWidth = .01, close = false, circleSize = .02
         , lineColor = "black", circleColor = "green", ndcScale = false) {
         if (pnts.length < 2) {
             return;
@@ -193,10 +197,10 @@ class DrawPrimitives {
         }
     }
 
-    drawText(center, size, txt, fore = "black", back = undefined, ndcScale = false) {
+    drawText(center, size, txt, foreColor = "black", backColor = undefined, ndcScale = false) {
         let textYSize = 1;
-        if (back) {
-            this.drawRectangleCenter(center, [size[0], size[1]], back, ndcScale);
+        if (backColor) {
+            this.drawRectangleCenter(center, [size[0], size[1]], backColor, ndcScale);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';
@@ -208,7 +212,7 @@ class DrawPrimitives {
         const adjCenter = .33; // TODO: no magic numbers, comes from font
         this.ctx.translate(-center[0], -center[1] + adjCenter);
         this.ctx.font = 'bold ' + textYSize + 'px serif';
-        this.ctx.fillStyle = fore; 
+        this.ctx.fillStyle = foreColor; 
         let text = txt;
         
         this.ctx.fillText(text, center[0], center[1]);

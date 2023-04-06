@@ -58,13 +58,15 @@ class Bitmap32 {
 		}
 	}
 
+	// color helper functions
+
 	// helpers for native color
 	// return Uint32 for color hex: AABBGGRR (native)
 	static color32(r = 0, g = 0, b = 0, a = 255) {
 		return 256 * (256 * (256 * a + b) + g) + r;
 	}
 
-	static colorRGBA(c32) {
+	static color32ToRGBA(c32) {
 		const ret = {};
 		ret.r = c32 & 0xff;
 		c32 >>>= 8;
@@ -74,6 +76,10 @@ class Bitmap32 {
 		c32 >>>= 8;
 		ret.a = c32 & 0xff;
 		return ret;
+	}
+
+	static RGBATocolor32(colObj) {
+		return 256 * (256 * (256 * colObj.a + colObj.b) + colObj.g) + colObj.r;
 	}
 
 	 // #rrggbb : hex 00 to ff, no alpha
@@ -114,6 +120,26 @@ class Bitmap32 {
 				   + g.toString(16).padStart(2, "0") 
 				   + b.toString(16).padStart(2, "0") 
 				   + a.toString(16).padStart(2, "0");
+	}
+
+	static #chanMul(chan, mul) {
+		chan *= mul;
+		chan = Math.round(chan);
+		if (chan > 255) {
+			return 255;
+		}
+		return chan;
+	}
+
+	// in CSS str, out CSS str, leave alpha alone
+	static colorMul(colStr, mul) {
+		const col32 = Bitmap32.strToColor32(colStr);
+		let colObj = Bitmap32.color32ToRGBA(col32);
+		colObj.r = Bitmap32.#chanMul(colObj.r, mul);
+		colObj.g = Bitmap32.#chanMul(colObj.g, mul);
+		colObj.b = Bitmap32.#chanMul(colObj.b, mul);
+		const col32Adj = Bitmap32.RGBATocolor32(colObj);
+		return Bitmap32.color32ToStr(col32Adj);
 	}
 
 	fill(color32 = Bitmap32.color32()) {
