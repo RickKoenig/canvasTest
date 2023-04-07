@@ -122,11 +122,22 @@ class Bitmap32 {
 				   + a.toString(16).padStart(2, "0");
 	}
 
-	static #chanMul(chan, mul) {
+	static #chanMul(chan, mul = 1) {
 		chan *= mul;
 		chan = Math.round(chan);
 		if (chan > 255) {
 			return 255;
+		}
+		return chan;
+	}
+
+	static #chanAdd(chan, add = 0) {
+		chan += add * 256;
+		chan = Math.round(chan);
+		if (chan > 255) {
+			return 255;
+		} else if (chan < 0) {
+			return 0;
 		}
 		return chan;
 	}
@@ -138,6 +149,17 @@ class Bitmap32 {
 		colObj.r = Bitmap32.#chanMul(colObj.r, mul);
 		colObj.g = Bitmap32.#chanMul(colObj.g, mul);
 		colObj.b = Bitmap32.#chanMul(colObj.b, mul);
+		const col32Adj = Bitmap32.RGBATocolor32(colObj);
+		return Bitmap32.color32ToStr(col32Adj);
+	}
+
+	// in CSS str, out CSS str, leave alpha alone
+	static colorAdd(colStr, add) {
+		const col32 = Bitmap32.strToColor32(colStr);
+		let colObj = Bitmap32.color32ToRGBA(col32);
+		colObj.r = Bitmap32.#chanAdd(colObj.r, add);
+		colObj.g = Bitmap32.#chanAdd(colObj.g, add);
+		colObj.b = Bitmap32.#chanAdd(colObj.b, add);
 		const col32Adj = Bitmap32.RGBATocolor32(colObj);
 		return Bitmap32.color32ToStr(col32Adj);
 	}

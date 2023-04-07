@@ -2,7 +2,7 @@
 
 // a Penrose tile
 class Tile {
-	constructor(pos, rot = 0, fat = false, colMul = 1) {
+	constructor(pos, rot = 0, fat = false, colHilit) {
 		if (pos) {
 			this.pos = vec2.clone(pos);
 		} else {
@@ -28,33 +28,36 @@ class Tile {
 			[ .5 + ca,  sa],
 			[ .5 - ca, -sa]
 		];
-
-		this.colMul = colMul;
+		// decide between mul or add
+		this.colAdjust = colHilit ? .3 : 0;
 	}
 
 	draw(drawPrim) {
 		const ctx = drawPrim.ctx;
-		//const aPoly = [[-.5, 0], [0, .25], [.5, 0], [0, -.25]];
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
 		ctx.rotate(this.rot);
-		drawPrim.drawPoly(this.pnts, .025, Bitmap32.colorMul(this.col, this.colMul), "black");
-		const col1 = "#2040ff";
-		const col2 = "indianred";
+		const colHilit = Bitmap32.colorAdd(this.col, this.colAdjust);
+		drawPrim.drawPoly(this.pnts, .025, colHilit, "black");
+		const col1 = "#2040ff";   // a blue
+		const col2 = "indianred"; // a red
+		const col1Hilit = Bitmap32.colorAdd(col1, this.colAdjust);
+		const col2Hilit = Bitmap32.colorAdd(col2, this.colAdjust);
 		if (this.fat) {
-			drawPrim.drawArcO(this.pnts[0], .25, .075, degToRad(0), degToRad(72), Bitmap32.colorMul(col1, this.colMul));
-			drawPrim.drawArcO(this.pnts[2], .75, .075, degToRad(180), degToRad(180 + 72), Bitmap32.colorMul(col2, this.colMul));
+			drawPrim.drawArcO(this.pnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
+			drawPrim.drawArcO(this.pnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
 		} else {
-			drawPrim.drawArcO(this.pnts[1], .25, .075, degToRad(180 + 36), degToRad(0), Bitmap32.colorMul(col1, this.colMul));
-			drawPrim.drawArcO(this.pnts[3], .25, .075, degToRad(36), degToRad(180 ), Bitmap32.colorMul(col2, this.colMul));
+			drawPrim.drawArcO(this.pnts[1], .25, .075, degToRad(180 + 36), degToRad(0), col1Hilit);
+			drawPrim.drawArcO(this.pnts[3], .25, .075, degToRad(36), degToRad(180 ), col2Hilit);
 		}
-		/*for (let i in this.pnts) {
-			const pnt = this.pnts[i];
-			drawPrim.drawArcO(pnt, .2, .05, degToRad(30), degToRad(60), "magenta");
-		}*/
 		ctx.restore();
 		drawPrim.drawCircle(this.pos, .025, "brown", ); // center
 	}
+}
+
+// a collection of Penrose tiles
+class Tiles {
+	
 }
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
@@ -109,8 +112,10 @@ class MainApp {
 		this.tiles = [];
 		this.tiles.push(new Tile([-1.5,.75], degToRad(0), false));
 		this.tiles.push(new Tile([.75, .5], degToRad(0), true));
-		this.tiles.push(new Tile([-1.5,-1], degToRad(-18), false, 1.5));
-		this.tiles.push(new Tile([.75, -1.25], degToRad(-36), true, 1.5));
+		this.tiles.push(new Tile([-1.5,-1], degToRad(-18), false, .3));
+		this.tiles.push(new Tile([.75, -1.25], degToRad(-36), true, .3));
+//		this.tiles.push(new Tile([-1.5,-1], degToRad(-18), false, 1.5));
+//		this.tiles.push(new Tile([.75, -1.25], degToRad(-36), true, 1.5));
 	}
 
 	#userBuildUI() {

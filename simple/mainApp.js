@@ -4,7 +4,7 @@ let codeWord;
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("javacript tests!");
-	//inheritanceTests();
+	inheritanceTests();
 	//codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");
 }
