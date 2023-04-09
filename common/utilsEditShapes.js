@@ -2,12 +2,11 @@
 
 // drag points around and add and remove them
 class EditPnts {
-
 	// all based on pntRad
 	static lineWidth = .1;
 	static circleWidth = .2;
 	static editCircleSize = 1.5;
-	static addPointDist = 50; // how far away to select point for adding
+	static addPointDist = 16; // how far away to select point for adding
 
 	constructor(pnts, pntRad, addRemove = false, minPnts = 0, maxPnts = -1) {
 		this.pnts = pnts;
@@ -165,7 +164,7 @@ class EditPnts {
 				if (doHilit && this.pnts.length > this.minPnts) {
 					drawPrim.drawCircleO(this.pnts[i], this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "red");
 					if (i > 0 && i < this.pnts.length - 1) {
-						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * EditPnts.lineWidth, "red");
+						drawPrim.drawLine(this.pnts[i - 1], this.pnts[i + 1], this.pntRad * EditPnts.lineWidth, "green");
 					}
 					isOver = true;
 				}
@@ -173,17 +172,100 @@ class EditPnts {
 		}
 		// add
 		if (this.addRemove && !isOver) {
-			drawPrim.drawCircleO(userMouse
-				, this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "green");
+			let drawTheInsertCircle = true;
 			if (this.pnts.length > 0) {
+				drawTheInsertCircle = false;
 				const addIdx = this.#calcAddIdx(userMouse);
 				if (addIdx > 0) { // before point
 					drawPrim.drawLine(userMouse, this.pnts[addIdx - 1], this.pntRad * EditPnts.lineWidth, "green");
+					drawTheInsertCircle = true;
 				}
 				if (addIdx != -1 && addIdx < this.pnts.length) { // after point
 					drawPrim.drawLine(userMouse, this.pnts[addIdx], this.pntRad * EditPnts.lineWidth, "green");
+					drawTheInsertCircle = true;
 				}
 			}
+			if (drawTheInsertCircle) {
+				drawPrim.drawCircleO(userMouse
+					, this.pntRad * EditPnts.editCircleSize, this.pntRad * EditPnts.circleWidth, "green");
+			}
+		}
+	}
+}
+
+
+
+// ##############################################         ##########################################
+// ##############################################         ##########################################
+
+
+
+// drag shapes around
+class EditShapes {
+	constructor(shapes) {
+		this.shapes = shapes;
+		this.curPntIdx = -1; // current select point for edit
+		this.hilitPntIdx = -1; // hover over
+		this.pntRad = .25;
+	}
+
+	getHilitIdx() {
+		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
+		return hilitIdx;
+	}
+
+	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
+		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
+		this.hilitPntIdx = -1
+		// edit stuff on the graph paper
+		let but = mouse.mbut[Mouse.LEFT];
+		let lastBut = mouse.lmbut[Mouse.LEFT];
+
+		// hilit hover
+		// check topmost points first
+		for (let i = this.shapes.length - 1; i >= 0; --i) {
+			const isInside
+				= vec2.squaredDistance(this.shapes[i].pos, userMouse) 
+				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
+			if (isInside) {
+				this.hilitPntIdx = i;
+				break;
+			}
+		}
+		if (this.curPntIdx < 0) {
+			// nothing selected
+			if (this.hilitPntIdx >= 0) {
+				// something hilighted
+				if (but && !lastBut) {
+					//mouse button down
+					this.curPntIdx = this.hilitPntIdx;
+				}
+			}
+		}
+		if (but) {
+			dirt = true;
+		} else {
+			//deselect point when mouse not pressed
+			this.curPntIdx = -1;
+		}
+			
+		//  move selected point
+		if (this.curPntIdx >= 0) {
+			this.shapes[this.curPntIdx].pos = userMouse;
+		}
+		return dirt;
+	}
+
+	draw(drawPrim) {
+		const hilitPntIdx2 = this.getHilitIdx();
+		const ctx = drawPrim.ctx;
+		for (let j = 0; j < this.shapes.length; ++j) {
+			const shape = this.shapes[j];
+			ctx.save();
+			ctx.translate(shape.pos[0], shape.pos[1]);
+			ctx.rotate(shape.rot);
+			shape.draw(drawPrim, hilitPntIdx2 == j);
+			ctx.restore();
 		}
 	}
 }

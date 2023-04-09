@@ -9,6 +9,57 @@ function javaScriptTests() {
 	//console.log("codeword = '" + codeWord + "'");
 }
 
+// a test tile
+class SimpleTile {
+	static polyPnts = [
+		[0, 0],
+		[0, .5],
+		[.5, 0]
+	];
+
+	// called only once, center and calc N and D
+	static setupPolyPnts() {
+		const avg = vec2.create();
+		for (let pnt of this.polyPnts) {
+			vec2.add(avg, avg, pnt);
+		}
+		vec2.scale(avg, avg, 1 / this.polyPnts.length);
+		for (let pnt of this.polyPnts) {
+			vec2.sub(pnt, pnt, avg);
+		}
+		this.norms  = [];
+		this.Ds = [];
+		for (let pnt of this.polyPnts) {
+			this.norms.push([3,4]);
+			this.Ds.push(5);
+
+		}
+	}
+
+	constructor(pos, rot) {
+		if (pos) {
+			this.pos = vec2.clone(pos);
+		} else {
+			this.pos = vec2.create();
+		}
+		if (rot !== undefined) {
+			this.rot = rot;
+		} else {
+			this.rot = 0;
+		}
+
+	}
+
+	draw(drawPrim, doHilit = false) {
+		const colAdjust = doHilit ? .3 : 0;
+		const colHilit = Bitmap32.colorAdd("green", colAdjust);
+		drawPrim.drawPoly(SimpleTile.polyPnts, .025, colHilit, "black");
+		drawPrim.drawCircle([0,0], .025, "brown", ); // center
+	}
+}
+SimpleTile.setupPolyPnts(); // call once, setup some statics
+
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
@@ -72,13 +123,20 @@ class MainApp {
 
 		const numPnts2 = 6; // some more editable points, test add remove and generic draw
 		this.pntRad2 = .05; // size of point
-		this.pnts2 = createArray(numPnts2, 2); // array of 'two' dimensional points
+		const pnts2 = createArray(numPnts2, 2); // array of 'two' dimensional points
+
+		const shapes = [];
 		for (let i = 0; i < numPnts2; ++i) {
-			this.pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i - .375 * (i % 2)];
+			pnts2[i] = [.25 + .5 * i, 1.5 + .25 * i - .375 * (i % 2)];
 		}
+		shapes.push(new SimpleTile([-3, 1], 0));
+		shapes.push(new SimpleTile([-2, 1.5], 0));
+		shapes.push(new SimpleTile([-1, 1.25], 0));
+
 		// interactive edit of points
 		this.editPnts = new EditPnts(this.pnts, this.pntRad); // defaults, no add remove points
-		this.editPnts2 = new EditPnts(this.pnts2, this.pntRad2, startAddRemovePoints, minPnts, maxPnts);
+		this.editPnts2 = new EditPnts(pnts2, this.pntRad2, startAddRemovePoints, minPnts, maxPnts);
+		this.editShapes = new EditShapes(shapes);
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 1];
@@ -121,6 +179,7 @@ class MainApp {
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		this.dirty = this.editPnts.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.dirty = this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		this.dirty = this.editShapes.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 	}
 
 	#userDraw() {
@@ -136,6 +195,7 @@ class MainApp {
 		}
 		this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
 		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.editShapes.draw(this.drawPrim, this.plotter2d.userMouse);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
