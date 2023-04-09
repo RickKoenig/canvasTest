@@ -9,13 +9,20 @@ function javaScriptTests() {
 	//console.log("codeword = '" + codeWord + "'");
 }
 
-// a test tile
-class SimpleTile {
-	static polyPnts = [
-		[0, 0],
-		[0, .5],
-		[.5, 0]
-	];
+// a generic poly tile
+class ShapeTile {
+	constructor(pos, rot) {
+		if (pos) {
+			this.pos = vec2.clone(pos);
+		} else {
+			this.pos = vec2.create();
+		}
+		if (rot !== undefined) {
+			this.rot = rot;
+		} else {
+			this.rot = 0;
+		}
+	}
 
 	// called only once, center and calc N and D
 	static setupPolyPnts() {
@@ -32,23 +39,17 @@ class SimpleTile {
 		for (let pnt of this.polyPnts) {
 			this.norms.push([3,4]);
 			this.Ds.push(5);
-
 		}
 	}
+}
 
-	constructor(pos, rot) {
-		if (pos) {
-			this.pos = vec2.clone(pos);
-		} else {
-			this.pos = vec2.create();
-		}
-		if (rot !== undefined) {
-			this.rot = rot;
-		} else {
-			this.rot = 0;
-		}
-
-	}
+// a test tile
+class SimpleTile extends ShapeTile{
+	static polyPnts = [
+		[0, 0],
+		[0, .5],
+		[.5, 0]
+	];
 
 	draw(drawPrim, doHilit = false) {
 		const colAdjust = doHilit ? .3 : 0;
@@ -58,7 +59,6 @@ class SimpleTile {
 	}
 }
 SimpleTile.setupPolyPnts(); // call once, setup some statics
-
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
