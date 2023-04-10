@@ -1,6 +1,9 @@
 'use strict';
 
 // math helpers
+
+
+// 1d
 function range(a,b,c) {
 	if (b<a)
 		return a;
@@ -34,29 +37,8 @@ function getRandomInt(max) {
 	return Math.floor(Math.random() * max);
 }
 
-function midPnt(out, p0, p1) {
-	vec2.add(out, p1, p0);
-	vec2.scale(out, out, .5);
-}
-
 function lerp(A, B, t) {
 	return A + (B - A) * t;
-}
-
-function getIntSect(A, B, C, D) {
-	const tTop  = (D[0] - C[0]) * (A[1] - C[1]) 
-				- (D[1] - C[1]) * (A[0] - C[0]);
-	const uTop  = (C[1] - A[1]) * (A[0] - B[0]) 
-				- (C[0] - A[0]) * (A[1] - B[1]);
-	const bottom  = (D[1] - C[1]) * (B[0] - A[0]) 
-				  - (D[0] - C[0]) * (B[1] - A[1]);
-    
-	if (bottom != 0) {
-		const t = tTop / bottom;
-		const u = uTop / bottom;
-		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
-	}
-	return null;
 }
 
 function degToRad(a) {
@@ -107,4 +89,41 @@ function normAngRadSigned(a) {
 		}
 	}
 	return a;
+}
+
+// 2d
+function midPnt(out, p0, p1) {
+	vec2.add(out, p1, p0);
+	vec2.scale(out, out, .5);
+}
+
+// given line segments A-B and  C-D return the intersection point OR null if no intersection
+function getIntSect(A, B, C, D) {
+	const tTop  = (D[0] - C[0]) * (A[1] - C[1]) 
+				- (D[1] - C[1]) * (A[0] - C[0]);
+	const uTop  = (C[1] - A[1]) * (A[0] - B[0]) 
+				- (C[0] - A[0]) * (A[1] - B[1]);
+	const bottom  = (D[1] - C[1]) * (B[0] - A[0]) 
+				  - (D[0] - C[0]) * (B[1] - A[1]);
+	if (bottom != 0) {
+		const t = tTop / bottom;
+		const u = uTop / bottom;
+		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
+	}
+	return null;
+}
+
+// how far a test point 'T' goes 'inside' line 'P0' to 'P1'
+function penetrate(P0, P1, T) {
+	// dummy
+	//return (P0[0] + P1[0]) * .5 - T[0];
+
+	// real deal
+	const N = vec2.create();
+	vec2.sub(N, P1, P0);
+	vec2.perp(N, N);
+	vec2.normalize(N, N);
+	const D = vec2.dot(N, P0); // or P1, doesn't matter
+	return D - vec2.dot(N, T);
+
 }

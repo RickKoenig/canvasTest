@@ -261,11 +261,14 @@ class EditShapes {
 		const ctx = drawPrim.ctx;
 		for (let j = 0; j < this.shapes.length; ++j) {
 			const shape = this.shapes[j];
+			/*
 			ctx.save();
 			ctx.translate(shape.pos[0], shape.pos[1]);
 			ctx.rotate(shape.rot);
 			shape.draw(drawPrim, hilitPntIdx2 == j);
 			ctx.restore();
+			*/
+			shape.draw(drawPrim, hilitPntIdx2 == j);
 		}
 	}
 }
