@@ -1,5 +1,8 @@
 'use strict';
 
+// ##############################################  EditPnts  ##########################################
+// ##############################################  EditPnts  ##########################################
+
 // drag points around and add and remove them
 class EditPnts {
 	// all based on pntRad
@@ -90,10 +93,10 @@ class EditPnts {
 		// hilit hover
 		// check topmost points first
 		for (let i = this.pnts.length - 1; i >= 0; --i) {
-			const isInside
+			const inside
 				= vec2.squaredDistance(this.pnts[i], userMouse) 
 				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
-			if (isInside) {
+			if (inside) {
 				this.hilitPntIdx = i;
 				break;
 			}
@@ -195,8 +198,56 @@ class EditPnts {
 
 
 
-// ##############################################         ##########################################
-// ##############################################         ##########################################
+// ##############################################  ShapeTile  ##########################################
+// ##############################################  ShapeTile  ##########################################
+
+// a generic poly tile, abstract, needs polyPnts and draw(drawPrim, doHilit = false)
+class ShapeTile {
+	constructor(pos, rot) {
+		if (pos) {
+			this.pos = vec2.clone(pos);
+		} else {
+			this.pos = vec2.create();
+		}
+		if (rot !== undefined) {
+			this.rot = rot;
+		} else {
+			this.rot = 0;
+		}
+	}
+
+	// called only once, center and TODO: calc N and D
+	static setupPolyPnts() {
+		const avg = vec2.create();
+		for (let pnt of this.polyPnts) {
+			vec2.add(avg, avg, pnt);
+		}
+		vec2.scale(avg, avg, 1 / this.polyPnts.length);
+		for (let pnt of this.polyPnts) {
+			vec2.sub(pnt, pnt, avg);
+		}
+		/*
+		this.norms  = [];
+		this.Ds = [];
+		for (let pnt of this.polyPnts) {
+			this.norms.push([3,4]);
+			this.Ds.push(5);
+		}*/
+	}
+
+	isInside(userMouse) {
+		return penetrateConvexPoly(SimpleTile.polyPnts, userMouse, this.pos, this.rot) > 0;
+		//return false;
+
+		
+		//const pntRad = .25;
+		//return vec2.squaredDistance(userMouse, this.pos) < pntRad * pntRad; // one less space to stop fictional errors, VSC
+		
+
+	}
+
+}
+
 
 
 
@@ -224,10 +275,9 @@ class EditShapes {
 		// hilit hover
 		// check topmost points first
 		for (let i = this.shapes.length - 1; i >= 0; --i) {
-			const isInside
-				= vec2.squaredDistance(this.shapes[i].pos, userMouse) 
-				< this.pntRad* this.pntRad; // one less space to stop fictional errors, VSC
-			if (isInside) {
+			const shape = this.shapes[i];
+			const inside = shape.isInside(userMouse);
+			if (inside) {
 				this.hilitPntIdx = i;
 				break;
 			}
@@ -248,7 +298,6 @@ class EditShapes {
 			//deselect point when mouse not pressed
 			this.curPntIdx = -1;
 		}
-			
 		//  move selected point
 		if (this.curPntIdx >= 0) {
 			this.shapes[this.curPntIdx].pos = userMouse;
@@ -261,13 +310,6 @@ class EditShapes {
 		const ctx = drawPrim.ctx;
 		for (let j = 0; j < this.shapes.length; ++j) {
 			const shape = this.shapes[j];
-			/*
-			ctx.save();
-			ctx.translate(shape.pos[0], shape.pos[1]);
-			ctx.rotate(shape.rot);
-			shape.draw(drawPrim, hilitPntIdx2 == j);
-			ctx.restore();
-			*/
 			shape.draw(drawPrim, hilitPntIdx2 == j);
 		}
 	}

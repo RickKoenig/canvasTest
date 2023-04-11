@@ -296,7 +296,7 @@ vec2.negate = function(out, a) {
 };
 
 /**
- * rotate the components of a vec2 90 degrees
+ * rotate a vec2 90 degrees
  *
  * @param {vec2} out the receiving vector
  * @param {vec2} a vector to rotate 90 degrees
@@ -308,6 +308,29 @@ vec2.perp = function(out, a) {
     out[1] = t;
     return out;
 };
+
+/**
+ * rotate a vec2 by rad
+ *
+ * @param {vec2} out the receiving vector
+ * @param {vec2} a vector to rotate
+ * @param {Number} rad angle amount to rotate
+ * @returns {vec2} out
+ */
+vec2.rot = function(out, a, rad) {
+    const a0 = a[0];
+    const a1 = a[1];
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    out[0] = a0 * c - a1 * s;
+    out[1] = a0 * s + a1 * c;
+    return out;
+};
+/**
+ * Alias for {@link vec2.rot}
+ * @function
+ */
+vec2.rotate = vec2.rot;
 
 /**
  * Normalize a vec2

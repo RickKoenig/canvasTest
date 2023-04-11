@@ -113,17 +113,36 @@ function getIntSect(A, B, C, D) {
 	return null;
 }
 
-// how far a test point 'T' goes 'inside' line 'P0' to 'P1'
-function penetrate(P0, P1, T) {
-	// dummy
-	//return (P0[0] + P1[0]) * .5 - T[0];
-
-	// real deal
+// how far a test point 'T' goes 'inside' line 'P0' to 'P1' (opposite of normal)
+// TODO: optimize, cache N and D
+function penetrateLine(P0, P1, T, offset, rot) {
 	const N = vec2.create();
 	vec2.sub(N, P1, P0);
 	vec2.perp(N, N);
 	vec2.normalize(N, N);
 	const D = vec2.dot(N, P0); // or P1, doesn't matter
-	return D - vec2.dot(N, T);
+	const Toff = vec2.create();
+	//vec2.rot(N, N, rot);
+	if (offset) {
+		vec2.sub(Toff, T, offset);
+	} else {
+		vec2.copy(Toff, T);
+	}
+	vec2.rotate(Toff, Toff, -rot);
+	return D - vec2.dot(N, Toff);
+}
 
+// TODO: cache N and D
+// how far T is inside pnts
+function penetrateConvexPoly(pnts, T, offset, rot) {
+	let pen = Number.MAX_VALUE;
+	for (let j = 0; j < pnts.length; ++j) {
+		const P0 = pnts[j];
+		const P1 = pnts[(j + 1) % pnts.length];
+		const p = penetrateLine(P0, P1, T, offset, rot);
+		if (p < pen) {
+			pen = p;
+		}
+	}
+	return pen;
 }

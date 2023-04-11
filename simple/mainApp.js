@@ -4,49 +4,15 @@ let codeWord;
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("javacript tests!");
-	inheritanceTests();
+	//inheritanceTests();
 	//codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");
-}
-
-// a generic poly tile
-class ShapeTile {
-	constructor(pos, rot) {
-		if (pos) {
-			this.pos = vec2.clone(pos);
-		} else {
-			this.pos = vec2.create();
-		}
-		if (rot !== undefined) {
-			this.rot = rot;
-		} else {
-			this.rot = 0;
-		}
-	}
-
-	// called only once, center and calc N and D
-	static setupPolyPnts() {
-		const avg = vec2.create();
-		for (let pnt of this.polyPnts) {
-			vec2.add(avg, avg, pnt);
-		}
-		vec2.scale(avg, avg, 1 / this.polyPnts.length);
-		for (let pnt of this.polyPnts) {
-			vec2.sub(pnt, pnt, avg);
-		}
-		this.norms  = [];
-		this.Ds = [];
-		for (let pnt of this.polyPnts) {
-			this.norms.push([3,4]);
-			this.Ds.push(5);
-		}
-	}
 }
 
 // a test tile
 class SimpleTile extends ShapeTile {
 	static polyPnts = [
-		[0, 0],
+		[-.25, .25],
 		[0, .5],
 		[.5, 0]
 	];
@@ -55,19 +21,17 @@ class SimpleTile extends ShapeTile {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd("green", colAdjust);
-
-
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
 		ctx.rotate(this.rot);
 		drawPrim.drawPoly(SimpleTile.polyPnts, .025, colHilit, "black");
 		drawPrim.drawCircle([0,0], .025, "brown", ); // center
 		ctx.restore();
-
-
 	}
 }
-SimpleTile.setupPolyPnts(); // call once, setup some statics
+SimpleTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
+
+class SimpleTile2 {}// TODO
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -147,11 +111,11 @@ class MainApp {
 		this.editPnts2 = new EditPnts(pnts2, this.pntRad2, startAddRemovePoints2, minPnts2, maxPnts2);
 
 		// shapes, test simple shapes
-		const shapes = [];
-		shapes.push(new SimpleTile([-3, 2], 0));
-		shapes.push(new SimpleTile([-2, 2.5], degToRad(30)));
-		shapes.push(new SimpleTile([-1, 2.25], degToRad(45)));
-		this.editShapes = new EditShapes(shapes);
+		this.shapes = [];
+		this.shapes.push(new SimpleTile([0, 0], degToRad(0)));
+		this.shapes.push(new SimpleTile([-2, 2.5], 30));
+		this.shapes.push(new SimpleTile([-1, 2.25], degToRad(45)));
+		this.editShapes = new EditShapes(this.shapes);
 
 		// pnts 3, test inside outside stuff, first start with a line
 		this.pnts3 = [[-1.75, 1.5], [-1.5, -1.25]];
@@ -164,8 +128,8 @@ class MainApp {
 		const maxX = 1;
 		const minY = -1;
 		const maxY = 1;
-		const numX = 20;
-		const numY = 20;
+		const numX = 80;
+		const numY = 80;
 		for (let j = 0; j < numY; ++j) {
 			let Y = minY + (maxY - minY) * j / (numY - 1);
 			for (let i = 0; i < numX; ++i) {
@@ -177,7 +141,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .5;
+		this.startZoom = .9;
 	}
 
 	#userBuildUI() {
@@ -212,6 +176,7 @@ class MainApp {
 	
 	#userProc() {
 		// proc
+		//this.dirty = true;
 		// update FPS
 		if (this.oldTime === undefined) {
 			this.oldTime = performance.now();
@@ -255,9 +220,12 @@ class MainApp {
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
 
 		// test point grid
+		const shapePos = this.shapes[0].pos;
+		const shapeRot = this.shapes[0].rot;
 		for (let pnt of this.testPntsGrid) {
-			const pen = penetrate(this.pnts3[0], this.pnts3[1], pnt);
-			this.drawPrim.drawCircle(pnt, .0125, pen > 0 ? "green" : "red"); // green inside, red outside
+			//const pen = penetrateLine(this.pnts3[0], this.pnts3[1], pnt);
+			const pen = penetrateConvexPoly(SimpleTile.polyPnts, pnt, shapePos, shapeRot);
+			this.drawPrim.drawCircle(pnt, .0075, pen > 0 ? "black" : "red"); // black inside, red outside
 		}
 	}
 

@@ -486,12 +486,11 @@ class MainApp {
 		// hilit current palette color
 		const mxy = this.input.mouse.mxy;
 		const palIdx = work8BmZoom.clipGetPixel(mxy);
-		// TODO: clipRectO
 		const black = this.colorsEnum.black;
-		work8BmZoom.clipLine([palIdx *4 - 1, 0], [palIdx *4 - 1, 15], black);
-		work8BmZoom.clipLine([palIdx *4 - 2, 0], [palIdx *4 - 2, 15], black);
-		work8BmZoom.clipLine([palIdx *4 + 4, 0], [palIdx *4 + 4, 15], black);
-		work8BmZoom.clipLine([palIdx *4 + 5, 0], [palIdx *4 + 5, 15], black);
+		work8BmZoom.clipLine([palIdx * 4 - 1, 0], [palIdx * 4 - 1, 15], black);
+		work8BmZoom.clipLine([palIdx * 4 - 2, 0], [palIdx * 4 - 2, 15], black);
+		work8BmZoom.clipLine([palIdx * 4 + 4, 0], [palIdx * 4 + 4, 15], black);
+		work8BmZoom.clipLine([palIdx * 4 + 5, 0], [palIdx * 4 + 5, 15], black);
 
 		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
 
