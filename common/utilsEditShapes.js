@@ -78,7 +78,7 @@ class EditPnts {
 		return ret;
 	}
 
-	getHilitIdx() {
+	getHilitIdx() { // selected has higher priority than hilit
 		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
 		return hilitIdx;
 	}
@@ -115,6 +115,9 @@ class EditPnts {
 			dirt = true;
 		} else {
 			//deselect point when mouse not pressed
+			if (this.curPntIdx >= 0) {
+				dirt = true;
+			}
 			this.curPntIdx = -1;
 		}
 			
@@ -201,9 +204,10 @@ class EditPnts {
 // ##############################################  ShapeTile  ##########################################
 // ##############################################  ShapeTile  ##########################################
 
-// a generic poly tile, abstract, needs polyPnts and draw(drawPrim, doHilit = false)
+// a generic poly tile, abstract, needs a draw(drawPrim, doHilit = false)
 class ShapeTile {
-	constructor(pos, rot) {
+	constructor(poly, pos, rot) {
+		this.poly = poly;
 		if (pos) {
 			this.pos = vec2.clone(pos);
 		} else {
@@ -236,7 +240,7 @@ class ShapeTile {
 	}
 
 	isInside(userMouse) {
-		return penetrateConvexPoly(SimpleTile.polyPnts, userMouse, this.pos, this.rot) > 0;
+		return penetrateConvexPoly(this.poly, userMouse, this.pos, this.rot) > 0;
 		//return false;
 
 		
@@ -254,13 +258,13 @@ class ShapeTile {
 // drag shapes around
 class EditShapes {
 	constructor(shapes) {
-		this.shapes = shapes;
+		this.shapes = shapes; // ShapeTile or derived classes
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
-		this.pntRad = .25;
+		this.regPoint = vec2.create(); // where in shape mouse is clicked on selection
 	}
 
-	getHilitIdx() {
+	getHilitIdx() { // selected has higher priority than hilit
 		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
 		return hilitIdx;
 	}
@@ -287,20 +291,30 @@ class EditShapes {
 			if (this.hilitPntIdx >= 0) {
 				// something hilighted
 				if (but && !lastBut) {
-					//mouse button down
+					//mouse button up to down, SELECT a piece for movement
 					this.curPntIdx = this.hilitPntIdx;
+					vec2.sub(this.regPoint, userMouse, this.shapes[this.curPntIdx].pos);
+					const moveToTop = true;
+					if (moveToTop) {
+						const result = this.shapes.splice(this.curPntIdx, 1);
+						this.shapes.push(result[0]);
+						this.curPntIdx = this.shapes.length - 1;
+					}
 				}
 			}
 		}
 		if (but) {
 			dirt = true;
 		} else {
-			//deselect point when mouse not pressed
+			// DESELECT point when mouse not pressed
+			if (this.curPntIdx >= 0) {
+				dirt = true;
+			}
 			this.curPntIdx = -1;
 		}
-		//  move selected point
+		//  MOVE selected point
 		if (this.curPntIdx >= 0) {
-			this.shapes[this.curPntIdx].pos = userMouse;
+			vec2.sub(this.shapes[this.curPntIdx].pos, userMouse, this.regPoint);
 		}
 		return dirt;
 	}
@@ -310,7 +324,7 @@ class EditShapes {
 		const ctx = drawPrim.ctx;
 		for (let j = 0; j < this.shapes.length; ++j) {
 			const shape = this.shapes[j];
-			shape.draw(drawPrim, hilitPntIdx2 == j);
+			shape.draw(drawPrim, j, hilitPntIdx2 == j);
 		}
 	}
 }

@@ -7,6 +7,12 @@ function javaScriptTests() {
 	//inheritanceTests();
 	//codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");
+	const arr = [100, 101, 102, 103, 104];
+	console.log("arr before = " + arr);
+	const result = arr.splice(4, 1);
+	arr.push(result[0]);
+	console.log("arr after  = " + arr);
+	console.log("result = " + result);
 }
 
 // a test tile
@@ -17,21 +23,59 @@ class SimpleTile extends ShapeTile {
 		[.5, 0]
 	];
 
-	draw(drawPrim, doHilit = false) {
+	constructor(pos, rot) {
+		super(SimpleTile.polyPnts, pos, rot);
+	}
+
+	draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd("green", colAdjust);
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
+		ctx.save();
 		ctx.rotate(this.rot);
-		drawPrim.drawPoly(SimpleTile.polyPnts, .025, colHilit, "black");
-		drawPrim.drawCircle([0,0], .025, "brown", ); // center
+		drawPrim.drawPoly(this.poly, .025, colHilit, "black");
+		const radius = .025;
+		drawPrim.drawCircle([0,0], radius, "brown", ); // center
+		const size = radius * 2;
+		ctx.restore(); // don't rotate the text
+		drawPrim.drawText([0, 0], [size, size], id, "white");
 		ctx.restore();
 	}
 }
 SimpleTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
 
-class SimpleTile2 {}// TODO
+// another test tile
+class SimpleTile2 extends ShapeTile {
+	static polyPnts = [
+		[-.25, 0],
+		[0, .5],
+		[.25, 0]
+	];
+
+	constructor(pos, rot) {
+		super(SimpleTile2.polyPnts, pos, rot);
+	}
+
+	draw(drawPrim, id, doHilit = false) {
+		const ctx = drawPrim.ctx;
+		const colAdjust = doHilit ? .3 : 0;
+		const colHilit = Bitmap32.colorAdd("gray", colAdjust);
+		ctx.save();
+		ctx.translate(this.pos[0], this.pos[1]);
+		ctx.save();
+		ctx.rotate(this.rot);
+		drawPrim.drawPoly(this.poly, .025, colHilit, "blue");
+		const radius = .025;
+		drawPrim.drawCircle([0,0], radius, "red", ); // center
+		const size = radius * 2;
+		ctx.restore(); // don't rotate the text
+		drawPrim.drawText([0, 0], [size, size], id, "black");
+		ctx.restore();
+	}
+}
+SimpleTile2.setupPolyPnts(); // call once, center points,  maybe setup some statics
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -112,9 +156,12 @@ class MainApp {
 
 		// shapes, test simple shapes
 		this.shapes = [];
-		this.shapes.push(new SimpleTile([0, 0], degToRad(0)));
-		this.shapes.push(new SimpleTile([-2, 2.5], 30));
-		this.shapes.push(new SimpleTile([-1, 2.25], degToRad(45)));
+		this.shapes.push(new SimpleTile([0, 0], degToRad(30)));
+		this.shapes.push(new SimpleTile([0, .375], degToRad(0)));
+		this.shapes.push(new SimpleTile([0, .75], degToRad(45)));
+		this.shapes.push(new SimpleTile2([1, 0], degToRad(30)));
+		this.shapes.push(new SimpleTile2([1, .375], degToRad(0)));
+		this.shapes.push(new SimpleTile2([1, .75], degToRad(45)));
 		this.editShapes = new EditShapes(this.shapes);
 
 		// pnts 3, test inside outside stuff, first start with a line
@@ -123,7 +170,9 @@ class MainApp {
 		this.pntRad3 = .05; // size of point
 		this.editPnts3 = new EditPnts(this.pnts3, this.pntRad3); // defaults, no add remove points
 
-		this.testPntsGrid = []; // an array of points to test against pnts3 line
+		/*
+		// an array of points to test against pnts3 line
+		this.testPntsGrid = []; 
 		const minX = -1;
 		const maxX = 1;
 		const minY = -1;
@@ -137,7 +186,7 @@ class MainApp {
 				const pnt = [X, Y];
 				this.testPntsGrid.push(pnt);
 			}
-		}
+		}*/
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
@@ -219,14 +268,14 @@ class MainApp {
 		// pnts 2
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
 
-		// test point grid
+		/*// test point grid
 		const shapePos = this.shapes[0].pos;
 		const shapeRot = this.shapes[0].rot;
 		for (let pnt of this.testPntsGrid) {
 			//const pen = penetrateLine(this.pnts3[0], this.pnts3[1], pnt);
 			const pen = penetrateConvexPoly(SimpleTile.polyPnts, pnt, shapePos, shapeRot);
 			this.drawPrim.drawCircle(pnt, .0075, pen > 0 ? "black" : "red"); // black inside, red outside
-		}
+		}*/
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
