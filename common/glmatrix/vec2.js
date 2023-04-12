@@ -317,11 +317,11 @@ vec2.perp = function(out, a) {
  * @param {Number} rad angle amount to rotate
  * @returns {vec2} out
  */
-vec2.rot = function(out, a, rad) {
+vec2.rot = function(out, a, rotAng) {
     const a0 = a[0];
     const a1 = a[1];
-    const c = Math.cos(rad);
-    const s = Math.sin(rad);
+    const c = Math.cos(rotAng);
+    const s = Math.sin(rotAng);
     out[0] = a0 * c - a1 * s;
     out[1] = a0 * s + a1 * c;
     return out;

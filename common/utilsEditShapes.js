@@ -261,6 +261,8 @@ class EditShapes {
 		this.shapes = shapes; // ShapeTile or derived classes
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
+		this.startRot = 0;
+		this.startRegPoint = vec2.create();
 		this.regPoint = vec2.create(); // where in shape mouse is clicked on selection
 	}
 
@@ -293,7 +295,9 @@ class EditShapes {
 				if (but && !lastBut) {
 					//mouse button up to down, SELECT a piece for movement
 					this.curPntIdx = this.hilitPntIdx;
-					vec2.sub(this.regPoint, userMouse, this.shapes[this.curPntIdx].pos);
+					const shape = this.shapes[this.curPntIdx];
+					vec2.sub(this.startRegPoint, userMouse, shape.pos);
+					this.startRot = shape.rot;
 					const moveToTop = true;
 					if (moveToTop) {
 						const result = this.shapes.splice(this.curPntIdx, 1);
@@ -314,7 +318,10 @@ class EditShapes {
 		}
 		//  MOVE selected point
 		if (this.curPntIdx >= 0) {
-			vec2.sub(this.shapes[this.curPntIdx].pos, userMouse, this.regPoint);
+			const shape = this.shapes[this.curPntIdx];
+			shape.rot += normAngRadSigned(degToRad(1));
+			vec2.rot(this.regPoint, this.startRegPoint, shape.rot - this.startRot);
+			vec2.sub(shape.pos, userMouse, this.regPoint);
 		}
 		return dirt;
 	}
