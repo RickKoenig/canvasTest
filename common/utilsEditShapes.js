@@ -333,6 +333,9 @@ class EditShapes {
 			const delMouse = vec2.create();
 			vec2.sub(delMouse, userMouse, this.lastUserMouse);
 			const rotAmount = vec2.cross2d(delMouse, this.regPoint);
+			if (shape.rotFactor === undefined) {
+				shape.rotFactor = -6;
+			}
 			shape.rot += rotAmount * shape.rotFactor;
 			shape.rot = normAngRadSigned(shape.rot);
 			vec2.rot(this.regPoint, this.startRegPoint, shape.rot - this.startRot);
