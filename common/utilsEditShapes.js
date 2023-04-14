@@ -204,22 +204,8 @@ class EditPnts {
 // ##############################################  ShapeTile  ##########################################
 // ##############################################  ShapeTile  ##########################################
 
-// a generic poly tile, abstract, needs a draw(drawPrim, doHilit = false)
-class ShapeTile {
-	constructor(poly, pos, rot, rotFactor) {
-		this.poly = poly;
-		this.rotFactor = rotFactor;
-		if (pos) {
-			this.pos = vec2.clone(pos);
-		} else {
-			this.pos = vec2.create();
-		}
-		if (rot !== undefined) {
-			this.rot = rot;
-		} else {
-			this.rot = 0;
-		}
-	}
+// a generic poly tile, abstract, needs a draw and points and rotFactor
+class Shape {
 
 	// called only once, center and TODO: calc N and D
 	static setupPolyPnts() {
@@ -231,13 +217,12 @@ class ShapeTile {
 		for (let pnt of this.polyPnts) {
 			vec2.sub(pnt, pnt, avg);
 		}
-		let farDist = 0;
+		this.farDist = 0;
 		for (let pnt of this.polyPnts) {
 			const dist = vec2.length(pnt);
-			if (dist > farDist) {
-				farDist = dist;
+			if (dist > this.farDist) {
+				this.farDist = dist;
 			}
-			this.farDist = farDist;
 		}
 		/*
 		this.norms  = [];
@@ -248,32 +233,46 @@ class ShapeTile {
 		}*/
 	}
 
-	isInside(userMouse) {
-		return penetrateConvexPoly(this.poly, userMouse, this.pos, this.rot) > 0;
-		//return false;
-
-		
-		//const pntRad = .25;
-		//return vec2.squaredDistance(userMouse, this.pos) < pntRad * pntRad; // one less space to stop fictional errors, VSC
-		
-
-	}
-
+	//static draw() {
+//
+	//}
 }
 
+class Tile {
+	constructor(shape, pos, rot) {
+		this.shape = shape;
+		this.pos = pos;
+		this.rot = rot;
+	}
 
+	draw(drawPrim, id, doHilit = false) {
+		const ctx = drawPrim.ctx;
 
+		ctx.save();
+		ctx.translate(this.pos[0], this.pos[1]);
+		ctx.save();
+		ctx.rotate(this.rot);
 
-// drag shapes around
-class EditShapes {
-	constructor(shapes) {
-		this.shapes = shapes; // ShapeTile or derived classes
+		this.shape.draw(drawPrim, id, doHilit); // will call ctx.restore once
+
+		ctx.restore();
+	}
+
+	isInside(userMouse) {
+		return penetrateConvexPoly(this.shape.polyPnts, userMouse, this.pos, this.rot) > 0;
+	}	
+}
+
+// drag tiles around
+class EditTiles {
+	constructor(tiles) {
+		this.tiles = tiles; // Tile
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
 		this.startRot = 0;
 		this.startRegPoint = vec2.create();
-		this.regPoint = vec2.create(); // where in shape mouse is clicked on selection
-		this.lastUserMouse = vec2.create(); // for rotation of shape
+		this.regPoint = vec2.create(); // where in tile, mouse is clicked on selection
+		this.lastUserMouse = vec2.create(); // for rotation of tile
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
@@ -290,9 +289,9 @@ class EditShapes {
 
 		// hilit hover
 		// check topmost points first
-		for (let i = this.shapes.length - 1; i >= 0; --i) {
-			const shape = this.shapes[i];
-			const inside = shape.isInside(userMouse);
+		for (let i = this.tiles.length - 1; i >= 0; --i) {
+			const tile = this.tiles[i];
+			const inside = tile.isInside(userMouse);
 			if (inside) {
 				this.hilitPntIdx = i;
 				break;
@@ -305,15 +304,15 @@ class EditShapes {
 				if (but && !lastBut) {
 					//mouse button up to down, SELECT a piece for movement
 					this.curPntIdx = this.hilitPntIdx;
-					const shape = this.shapes[this.curPntIdx];
-					vec2.sub(this.startRegPoint, userMouse, shape.pos);
+					const tile = this.tiles[this.curPntIdx];
+					vec2.sub(this.startRegPoint, userMouse, tile.pos);
 					vec2.copy(this.lastUserMouse, userMouse);
-					this.startRot = shape.rot;
+					this.startRot = tile.rot;
 					const moveToTop = true;
 					if (moveToTop) {
-						const result = this.shapes.splice(this.curPntIdx, 1);
-						this.shapes.push(result[0]);
-						this.curPntIdx = this.shapes.length - 1;
+						const result = this.tiles.splice(this.curPntIdx, 1);
+						this.tiles.push(result[0]);
+						this.curPntIdx = this.tiles.length - 1;
 					}
 				}
 			}
@@ -329,17 +328,17 @@ class EditShapes {
 		}
 		//  MOVE selected point
 		if (this.curPntIdx >= 0) {
-			const shape = this.shapes[this.curPntIdx];
+			const tile = this.tiles[this.curPntIdx];
 			const delMouse = vec2.create();
 			vec2.sub(delMouse, userMouse, this.lastUserMouse);
 			const rotAmount = vec2.cross2d(delMouse, this.regPoint);
-			if (shape.rotFactor === undefined) {
-				shape.rotFactor = -6;
-			}
-			shape.rot += rotAmount * shape.rotFactor;
-			shape.rot = normAngRadSigned(shape.rot);
-			vec2.rot(this.regPoint, this.startRegPoint, shape.rot - this.startRot);
-			vec2.sub(shape.pos, userMouse, this.regPoint);
+			//if (tile.rotFactor === undefined) {
+			//	tile.rotFactor = -6;
+			//}
+			tile.rot += rotAmount * tile.shape.rotFactor;
+			tile.rot = normAngRadSigned(tile.rot);
+			vec2.rot(this.regPoint, this.startRegPoint, tile.rot - this.startRot);
+			vec2.sub(tile.pos, userMouse, this.regPoint);
 			vec2.copy(this.lastUserMouse, userMouse);
 		}
 		return dirt;
@@ -348,9 +347,9 @@ class EditShapes {
 	draw(drawPrim) {
 		const hilitPntIdx2 = this.getHilitIdx();
 		const ctx = drawPrim.ctx;
-		for (let j = 0; j < this.shapes.length; ++j) {
-			const shape = this.shapes[j];
-			shape.draw(drawPrim, j, hilitPntIdx2 == j);
+		for (let j = 0; j < this.tiles.length; ++j) {
+			const tile = this.tiles[j];
+			tile.draw(drawPrim, j, hilitPntIdx2 == j);
 		}
 	}
 }

@@ -1,13 +1,13 @@
 'use strict';
 
 // test inheritance
-class Shape {
+class BaseShape {
     constructor(pos) {
         this.pos = pos.slice();
     }
 
     print() {
-        console.log("Shape: pos = " + this.pos);
+        console.log("BaseShape: pos = " + this.pos);
     }
 
     area() {
@@ -23,7 +23,7 @@ class Shape {
     }
 }
 
-class Circle extends Shape {
+class Circle extends BaseShape {
     constructor(pos, radius) {
         super(pos);
         this.radius = radius;
@@ -48,7 +48,7 @@ class Circle extends Shape {
     }
 }
 
-class Rect extends Shape {
+class Rect extends BaseShape {
     constructor(pos, sizeOrig) {
         super(pos);
         this.size = sizeOrig.slice();
@@ -73,8 +73,8 @@ function inheritanceTests() {
     console.log("\n############ inheritanceTests");
     const shapeList = [];
 
-    shapeList.push(new Shape([17, 19]));
-    shapeList.push(new Shape([23, 29]));
+    shapeList.push(new BaseShape([17, 19]));
+    shapeList.push(new BaseShape([23, 29]));
     shapeList.push(new Circle([44, 55], 1));
     shapeList.push(new Rect([447, 559], [16, 9]));
 
