@@ -380,6 +380,18 @@ vec2.cross = function(out, a, b) {
 };
 
 /**
+ * Computes the cross product of two vec2's
+ * returns the z component of a vec3
+ *
+ * @param {vec2} a the first operand
+ * @param {vec2} b the second operand
+ * @returns {Number} out
+ */
+vec2.cross2d = function(a, b) {
+    return  a[0] * b[1] - a[1] * b[0];
+};
+
+/**
  * Performs a linear interpolation between two vec2's
  *
  * @param {vec2} out the receiving vector

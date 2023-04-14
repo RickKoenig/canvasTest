@@ -1,5 +1,228 @@
 'use strict';
 
+// a test tile
+class SkinnyTile extends ShapeTile {
+	static setupPolyPnts() {
+		const ang = degToRad(36);
+		const sa = Math.sin(ang);
+		const ca = Math.cos(ang);
+		this.polyPnts = [
+			[0, 0],
+			[ca, sa],
+			[1 + ca, sa],
+			[1, 0]
+		];
+		this.rotFactor = -1.2;
+		super.setupPolyPnts();
+	}
+
+	constructor(pos, rot) {
+		super(SkinnyTile.polyPnts, pos, rot, SkinnyTile.rotFactor);
+	}
+
+	draw(drawPrim, id, doHilit = false) {
+		const ctx = drawPrim.ctx;
+		const colAdjust = doHilit ? .3 : 0;
+		const colHilit = Bitmap32.colorAdd("green", colAdjust);
+		ctx.save();
+		ctx.translate(this.pos[0], this.pos[1]);
+		ctx.save();
+		ctx.rotate(this.rot);
+		drawPrim.drawPoly(this.poly, .025, colHilit, "black");
+		const radius = .025;
+		drawPrim.drawCircle([0,0], radius, "brown", ); // center
+		const size = radius * 2;
+		ctx.restore(); // don't rotate the text
+		drawPrim.drawText([0, 0], [size, size], id, "white");
+		ctx.restore();
+	}
+}
+SkinnyTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
+
+// another test tile
+class FatTile extends ShapeTile {
+	static polyPnts = [
+		[-.25, 0],
+		[0, .5],
+		[.25, 0]
+	];
+
+	constructor(pos, rot) {
+		const rotFactor = -10;
+		super(FatTile.polyPnts, pos, rot, rotFactor);
+	}
+
+	draw(drawPrim, id, doHilit = false) {
+		const ctx = drawPrim.ctx;
+		const colAdjust = doHilit ? .3 : 0;
+		const colHilit = Bitmap32.colorAdd("gray", colAdjust);
+		ctx.save();
+		ctx.translate(this.pos[0], this.pos[1]);
+		ctx.save();
+		ctx.rotate(this.rot);
+		drawPrim.drawPoly(this.poly, .025, colHilit, "blue");
+		const radius = .025;
+		drawPrim.drawCircle([0,0], radius, "red", ); // center
+		const size = radius * 2;
+		ctx.restore(); // don't rotate the text
+		drawPrim.drawText([0, 0], [size, size], id, "black");
+		ctx.restore();
+	}
+}
+FatTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
+
+// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
+// TODO: for now assume 60hz refresh rate
+class MainApp {
+	static #numInstances = 0; // test static members
+	static getNumInstances() { // test static methods
+		return MainApp.#numInstances;
+	}
+
+	constructor() {
+		console.log("\n############# creating instance of MainApp");
+		++MainApp.#numInstances;
+
+		// vertical panel UI
+		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
+
+		// add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		//populateElementIds(this.vp, this.eles);
+
+		// setup 2D drawing environment
+		this.plotter2dDiv = document.getElementById("plotter2dDiv");
+		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
+		this.ctx = this.plotter2dCanvas.getContext("2d");
+
+		// USER before UI built
+		this.#userInit();
+
+		// fire up all instances of the classes that are needed
+		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
+		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
+		this.drawPrim = new DrawPrimitives(this.plotter2d);
+		this.graphPaper = new GraphPaper(this.drawPrim);
+
+		// USER build UI
+		this.#userBuildUI();
+
+		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
+		this.#animate();
+	}
+
+	// USER: add more members or classes to MainApp
+	#userInit() {
+		// user init section
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.avgFpsObj = new Runavg(500);
+
+		// shapes, test simple shapes
+		this.shapes = [];
+		this.shapes.push(new SkinnyTile([0, 0], degToRad(0)));
+		this.shapes.push(new SkinnyTile([0, .375], degToRad(30)));
+		this.shapes.push(new SkinnyTile([0, .75], degToRad(45)));
+		this.shapes.push(new FatTile([1, 0], degToRad(0)));
+		this.shapes.push(new FatTile([1, .375], degToRad(30)));
+		this.shapes.push(new FatTile([1, .75], degToRad(45)));
+		this.editShapes = new EditShapes(this.shapes);
+
+		// before firing up Plotter2d
+		this.startCenter = [0, 0];
+		this.startZoom = .9;
+	}
+
+	#userBuildUI() {
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
+		makeEle(this.vp, "hr");
+	}		
+	
+	#userProc() {
+		// proc
+		//this.dirty = true;
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+		// pass in the buttons and the user/cam space mouse from drawPrim
+		this.dirty = this.editShapes.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+	}
+
+	#userDraw() {
+		// shapes
+		this.editShapes.draw(this.drawPrim, this.plotter2d.userMouse);
+	}
+
+	// USER: update some of the UI in vertical panel if there is some in the HTML
+	#userUpdateInfo() {
+		let countStr = "Dirty Count = " + this.dirtyCount;
+		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		this.eles.textInfoLog.innerText = countStr;
+	}
+
+	// proc
+	#animate() {
+		// proc
+		// update input system
+		this.input.proc();
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT) || this.dirty;
+		// USER: do USER stuff
+		this.#userProc(); // proc
+
+		//this.dirty = true; // test, always draw every frame
+		// draw when dirty
+		if (this.dirty) {
+			this.plotter2d.clearCanvas();
+			// interact with mouse, calc all spaces
+			// goto user/cam space
+			this.plotter2d.setSpace(Plotter2d.spaces.USER);
+			// now in user/cam space
+			this.graphPaper.draw("X", "Y");
+			// USER: do USER stuff
+			this.#userDraw(); //draw
+		}
+		// update UI, text
+		this.#userUpdateInfo();
+
+		if (this.dirty) {
+			this.dirtyCount = 100;
+		} else {
+			--this.dirtyCount;
+			if (this.dirtyCount < 0) {
+				this.dirtyCount = 0;
+			}
+		}
+		this.dirty = false; // turn off drawing unless something changes
+
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
+	}
+
+	#resetCounter() {
+		this.count = 0;
+	}
+}
+
+const mainApp = new MainApp();
+console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods
+
+/*
 // a Penrose tile
 class Tile {
 	constructor(pos, rot = 0, fat = false, colHilit) {
@@ -19,14 +242,14 @@ class Tile {
 			this.col = "darkgreen";
 		}
 		ang = degToRad(ang);
-		const sa = .5 * Math.sin(ang);
-		const ca = .5 * Math.cos(ang);
+		const sa = Math.sin(ang);
+		const ca = Math.cos(ang);
 
 		this.pnts = [
-			[-.5 - ca, -sa],
-			[-.5 + ca,  sa],
-			[ .5 + ca,  sa],
-			[ .5 - ca, -sa]
+			[0, 0],
+			[ca,  sa],
+			[1 + ca,  sa],
+			[1, 0]
 		];
 		// decide between mul or add
 		this.colAdjust = colHilit ? .3 : 0;
@@ -202,3 +425,4 @@ __
 }
 
 const mainApp = new MainApp();
+*/

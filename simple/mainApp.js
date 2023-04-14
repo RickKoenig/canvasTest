@@ -1,18 +1,20 @@
 'use strict';
 
 let codeWord;
+class cls {
+	constructor(hi) {
+		this.hi = hi;
+	}
+}
+
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("javacript tests!");
 	//inheritanceTests();
 	//codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");
-	const arr = [100, 101, 102, 103, 104];
-	console.log("arr before = " + arr);
-	const result = arr.splice(4, 1);
-	arr.push(result[0]);
-	console.log("arr after  = " + arr);
-	console.log("result = " + result);
+	const cont = [];
+	cont.push(cls);
 }
 
 // a test tile
@@ -156,12 +158,19 @@ class MainApp {
 
 		// shapes, test simple shapes
 		this.shapes = [];
-		this.shapes.push(new SimpleTile([0, 0], degToRad(30)));
-		this.shapes.push(new SimpleTile([0, .375], degToRad(0)));
+		
+		this.shapes.push(new SimpleTile([0, 0], degToRad(0)));
+		this.shapes.push(new SimpleTile([0, .375], degToRad(30)));
 		this.shapes.push(new SimpleTile([0, .75], degToRad(45)));
-		this.shapes.push(new SimpleTile2([1, 0], degToRad(30)));
-		this.shapes.push(new SimpleTile2([1, .375], degToRad(0)));
-		this.shapes.push(new SimpleTile2([1, .75], degToRad(45)));
+		this.shapes.push(new SimpleTile2([1, 0], degToRad(0)));
+		this.shapes.push(new SimpleTile2([1, .375], degToRad(30)));
+		this.shapes.push(new SimpleTile2([1, .75], degToRad(45))); 
+		/*this.shapes.push(SimpleTile([0, 0], degToRad(0)));
+		this.shapes.push(SimpleTile([0, .375], degToRad(30)));
+		this.shapes.push(SimpleTile([0, .75], degToRad(45)));
+		this.shapes.push(SimpleTile2([1, 0], degToRad(0)));
+		this.shapes.push(SimpleTile2([1, .375], degToRad(30)));
+		this.shapes.push(SimpleTile2([1, .75], degToRad(45)));*/
 		this.editShapes = new EditShapes(this.shapes);
 
 		// pnts 3, test inside outside stuff, first start with a line

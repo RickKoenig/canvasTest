@@ -206,8 +206,9 @@ class EditPnts {
 
 // a generic poly tile, abstract, needs a draw(drawPrim, doHilit = false)
 class ShapeTile {
-	constructor(poly, pos, rot) {
+	constructor(poly, pos, rot, rotFactor) {
 		this.poly = poly;
+		this.rotFactor = rotFactor;
 		if (pos) {
 			this.pos = vec2.clone(pos);
 		} else {
@@ -229,6 +230,14 @@ class ShapeTile {
 		vec2.scale(avg, avg, 1 / this.polyPnts.length);
 		for (let pnt of this.polyPnts) {
 			vec2.sub(pnt, pnt, avg);
+		}
+		let farDist = 0;
+		for (let pnt of this.polyPnts) {
+			const dist = vec2.length(pnt);
+			if (dist > farDist) {
+				farDist = dist;
+			}
+			this.farDist = farDist;
 		}
 		/*
 		this.norms  = [];
@@ -264,6 +273,7 @@ class EditShapes {
 		this.startRot = 0;
 		this.startRegPoint = vec2.create();
 		this.regPoint = vec2.create(); // where in shape mouse is clicked on selection
+		this.lastUserMouse = vec2.create(); // for rotation of shape
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
@@ -297,6 +307,7 @@ class EditShapes {
 					this.curPntIdx = this.hilitPntIdx;
 					const shape = this.shapes[this.curPntIdx];
 					vec2.sub(this.startRegPoint, userMouse, shape.pos);
+					vec2.copy(this.lastUserMouse, userMouse);
 					this.startRot = shape.rot;
 					const moveToTop = true;
 					if (moveToTop) {
@@ -319,9 +330,14 @@ class EditShapes {
 		//  MOVE selected point
 		if (this.curPntIdx >= 0) {
 			const shape = this.shapes[this.curPntIdx];
-			shape.rot += normAngRadSigned(degToRad(1));
+			const delMouse = vec2.create();
+			vec2.sub(delMouse, userMouse, this.lastUserMouse);
+			const rotAmount = vec2.cross2d(delMouse, this.regPoint);
+			shape.rot += rotAmount * shape.rotFactor;
+			shape.rot = normAngRadSigned(shape.rot);
 			vec2.rot(this.regPoint, this.startRegPoint, shape.rot - this.startRot);
 			vec2.sub(shape.pos, userMouse, this.regPoint);
+			vec2.copy(this.lastUserMouse, userMouse);
 		}
 		return dirt;
 	}
