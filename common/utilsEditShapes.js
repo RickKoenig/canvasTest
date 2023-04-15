@@ -205,6 +205,7 @@ class EditPnts {
 // ##############################################  ShapeTile  ##########################################
 
 // a generic poly tile, abstract, needs a draw and points and rotFactor
+// static
 class Shape {
 
 	// called only once, center and TODO: calc N and D
@@ -217,13 +218,14 @@ class Shape {
 		for (let pnt of this.polyPnts) {
 			vec2.sub(pnt, pnt, avg);
 		}
-		this.farDist = 0;
+		let farDist2 = 0;
 		for (let pnt of this.polyPnts) {
-			const dist = vec2.length(pnt);
-			if (dist > this.farDist) {
-				this.farDist = dist;
+			const dist2 = vec2.squaredLength(pnt);
+			if (dist2 > farDist2) {
+				farDist2 = dist2;
 			}
 		}
+		this.rotFactor = 1 / farDist2; // That's it!
 		/*
 		this.norms  = [];
 		this.Ds = [];
@@ -238,6 +240,7 @@ class Shape {
 	//}
 }
 
+// has a Shape, not static
 class Tile {
 	constructor(shape, pos, rot) {
 		this.shape = shape;
@@ -331,7 +334,7 @@ class EditTiles {
 			const tile = this.tiles[this.curPntIdx];
 			const delMouse = vec2.create();
 			vec2.sub(delMouse, userMouse, this.lastUserMouse);
-			const rotAmount = vec2.cross2d(delMouse, this.regPoint);
+			const rotAmount = vec2.cross2d(this.regPoint, delMouse);
 			//if (tile.rotFactor === undefined) {
 			//	tile.rotFactor = -6;
 			//}

@@ -91,12 +91,14 @@ class SimpleShape extends Shape {
 		this.polyPnts = [
 			[-.25, .25],
 			[0, .5],
-			[.5, 0]
+			[.25, 0]
 		];
+
 		super.setupPolyPnts();
-		this.rotFactor = -1;
+		//this.rotFactor = 1;
 	}
 
+	// very custom draw
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
@@ -115,14 +117,15 @@ SimpleShape.setupPolyPnts(); // call once, center points,  maybe setup some stat
 class SimpleShape2 extends Shape {
 	static setupPolyPnts() {
 		this.polyPnts = [
-			[-.25, 0],
-			[0, .5],
-			[.25, 0]
+			[-.125, 0],
+			[0, .25],
+			[5.125, 0]
 		];
 		super.setupPolyPnts();
-		this.rotFactor = -10;
+		//this.rotFactor = 1 / 9;
 	}
 
+	// very custom draw
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
