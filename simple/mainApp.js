@@ -1,86 +1,11 @@
 'use strict';
 
-let codeWord;
-
-
-class Shp {
-	static setupPolyPnts() {
-		//console.log("Shp: setupPolyPoints");
-		let avg = 0;
-		for (let i = 0; i < this.polyPnts.length; ++i) {
-			avg += this.polyPnts[i];
-		}
-		avg /= this.polyPnts.length;
-		for (let i = 0; i < this.polyPnts.length; ++i) {
-			this.polyPnts[i] -= avg;
-		}
-		this.largestDist = 0;
-		for (let i = 0; i < this.polyPnts.length; ++i) {
-			const dist = Math.abs(this.polyPnts[i]);
-			if (dist > this.largestDist) {
-				this.largestDist = dist;
-			}
-		}
-	}
-
-	/*static draw() {
-		console.log("Shp: draw [" + this.polyPnts + "] largestDist " + this.largestDist);
-	}*/
-}
-
-class Shp1 extends Shp {
-	static setupPolyPnts() {
-		this.polyPnts = [3, 4, 5, 7];
-		super.setupPolyPnts();
-	}
-	static draw() {
-		console.log("Shape1: draw");
-		//super.draw();
-	}
-}
-Shp1.setupPolyPnts(); // call once, center points,  maybe setup some statics
-
-class Shp2 extends Shp {
-	static setupPolyPnts() {
-		this.polyPnts = [ .5, .7, .9, 1.1];
-		super.setupPolyPnts();
-	}
-	static draw() {
-		console.log("Shape2: draw");
-		//super.draw();
-	}
-}
-Shp2.setupPolyPnts(); // call once, center points,  maybe setup some statics
-
-class Til {
-	constructor(shape, pos, rot) {
-		this.shape = shape;
-		this.pos = pos;
-		this.rot = rot;
-	}
-
-	draw() {
-		console.log("Tile: draw " + this.pos + " " + this.rot);
-		this.shape.draw();
-	}
-}
-
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javacript tests!");
-	
-	const sh = Shp;
-	const sh1 = Shp1;
-	const sh2 = Shp2;
-	const tiles = [];
-	tiles.push(new Til(Shp1, 4, 9));
-	tiles.push(new Til(Shp2, 8, 11));
-	for (let tile of tiles) {
-		tile.draw();
-	}
-	
+	//staticTests();
 	//inheritanceTests();
-	//codeWord = rudolphSim();
+	//const codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");
 	console.log("DONE javacript tests!");
 }
@@ -93,9 +18,7 @@ class SimpleShape extends Shape {
 			[0, .5],
 			[.25, 0]
 		];
-
 		super.setupPolyPnts();
-		//this.rotFactor = 1;
 	}
 
 	// very custom draw
@@ -104,14 +27,21 @@ class SimpleShape extends Shape {
 		const colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd("green", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
+	}
+
+	// no rotation
+	static drawLevel(drawPrim, id, doHilit = false) {
+		// don't rotate the text
 		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, "brown", ); // center
 		const size = radius * 2;
-		ctx.restore(); // don't rotate the text
 		drawPrim.drawText([0, 0], [size, size], id, "white");
 	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+	}
 }
-SimpleShape.setupPolyPnts(); // call once, center points,  maybe setup some statics
 
 // another test tile
 class SimpleShape2 extends Shape {
@@ -119,10 +49,9 @@ class SimpleShape2 extends Shape {
 		this.polyPnts = [
 			[-.125, 0],
 			[0, .25],
-			[5.125, 0]
+			[1.125, 0]
 		];
 		super.setupPolyPnts();
-		//this.rotFactor = 1 / 9;
 	}
 
 	// very custom draw
@@ -134,24 +63,27 @@ class SimpleShape2 extends Shape {
 		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, "red", ); // center
 		const size = radius * 2;
-		ctx.restore(); // don't rotate the text
+		// rotate the text too
 		drawPrim.drawText([0, 0], [size, size], id, "black");
 	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+	}
 }
-SimpleShape2.setupPolyPnts(); // call once, center points,  maybe setup some statics
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static #numInstances = 0; // test static members
+	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return MainApp.#numInstances;
+		return MainApp.numInstances;
 	}
 
 	constructor() {
 		javaScriptTests();
 		console.log("\n############# creating instance of MainApp");
-		++MainApp.#numInstances;
+		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -217,7 +149,7 @@ class MainApp {
 		const startAddRemovePoints2 = false;
 		this.editPnts2 = new EditPnts(pnts2, this.pntRad2, startAddRemovePoints2, minPnts2, maxPnts2);
 
-		// shapes, test simple shapes
+		// tiles, test simple tiles
 		this.tiles = [];
 		
 		this.tiles.push(new Tile(SimpleShape, [0, 0], degToRad(0)));
@@ -234,23 +166,25 @@ class MainApp {
 		this.pntRad3 = .05; // size of point
 		this.editPnts3 = new EditPnts(this.pnts3, this.pntRad3); // defaults, no add remove points
 
-		/*
-		// an array of points to test against pnts3 line
-		this.testPntsGrid = []; 
-		const minX = -1;
-		const maxX = 1;
-		const minY = -1;
-		const maxY = 1;
-		const numX = 80;
-		const numY = 80;
-		for (let j = 0; j < numY; ++j) {
-			let Y = minY + (maxY - minY) * j / (numY - 1);
-			for (let i = 0; i < numX; ++i) {
-				let X = minX + (maxX - minX) * i / (numX - 1);
-				const pnt = [X, Y];
-				this.testPntsGrid.push(pnt);
+		const testGrid = false;
+		if (testGrid) {
+			// an array of points to test against Tiles
+			this.testPntsGrid = []; 
+			const minX = -1;
+			const maxX = 1;
+			const minY = -1;
+			const maxY = 1;
+			const numX = 80;
+			const numY = 80;
+			for (let j = 0; j < numY; ++j) {
+				let Y = minY + (maxY - minY) * j / (numY - 1);
+				for (let i = 0; i < numX; ++i) {
+					let X = minX + (maxX - minX) * i / (numX - 1);
+					const pnt = [X, Y];
+					this.testPntsGrid.push(pnt);
+				}
 			}
-		}*/
+		}
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
@@ -280,7 +214,6 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		makeEle(this.vp, "span", null, "marg", "Add remove points");
 		this.eles.addRemovePoints = makeEle(this.vp, "input", "addRemovePoints", null, "ho", (val) => {
-			//console.log("checkbox addRemovePoints, value = " + val);
 			this.editPnts2.setAddRemove(val);
 			this.dirty = true;
 		}, "checkbox");
@@ -332,22 +265,19 @@ class MainApp {
 		// pnts 2
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
 
-		/*// test point grid
-		const shapePos = this.shapes[0].pos;
-		const shapeRot = this.shapes[0].rot;
-		for (let pnt of this.testPntsGrid) {
-			//const pen = penetrateLine(this.pnts3[0], this.pnts3[1], pnt);
-			const pen = penetrateConvexPoly(SimpleShape.polyPnts, pnt, shapePos, shapeRot);
-			this.drawPrim.drawCircle(pnt, .0075, pen > 0 ? "black" : "red"); // black inside, red outside
-		}*/
+		if (this.testPntsGrid) {
+			// test point grid with last tile
+			const tile = this.editTiles.tiles[this.editTiles.tiles.length - 1];
+			for (let pnt of this.testPntsGrid) {
+				const inside = tile.isInside(pnt);
+				this.drawPrim.drawCircle(pnt, .0075, inside ? "black" : "red"); // black inside, red outside
+			}
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let countStr = "Frame Count = " + this.count;
-		if (codeWord) {
-			countStr += "\nCodeword = '" + codeWord + "'";
-		}
 		countStr += "\nDirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		this.eles.textInfoLog.innerText = countStr;

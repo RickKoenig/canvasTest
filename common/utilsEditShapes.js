@@ -204,10 +204,9 @@ class EditPnts {
 // ##############################################  ShapeTile  ##########################################
 // ##############################################  ShapeTile  ##########################################
 
-// a generic poly tile, abstract, needs a draw and points and rotFactor
+// a generic poly tile, abstract, needs a draw and point
 // static
 class Shape {
-
 	// called only once, center and TODO: calc N and D
 	static setupPolyPnts() {
 		const avg = vec2.create();
@@ -225,19 +224,8 @@ class Shape {
 				farDist2 = dist2;
 			}
 		}
-		this.rotFactor = 1 / farDist2; // That's it!
-		/*
-		this.norms  = [];
-		this.Ds = [];
-		for (let pnt of this.polyPnts) {
-			this.norms.push([3,4]);
-			this.Ds.push(5);
-		}*/
+		this.rotFactor = 1.25 / farDist2; // That's it!, try a little more turn
 	}
-
-	//static draw() {
-//
-	//}
 }
 
 // has a Shape, not static
@@ -250,14 +238,17 @@ class Tile {
 
 	draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
-
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
-		ctx.save();
-		ctx.rotate(this.rot);
-
-		this.shape.draw(drawPrim, id, doHilit); // will call ctx.restore once
-
+		if (this.shape.draw) {
+			ctx.save(); // keep font level
+			ctx.rotate(this.rot);
+			this.shape.draw(drawPrim, id, doHilit);
+			ctx.restore();
+		}
+		if (this.shape.drawLevel) {
+			this.shape.drawLevel(drawPrim, id, doHilit);
+		}
 		ctx.restore();
 	}
 
@@ -335,9 +326,6 @@ class EditTiles {
 			const delMouse = vec2.create();
 			vec2.sub(delMouse, userMouse, this.lastUserMouse);
 			const rotAmount = vec2.cross2d(this.regPoint, delMouse);
-			//if (tile.rotFactor === undefined) {
-			//	tile.rotFactor = -6;
-			//}
 			tile.rot += rotAmount * tile.shape.rotFactor;
 			tile.rot = normAngRadSigned(tile.rot);
 			vec2.rot(this.regPoint, this.startRegPoint, tile.rot - this.startRot);

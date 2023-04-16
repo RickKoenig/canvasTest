@@ -1,9 +1,8 @@
 'use strict';
 
-// a test tile
-class SkinnyTile extends ShapeTile {
-	static setupPolyPnts() {
-		const ang = degToRad(36);
+class PenTile extends Shape {
+	static setupPolyPnts(ang, fat) {
+		// rhombus
 		const sa = Math.sin(ang);
 		const ca = Math.cos(ang);
 		this.polyPnts = [
@@ -12,64 +11,65 @@ class SkinnyTile extends ShapeTile {
 			[1 + ca, sa],
 			[1, 0]
 		];
-		this.rotFactor = -1.2;
+		this.fat = fat;
 		super.setupPolyPnts();
 	}
 
-	constructor(pos, rot) {
-		super(SkinnyTile.polyPnts, pos, rot, SkinnyTile.rotFactor);
+	static draw(drawPrim, id, doHilit = false, fat) {
+		let colAdjust = doHilit ? .3 : 0;
+		const col = fat ? "#a08000" : "#008000";
+		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
+		const col1 = "#2040ff";   // a blue
+		const col2 = "indianred"; // a red
+		const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
+		const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
+		if (fat) {
+			drawPrim.drawArcO(this.polyPnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
+			drawPrim.drawArcO(this.polyPnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
+		} else {
+			drawPrim.drawArcO(this.polyPnts[1], .25, .075, degToRad(180 + 36), degToRad(0), col1Hilit);
+			drawPrim.drawArcO(this.polyPnts[3], .25, .075, degToRad(36), degToRad(180 ), col2Hilit);
+		}
 	}
 
-	draw(drawPrim, id, doHilit = false) {
-		const ctx = drawPrim.ctx;
-		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("green", colAdjust);
-		ctx.save();
-		ctx.translate(this.pos[0], this.pos[1]);
-		ctx.save();
-		ctx.rotate(this.rot);
-		drawPrim.drawPoly(this.poly, .025, colHilit, "black");
-		const radius = .025;
+	static drawLevel(drawPrim, id, doHilit) {
+		const radius = .075;
 		drawPrim.drawCircle([0,0], radius, "brown", ); // center
 		const size = radius * 2;
-		ctx.restore(); // don't rotate the text
 		drawPrim.drawText([0, 0], [size, size], id, "white");
-		ctx.restore();
 	}
 }
-SkinnyTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
 
-// another test tile
-class FatTile extends ShapeTile {
-	static polyPnts = [
-		[-.25, 0],
-		[0, .5],
-		[.25, 0]
-	];
-
-	constructor(pos, rot) {
-		const rotFactor = -10;
-		super(FatTile.polyPnts, pos, rot, rotFactor);
+// tile 1
+class SkinnyShape extends PenTile {
+	static setupPolyPnts() {
+		super.setupPolyPnts(degToRad(36), false); // make a skinny rhombus
 	}
 
-	draw(drawPrim, id, doHilit = false) {
-		const ctx = drawPrim.ctx;
-		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("gray", colAdjust);
-		ctx.save();
-		ctx.translate(this.pos[0], this.pos[1]);
-		ctx.save();
-		ctx.rotate(this.rot);
-		drawPrim.drawPoly(this.poly, .025, colHilit, "blue");
-		const radius = .025;
-		drawPrim.drawCircle([0,0], radius, "red", ); // center
-		const size = radius * 2;
-		ctx.restore(); // don't rotate the text
-		drawPrim.drawText([0, 0], [size, size], id, "black");
-		ctx.restore();
+	static draw(drawPrim, id, doHilit = false) {
+		super.draw(drawPrim, id, doHilit, false);
+	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
 	}
 }
-FatTile.setupPolyPnts(); // call once, center points,  maybe setup some statics
+
+// tile 2
+class FatShape extends PenTile {
+	static setupPolyPnts() {
+		super.setupPolyPnts(degToRad(72), true); // make a fat rhombus
+	}
+
+	static draw(drawPrim, id, doHilit = false) {
+		super.draw(drawPrim, id, doHilit, true);
+	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+	}
+}
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -125,19 +125,19 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		// shapes, test simple shapes
-		this.shapes = [];
-		this.shapes.push(new SkinnyTile([0, 0], degToRad(0)));
-		this.shapes.push(new SkinnyTile([0, .375], degToRad(30)));
-		this.shapes.push(new SkinnyTile([0, .75], degToRad(45)));
-		this.shapes.push(new FatTile([1, 0], degToRad(0)));
-		this.shapes.push(new FatTile([1, .375], degToRad(30)));
-		this.shapes.push(new FatTile([1, .75], degToRad(45)));
-		this.editShapes = new EditShapes(this.shapes);
+		// Penrose tiles
+		this.tiles = [];
+		this.tiles.push(new Tile(SkinnyShape, [0, 0], degToRad(0)));
+		this.tiles.push(new Tile(SkinnyShape, [0, .375], degToRad(30)));
+		this.tiles.push(new Tile(SkinnyShape, [0, .75], degToRad(45)));
+		this.tiles.push(new Tile(FatShape, [1, 0], degToRad(0)));
+		this.tiles.push(new Tile(FatShape, [1, .375], degToRad(30)));
+		this.tiles.push(new Tile(FatShape, [1, .75], degToRad(45)));
+		this.editTiles = new EditTiles(this.tiles);
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .9;
+		this.startZoom = .3;
 	}
 
 	#userBuildUI() {
@@ -161,12 +161,12 @@ class MainApp {
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 		// pass in the buttons and the user/cam space mouse from drawPrim
-		this.dirty = this.editShapes.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		this.dirty = this.editTiles.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 	}
 
 	#userDraw() {
 		// shapes
-		this.editShapes.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
