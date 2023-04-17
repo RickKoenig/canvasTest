@@ -149,16 +149,16 @@ class MainApp {
 		let dirX = 0;
 		let dirY = 0;
 		switch(this.input.keyboard.key) {
-			case keyTable.keycodes.RIGHT:
+			case keyTable.keyCodes.RIGHT:
 				dirX = 1;
 				break;
-			case keyTable.keycodes.LEFT:
+			case keyTable.keyCodes.LEFT:
 				dirX = -1;
 				break;
-			case keyTable.keycodes.UP:
+			case keyTable.keyCodes.UP:
 				dirY = 1;
 				break;
-			case keyTable.keycodes.DOWN:
+			case keyTable.keyCodes.DOWN:
 				dirY = -1;
 				break;
 		}

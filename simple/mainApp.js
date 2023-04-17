@@ -1,8 +1,25 @@
 'use strict';
 
+
+function snap(val, snap) {
+	val /= snap;
+	val = Math.round(val);
+	val *= snap;
+	return val;
+}
+
+function snapTest() {
+	console.log("snap test");
+	for (let i = -5; i <= 5; i += .125) {
+		const j = snap(i, .25);
+		console.log('in ' + i + ', out ' + j);
+	}
+}
+
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javacript tests!");
+	snapTest();
 	//staticTests();
 	//inheritanceTests();
 	//const codeWord = rudolphSim();

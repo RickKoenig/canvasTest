@@ -259,7 +259,7 @@ class Tile {
 
 // drag tiles around
 class EditTiles {
-	constructor(tiles) {
+	constructor(tiles, snapAmount = degToRad(36)) {
 		this.tiles = tiles; // Tile
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
@@ -267,6 +267,7 @@ class EditTiles {
 		this.startRegPoint = vec2.create();
 		this.regPoint = vec2.create(); // where in tile, mouse is clicked on selection
 		this.lastUserMouse = vec2.create(); // for rotation of tile
+		this.snapAmount = snapAmount;
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
@@ -274,7 +275,16 @@ class EditTiles {
 		return hilitIdx;
 	}
 
-	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
+	#doSnap(ang) {
+		if (this.snapAmount) {
+			ang /= this.snapAmount;
+			ang = Math.round(ang);
+			ang *= this.snapAmount;
+		}
+		return ang;
+	}
+
+	proc(mouse, userMouse, snapMode = false, rotMode = false, rotStep = 0) { // mouse buttons and user/cam space mouse coord
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
@@ -316,6 +326,10 @@ class EditTiles {
 		} else {
 			// DESELECT point when mouse not pressed
 			if (this.curPntIdx >= 0) {
+				if (snapMode) {
+					const tile = this.tiles[this.curPntIdx];
+					tile.rot = this.#doSnap(tile.rot);
+				}
 				dirt = true;
 			}
 			this.curPntIdx = -1;
@@ -324,9 +338,13 @@ class EditTiles {
 		if (this.curPntIdx >= 0) {
 			const tile = this.tiles[this.curPntIdx];
 			const delMouse = vec2.create();
-			vec2.sub(delMouse, userMouse, this.lastUserMouse);
-			const rotAmount = vec2.cross2d(this.regPoint, delMouse);
-			tile.rot += rotAmount * tile.shape.rotFactor;
+			if (rotMode) {
+				tile.rot += rotStep;
+			} else {
+				vec2.sub(delMouse, userMouse, this.lastUserMouse);
+				const rotAmount = vec2.cross2d(this.regPoint, delMouse);
+				tile.rot += rotAmount * tile.shape.rotFactor;
+			}
 			tile.rot = normAngRadSigned(tile.rot);
 			vec2.rot(this.regPoint, this.startRegPoint, tile.rot - this.startRot);
 			vec2.sub(tile.pos, userMouse, this.regPoint);

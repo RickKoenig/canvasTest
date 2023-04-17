@@ -226,7 +226,7 @@ class MainApp {
 		if (this.doDebug) {
 			const key = this.input.keyboard.key;
 			if (key) {
-				if (key == keyTable.keycodes.BACKSPACE) {
+				if (key == keyTable.keyCodes.BACKSPACE) {
 					this.textTextType = this.textTextType.slice(0,this.textTextType.length - 1);
 				} else if (this.textTextType.length < 20) {
 					this.textTextType += String.fromCharCode(key);

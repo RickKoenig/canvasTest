@@ -28,7 +28,7 @@ class Keyboard {
     }
 
     #isbrowserdebugkey(k) {
-        return k == keyTable.keycodes.F12;
+        return k == keyTable.keyCodes.F12;
     }
 
     // event
@@ -66,10 +66,10 @@ class Keyboard {
             this.keystatecur[val] = 1;
             this.keystatehold[val] = 1;
             if (this.keybuff.length < maxbuflen) {
-                if (this.keystatehold[keyTable.keycodes.SHIFT]) { // no nudges for SHIFT
+                if (this.keystatehold[keyTable.keyCodes.SHIFT]) { // no nudges for SHIFT
                     val = keyTable.noshift2shift[val];
                 }
-                if (val != keyTable.keycodes.SHIFT) { // don't push SHIFT
+                if (val != keyTable.keyCodes.SHIFT) { // don't push SHIFT
                     this.keybuff.push(val);
                 }
             }
