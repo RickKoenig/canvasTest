@@ -285,7 +285,7 @@ class EditTiles {
 		return ang;
 	}
 
-	proc(mouse, userMouse, snapMode = false, rotMode = false, rotStep = 0) { // mouse buttons and user/cam space mouse coord
+	proc(mouse, userMouse, snapMode = false, rotMode = false, rotStep = 0, delDeselect = false) { // mouse buttons and user/cam space mouse coord
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
@@ -327,9 +327,13 @@ class EditTiles {
 		} else {
 			// DESELECT point when mouse not pressed
 			if (this.curPntIdx >= 0) {
-				if (snapMode) {
-					const tile = this.tiles[this.curPntIdx];
-					tile.rot = this.#doSnap(tile.rot);
+				if (delDeselect) { // delete tile when deselected
+					this.tiles.splice(this.curPntIdx, 1);
+				} else {
+					if (snapMode) {
+						const tile = this.tiles[this.curPntIdx];
+						tile.rot = this.#doSnap(tile.rot);
+					}
 				}
 				dirt = true;
 			}

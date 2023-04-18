@@ -128,6 +128,7 @@ class MainApp {
 
 		this.rotMode = true;
 		this.snapMode = true;
+		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.tiles = [];
 		this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
@@ -140,7 +141,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		//this.startZoom = .25;
+		this.startZoom = .25;
 	}
 
 	#userBuildUI() {
@@ -193,28 +194,20 @@ class MainApp {
 			//console.log("rot = " + rotStep);
 			break;
 		}
+		this.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < .25;
 		this.dirty = this.editTiles.proc(this.input.mouse
 			, this.plotter2d.userMouse
-			, this.snapMode, this.rotMode, rotStep) 
+			, this.snapMode, this.rotMode, rotStep, this.delDeselect) 
 			|| this.dirty;
 	}
 
 	#userDraw() {
 		// shapes
 		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
+
+		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-		this.drawPrim.drawCircle([.5, .75], .125);
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		this.drawPrim.drawCircle([.25, .75], .125, "#80ff80");
-		/*
-		// in user space, make look like ndc space, not scale
-		const pntUser = [-1, .75];
-		const pntXlate = vec2.create();
-		//vec2.copy(pntXlate, pntUser);
-		this.plotter2d.ndcToUser(pntXlate, pntUser);
-		this.drawPrim.drawCircle(pntXlate, .125, "#ff8080");*/
-		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-		const col = this.plotter2d.userMouse[0] < 0 ? "#ff0000c0" : "#ff000080";
+		const col = this.delDeselect ? "#ff0000c0" : "#ff000080";
 		this.drawPrim.drawRectangle(this.plotter2d.ndcMin
 			, [.25, (this.plotter2d.ndcMax[1] - this.plotter2d.ndcMin[1])]
 			, col);
