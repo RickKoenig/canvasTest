@@ -140,7 +140,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .3;
+		//this.startZoom = .25;
 	}
 
 	#userBuildUI() {
@@ -202,6 +202,16 @@ class MainApp {
 	#userDraw() {
 		// shapes
 		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
+		this.drawPrim.drawCircle([.5, .75], .125);
+		this.plotter2d.setSpace(Plotter2d.spaces.USER);
+		this.drawPrim.drawCircle([.25, .75], .125, "#80ff80");
+		// in user space, make look like ndc space, not scale
+		const pntUser = [-1, .75];
+		const pntXlate = vec2.create();
+		//vec2.copy(pntXlate, pntUser);
+		this.plotter2d.ndcToUser(pntXlate, pntUser);
+		this.drawPrim.drawCircle(pntXlate, .125, "#ff8080");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

@@ -274,4 +274,11 @@ class Plotter2d {
         }
         this.curSpace = space;
     }
+
+    // move points from ndc space to user space
+    // TODO: implement
+    ndcToUser(pntXlate, pntUser) {
+        pntXlate[0] = pntUser[0];
+        pntXlate[1] = pntUser[1] - 1.25;
+    }
 }

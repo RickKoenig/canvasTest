@@ -2,15 +2,15 @@
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 class MainApp {
-	static #numInstances = 0; // test static members
+	static numInstances = 0; // test static members
 
 	static getNumInstances() { // test static methods
-		return MainApp.#numInstances;
+		return MainApp.numInstances;
 	}
 
 	constructor() {
 		console.log("creating instance of MainApp");
-		++MainApp.#numInstances;
+		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
