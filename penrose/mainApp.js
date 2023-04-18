@@ -206,12 +206,18 @@ class MainApp {
 		this.drawPrim.drawCircle([.5, .75], .125);
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		this.drawPrim.drawCircle([.25, .75], .125, "#80ff80");
+		/*
 		// in user space, make look like ndc space, not scale
 		const pntUser = [-1, .75];
 		const pntXlate = vec2.create();
 		//vec2.copy(pntXlate, pntUser);
 		this.plotter2d.ndcToUser(pntXlate, pntUser);
-		this.drawPrim.drawCircle(pntXlate, .125, "#ff8080");
+		this.drawPrim.drawCircle(pntXlate, .125, "#ff8080");*/
+		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
+		const col = this.plotter2d.userMouse[0] < 0 ? "#ff0000c0" : "#ff000080";
+		this.drawPrim.drawRectangle(this.plotter2d.ndcMin
+			, [.25, (this.plotter2d.ndcMax[1] - this.plotter2d.ndcMin[1])]
+			, col);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

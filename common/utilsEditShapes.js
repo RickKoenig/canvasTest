@@ -83,7 +83,8 @@ class EditPnts {
 		return hilitIdx;
 	}
 
-	proc(mouse, userMouse) { // mouse buttons and user/cam space mouse coord
+	proc(mouse, userMouseOrig) { // mouse buttons and user/cam space mouse coord
+		const userMouse = vec2.clone(userMouseOrig);
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
