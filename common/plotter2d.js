@@ -284,13 +284,12 @@ class Plotter2d {
     }
 
     // move points from ndc space to user space
-    // TODO: implement
-    ndcToUser(pntXlate, pntUser) {
-        pntXlate[0] = pntUser[0];
-        pntXlate[1] = pntUser[1];
-        pntXlate[0] *= this.invZoom;
-        pntXlate[1] *= this.invZoom;
-        pntXlate[0] += this.center[0];
-        pntXlate[1] += this.center[1];
+    ndcToUser(outUser, inNdc) {
+        outUser[0] = inNdc[0];
+        outUser[1] = inNdc[1];
+        outUser[0] *= this.invZoom;
+        outUser[1] *= this.invZoom;
+        outUser[0] += this.center[0];
+        outUser[1] += this.center[1]; 
     }
 }

@@ -276,6 +276,10 @@ class EditTiles {
 		return hilitIdx;
 	}
 
+	getCurSelected() {
+		return this.curPntIdx;
+	}
+
 	#doSnap(ang) {
 		if (this.snapAmount) {
 			ang /= this.snapAmount;

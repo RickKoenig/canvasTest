@@ -130,6 +130,10 @@ class MainApp {
 		this.snapMode = true;
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
+		this.protoTiles = [];
+		// let proc position them proto tiles
+		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.tiles = [];
 		this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.tiles.push(new Tile(SkinnyShape, [0, .375], PenTile.smallAngle));
@@ -138,6 +142,7 @@ class MainApp {
 		this.tiles.push(new Tile(FatShape, [1, .375], PenTile.smallAngle));
 		this.tiles.push(new Tile(FatShape, [1, .75], PenTile.smallAngle * 2));
 		this.editTiles = new EditTiles(this.tiles);
+		this.editProtoTiles = new EditTiles(this.protoTiles);
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
@@ -180,6 +185,8 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+
+		// process input
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		const key = this.input.keyboard.key;
 		const keyCodes = keyTable.keyCodes;
@@ -194,22 +201,49 @@ class MainApp {
 			//console.log("rot = " + rotStep);
 			break;
 		}
-		this.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < .25;
+
+		// remove tiles if deselected in the red area
+		this.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;
 		this.dirty = this.editTiles.proc(this.input.mouse
 			, this.plotter2d.userMouse
 			, this.snapMode, this.rotMode, rotStep, this.delDeselect) 
 			|| this.dirty;
+		/*
+		this.dirty = this.editProtoTiles.proc(this.input.mouse
+			, this.plotter2d.userMouse
+			, false, false, rotStep, false) 
+			|| this.dirty;
+		*/
+		// update proto tiles positions to user space
+		const yPos = [.75, .25]; // skinny, fat
+		for (let i = 0; i < this.protoTiles.length; ++i) {
+			const tile = this.protoTiles[i];
+			const ndc = [this.plotter2d.ndcMin[0] + this.redBarWidth / 2, yPos[i]]; 
+			const user = tile.pos;
+			this.plotter2d.ndcToUser(user, ndc);
+		}
+		// select and add a proto tile to the main tiles
+		if (this.input.mouse.mbut[0] && !this.input.mouse.lmbut[0]) {
+			console.log("mbut pressed");
+		}
 	}
 
 	#userDraw() {
-		// shapes
+		// main shapes
 		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
-
+		// proto shapes
+		/*
+		for (let j = 0; j < this.protoTiles.length; ++j) {
+			const tile = this.protoTiles[j];
+			tile.draw(this.drawPrim, j);
+		}
+*/
+		this.editProtoTiles.draw(this.drawPrim, this.plotter2d.userMouse);
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-		const col = this.delDeselect ? "#ff0000c0" : "#ff000080";
+		const col = this.delDeselect ? "#ff000040" : "#ff000020";
 		this.drawPrim.drawRectangle(this.plotter2d.ndcMin
-			, [.25, (this.plotter2d.ndcMax[1] - this.plotter2d.ndcMin[1])]
+			, [this.redBarWidth, (this.plotter2d.ndcMax[1] - this.plotter2d.ndcMin[1])]
 			, col);
 	}
 
