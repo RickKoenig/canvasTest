@@ -233,8 +233,13 @@ class Shape {
 class Tile {
 	constructor(shape, pos, rot) {
 		this.shape = shape;
-		this.pos = pos;
+		this.pos = vec2.clone(pos);
 		this.rot = rot;
+	}
+
+	clone(rhs) {
+		const ret = new Tile(this.shape, this.pos, this.rot);
+		return ret;
 	}
 
 	draw(drawPrim, id, doHilit = false) {
@@ -280,6 +285,28 @@ class EditTiles {
 		return this.curPntIdx;
 	}
 
+	deselect() {
+		this.curPntIdx = -1;
+		this.hilitPntIdx = -1;
+	}
+
+	deleteHilited() {
+		if (this.hilitPntIdx >=0) {
+			this.tiles.splice(this.hilitPntIdx, 1);
+			this.deselect();
+		}
+	}
+
+	addTile(tile, userMouse) {
+		this.curPntIdx = this.tiles.length;
+		this.hilitPntIdx = this.curPntIdx;
+		this.tiles.push(tile);
+
+		vec2.sub(this.startRegPoint, userMouse, tile.pos);
+		vec2.copy(this.lastUserMouse, userMouse);
+		this.startRot = tile.rot;
+	}
+
 	#doSnap(ang) {
 		if (this.snapAmount) {
 			ang /= this.snapAmount;
@@ -289,14 +316,7 @@ class EditTiles {
 		return ang;
 	}
 
-	proc(mouse, userMouse, snapMode = false, rotMode = false, rotStep = 0, delDeselect = false) { // mouse buttons and user/cam space mouse coord
-		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
-		this.hilitPntIdx = -1
-		// edit stuff on the graph paper
-		let but = mouse.mbut[Mouse.LEFT];
-		let lastBut = mouse.lmbut[Mouse.LEFT];
-
-		// hilit hover
+	#calcHilit(userMouse) {
 		// check topmost points first
 		for (let i = this.tiles.length - 1; i >= 0; --i) {
 			const tile = this.tiles[i];
@@ -306,6 +326,20 @@ class EditTiles {
 				break;
 			}
 		}
+	}
+	
+	proc(mouse, userMouse
+		, snapMode = false, rotMode = false
+		, rotStep = 0, delDeselect = false
+		, doMove = true) { // mouse buttons and user/cam space mouse coord
+		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
+		this.hilitPntIdx = -1
+		// edit stuff on the graph paper
+		let but = mouse.mbut[Mouse.LEFT];
+		let lastBut = mouse.lmbut[Mouse.LEFT];
+
+		// hilit hover
+		this.#calcHilit(userMouse);
 		if (this.curPntIdx < 0) {
 			// nothing selected
 			if (this.hilitPntIdx >= 0) {
@@ -317,7 +351,7 @@ class EditTiles {
 					vec2.sub(this.startRegPoint, userMouse, tile.pos);
 					vec2.copy(this.lastUserMouse, userMouse);
 					this.startRot = tile.rot;
-					const moveToTop = true;
+					const moveToTop = doMove;
 					if (moveToTop) {
 						const result = this.tiles.splice(this.curPntIdx, 1);
 						this.tiles.push(result[0]);
@@ -333,6 +367,7 @@ class EditTiles {
 			if (this.curPntIdx >= 0) {
 				if (delDeselect) { // delete tile when deselected
 					this.tiles.splice(this.curPntIdx, 1);
+					this.hilitPntIdx = -1;
 				} else {
 					if (snapMode) {
 						const tile = this.tiles[this.curPntIdx];
@@ -341,10 +376,11 @@ class EditTiles {
 				}
 				dirt = true;
 			}
+			this.#calcHilit(userMouse); // recalc hilit after things delected or deleted
 			this.curPntIdx = -1;
 		}
 		//  MOVE selected point
-		if (this.curPntIdx >= 0) {
+		if (this.curPntIdx >= 0 && doMove) {
 			const tile = this.tiles[this.curPntIdx];
 			const delMouse = vec2.create();
 			if (rotMode) {

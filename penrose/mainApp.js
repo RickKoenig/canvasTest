@@ -159,21 +159,25 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "Left Right Arrow Keys");
 		this.eles.rotMode = makeEle(this.vp, "input", "rotMode", null, "ho", (val) => {
 			this.rotMode = val;
-			//console.log("rotmode = " + val);
 		}, "checkbox");
 		this.eles.rotMode.checked = this.rotMode;
-		makeEle(this.vp, "hr");
-		makeEle(this.vp, "span", null, "marg", "Snap Mode");
+
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Snap Angle Mode");
 		this.eles.snapMode = makeEle(this.vp, "input", "snapMode", null, "ho", (val) => {
 			this.snapMode = val;
-			//console.log("snapMode = " + val);
 		}, "checkbox");
 		this.eles.snapMode.checked = this.snapMode;
+
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "'Del' key to delete tiles");
 	}		
 	
 	#userProc() {
 		// proc
-		//this.dirty = true;
+		// this.dirty = true;
 		// update FPS
 		if (this.oldTime === undefined) {
 			this.oldTime = performance.now();
@@ -194,11 +198,13 @@ class MainApp {
 		switch(key) {
 		case keyCodes.RIGHT:
 			rotStep -= PenTile.smallAngle; // clockwise
-			//console.log("rot = " + rotStep);
 			break;
 		case keyCodes.LEFT:
 			rotStep += PenTile.smallAngle; // counter clockwise
-			//console.log("rot = " + rotStep);
+			break;
+		case keyCodes.DELETE:
+			this.editTiles.deleteHilited();
+			this.dirty = true;
 			break;
 		}
 
@@ -208,12 +214,16 @@ class MainApp {
 			, this.plotter2d.userMouse
 			, this.snapMode, this.rotMode, rotStep, this.delDeselect) 
 			|| this.dirty;
-		/*
+		
 		this.dirty = this.editProtoTiles.proc(this.input.mouse
 			, this.plotter2d.userMouse
-			, false, false, rotStep, false) 
+			, false, false, rotStep, false, false) 
 			|| this.dirty;
-		*/
+		
+		if (this.editTiles.getHilitIdx() >= 0) {
+			// don't hilit both proto tiles and main tiles
+			this.editProtoTiles.deselect();
+		}
 		// update proto tiles positions to user space
 		const yPos = [.75, .25]; // skinny, fat
 		for (let i = 0; i < this.protoTiles.length; ++i) {
@@ -223,22 +233,19 @@ class MainApp {
 			this.plotter2d.ndcToUser(user, ndc);
 		}
 		// select and add a proto tile to the main tiles
-		if (this.input.mouse.mbut[0] && !this.input.mouse.lmbut[0]) {
-			console.log("mbut pressed");
+		const protoSelected = this.editProtoTiles.getCurSelected()
+		if (protoSelected >=0) {
+			this.editProtoTiles.deselect();
+			const newTile = this.protoTiles[protoSelected].clone();
+			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
 		}
 	}
 
 	#userDraw() {
+		// proto shapes
+		this.editProtoTiles.draw(this.drawPrim, this.plotter2d.userMouse);
 		// main shapes
 		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
-		// proto shapes
-		/*
-		for (let j = 0; j < this.protoTiles.length; ++j) {
-			const tile = this.protoTiles[j];
-			tile.draw(this.drawPrim, j);
-		}
-*/
-		this.editProtoTiles.draw(this.drawPrim, this.plotter2d.userMouse);
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 		const col = this.delDeselect ? "#ff000040" : "#ff000020";
@@ -290,10 +297,6 @@ class MainApp {
 
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
-	}
-
-	#resetCounter() {
-		this.count = 0;
 	}
 }
 
