@@ -243,14 +243,14 @@ class Tile {
 		return ret;
 	}
 
-	draw(drawPrim, id, doHilit = false) {
+	draw(drawPrim, id, doHilit = false, options) {
 		const ctx = drawPrim.ctx;
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
 		if (this.shape.draw) {
 			ctx.save(); // keep font level
 			ctx.rotate(this.rot);
-			this.shape.draw(drawPrim, id, doHilit);
+			this.shape.draw(drawPrim, id, doHilit, options);
 			ctx.restore();
 		}
 		if (this.shape.drawLevel) {
@@ -399,12 +399,12 @@ class EditTiles {
 		return dirt;
 	}
 
-	draw(drawPrim) {
+	draw(drawPrim, options) {
 		const hilitPntIdx2 = this.getHilitIdx();
 		const ctx = drawPrim.ctx;
 		for (let j = 0; j < this.tiles.length; ++j) {
 			const tile = this.tiles[j];
-			tile.draw(drawPrim, j, hilitPntIdx2 == j);
+			tile.draw(drawPrim, j, hilitPntIdx2 == j, options);
 		}
 	}
 }

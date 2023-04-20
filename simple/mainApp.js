@@ -277,7 +277,7 @@ class MainApp {
 		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);
 
 		// shapes
-		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.editTiles.draw(this.drawPrim);
 
 		// pnts 2
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);

@@ -16,7 +16,11 @@ class PenShape extends Shape {
 		super.setupPolyPnts();
 	}
 
-	static draw(drawPrim, id, doHilit = false, fat) {
+	static drawTriNotch(drawPrim, pos, ang) {
+		drawPrim.drawCircle(pos, .25, "white");
+	}
+
+	static draw(drawPrim, id, doHilit = false, fat, options) {
 		let colAdjust = doHilit ? .3 : 0;
 		const col = fat ? "#a08000" : "#008000";
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
@@ -25,12 +29,40 @@ class PenShape extends Shape {
 		const col2 = "indianred"; // a red
 		const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
 		const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
-		if (fat) {
-			drawPrim.drawArcO(this.polyPnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
-			drawPrim.drawArcO(this.polyPnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
-		} else {
-			drawPrim.drawArcO(this.polyPnts[1], .25, .075, degToRad(180 + 36), degToRad(0), col1Hilit);
-			drawPrim.drawArcO(this.polyPnts[3], .25, .075, degToRad(36), degToRad(180 ), col2Hilit);
+		if (options.drawArcs) {
+			if (fat) {
+				drawPrim.drawArcO(this.polyPnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
+				drawPrim.drawArcO(this.polyPnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
+			} else {
+				drawPrim.drawArcO(this.polyPnts[1], .25, .075, degToRad(180 + 36), degToRad(0), col1Hilit);
+				drawPrim.drawArcO(this.polyPnts[3], .25, .075, degToRad(36), degToRad(180 ), col2Hilit);
+			}
+		}
+		if (options.drawNotches) {
+			const pnt = vec2.create();
+			const smallDist = 1 / 3;
+			const largeDist = 2 / 3;
+			const lineWidth = .025;
+			const rad = .075;
+			if (fat) {
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
+				this.drawTriNotch(drawPrim, pnt,degToRad(36));
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(180), 0, "blue");
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(72 + 180), degToRad(72), "blue");
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
+				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+			} else {
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
+				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(36 + 180), degToRad(36), "blue");
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, 0, degToRad(180), "blue");
+			}
 		}
 	}
 
@@ -48,8 +80,8 @@ class SkinnyShape extends PenShape {
 		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
 	}
 
-	static draw(drawPrim, id, doHilit = false) {
-		super.draw(drawPrim, id, doHilit, false);
+	static draw(drawPrim, id, doHilit = false, options) {
+		super.draw(drawPrim, id, doHilit, false, options);
 	}
 
 	static {
@@ -64,8 +96,8 @@ class FatShape extends PenShape {
 		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
 	}
 
-	static draw(drawPrim, id, doHilit = false) {
-		super.draw(drawPrim, id, doHilit, true);
+	static draw(drawPrim, id, doHilit = false, options) {
+		super.draw(drawPrim, id, doHilit, true, options);
 	}
 
 	static {
@@ -130,7 +162,7 @@ class MainApp {
 			penTilesObj = JSON.parse(penTilesStr);
 		}
 		if (penTilesObj.length) {
-			console.log("loading " + this.tiles.length + " tiles on init");
+			console.log("loading " + penTilesObj.length + " tiles on init");
 			for (let penTileObj of penTilesObj) {
 				let kind = null;
 				switch(penTileObj.kind) {
@@ -181,6 +213,8 @@ class MainApp {
 
 		this.rotMode = true;
 		this.snapMode = true;
+		this.drawArcs = true;
+		this.drawNotches = true;
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.protoTiles = [];
@@ -211,11 +245,35 @@ class MainApp {
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
+
 		makeEle(this.vp, "span", null, "marg", "Snap Angle Mode");
 		this.eles.snapMode = makeEle(this.vp, "input", "snapMode", null, "ho", (val) => {
 			this.snapMode = val;
 		}, "checkbox");
 		this.eles.snapMode.checked = this.snapMode;
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+
+		makeEle(this.vp, "span", null, "marg", "Draw Arcs");
+		this.eles.drawArcs = makeEle(this.vp, "input", "draw arcs", null, "ho", (val) => {
+			if (this.drawNotches) {
+				this.drawArcs = val;
+			}
+			this.eles.drawArcs.checked = this.drawArcs;
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.drawArcs.checked = this.drawArcs;
+		makeEle(this.vp, "br");
+
+		makeEle(this.vp, "span", null, "marg", "Draw Notches");
+		this.eles.drawNotches = makeEle(this.vp, "input", "draw notches", null, "ho", (val) => {
+			if (this.drawArcs) {
+				this.drawNotches = val;
+			}
+			this.eles.drawNotches.checked = this.drawNotches;
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.drawNotches.checked = this.drawNotches;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
@@ -291,10 +349,14 @@ class MainApp {
 	}
 
 	#userDraw() {
+		const options = {
+			drawArcs: this.drawArcs,
+			drawNotches: this.drawNotches
+		};
 		// proto shapes
-		this.editProtoTiles.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.editProtoTiles.draw(this.drawPrim, options);
 		// main shapes
-		this.editTiles.draw(this.drawPrim, this.plotter2d.userMouse);
+		this.editTiles.draw(this.drawPrim, options);
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 		const col = this.delDeselect ? "#ff000040" : "#ff000020";
