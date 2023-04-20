@@ -235,6 +235,7 @@ class Tile {
 		this.shape = shape;
 		this.pos = vec2.clone(pos);
 		this.rot = rot;
+		this.kind = shape.kind;
 	}
 
 	clone(rhs) {

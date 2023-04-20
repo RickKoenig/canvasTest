@@ -1,6 +1,6 @@
 'use strict';
 
-class PenTile extends Shape {
+class PenShape extends Shape {
 	static smallAngle = degToRad(36);
 	static setupPolyPnts(ang, fat) {
 		// rhombus
@@ -43,7 +43,7 @@ class PenTile extends Shape {
 }
 
 // tile 1
-class SkinnyShape extends PenTile {
+class SkinnyShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
 	}
@@ -54,11 +54,12 @@ class SkinnyShape extends PenTile {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "skinny";
 	}
 }
 
 // tile 2
-class FatShape extends PenTile {
+class FatShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
 	}
@@ -69,6 +70,7 @@ class FatShape extends PenTile {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "fat";
 	}
 }
 
@@ -115,6 +117,57 @@ class MainApp {
 		this.dirty = true; // draw at least once
 		this.dirtyCount = 100;
 		this.#animate();
+
+		// auto save
+		addEventListener("beforeunload", this.#saveOnExit.bind(this));
+	}
+
+	#loadOnInit() {
+		this.tiles = [];
+		const penTilesStr = localStorage.getItem("penTiles");
+		let penTilesObj = [];
+		if (penTilesStr) {
+			penTilesObj = JSON.parse(penTilesStr);
+		}
+		if (penTilesObj.length) {
+			console.log("loading " + this.tiles.length + " tiles on init");
+			for (let penTileObj of penTilesObj) {
+				let kind = null;
+				switch(penTileObj.kind) {
+				case 'skinny':
+					kind = SkinnyShape;
+					break;
+				case 'fat':
+					kind = FatShape;
+					break;
+				default:
+					alert("unknown tile kind " + penTileObj.kind);
+					break;
+				}
+				const pos = vec2.clone(penTileObj.pos);
+				const rot = penTileObj.rot;
+				this.tiles.push(new Tile(kind, pos, rot));
+			}
+		} else {
+			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
+			this.tiles.push(new Tile(SkinnyShape, [0, .375], PenShape.smallAngle));
+			this.tiles.push(new Tile(SkinnyShape, [0, .75], PenShape.smallAngle * 2));
+			this.tiles.push(new Tile(FatShape, [1, 0], 0));
+			this.tiles.push(new Tile(FatShape, [1, .375], PenShape.smallAngle));
+			this.tiles.push(new Tile(FatShape, [1, .75], PenShape.smallAngle * 2));
+			console.log("creating " + this.tiles.length + " tiles on init");
+		}
+	}
+
+	#saveOnExit() {
+		console.log("saving " + this.tiles.length + " tiles on exit");
+		localStorage.setItem("penTiles", JSON.stringify(this.tiles));
+	}
+
+	#clearTiles() {
+		this.tiles.length = 0;
+		this.dirty = true;
+
 	}
 
 	// USER: add more members or classes to MainApp
@@ -134,13 +187,7 @@ class MainApp {
 		// let proc position them proto tiles
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
-		this.tiles = [];
-		this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
-		this.tiles.push(new Tile(SkinnyShape, [0, .375], PenTile.smallAngle));
-		this.tiles.push(new Tile(SkinnyShape, [0, .75], PenTile.smallAngle * 2));
-		this.tiles.push(new Tile(FatShape, [1, 0], 0));
-		this.tiles.push(new Tile(FatShape, [1, .375], PenTile.smallAngle));
-		this.tiles.push(new Tile(FatShape, [1, .75], PenTile.smallAngle * 2));
+		this.#loadOnInit();
 		this.editTiles = new EditTiles(this.tiles);
 		this.editProtoTiles = new EditTiles(this.protoTiles);
 
@@ -172,7 +219,9 @@ class MainApp {
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "'Del' key to delete tiles");
+		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
+		// clear tiles
+		makeEle(this.vp, "button", null, null, "Clear all tiles",this.#clearTiles.bind(this));
 	}		
 	
 	#userProc() {
@@ -197,10 +246,10 @@ class MainApp {
 		let rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			rotStep -= PenTile.smallAngle; // clockwise
+			rotStep -= PenShape.smallAngle; // clockwise
 			break;
 		case keyCodes.LEFT:
-			rotStep += PenTile.smallAngle; // counter clockwise
+			rotStep += PenShape.smallAngle; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
@@ -256,9 +305,10 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let countStr = "Dirty Count = " + this.dirtyCount;
-		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
-		this.eles.textInfoLog.innerText = countStr;
+		let infoStr = "Dirty Count = " + this.dirtyCount;
+		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		infoStr += "\n Number of tiles = " + this.tiles.length;
+		this.eles.textInfoLog.innerText = infoStr;
 	}
 
 	// proc
