@@ -114,7 +114,7 @@ class DrawPrimitives {
     }
 
     // an array of x,y values, if close is true, connect first point to last point
-    drawLinesParametric(pnts, lineWidth = .01, close = false, circleSize = .02
+    drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
         , lineColor = "black", circleColor = "green", ndcScale = false) {
         if (pnts.length < 2) {
             return;
@@ -158,7 +158,6 @@ class DrawPrimitives {
             return;
         }
         const outerColor = outlineRatio > 0 ? outLineColor : fillColor;
-        //const ndcZoom = this.plotter2d.getZoom(ndcScale);
 
         // first pass, outlinecolor  if outlineRatio > 0  or fillcolor
         this.ctx.beginPath();

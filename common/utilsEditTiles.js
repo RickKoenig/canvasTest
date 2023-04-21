@@ -253,7 +253,7 @@ class Tile {
 			this.shape.draw(drawPrim, id, doHilit, options);
 			ctx.restore();
 		}
-		if (this.shape.drawLevel) {
+		if (this.shape.drawLevel && options.drawIds) {
 			this.shape.drawLevel(drawPrim, id, doHilit);
 		}
 		ctx.restore();

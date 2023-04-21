@@ -16,8 +16,22 @@ class PenShape extends Shape {
 		super.setupPolyPnts();
 	}
 
+	static offs = [[-.05, 0], [0, .1], [.05, 0]];
 	static drawTriNotch(drawPrim, pos, ang) {
-		drawPrim.drawCircle(pos, .25, "white");
+		const ctx = drawPrim.ctx;
+		ctx.save();
+		//drawPrim.drawArcO(pos, .075, .025, ang, ang + Math.PI, "yellow");
+		//const pnts = [vec2.create(), vec2.create(), vec2.create()];
+		//vec2.add(pnts[0], pos, offs[0]);
+		//vec2.add(pnts[1], pos, offs[1]);
+		//vec2.add(pnts[2], pos, offs[2]);
+		ctx.translate(pos[0], pos[1]);
+		ctx.rotate(ang);
+		drawPrim.drawLinesParametric(this.offs, .025, 0, false, "black");
+		ctx.restore();
+		/*
+		drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
+			, lineColor = "black", circleColor = "green", ndcScale = false) { */
 	}
 
 	static draw(drawPrim, id, doHilit = false, fat, options) {
@@ -46,22 +60,22 @@ class PenShape extends Shape {
 			const rad = .075;
 			if (fat) {
 				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
-				this.drawTriNotch(drawPrim, pnt,degToRad(36));
+				this.drawTriNotch(drawPrim, pnt,degToRad(72 + 180));
 				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(180), 0, "blue");
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(180), 0, "black");
 				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(72 + 180), degToRad(72), "blue");
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(72 + 180), degToRad(72), "black");
 				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
-				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+				this.drawTriNotch(drawPrim, pnt, degToRad(180));
 			} else {
 				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
-				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+				this.drawTriNotch(drawPrim, pnt, degToRad(36));
 				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-				drawPrim.drawCircleO(pnt, rad, lineWidth, "red");
+				this.drawTriNotch(drawPrim, pnt, degToRad(180));
 				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(36 + 180), degToRad(36), "blue");
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(36 + 180), degToRad(36), "black");
 				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
-				drawPrim.drawArcO(pnt, rad, lineWidth, 0, degToRad(180), "blue");
+				drawPrim.drawArcO(pnt, rad, lineWidth, 0, degToRad(180), "black");
 			}
 		}
 	}
@@ -181,12 +195,8 @@ class MainApp {
 				this.tiles.push(new Tile(kind, pos, rot));
 			}
 		} else {
-			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
-			this.tiles.push(new Tile(SkinnyShape, [0, .375], PenShape.smallAngle));
-			this.tiles.push(new Tile(SkinnyShape, [0, .75], PenShape.smallAngle * 2));
-			this.tiles.push(new Tile(FatShape, [1, 0], 0));
-			this.tiles.push(new Tile(FatShape, [1, .375], PenShape.smallAngle));
-			this.tiles.push(new Tile(FatShape, [1, .75], PenShape.smallAngle * 2));
+			this.tiles.push(new Tile(SkinnyShape, [0, 2], 0));
+			this.tiles.push(new Tile(FatShape, [2, 2], 0));
 			console.log("creating " + this.tiles.length + " tiles on init");
 		}
 	}
@@ -215,6 +225,7 @@ class MainApp {
 		this.snapMode = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
+		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.protoTiles = [];
@@ -227,7 +238,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .25;
+		this.startZoom = .35;
 	}
 
 	#userBuildUI() {
@@ -274,6 +285,14 @@ class MainApp {
 			this.dirty = true;
 		}, "checkbox");
 		this.eles.drawNotches.checked = this.drawNotches;
+		makeEle(this.vp, "br");
+
+		makeEle(this.vp, "span", null, "marg", "Draw Ids");
+		this.eles.drawIds = makeEle(this.vp, "input", "draw ids", null, "ho", (val) => {
+			this.drawIds = val;
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.drawIds.checked = this.drawIds;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
@@ -348,15 +367,102 @@ class MainApp {
 		}
 	}
 
+	#testDraw() {
+		/*
+		this.ctx.beginPath();
+		this.ctx.lineJoin = "round";
+		this.ctx.moveTo(-1, 1);
+		this.ctx.lineTo(0, 0);
+		this.ctx.lineTo(1, 1);
+		this.ctx.lineWidth = .1;
+		this.ctx.strokeStyle = "cyan";
+		this.ctx.fillStyle = "red";
+		this.ctx.closePath();
+		this.ctx.fill();
+		this.ctx.stroke();*/
+
+		//this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
+		const ctx = this.ctx;
+		ctx.save();
+		ctx.scale(.005, .005); // zoom in real close to the example
+		
+		// Tangential lines
+		ctx.beginPath();
+		ctx.strokeStyle = "gray";
+		ctx.lineWidth = 1;
+		ctx.moveTo(200, 20);
+		ctx.lineTo(200, 130);
+		ctx.lineTo(50, 20);
+		ctx.stroke();
+
+		// Arc
+		ctx.beginPath();
+		ctx.strokeStyle = "black";
+		ctx.fillStyle = "green";
+		ctx.lineWidth = 5;
+		ctx.moveTo(200, 20);
+		ctx.arcTo(200, 130, 50, 20, 40);
+		ctx.closePath();
+		//ctx.lineTo(50, 20);
+		ctx.fill();
+		ctx.stroke();
+
+		// test
+		ctx.beginPath();
+		ctx.strokeStyle = "black";
+		ctx.fillStyle = "green";
+		ctx.lineWidth = 2;
+		ctx.moveTo(250, 20);
+		ctx.arc(300, 20, 20, degToRad(180), degToRad(0), true);
+		ctx.arc(400, 20, 20, degToRad(180), degToRad(0), false);
+		ctx.lineTo(450, 20);
+		ctx.lineTo(250, 130);
+		//ctx.lineTo(250, 20);
+		//ctx.arc(325, 210, 30, 0, Math.PI / 8);
+		ctx.closePath();
+		//ctx.lineTo(50, 20);
+		ctx.fill();
+		ctx.stroke();
+
+
+		// Start point
+		ctx.beginPath();
+		ctx.fillStyle = "blue";
+		ctx.arc(200, 20, 5, 0, 2 * Math.PI);
+		ctx.fill();
+
+		// Control points
+		ctx.beginPath();
+		ctx.fillStyle = "red";
+		ctx.arc(200, 130, 5, 0, 2 * Math.PI); // Control point one
+		ctx.arc(50, 20, 5, 0, 2 * Math.PI); // Control point two
+		ctx.fill();
+		ctx.restore();
+	}
+/*
+	// optional draw circles on vertices
+	if (circleSize > 0) {
+		this.ctx.fillStyle = circleColor;
+		for (let idx = 0; idx < pnts.length; ++idx) {
+			const pnt = pnts[idx];
+			this.ctx.beginPath();
+			this.ctx.arc(pnt[0], pnt[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+			this.ctx.fill();
+		}
+	}
+}
+*/
 	#userDraw() {
 		const options = {
 			drawArcs: this.drawArcs,
-			drawNotches: this.drawNotches
+			drawNotches: this.drawNotches,
+			drawIds: this.drawIds
 		};
 		// proto shapes
 		this.editProtoTiles.draw(this.drawPrim, options);
 		// main shapes
 		this.editTiles.draw(this.drawPrim, options);
+		//this.#testDraw();
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 		const col = this.delDeselect ? "#ff000040" : "#ff000020";
