@@ -88,9 +88,9 @@ class PenShape extends Shape {
 		ctx.lineTo(pnt[0], pnt[1]);
 		vec2.rotate(rotOff, this.triOffs[1], ang);
 		if  (ccw) {
-			vec2.sub(pnt, pos, rotOff);
-		} else {
 			vec2.add(pnt, pos, rotOff);
+		} else {
+			vec2.sub(pnt, pos, rotOff);
 		}
 		ctx.lineTo(pnt[0], pnt[1]);
 		vec2.rotate(rotOff, this.triOffs[2], ang);
@@ -108,7 +108,7 @@ class PenShape extends Shape {
 			if (fat) {
 				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
 				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
-				this.addTriNotch(ctx, pnt, degToRad(72), true);
+				this.addTriNotch(ctx, pnt, degToRad(72));
 				ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
 				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
 				ctx.arc(pnt[0], pnt[1], rad, degToRad(180), 0);
@@ -117,9 +117,20 @@ class PenShape extends Shape {
 				ctx.arc(pnt[0], pnt[1], rad, degToRad(72), degToRad(72 + 180), true);
 				ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
 				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
-				this.addTriNotch(ctx, pnt, degToRad(180));
+				this.addTriNotch(ctx, pnt, degToRad(180),true);
 			} else {
-
+				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
+				this.addTriNotch(ctx, pnt, degToRad(36), true);
+				ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				this.addTriNotch(ctx, pnt, degToRad(0), false);
+				ctx.lineTo(this.polyPnts[2][0], this.polyPnts[2][1]);
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				ctx.arc(pnt[0], pnt[1], rad, degToRad(36), degToRad(36 + 180), true);
+				ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
+				ctx.arc(pnt[0], pnt[1], rad, degToRad(0), degToRad(0 + 180));
 			}
 		} else {
 			ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
@@ -205,7 +216,7 @@ class SkinnyShape extends PenShape {
 	}
 
 	static draw(drawPrim, id, doHilit = false, options) {
-		super.draw(drawPrim, id, doHilit, false, options);
+		super.draw2(drawPrim, id, doHilit, false, options);
 	}
 
 	static {
