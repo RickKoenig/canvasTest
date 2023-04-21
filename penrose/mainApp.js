@@ -16,18 +16,18 @@ class PenShape extends Shape {
 		super.setupPolyPnts();
 	}
 
-	static offs = [[-.05, 0], [0, .1], [.05, 0]];
+	static triOffs = [[-.05, 0], [0, .1], [.05, 0]];
 	static drawTriNotch(drawPrim, pos, ang) {
 		const ctx = drawPrim.ctx;
 		ctx.save();
 		//drawPrim.drawArcO(pos, .075, .025, ang, ang + Math.PI, "yellow");
 		//const pnts = [vec2.create(), vec2.create(), vec2.create()];
-		//vec2.add(pnts[0], pos, offs[0]);
-		//vec2.add(pnts[1], pos, offs[1]);
-		//vec2.add(pnts[2], pos, offs[2]);
+		//vec2.add(pnts[0], pos, triOffs[0]);
+		//vec2.add(pnts[1], pos, triOffs[1]);
+		//vec2.add(pnts[2], pos, triOffs[2]);
 		ctx.translate(pos[0], pos[1]);
 		ctx.rotate(ang);
-		drawPrim.drawLinesParametric(this.offs, .025, 0, false, "black");
+		drawPrim.drawLinesParametric(this.triOffs, .025, 0, false, "black");
 		ctx.restore();
 		/*
 		drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
@@ -39,11 +39,11 @@ class PenShape extends Shape {
 		const col = fat ? "#a08000" : "#008000";
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
-		const col1 = "#2040ff";   // a blue
-		const col2 = "indianred"; // a red
-		const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
-		const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
 		if (options.drawArcs) {
+			const col1 = "#2040ff";   // a blue
+			const col2 = "indianred"; // a red
+			const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
+			const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
 			if (fat) {
 				drawPrim.drawArcO(this.polyPnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
 				drawPrim.drawArcO(this.polyPnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
@@ -80,6 +80,116 @@ class PenShape extends Shape {
 		}
 	}
 
+	static addTriNotch(ctx, pos, ang, ccw = false) {
+		const pnt = vec2.create();
+		const rotOff = vec2.create();
+		vec2.rotate(rotOff, this.triOffs[0], ang);
+		vec2.add(pnt, rotOff, pos);
+		ctx.lineTo(pnt[0], pnt[1]);
+		vec2.rotate(rotOff, this.triOffs[1], ang);
+		if  (ccw) {
+			vec2.sub(pnt, pos, rotOff);
+		} else {
+			vec2.add(pnt, pos, rotOff);
+		}
+		ctx.lineTo(pnt[0], pnt[1]);
+		vec2.rotate(rotOff, this.triOffs[2], ang);
+		vec2.add(pnt, rotOff, pos);
+		ctx.lineTo(pnt[0], pnt[1]);
+	}
+
+	static doPath(ctx, fat, options) {
+		const smallDist = 1 / 3;
+		const largeDist = 2 / 3;
+		const rad = .075;
+		const pnt = vec2.create();
+		ctx.beginPath();
+		if (options.drawNotches) {
+			if (fat) {
+				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
+				this.addTriNotch(ctx, pnt, degToRad(72), true);
+				ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				ctx.arc(pnt[0], pnt[1], rad, degToRad(180), 0);
+				ctx.lineTo(this.polyPnts[2][0], this.polyPnts[2][1]);
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				ctx.arc(pnt[0], pnt[1], rad, degToRad(72), degToRad(72 + 180), true);
+				ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
+				this.addTriNotch(ctx, pnt, degToRad(180));
+			} else {
+
+			}
+		} else {
+			ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
+			ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
+			ctx.lineTo(this.polyPnts[2][0], this.polyPnts[2][1]);
+			ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
+		}
+		ctx.closePath();
+	}
+
+	static draw2(drawPrim, id, doHilit = false, fat, options) {
+		let colAdjust = doHilit ? .3 : 0;
+		const col = fat ? "#a08000" : "#008000";
+		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		const ctx = drawPrim.ctx;
+		//drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
+		const pnt = vec2.create();
+		const smallDist = 1 / 3;
+		const largeDist = 2 / 3;
+		const lineWidth = .025;
+		const rad = .075;
+		this.doPath(ctx, fat, options);
+		ctx.fillStyle = colHilit;
+		ctx.fill();
+		if (options.drawArcs) {
+			const col1 = "#2040ff";   // a blue
+			const col2 = "indianred"; // a red
+			const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
+			const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
+			if (fat) {
+				drawPrim.drawArcO(this.polyPnts[0], .25, .075, degToRad(0), degToRad(72), col1Hilit);
+				drawPrim.drawArcO(this.polyPnts[2], .75, .075, degToRad(180), degToRad(180 + 72), col2Hilit);
+			} else {
+				drawPrim.drawArcO(this.polyPnts[1], .25, .075, degToRad(180 + 36), degToRad(0), col1Hilit);
+				drawPrim.drawArcO(this.polyPnts[3], .25, .075, degToRad(36), degToRad(180 ), col2Hilit);
+			}
+		}
+		this.doPath(ctx, fat, options);
+		ctx.lineWidth = lineWidth;
+		ctx.strokeStyle = "black";
+		ctx.stroke();
+		/*
+		if (options.drawNotches) {
+			const pnt = vec2.create();
+			const smallDist = 1 / 3;
+			const largeDist = 2 / 3;
+			const lineWidth = .025;
+			const rad = .075;
+			if (fat) {
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
+				this.drawTriNotch(drawPrim, pnt,degToRad(72 + 180));
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(180), 0, "black");
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(72 + 180), degToRad(72), "black");
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
+				this.drawTriNotch(drawPrim, pnt, degToRad(180));
+			} else {
+				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
+				this.drawTriNotch(drawPrim, pnt, degToRad(36));
+				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+				this.drawTriNotch(drawPrim, pnt, degToRad(180));
+				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, degToRad(36 + 180), degToRad(36), "black");
+				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
+				drawPrim.drawArcO(pnt, rad, lineWidth, 0, degToRad(180), "black");
+			}
+		} */
+	}
+
 	static drawLevel(drawPrim, id, doHilit) {
 		const radius = .075;
 		drawPrim.drawCircle([0,0], radius, "brown", ); // center
@@ -111,7 +221,7 @@ class FatShape extends PenShape {
 	}
 
 	static draw(drawPrim, id, doHilit = false, options) {
-		super.draw(drawPrim, id, doHilit, true, options);
+		super.draw2(drawPrim, id, doHilit, true, options);
 	}
 
 	static {
