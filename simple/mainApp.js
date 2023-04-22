@@ -28,7 +28,7 @@ function javaScriptTests() {
 }
 
 // a test shape
-class SimpleShape extends Shape {
+class SimpleShape1 extends Shape {
 	static setupPolyPnts() {
 		this.polyPnts = [
 			[-.25, .25],
@@ -47,7 +47,7 @@ class SimpleShape extends Shape {
 	}
 
 	// no rotation
-	static drawLevel(drawPrim, id, doHilit = false) {
+	static drawLevel(drawPrim, id) {
 		// don't rotate the text
 		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, "brown", ); // center
@@ -169,9 +169,9 @@ class MainApp {
 		// tiles, test simple tiles
 		this.tiles = [];
 		
-		this.tiles.push(new Tile(SimpleShape, [0, 0], degToRad(0)));
-		this.tiles.push(new Tile(SimpleShape, [0, .375], degToRad(30)));
-		this.tiles.push(new Tile(SimpleShape, [0, .75], degToRad(45)));
+		this.tiles.push(new Tile(SimpleShape1, [0, 0], degToRad(0)));
+		this.tiles.push(new Tile(SimpleShape1, [0, .375], degToRad(30)));
+		this.tiles.push(new Tile(SimpleShape1, [0, .75], degToRad(45)));
 		this.tiles.push(new Tile(SimpleShape2, [1, 0], degToRad(0)));
 		this.tiles.push(new Tile(SimpleShape2, [1, .375], degToRad(30)));
 		this.tiles.push(new Tile(SimpleShape2, [1, .75], degToRad(45))); 
