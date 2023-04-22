@@ -16,6 +16,78 @@ class PenShape extends Shape {
 		this.fat = fat;
 		super.setupPolyPnts();
 		// setup draw commands
+		this.cmdsNoNotches = [];
+		let first = true;
+		for (let polyPnt of this.polyPnts) {
+			const cmd = {
+				pnt: polyPnt,
+				kind: first ? "moveTo" : "lineTo"
+			}
+			first = false;
+			this.cmdsNoNotches.push(cmd);
+		}
+		this.cmdsNotches = [];
+		const smallDist = 1 / 3;
+		const largeDist = 2 / 3;
+		const rad = .075;
+		let pnt;
+		// hand build the notches
+		if (this.fat) {
+			let cmd = {
+				pnt: this.polyPnts[0],
+				kind: "moveTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
+			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(72), false);
+
+			cmd = {
+				pnt: this.polyPnts[1],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+			cmd = {
+				pnt: pnt,
+				kind: "arc",
+				ang: degToRad(270),
+				ccw: false
+			}
+			this.cmdsNotches.push(cmd);
+
+			cmd = {
+				pnt: this.polyPnts[2],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+			cmd = {
+				pnt: pnt,
+				kind: "arc",
+				ang: degToRad(72 + 90),
+				ccw: true
+			}
+			this.cmdsNotches.push(cmd);
+
+			cmd = {
+				pnt: this.polyPnts[3],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
+			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
+
+		} else {
+			this.cmdsNotches = this.cmdsNoNotches;
+		}
 	}
 
 	static triOffs = [[-.05, 0], [0, .1], [.05, 0]];
@@ -37,6 +109,59 @@ class PenShape extends Shape {
 		ctx.lineTo(pnt[0], pnt[1]);
 	}
 
+	static addTriNotchCmd(cmds, pos, ang, ccw = false) {
+		const rotOff = vec2.create();
+
+		let pnt = vec2.create();
+		vec2.rotate(rotOff, this.triOffs[0], ang);
+		vec2.add(pnt, rotOff, pos);
+		let cmd = {
+			pnt: pnt,
+			kind: "lineTo",
+		};
+		cmds.push(cmd);
+
+		pnt = vec2.create();
+		vec2.rotate(rotOff, this.triOffs[1], ang);
+		if  (ccw) {
+			vec2.add(pnt, pos, rotOff);
+		} else {
+			vec2.sub(pnt, pos, rotOff);
+		}
+		cmd = {
+			pnt: pnt,
+			kind: "lineTo",
+		};
+		cmds.push(cmd);
+
+		pnt = vec2.create();
+		vec2.rotate(rotOff, this.triOffs[2], ang);
+		vec2.add(pnt, rotOff, pos);
+		cmd = {
+			pnt: pnt,
+			kind: "lineTo",
+		};
+		cmds.push(cmd);
+	}
+
+	static runCmds(ctx, cmds) {
+		const rad = .075;
+		for (let cmd of cmds) {
+			switch (cmd.kind) {
+			case "moveTo":
+				ctx.moveTo(cmd.pnt[0], cmd.pnt[1]);
+				break;
+			case "lineTo":
+				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
+				break;
+			case "arc":
+				const ang0 = cmd.ang - Math.PI / 2;
+				const ang1 = cmd.ang + Math.PI / 2;
+				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
+			}
+		}
+	}
+
 	static doPath(ctx, fat, options) {
 		const smallDist = 1 / 3;
 		const largeDist = 2 / 3;
@@ -44,6 +169,7 @@ class PenShape extends Shape {
 		const pnt = vec2.create();
 		ctx.beginPath();
 		if (options.drawNotches) {
+			/*
 			if (fat) {
 				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
 				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
@@ -71,41 +197,10 @@ class PenShape extends Shape {
 				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
 				ctx.arc(pnt[0], pnt[1], rad, degToRad(0), degToRad(0 + 180));
 			}
+			*/
+			this.runCmds(ctx, this.cmdsNotches);
 		} else {
-			// test draw commands with no notches, TODO: make work with notches
-			// and put into setupPolyPoints etc.
-			const cmds = [];
-			for (let polyPnt of this.polyPnts) {
-				const cmd = {
-					pnt: polyPnt,
-					kind: "point"
-				}
-				cmds.push(cmd);
-			}
-
-			let first = true;
-			for (let cmd of cmds) {
-				switch (cmd.kind) {
-				case "point":
-					if (first) {
-						ctx.moveTo(cmd.pnt[0], cmd.pnt[1]);
-					} else {
-						ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
-					}
-					break;
-				}
-				first = false;
-			}
-/*
-			let first = true;
-			for (let polyPnt of this.polyPnts) {
-				if (first) {
-					ctx.moveTo(polyPnt[0], polyPnt[1]);
-					first = false;
-				} else {
-					ctx.lineTo(polyPnt[0], polyPnt[1]);
-				}
-			} */
+			this.runCmds(ctx, this.cmdsNoNotches);
 		}
 		ctx.closePath();
 	}
