@@ -30,7 +30,7 @@ class Tile {
 		this.shape = shape;
 		this.pos = vec2.clone(pos);
 		this.rot = rot;
-		this.kind = shape.kind;
+		this.kind = shape.kind; // for serialization
 	}
 
 	clone(rhs) {

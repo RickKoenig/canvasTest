@@ -15,7 +15,7 @@ class PenShape extends Shape {
 		];
 		this.fat = fat;
 		super.setupPolyPnts();
-		// setup draw commands
+		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
 		let first = true;
 		for (let polyPnt of this.polyPnts) {
@@ -29,7 +29,6 @@ class PenShape extends Shape {
 		this.cmdsNotches = [];
 		const smallDist = 1 / 3;
 		const largeDist = 2 / 3;
-		const rad = .075;
 		let pnt;
 		// hand build the notches
 		if (this.fat) {
@@ -84,34 +83,65 @@ class PenShape extends Shape {
 			pnt = vec2.create();
 			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
 			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
+		} else { // skinny
+			let cmd = {
+				pnt: this.polyPnts[0],
+				kind: "moveTo"
+			}
+			this.cmdsNotches.push(cmd);
 
-		} else {
-			this.cmdsNotches = this.cmdsNoNotches;
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
+			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(36), true);
+
+			cmd = {
+				pnt: this.polyPnts[1],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
+			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(0), false);
+
+			cmd = {
+				pnt: this.polyPnts[2],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
+			cmd = {
+				pnt: pnt,
+				kind: "arc",
+				ang: degToRad(36 + 90),
+				ccw: true
+			}
+			this.cmdsNotches.push(cmd);
+
+			cmd = {
+				pnt: this.polyPnts[3],
+				kind: "lineTo"
+			}
+			this.cmdsNotches.push(cmd);
+
+			pnt = vec2.create();
+			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
+			cmd = {
+				pnt: pnt,
+				kind: "arc",
+				ang: degToRad(90),
+				ccw: false
+			}
+			this.cmdsNotches.push(cmd);
 		}
 	}
 
+	// add a triangle notch to the draw commands
 	static triOffs = [[-.05, 0], [0, .1], [.05, 0]];
-	static addTriNotch(ctx, pos, ang, ccw = false) {
-		const pnt = vec2.create();
-		const rotOff = vec2.create();
-		vec2.rotate(rotOff, this.triOffs[0], ang);
-		vec2.add(pnt, rotOff, pos);
-		ctx.lineTo(pnt[0], pnt[1]);
-		vec2.rotate(rotOff, this.triOffs[1], ang);
-		if  (ccw) {
-			vec2.add(pnt, pos, rotOff);
-		} else {
-			vec2.sub(pnt, pos, rotOff);
-		}
-		ctx.lineTo(pnt[0], pnt[1]);
-		vec2.rotate(rotOff, this.triOffs[2], ang);
-		vec2.add(pnt, rotOff, pos);
-		ctx.lineTo(pnt[0], pnt[1]);
-	}
-
 	static addTriNotchCmd(cmds, pos, ang, ccw = false) {
 		const rotOff = vec2.create();
-
 		let pnt = vec2.create();
 		vec2.rotate(rotOff, this.triOffs[0], ang);
 		vec2.add(pnt, rotOff, pos);
@@ -144,6 +174,7 @@ class PenShape extends Shape {
 		cmds.push(cmd);
 	}
 
+	// draw commands from an array of commands
 	static runCmds(ctx, cmds) {
 		const rad = .075;
 		for (let cmd of cmds) {
@@ -162,42 +193,10 @@ class PenShape extends Shape {
 		}
 	}
 
-	static doPath(ctx, fat, options) {
-		const smallDist = 1 / 3;
-		const largeDist = 2 / 3;
-		const rad = .075;
-		const pnt = vec2.create();
+	// draw the outline of a tile
+	static doPath(ctx, options) {
 		ctx.beginPath();
 		if (options.drawNotches) {
-			/*
-			if (fat) {
-				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
-				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
-				this.addTriNotch(ctx, pnt, degToRad(72));
-				ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
-				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-				ctx.arc(pnt[0], pnt[1], rad, degToRad(180), 0);
-				ctx.lineTo(this.polyPnts[2][0], this.polyPnts[2][1]);
-				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-				ctx.arc(pnt[0], pnt[1], rad, degToRad(72), degToRad(72 + 180), true);
-				ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
-				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
-				this.addTriNotch(ctx, pnt, degToRad(180),true);
-			} else {
-				ctx.moveTo(this.polyPnts[0][0], this.polyPnts[0][1]);
-				vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
-				this.addTriNotch(ctx, pnt, degToRad(36), true);
-				ctx.lineTo(this.polyPnts[1][0], this.polyPnts[1][1]);
-				vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-				this.addTriNotch(ctx, pnt, degToRad(0), false);
-				ctx.lineTo(this.polyPnts[2][0], this.polyPnts[2][1]);
-				vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-				ctx.arc(pnt[0], pnt[1], rad, degToRad(36), degToRad(36 + 180), true);
-				ctx.lineTo(this.polyPnts[3][0], this.polyPnts[3][1]);
-				vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
-				ctx.arc(pnt[0], pnt[1], rad, degToRad(0), degToRad(0 + 180));
-			}
-			*/
 			this.runCmds(ctx, this.cmdsNotches);
 		} else {
 			this.runCmds(ctx, this.cmdsNoNotches);
@@ -206,18 +205,19 @@ class PenShape extends Shape {
 	}
 
 	static draw(drawPrim, id, doHilit = false, fat, options) {
-		let colAdjust = doHilit ? .3 : 0;
-		const col = fat ? "#a08000" : "#008000";
-		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		// fill the tile
 		const ctx = drawPrim.ctx;
-		const lineWidth = .025;
-		const arcWidth = .075;
-		const arcRad1 = .25;
-		const arcRad2 = 1 - arcRad1;
-		this.doPath(ctx, fat, options);
+		this.doPath(ctx, options);
+		const col = fat ? "#a08000" : "#008000";
+		let colAdjust = doHilit ? .3 : 0;
+		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
+		// draw arcs
 		if (options.drawArcs) {
+			const arcWidth = .075;
+			const arcRad1 = .25;
+			const arcRad2 = 1 - arcRad1;
 			const col1 = "#2040ff";   // a blue
 			const col2 = "indianred"; // a red
 			const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
@@ -230,15 +230,18 @@ class PenShape extends Shape {
 				drawPrim.drawArcO(this.polyPnts[3], arcRad1, arcWidth, degToRad(36), degToRad(180 ), col2Hilit);
 			}
 		}
-		this.doPath(ctx, fat, options);
+		// outline the tile
+		this.doPath(ctx, options);
+		const lineWidth = .025;
 		ctx.lineWidth = lineWidth;
 		ctx.strokeStyle = "black";
 		ctx.stroke();
 	}
 
+	// horizontal level text
 	static drawLevel(drawPrim, id) {
 		const radius = .075;
-		drawPrim.drawCircle([0,0], radius, "brown", ); // center
+		drawPrim.drawCircle([0,0], radius, "brown"); // center
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, "white");
 	}
@@ -343,7 +346,7 @@ class MainApp {
 					kind = FatShape;
 					break;
 				default:
-					alert("unknown tile kind " + penTileObj.kind);
+					//alert("unknown tile kind " + penTileObj.kind);
 					break;
 				}
 				const pos = vec2.clone(penTileObj.pos);
@@ -516,83 +519,11 @@ class MainApp {
 		}
 		// select and add a proto tile to the main tiles
 		const protoSelected = this.editProtoTiles.getCurSelected()
-		if (protoSelected >=0) {
+		if (protoSelected >= 0) {
 			this.editProtoTiles.deselect();
 			const newTile = this.protoTiles[protoSelected].clone();
 			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
 		}
-	}
-
-	#testDraw() {
-		/*
-		this.ctx.beginPath();
-		this.ctx.lineJoin = "round";
-		this.ctx.moveTo(-1, 1);
-		this.ctx.lineTo(0, 0);
-		this.ctx.lineTo(1, 1);
-		this.ctx.lineWidth = .1;
-		this.ctx.strokeStyle = "cyan";
-		this.ctx.fillStyle = "red";
-		this.ctx.closePath();
-		this.ctx.fill();
-		this.ctx.stroke();*/
-
-		//this.plotter2d.setSpace(Plotter2d.spaces.SCREEN);
-		const ctx = this.ctx;
-		ctx.save();
-		ctx.scale(.005, .005); // zoom in real close to the example
-		
-		// Tangential lines
-		ctx.beginPath();
-		ctx.strokeStyle = "gray";
-		ctx.lineWidth = 1;
-		ctx.moveTo(200, 20);
-		ctx.lineTo(200, 130);
-		ctx.lineTo(50, 20);
-		ctx.stroke();
-
-		// Arc
-		ctx.beginPath();
-		ctx.strokeStyle = "black";
-		ctx.fillStyle = "green";
-		ctx.lineWidth = 5;
-		ctx.moveTo(200, 20);
-		ctx.arcTo(200, 130, 50, 20, 40);
-		ctx.closePath();
-		//ctx.lineTo(50, 20);
-		ctx.fill();
-		ctx.stroke();
-
-		// test
-		ctx.beginPath();
-		ctx.strokeStyle = "black";
-		ctx.fillStyle = "green";
-		ctx.lineWidth = 2;
-		ctx.moveTo(250, 20);
-		ctx.arc(300, 20, 20, degToRad(180), degToRad(0), true);
-		ctx.arc(400, 20, 20, degToRad(180), degToRad(0), false);
-		ctx.lineTo(450, 20);
-		ctx.lineTo(250, 130);
-		//ctx.lineTo(250, 20);
-		//ctx.arc(325, 210, 30, 0, Math.PI / 8);
-		ctx.closePath();
-		//ctx.lineTo(50, 20);
-		ctx.fill();
-		ctx.stroke();
-
-		// Start point
-		ctx.beginPath();
-		ctx.fillStyle = "blue";
-		ctx.arc(200, 20, 5, 0, 2 * Math.PI);
-		ctx.fill();
-
-		// Control points
-		ctx.beginPath();
-		ctx.fillStyle = "red";
-		ctx.arc(200, 130, 5, 0, 2 * Math.PI); // Control point one
-		ctx.arc(50, 20, 5, 0, 2 * Math.PI); // Control point two
-		ctx.fill();
-		ctx.restore();
 	}
 
 	#userDraw() {
