@@ -49,6 +49,16 @@ function radToDeg(a) {
 	return a * (180 / Math.PI);
 }
 
+// snap to nearest multiple of amount
+function snap(v, amount) {
+	if (amount) {
+		v /= amount;
+		v = Math.round(v);
+		v *= amount;
+	}
+	return v;
+}
+
 // 0 <= a < 2 * PI
 function normAngRadUnsigned(a) {
 	let watchDog = 10;

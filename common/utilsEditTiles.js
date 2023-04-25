@@ -62,7 +62,7 @@ class Tile {
 
 // drag tiles around
 class EditTiles {
-	constructor(tiles, snapAmount = degToRad(36)) {
+	constructor(tiles, snapTransAmount = 0, snapRotAmount = degToRad(36)) {
 		this.tiles = tiles; // Tile
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
@@ -70,7 +70,8 @@ class EditTiles {
 		this.startRegPoint = vec2.create();
 		this.regPoint = vec2.create(); // where in tile, mouse is clicked on selection
 		this.lastUserMouse = vec2.create(); // for rotation of tile
-		this.snapAmount = snapAmount;
+		this.snapTransAmount = snapTransAmount;
+		this.snapRotAmount = snapRotAmount;
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
@@ -104,15 +105,6 @@ class EditTiles {
 		this.startRot = tile.rot;
 	}
 
-	#doSnap(ang) {
-		if (this.snapAmount) {
-			ang /= this.snapAmount;
-			ang = Math.round(ang);
-			ang *= this.snapAmount;
-		}
-		return ang;
-	}
-
 	#calcHilit(userMouse) {
 		// check topmost points first
 		for (let i = this.tiles.length - 1; i >= 0; --i) {
@@ -126,9 +118,32 @@ class EditTiles {
 	}
 	
 	proc(mouse, userMouse
-		, snapMode = false, rotMode = false
-		, rotStep = 0, delDeselect = false
+		/*
+		, snapMode = false
+		, rotStep = 0 // usually with arrow keys
+		, delDeselect = false
 		, doMove = true) { // mouse buttons and user/cam space mouse coord
+		*/
+		, options) {
+		
+		let snapMode = false;
+		let rotStep = 0;
+		let delDeselect = false;
+		let doMove = true; // also when false, prevent reordering of tiles
+		if (options) {
+			if (options.snapMode !== undefined) {
+				snapMode = options.snapMode;
+			}
+			if (options.rotStep !== undefined) {
+				rotStep = options.rotStep;
+			}
+			if (options.delDeselect !== undefined) {
+				delDeselect = options.delDeselect;
+			}
+			if (options.doMove !== undefined) {
+				doMove = options.doMove;
+			}
+		}
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
 		this.hilitPntIdx = -1
 		// edit stuff on the graph paper
@@ -168,7 +183,9 @@ class EditTiles {
 				} else {
 					if (snapMode) {
 						const tile = this.tiles[this.curPntIdx];
-						tile.rot = this.#doSnap(tile.rot);
+						tile.rot = snap(tile.rot, this.snapRotAmount);
+						tile.pos[0] = snap(tile.pos[0], this.snapTransAmount);
+						tile.pos[1] = snap(tile.pos[1], this.snapTransAmount);
 					}
 				}
 				dirt = true;
@@ -180,14 +197,13 @@ class EditTiles {
 		if (this.curPntIdx >= 0 && doMove) {
 			const tile = this.tiles[this.curPntIdx];
 			const delMouse = vec2.create();
-			if (rotMode) {
-				tile.rot += rotStep;
-			} else {
-				vec2.sub(delMouse, userMouse, this.lastUserMouse);
-				const rotAmount = vec2.cross2d(this.regPoint, delMouse);
-				tile.rot += rotAmount * tile.shape.rotFactor;
-			}
+
+			vec2.sub(delMouse, userMouse, this.lastUserMouse);
+			const rotAmount = vec2.cross2d(this.regPoint, delMouse);
+			tile.rot += rotAmount * tile.shape.rotFactor;
+			tile.rot += rotStep;
 			tile.rot = normAngRadSigned(tile.rot);
+
 			vec2.rot(this.regPoint, this.startRegPoint, tile.rot - this.startRot);
 			vec2.sub(tile.pos, userMouse, this.regPoint);
 			vec2.copy(this.lastUserMouse, userMouse);

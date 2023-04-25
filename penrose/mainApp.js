@@ -380,7 +380,6 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.rotMode = true;
 		this.snapMode = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
@@ -392,6 +391,18 @@ class MainApp {
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.#loadOnInit();
+		this.editOptions = {
+			snapMode: false, // set in proc
+			rotStep: 0, // set in proc
+			delDeselect: false, // set in proc
+			doMove: true
+		};
+		this.editProtoOptions = {
+			snapMode: false,
+			rotStep: 0,
+			delDeselect: false,
+			doMove: false
+		};
 		this.editTiles = new EditTiles(this.tiles);
 		this.editProtoTiles = new EditTiles(this.protoTiles);
 
@@ -405,13 +416,9 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
 
-		makeEle(this.vp, "span", null, "marg", "Rotation Mode");
+		makeEle(this.vp, "span", null, "marg", "Rotate Tiles");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Left Right Arrow Keys");
-		this.eles.rotMode = makeEle(this.vp, "input", "rotMode", null, "ho", (val) => {
-			this.rotMode = val;
-		}, "checkbox");
-		this.eles.rotMode.checked = this.rotMode;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
@@ -446,7 +453,7 @@ class MainApp {
 		this.eles.drawNotches.checked = this.drawNotches;
 		makeEle(this.vp, "br");
 
-		makeEle(this.vp, "span", null, "marg", "Draw Ids");
+		makeEle(this.vp, "span", null, "marg", "Draw Center Ids");
 		this.eles.drawIds = makeEle(this.vp, "input", "draw ids", null, "ho", (val) => {
 			this.drawIds = val;
 			this.dirty = true;
@@ -479,30 +486,29 @@ class MainApp {
 		// pass in the buttons and the user/cam space mouse from drawPrim
 		const key = this.input.keyboard.key;
 		const keyCodes = keyTable.keyCodes;
-		let rotStep = 0;
+		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			rotStep -= PenShape.smallAngle; // clockwise
+			this.editOptions.rotStep -= PenShape.smallAngle; // clockwise
 			break;
 		case keyCodes.LEFT:
-			rotStep += PenShape.smallAngle; // counter clockwise
+			this.editOptions.rotStep += PenShape.smallAngle; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
 			this.dirty = true;
 			break;
 		}
+		this.editOptions.snapMode = this.snapMode;
 
 		// remove tiles if deselected in the red area
-		this.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;
-		this.dirty = this.editTiles.proc(this.input.mouse
-			, this.plotter2d.userMouse
-			, this.snapMode, this.rotMode, rotStep, this.delDeselect) 
+		this.editOptions.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;
+		this.dirty = this.editTiles.proc(this.input.mouse, this.plotter2d.userMouse
+			, this.editOptions) 
 			|| this.dirty;
 		
-		this.dirty = this.editProtoTiles.proc(this.input.mouse
-			, this.plotter2d.userMouse
-			, false, false, rotStep, false, false) 
+		this.dirty = this.editProtoTiles.proc(this.input.mouse, this.plotter2d.userMouse
+			, this.editProtoOptions) 
 			|| this.dirty;
 		
 		if (this.editTiles.getHilitIdx() >= 0) {
@@ -539,7 +545,7 @@ class MainApp {
 		//this.#testDraw();
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
-		const col = this.delDeselect ? "#ff000040" : "#ff000020";
+		const col = this.editOptions.delDeselect ? "#ff000040" : "#ff000020";
 		this.drawPrim.drawRectangle(this.plotter2d.ndcMin
 			, [this.redBarWidth, (this.plotter2d.ndcMax[1] - this.plotter2d.ndcMin[1])]
 			, col);
