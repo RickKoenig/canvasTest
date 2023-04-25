@@ -140,6 +140,11 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 	}		
 	
+	#isInside(tile, testPoint) {
+		const inside = penetrateLine(tile.shape.polyPnts[0], tile.shape.polyPnts[1], testPoint, tile.pos, tile.rot);
+		return inside > 0;
+	}
+
 	#userProc() {
 		// proc
 		//this.dirty = true;
@@ -159,6 +164,8 @@ class MainApp {
 			, this.plotter2d.userMouse
 			, this.editOptions)
 			 || this.dirty;
+		// inside outside test
+		this.inside = this.#isInside(this.tiles[0], this.plotter2d.userMouse);
 	}
 
 	#userDraw() {
@@ -170,6 +177,7 @@ class MainApp {
 	#userUpdateInfo() {
 		let countStr = "Dirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		countStr += "\nInside = " + this.inside;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
