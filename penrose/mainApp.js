@@ -395,13 +395,15 @@ class MainApp {
 			snapMode: false, // set in proc
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
-			doMove: true
+			doMove: true,
+			moveToTop: true
 		};
 		this.editProtoOptions = {
 			snapMode: false,
 			rotStep: 0,
 			delDeselect: false,
-			doMove: false
+			doMove: false,
+			moveToTop: false
 		};
 		this.editTiles = new EditTiles(this.tiles);
 		this.editProtoTiles = new EditTiles(this.protoTiles);

@@ -244,7 +244,6 @@ class MainApp {
 		const lens = [];
 		for (let i = 0; i < 3; ++i) {
 			const j = (i + 1) % 3;
-			//const out = vec2.create();
 			lens.push(vec2.distance(pnts[i], pnts[j]));
 		}
 		// s0 + s1 = len0, s1 + s2 = len1, s2 + s0 = len2

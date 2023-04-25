@@ -108,6 +108,7 @@ function midPnt(out, p0, p1) {
 }
 
 // given line segments A-B and  C-D return the intersection point OR null if no intersection
+// intsect could be beyond the segments
 function getIntSect(A, B, C, D) {
 	const tTop  = (D[0] - C[0]) * (A[1] - C[1]) 
 				- (D[1] - C[1]) * (A[0] - C[0]);
@@ -123,9 +124,22 @@ function getIntSect(A, B, C, D) {
 	return null;
 }
 
+// given line segments A-B and  C-D return T, U and Bot
+// where intsect is lerp(A, B, T/Bot or lerp(C, D, U/Bot)
+// good for checking if intsect is on the line segment
+function getIntSectParam(A, B, C, D) {
+	const tTop  = (D[0] - C[0]) * (A[1] - C[1]) 
+				- (D[1] - C[1]) * (A[0] - C[0]);
+	const uTop  = (C[1] - A[1]) * (A[0] - B[0]) 
+				- (C[0] - A[0]) * (A[1] - B[1]);
+	const bottom  = (D[1] - C[1]) * (B[0] - A[0]) 
+				  - (D[0] - C[0]) * (B[1] - A[1]);
+	return {T: tTop, U: uTop, Bot: bottom};
+}
+
 // how far a test point 'T' goes 'inside' line 'P0' to 'P1' (opposite of normal)
 // TODO: optimize, cache N and D
-function penetrateLine(P0, P1, T, offset, rot) {
+function penetrateLine(P0, P1, offset, rot, T) {
 	const N = vec2.create();
 	vec2.sub(N, P1, P0);
 	vec2.perp(N, N);
@@ -138,21 +152,88 @@ function penetrateLine(P0, P1, T, offset, rot) {
 	} else {
 		vec2.copy(Toff, T);
 	}
-	vec2.rotate(Toff, Toff, -rot);
+	if (rot) {
+		vec2.rotate(Toff, Toff, -rot);
+	}
 	return D - vec2.dot(N, Toff);
 }
 
 // TODO: cache N and D
 // how far T is inside pnts
-function penetrateConvexPoly(pnts, T, offset, rot) {
+function penetrateConvexPoly(pnts, offset, rot, T) {
 	let pen = Number.MAX_VALUE;
 	for (let j = 0; j < pnts.length; ++j) {
 		const P0 = pnts[j];
 		const P1 = pnts[(j + 1) % pnts.length];
-		const p = penetrateLine(P0, P1, T, offset, rot);
+		const p = penetrateLine(P0, P1, offset, rot, T);
 		if (p < pen) {
 			pen = p;
 		}
 	}
 	return pen;
+}
+
+function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
+	let insideA = [];
+	for (let pnt of polyA) {
+		insideA.push(penetrateLine(pntB0, pntB1, null, 0, pnt) > 0);
+	}
+	const clipPoly = [];
+	for (let i = 0; i < insideA.length; ++i) {
+		const j = (i + 1) % insideA.length;
+		// 4 cases
+		if (insideA[i]) {
+			if (insideA[j]) { // inside
+				clipPoly.push(polyA[i]);
+			} else { // going out
+				clipPoly.push(polyA[i]);
+				const isect = getIntSect(polyA[i], polyA[j], pntB0, pntB1);
+				clipPoly.push(isect);
+			}
+		} else {
+			if (insideA[j]) { // going in
+				const isect = getIntSect(polyA[i], polyA[j], pntB0, pntB1);
+				clipPoly.push(isect);
+			} else { // outside, do nothing
+	
+			}
+		}
+	}
+	return clipPoly;
+}
+
+function calcPolyIntsectWorld(polyA, polyB) {
+	let isectPoly = polyA;
+	for  (let i = 0; i < polyB.length; ++i) {
+		const j = (i + 1) %polyB.length;
+		isectPoly = calcPolyLineIntsectWorld(isectPoly, polyB[i], polyB[j]);
+	}
+	return isectPoly;
+}
+
+function calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB) {
+	// TODO: for now just polyA against first edge of polyB
+	const polyAWorld = [];
+	for (let pnt of polyA) {
+		const pntW = vec2.clone(pnt);
+		if (rotA) {
+			vec2.rot(pntW, pntW, rotA);
+		}
+		if (offsetA) {
+			vec2.add(pntW, pntW, offsetA);
+		}
+		polyAWorld.push(pntW);
+	}
+	const polyBWorld = [];
+	for (let pnt of polyB) {
+		const pntW = vec2.clone(pnt);
+		if (rotB) {
+			vec2.rot(pntW, pntW, rotB);
+		}
+		if (offsetB) {
+			vec2.add(pntW, pntW, offsetB);
+		}
+		polyBWorld.push(pntW);
+	}
+	return calcPolyIntsectWorld(polyAWorld, polyBWorld);
 }

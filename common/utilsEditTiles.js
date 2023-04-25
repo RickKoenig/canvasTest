@@ -56,7 +56,7 @@ class Tile {
 	}
 
 	isInside(userMouse) {
-		return penetrateConvexPoly(this.shape.polyPnts, userMouse, this.pos, this.rot) > 0;
+		return penetrateConvexPoly(this.shape.polyPnts, this.pos, this.rot, userMouse) > 0;
 	}	
 }
 
@@ -129,7 +129,8 @@ class EditTiles {
 		let snapMode = false;
 		let rotStep = 0;
 		let delDeselect = false;
-		let doMove = true; // also when false, prevent reordering of tiles
+		let doMove = true; // allow tiles to move
+		let moveToTop = true; // reorder tiles
 		if (options) {
 			if (options.snapMode !== undefined) {
 				snapMode = options.snapMode;
@@ -142,6 +143,9 @@ class EditTiles {
 			}
 			if (options.doMove !== undefined) {
 				doMove = options.doMove;
+			}
+			if (options.moveToTop !== undefined) {
+				moveToTop = options.moveToTop;
 			}
 		}
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
@@ -163,7 +167,6 @@ class EditTiles {
 					vec2.sub(this.startRegPoint, userMouse, tile.pos);
 					vec2.copy(this.lastUserMouse, userMouse);
 					this.startRot = tile.rot;
-					const moveToTop = doMove;
 					if (moveToTop) {
 						const result = this.tiles.splice(this.curPntIdx, 1);
 						this.tiles.push(result[0]);

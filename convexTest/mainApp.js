@@ -15,7 +15,7 @@ class SimpleShape1 extends Shape {
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("green", colAdjust);
+		const colHilit = Bitmap32.colorAdd("blue", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
 	}
 
@@ -127,12 +127,14 @@ class MainApp {
 			//rotStep: 0,
 			//delDeselect: false,
 			//doMove: true
+			moveToTop: false
 		};
 		this.editTiles = new EditTiles(this.tiles, .0625, degToRad(22.5)); // snap amount if snapMode == true
+		this.testPoly = [[-.3,-.2], [-.1, 0], [.3,-.3]];
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .9;
+		this.startZoom = 1;
 	}
 
 	#userBuildUI() {
@@ -141,8 +143,13 @@ class MainApp {
 	}		
 	
 	#isInside(tile, testPoint) {
-		const inside = penetrateLine(tile.shape.polyPnts[0], tile.shape.polyPnts[1], testPoint, tile.pos, tile.rot);
+		const inside = penetrateLine(tile.shape.polyPnts[0], tile.shape.polyPnts[1], tile.pos, tile.rot, testPoint);
 		return inside > 0;
+	}
+
+	#doIsectPoly(tile, testPoly) {
+		const poly = calcPolyIntsect(this.testPoly, null, 0, tile.shape.polyPnts, tile.pos, tile.rot);
+		return poly;
 	}
 
 	#userProc() {
@@ -166,18 +173,25 @@ class MainApp {
 			 || this.dirty;
 		// inside outside test
 		this.inside = this.#isInside(this.tiles[0], this.plotter2d.userMouse);
+		this.isectPoly = this.#doIsectPoly(this.tiles[0], this.testPoly);
 	}
 
 	#userDraw() {
 		// tiles
 		this.editTiles.draw(this.drawPrim);
-	}
+		this.drawPrim.drawLinesParametric(this.testPoly, .0025, .005, true
+			, "black", "yellow");
+			this.drawPrim.drawLinesParametric(this.isectPoly, .01, .02, true
+				, "green", "brown");
+		}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let countStr = "Dirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		countStr += "\nInside = " + this.inside;
+		//countStr += "\nNum inside = " + this.isectPoly[0][[0]];
+		countStr += "\nPoly points = " + this.isectPoly.length;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
