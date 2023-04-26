@@ -130,7 +130,7 @@ class MainApp {
 			moveToTop: false
 		};
 		this.editTiles = new EditTiles(this.tiles, .0625, degToRad(22.5)); // snap amount if snapMode == true
-		this.testPoly = [[-.3,-.2], [-.1, 0], [.3,-.3]];
+		//this.testPoly = [[-.3,-.2], [-.1, 0], [.3,-.3]];
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
@@ -147,9 +147,10 @@ class MainApp {
 		return inside > 0;
 	}
 
-	#doIsectPoly(tile, testPoly) {
-		const poly = calcPolyIntsect(this.testPoly, null, 0, tile.shape.polyPnts, tile.pos, tile.rot);
-		return poly;
+	
+	#doIsectTiles(tileA, tileB) {
+		return calcPolyIntsect(tileA.shape.polyPnts, tileA.pos, tileA.rot
+			, tileB.shape.polyPnts, tileB.pos, tileB.rot);
 	}
 
 	#userProc() {
@@ -173,16 +174,14 @@ class MainApp {
 			 || this.dirty;
 		// inside outside test
 		this.inside = this.#isInside(this.tiles[0], this.plotter2d.userMouse);
-		this.isectPoly = this.#doIsectPoly(this.tiles[0], this.testPoly);
+		this.isectPoly = this.#doIsectTiles(this.tiles[0], this.tiles[1]);
 	}
 
 	#userDraw() {
 		// tiles
 		this.editTiles.draw(this.drawPrim);
-		this.drawPrim.drawLinesParametric(this.testPoly, .0025, .005, true
-			, "black", "yellow");
-			this.drawPrim.drawLinesParametric(this.isectPoly, .01, .02, true
-				, "green", "brown");
+		this.drawPrim.drawLinesParametric(this.isectPoly, .01, .02, true
+			, "green", "brown");
 		}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

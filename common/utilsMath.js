@@ -121,6 +121,7 @@ function getIntSect(A, B, C, D) {
 		const u = uTop / bottom;
 		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
 	}
+	console.log("returning NULL from getIntSect");
 	return null;
 }
 
@@ -202,7 +203,48 @@ function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 	return clipPoly;
 }
 
+function  calcBoundBox(poly) {
+	const boxMin = vec2.clone(poly[0]);
+	const boxMax = vec2.clone(poly[0]);
+	for (let i = 1; i < poly.length; ++i) {
+		const pnt = poly[i];
+		if (pnt[0] < boxMin[0]) {
+			boxMin[0] = pnt[0];
+		}
+		if (pnt[1] < boxMin[1]) {
+			boxMin[1] = pnt[1];
+		}
+		if (pnt[0] > boxMax[0]) {
+			boxMax[0] = pnt[0];
+		}
+		if (pnt[1] > boxMax[1]) {
+			boxMax[1] = pnt[1];
+		}
+	}
+	return [boxMin, boxMax];
+}
 function calcPolyIntsectWorld(polyA, polyB) {
+	// early out
+	const earlyOut = [];
+	const boxA = calcBoundBox(polyA);
+	const boxMinA = boxA[0];
+	const boxMaxA = boxA[1];
+	const boxB = calcBoundBox(polyB);
+	const boxMinB = boxB[0];
+	const boxMaxB = boxB[1];
+	if (boxMinA[0] > boxMaxB[0]) {
+		return earlyOut;
+	}
+	if (boxMinA[1] > boxMaxB[1]) {
+		return earlyOut;
+	}
+	if (boxMinB[0] > boxMaxA[0]) {
+		return earlyOut;
+	}
+	if (boxMinB[1] > boxMaxA[1]) {
+		return earlyOut;
+	}
+	// clip away
 	let isectPoly = polyA;
 	for  (let i = 0; i < polyB.length; ++i) {
 		const j = (i + 1) %polyB.length;
@@ -212,7 +254,10 @@ function calcPolyIntsectWorld(polyA, polyB) {
 }
 
 function calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB) {
-	// TODO: for now just polyA against first edge of polyB
+	// early out
+	if (polyA.length < 3 || polyB.length < 3) {
+		return [];
+	}
 	const polyAWorld = [];
 	for (let pnt of polyA) {
 		const pntW = vec2.clone(pnt);
