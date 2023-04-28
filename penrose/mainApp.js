@@ -396,7 +396,8 @@ class MainApp {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
 			doMove: true,
-			moveToTop: true
+			moveToTop: true,
+			delDeselectFun: null
 		};
 		this.editProtoOptions = {
 			snapMode: false,
@@ -468,6 +469,13 @@ class MainApp {
 		// clear tiles
 		makeEle(this.vp, "button", null, null, "Clear all tiles",this.#clearTiles.bind(this));
 	}		
+
+	// tiles and tile index
+	static #delSelFun(tiles, idx) {
+		console.log('deselect: id =  ' + idx + ', tiles len = ' + tiles.length);
+		const tile = tiles[idx];
+		tile.rot = snap(tile.rot, PenShape.smallAngle);
+	}
 	
 	#userProc() {
 		// proc
@@ -501,7 +509,13 @@ class MainApp {
 			this.dirty = true;
 			break;
 		}
-		this.editOptions.snapMode = this.snapMode;
+		//this.editOptions.snapMode = this.snapMode;
+		if (this.snapMode) {
+			this.editOptions.delDeselectFun = MainApp.#delSelFun;
+			//MainApp.#delSelFun();
+		} else {
+			this.editOptions.delDeselectFun = null;
+		}
 
 		// remove tiles if deselected in the red area
 		this.editOptions.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;

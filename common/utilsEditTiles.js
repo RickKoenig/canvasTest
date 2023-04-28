@@ -121,8 +121,9 @@ class EditTiles {
 		/*
 		, snapMode = false
 		, rotStep = 0 // usually with arrow keys
-		, delDeselect = false
-		, doMove = true) { // mouse buttons and user/cam space mouse coord
+		, delDeselect = false // delete Tile when deselected
+		, doMove = true//  mouse buttons and user/cam space mouse coord
+		, moveToTop = true//  deselect will put object to the top
 		*/
 		, options) {
 		
@@ -190,6 +191,9 @@ class EditTiles {
 						tile.pos[0] = snap(tile.pos[0], this.snapTransAmount);
 						tile.pos[1] = snap(tile.pos[1], this.snapTransAmount);
 					}
+				}
+				if (options.delDeselectFun) { // custom do something when deselected
+					options.delDeselectFun(this.tiles, this.curPntIdx);
 				}
 				dirt = true;
 			}

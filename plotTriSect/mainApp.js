@@ -1,9 +1,43 @@
 'use strict';
 
+// test code
+class Shape {
+	// called only once, center and TODO: calc N and D
+	static setupPolyPnts() {
+		console.log("in static Shape setupPolyPnts");
+	}
+}
+
+// a test shape
+class SimpleShape1 extends Shape {
+	static setupPolyPnts() {
+		console.log("in static SimpleShape1 setupPolyPnts");
+		this.polyPnts = [
+			[-.25, .25],
+			[0, .5],
+			[.25, 0]
+		];
+		super.setupPolyPnts();
+	}
+
+	/*static { // doesn't work on ipad or iphone chrome and safari
+		console.log("in static SimpleShape1");
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+	}*/
+}
+
+function testStatics() {
+	console.log("test statics");
+	SimpleShape1.setupPolyPnts(); // use this if static {} doesn't work (ipad, iphone)
+}
+// end test code
+
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	constructor() {
+		testStatics(); // test code
 		console.log("creating instance of MainApp");
 
 		// vertical panel UI
