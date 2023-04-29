@@ -203,7 +203,7 @@ function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 	return clipPoly;
 }
 
-function  calcBoundBox(poly) {
+function calcBoundBox(poly) {
 	const boxMin = vec2.clone(poly[0]);
 	const boxMax = vec2.clone(poly[0]);
 	for (let i = 1; i < poly.length; ++i) {
@@ -251,6 +251,25 @@ function calcPolyIntsectWorld(polyA, polyB) {
 		isectPoly = calcPolyLineIntsectWorld(isectPoly, polyB[i], polyB[j]);
 	}
 	return isectPoly;
+}
+
+function calcPolyArea(poly) {
+	if (poly.length < 3) {
+		return 0;
+	}
+	let area = 0;
+	const p0 = poly[0];
+	for (let i = 1; i < poly.length - 1; ++i) {
+		const p1 = poly[i];
+		const p2 = poly[i + 1];
+		const d1 = vec2.create();
+		const d2 = vec2.create();
+		vec2.sub(d1, p1, p0);
+		vec2.sub(d2, p2, p0);
+		area += vec2.cross2d(d2, d1);
+	}
+
+	return area * .5;
 }
 
 function calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB) {

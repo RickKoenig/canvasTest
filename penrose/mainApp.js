@@ -392,17 +392,20 @@ class MainApp {
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.#loadOnInit();
 		this.editOptions = {
-			snapMode: false, // set in proc
+			////snapMode: false, // set in proc
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
+			deselectFun: this.#deselectFun.bind(this),
+			moveFun: null,
 			doMove: true,
-			moveToTop: true,
-			delDeselectFun: null
+			moveToTop: true
 		};
 		this.editProtoOptions = {
-			snapMode: false,
+			//snapMode: false,
 			rotStep: 0,
 			delDeselect: false,
+			deselectFun: null,
+			moveFun: null,
 			doMove: false,
 			moveToTop: false
 		};
@@ -471,10 +474,13 @@ class MainApp {
 	}		
 
 	// tiles and tile index
-	static #delSelFun(tiles, idx) {
-		console.log('deselect: id =  ' + idx + ', tiles len = ' + tiles.length);
+	#deselectFun(tiles, idx) {
+		console.log('DESELECT: id =  ' + idx + ', tiles len = ' + tiles.length);
 		const tile = tiles[idx];
-		tile.rot = snap(tile.rot, PenShape.smallAngle);
+		if (this.snapMode) {
+			tile.rot = snap(tile.rot, PenShape.smallAngle);
+		}
+		console.log("avg fps = " + this.avgFps.toFixed(3));
 	}
 	
 	#userProc() {
@@ -510,12 +516,12 @@ class MainApp {
 			break;
 		}
 		//this.editOptions.snapMode = this.snapMode;
-		if (this.snapMode) {
-			this.editOptions.delDeselectFun = MainApp.#delSelFun;
-			//MainApp.#delSelFun();
-		} else {
-			this.editOptions.delDeselectFun = null;
-		}
+		//if (this.snapMode) {
+		//	this.editOptions.deselectFun = this.#deselectFun.bind(this);
+		//	//MainApp.#deselectFun();
+		//} else {
+		//	this.editOptions.deselectFun = null;
+		//}
 
 		// remove tiles if deselected in the red area
 		this.editOptions.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;

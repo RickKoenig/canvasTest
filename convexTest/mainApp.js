@@ -4,9 +4,12 @@
 class SimpleShape1 extends Shape {
 	static setupPolyPnts() {
 		this.polyPnts = [
-			[-.25, 0],
+			[-1, 0],
+			[0, 3],
+			[1, 0]
+/*			[-.25, 0],
 			[0, .75],
-			[.25, 0]
+			[.25, 0] */
 		];
 		super.setupPolyPnts();
 	}
@@ -49,7 +52,7 @@ class SimpleShape2 extends Shape {
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("gray", colAdjust);
+		const colHilit = Bitmap32.colorAdd("#444", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "blue");
 		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, "red", ); // center
@@ -123,10 +126,12 @@ class MainApp {
 		this.tiles.push(new Tile(SimpleShape1, [0, 0], degToRad(0)));
 		this.tiles.push(new Tile(SimpleShape2, [1, 0], degToRad(0)));
 		this.editOptions = {
-			snapMode: true,
+			////snapMode: true,
 			//rotStep: 0,
 			//delDeselect: false,
-			//doMove: true
+			deselectFun: this.#deselectFun.bind(this),
+			moveFun: this.#moveFun.bind(this),
+			//doMove: true,
 			moveToTop: false
 		};
 		this.editTiles = new EditTiles(this.tiles, .0625, degToRad(22.5)); // snap amount if snapMode == true
@@ -153,6 +158,24 @@ class MainApp {
 			, tileB.shape.polyPnts, tileB.pos, tileB.rot);
 	}
 
+	// tiles and tile index
+	#deselectFun(tiles, idx) {
+		console.log('DESELECT: id =  ' + idx + ', tiles len = ' + tiles.length);
+		const tile = tiles[idx];
+		tile.rot = snap(tile.rot, degToRad(22.5));
+		tile.pos[0] = snap(tile.pos[0], .0625);
+		tile.pos[1] = snap(tile.pos[1], .0625);
+		console.log("avg fps = " + this.avgFps.toFixed(3));
+	}
+	
+	#moveFun(tiles, idx) {
+		console.log('MOVE: id =  ' + idx + ', tiles len = ' + tiles.length);
+		const tile = tiles[idx];
+		console.log("avg fps = " + this.avgFps.toFixed(3)
+			+ " pos = (" + tile.pos[0].toFixed(3) + "," 
+			+ tile.pos[1].toFixed(3) + ")");
+	}
+	
 	#userProc() {
 		// proc
 		//this.dirty = true;
@@ -191,6 +214,7 @@ class MainApp {
 		countStr += "\nInside = " + this.inside;
 		//countStr += "\nNum inside = " + this.isectPoly[0][[0]];
 		countStr += "\nPoly points = " + this.isectPoly.length;
+		countStr += "\nPoly area = " + calcPolyArea(this.isectPoly).toFixed(3); 
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
