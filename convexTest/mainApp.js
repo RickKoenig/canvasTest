@@ -152,12 +152,6 @@ class MainApp {
 		return inside > 0;
 	}
 
-	
-	#doIsectTiles(tileA, tileB) {
-		return calcPolyIntsect(tileA.shape.polyPnts, tileA.pos, tileA.rot
-			, tileB.shape.polyPnts, tileB.pos, tileB.rot);
-	}
-
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		console.log('DESELECT: id =  ' + idx + ', tiles len = ' + tiles.length);
@@ -197,7 +191,7 @@ class MainApp {
 			 || this.dirty;
 		// inside outside test
 		this.inside = this.#isInside(this.tiles[0], this.plotter2d.userMouse);
-		this.isectPoly = this.#doIsectTiles(this.tiles[0], this.tiles[1]);
+		this.isectPoly = Tile.doIsectTiles(this.tiles[0], this.tiles[1]);
 	}
 
 	#userDraw() {

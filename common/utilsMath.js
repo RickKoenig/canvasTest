@@ -203,47 +203,7 @@ function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 	return clipPoly;
 }
 
-function calcBoundBox(poly) {
-	const boxMin = vec2.clone(poly[0]);
-	const boxMax = vec2.clone(poly[0]);
-	for (let i = 1; i < poly.length; ++i) {
-		const pnt = poly[i];
-		if (pnt[0] < boxMin[0]) {
-			boxMin[0] = pnt[0];
-		}
-		if (pnt[1] < boxMin[1]) {
-			boxMin[1] = pnt[1];
-		}
-		if (pnt[0] > boxMax[0]) {
-			boxMax[0] = pnt[0];
-		}
-		if (pnt[1] > boxMax[1]) {
-			boxMax[1] = pnt[1];
-		}
-	}
-	return [boxMin, boxMax];
-}
 function calcPolyIntsectWorld(polyA, polyB) {
-	// early out
-	const earlyOut = [];
-	const boxA = calcBoundBox(polyA);
-	const boxMinA = boxA[0];
-	const boxMaxA = boxA[1];
-	const boxB = calcBoundBox(polyB);
-	const boxMinB = boxB[0];
-	const boxMaxB = boxB[1];
-	if (boxMinA[0] > boxMaxB[0]) {
-		return earlyOut;
-	}
-	if (boxMinA[1] > boxMaxB[1]) {
-		return earlyOut;
-	}
-	if (boxMinB[0] > boxMaxA[0]) {
-		return earlyOut;
-	}
-	if (boxMinB[1] > boxMaxA[1]) {
-		return earlyOut;
-	}
 	// clip away
 	let isectPoly = polyA;
 	for  (let i = 0; i < polyB.length; ++i) {
@@ -272,8 +232,19 @@ function calcPolyArea(poly) {
 	return area * .5;
 }
 
+function calcPolyIntsectBoundcircle(polyA, radA, offsetA, rotA
+		, polyB, radB, offsetB, rotB) {
+	const distPoints2 = vec2.sqrDist(offsetA, offsetB);
+	let distRad2 = radA + radB;
+	distRad2 *= distRad2;
+	if (distPoints2 >= distRad2) {
+		return [];
+	}
+	return calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB);
+}
+
 function calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB) {
-	// early out
+		// early out
 	if (polyA.length < 3 || polyB.length < 3) {
 		return [];
 	}

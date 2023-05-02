@@ -204,7 +204,7 @@ class PenShape extends Shape {
 		ctx.closePath();
 	}
 
-	static draw(drawPrim, id, doHilit = false, fat, options) {
+	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
 		// fill the tile
 		const ctx = drawPrim.ctx;
 		this.doPath(ctx, options);
@@ -234,7 +234,7 @@ class PenShape extends Shape {
 		this.doPath(ctx, options);
 		const lineWidth = .025;
 		ctx.lineWidth = lineWidth;
-		ctx.strokeStyle = "black";
+		ctx.strokeStyle = overlap ? "red" : "black";
 		ctx.stroke();
 	}
 
@@ -253,8 +253,8 @@ class SkinnyShape extends PenShape {
 		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
 	}
 
-	static draw(drawPrim, id, doHilit = false, options) {
-		super.draw(drawPrim, id, doHilit, false, options);
+	static draw(drawPrim, id, doHilit = false, options, overlap) {
+		super.draw(drawPrim, id, doHilit, false, options, overlap);
 	}
 
 	static {
@@ -269,8 +269,8 @@ class FatShape extends PenShape {
 		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
 	}
 
-	static draw(drawPrim, id, doHilit = false, options) {
-		super.draw(drawPrim, id, doHilit, true, options);
+	static draw(drawPrim, id, doHilit = false, options, overlap) {
+		super.draw(drawPrim, id, doHilit, true, options, overlap);
 	}
 
 	static {
@@ -324,12 +324,17 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveOnExit.bind(this));
+		addEventListener("beforeunload", this.#saveTiles.bind(this, "penTiles"));
 	}
 
-	#loadOnInit() {
+	#clearTiles() {
+		this.tiles.length = 0;
+		this.dirty = true;
+	}
+
+	#loadTiles(slot, starterTiles) {
 		this.tiles = [];
-		const penTilesStr = localStorage.getItem("penTiles");
+		const penTilesStr = localStorage.getItem(slot);
 		let penTilesObj = [];
 		if (penTilesStr) {
 			penTilesObj = JSON.parse(penTilesStr);
@@ -353,22 +358,19 @@ class MainApp {
 				const rot = penTileObj.rot;
 				this.tiles.push(new Tile(kind, pos, rot));
 			}
-		} else {
+		} else if (starterTiles) {
 			this.tiles.push(new Tile(SkinnyShape, [0, 2], 0));
 			this.tiles.push(new Tile(FatShape, [2, 2], 0));
 			console.log("creating " + this.tiles.length + " tiles on init");
 		}
-	}
-
-	#saveOnExit() {
-		console.log("saving " + this.tiles.length + " tiles on exit");
-		localStorage.setItem("penTiles", JSON.stringify(this.tiles));
-	}
-
-	#clearTiles() {
-		this.tiles.length = 0;
+		console.log("load tiles, len = " + this.tiles.length + ", slot = " + slot);
+		this.editTiles = new EditTiles(this.tiles);
 		this.dirty = true;
+	}
 
+	#saveTiles(slot) {
+		console.log("save tiles, len = " + this.tiles.length + ", slot = " + slot);
+		localStorage.setItem(slot, JSON.stringify(this.tiles));
 	}
 
 	// USER: add more members or classes to MainApp
@@ -390,7 +392,7 @@ class MainApp {
 		// let proc position them proto tiles
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
-		this.#loadOnInit();
+		this.#loadTiles("penTiles", true);
 		this.editOptions = {
 			////snapMode: false, // set in proc
 			rotStep: 0, // set in proc
@@ -409,7 +411,6 @@ class MainApp {
 			doMove: false,
 			moveToTop: false
 		};
-		this.editTiles = new EditTiles(this.tiles);
 		this.editProtoTiles = new EditTiles(this.protoTiles);
 
 		// before firing up Plotter2d
@@ -425,6 +426,8 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "Rotate Tiles");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Left Right Arrow Keys");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "While Selected");
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
@@ -471,6 +474,23 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
 		// clear tiles
 		makeEle(this.vp, "button", null, null, "Clear all tiles",this.#clearTiles.bind(this));
+		// load save slots
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, "short", "Load 1",this.#loadTiles.bind(this, "slot1", false));
+		makeEle(this.vp, "button", null, "short", "Save 1",this.#saveTiles.bind(this, "slot1"));
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, "short", "Load 2",this.#loadTiles.bind(this, "slot2", false));
+		makeEle(this.vp, "button", null, "short", "Save 2",this.#saveTiles.bind(this, "slot2"));
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, "short", "Load 3",this.#loadTiles.bind(this, "slot3", false));
+		makeEle(this.vp, "button", null, "short", "Save 3",this.#saveTiles.bind(this, "slot3"));
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, "short", "Load 4",this.#loadTiles.bind(this, "slot4", false));
+		makeEle(this.vp, "button", null, "short", "Save 4",this.#saveTiles.bind(this, "slot4"));
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, "short", "Load 5",this.#loadTiles.bind(this, "slot5", false));
+		makeEle(this.vp, "button", null, "short", "Save 5",this.#saveTiles.bind(this, "slot5"));
 	}		
 
 	// tiles and tile index
@@ -563,7 +583,7 @@ class MainApp {
 		// proto shapes
 		this.editProtoTiles.draw(this.drawPrim, options);
 		// main shapes
-		this.editTiles.draw(this.drawPrim, options);
+		this.editTiles.draw(this.drawPrim, options, true);
 		//this.#testDraw();
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);

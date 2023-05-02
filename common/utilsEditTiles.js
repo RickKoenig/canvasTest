@@ -4,7 +4,12 @@
 // static
 class Shape {
 	// called only once, center and TODO: calc N and D
+	// polyPnts: array of points
+	// rotFactor: for UI rotate object with drag mouse
+	// boundRadius: smallest circle containing all points
+	// area: area of poly
 	static setupPolyPnts() {
+		// center points
 		const avg = vec2.create();
 		for (let pnt of this.polyPnts) {
 			vec2.add(avg, avg, pnt);
@@ -20,7 +25,9 @@ class Shape {
 				farDist2 = dist2;
 			}
 		}
+		this.boundRadius = Math.sqrt(farDist2);
 		this.rotFactor = 1.25 / farDist2; // That's it!, try a little more turn
+		this.area = calcPolyArea(this.polyPnts);
 	}
 }
 
@@ -38,14 +45,14 @@ class Tile {
 		return ret;
 	}
 
-	draw(drawPrim, id, doHilit = false, options) {
+	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
 		const ctx = drawPrim.ctx;
 		ctx.save();
 		ctx.translate(this.pos[0], this.pos[1]);
 		if (this.shape.draw) {
 			ctx.save(); // keep font level
 			ctx.rotate(this.rot);
-			this.shape.draw(drawPrim, id, doHilit, options);
+			this.shape.draw(drawPrim, id, doHilit, options, overlap);
 			ctx.restore();
 		}
 		// draw ids when no options
@@ -58,6 +65,22 @@ class Tile {
 	isInside(userMouse) {
 		return penetrateConvexPoly(this.shape.polyPnts, this.pos, this.rot, userMouse) > 0;
 	}	
+
+	static doIsectTiles(tileA, tileB) {
+		return calcPolyIntsectBoundcircle(tileA.shape.polyPnts, tileA.shape.boundRadius, tileA.pos, tileA.rot
+			, tileB.shape.polyPnts, tileB.shape.boundRadius, tileB.pos, tileB.rot);
+	}
+
+	static isOverlap(tileA, tileB, thresh = .01) {
+		if (tileA === tileB) {
+			return false; // can't overlap over self
+		}
+		const isectPoly = calcPolyIntsectBoundcircle(tileA.shape.polyPnts, tileA.shape.boundRadius, tileA.pos, tileA.rot
+			, tileB.shape.polyPnts, tileB.shape.boundRadius, tileB.pos, tileB.rot);
+		const areaIsect = calcPolyArea(isectPoly);
+		const totalArea = tileA.shape.area + tileB.shape.area;
+		return areaIsect > thresh * totalArea;
+	}
 }
 
 // drag tiles around
@@ -230,12 +253,29 @@ class EditTiles {
 		return dirt;
 	}
 
-	draw(drawPrim, options) {
-		const hilitPntIdx2 = this.getHilitIdx();
-		const ctx = drawPrim.ctx;
-		for (let j = 0; j < this.tiles.length; ++j) {
-			const tile = this.tiles[j];
-			tile.draw(drawPrim, j, hilitPntIdx2 == j, options);
+	draw(drawPrim, options, doOverlap) {
+		// first pass, see which tiles overlap hilighted tile
+		const markOverlap = new Array(this.tiles.length);
+		const hilitPntIdx = this.getHilitIdx();
+		if (hilitPntIdx >= 0 && doOverlap) {
+			let someOverlap = false;
+			const hilitTile = this.tiles[hilitPntIdx];
+			for (let j = 0; j < this.tiles.length; ++j) {
+				const overlap = Tile.isOverlap(hilitTile, this.tiles[j]);
+				if (overlap) {
+					someOverlap = true;
+					markOverlap[j] = true;
+				}
+			}
+			if (someOverlap) {
+				markOverlap[hilitPntIdx] = true;
+			}
+		}
+		// second pass, draw the tiles
+		for (let i = 0; i < this.tiles.length; ++i) {
+			const tile = this.tiles[i];
+			const doHilit = hilitPntIdx == i;
+			tile.draw(drawPrim, i, doHilit, options, markOverlap[i]);
 		}
 	}
 }
