@@ -5,14 +5,14 @@ class Keyboard {
 
         // public
         this.key = 0; // current key click from buffer, 0 if no key pressed
-        this.keybuff = new Array(); // unicode keys pressed
-        this.keystate = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.keybuff = Array(); // unicode keys pressed
+        this.keystate = Array(); // keycode keys currently down 0 or 1, indexed by keycode
         this.events = "";
         this.stats = "";
 
         // private
-        this.keystatecur = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
-        this.keystatehold = new Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.keystatecur = Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.keystatehold = Array(); // keycode keys currently down 0 or 1, indexed by keycode
 
 
         div.focus();

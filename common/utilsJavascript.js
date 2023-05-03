@@ -51,7 +51,7 @@ function createArray(length) {
 	}
 	if (length === undefined)
 		return null;
-    var arr = new Array(length);
+    var arr = Array(length);
 	var i = length;
     if (arguments.length > 1) {
         var args = Array.prototype.slice.call(arguments,1);

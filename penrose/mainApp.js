@@ -284,7 +284,7 @@ class FatShape extends PenShape {
 class MainApp {
 	static #numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return MainApp.#numInstances;
+		return this.#numInstances;
 	}
 
 	constructor() {
@@ -340,7 +340,7 @@ class MainApp {
 			penTilesObj = JSON.parse(penTilesStr);
 		}
 		if (penTilesObj.length) {
-			console.log("loading " + penTilesObj.length + " tiles on init");
+			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
 			for (let penTileObj of penTilesObj) {
 				let kind = null;
 				switch(penTileObj.kind) {
@@ -351,7 +351,7 @@ class MainApp {
 					kind = FatShape;
 					break;
 				default:
-					//alert("unknown tile kind " + penTileObj.kind);
+					console.error("unknown tile kind " + penTileObj.kind);
 					break;
 				}
 				const pos = vec2.clone(penTileObj.pos);
@@ -361,15 +361,14 @@ class MainApp {
 		} else if (starterTiles) {
 			this.tiles.push(new Tile(SkinnyShape, [0, 2], 0));
 			this.tiles.push(new Tile(FatShape, [2, 2], 0));
-			console.log("creating " + this.tiles.length + " tiles on init");
+			console.log("creating " + this.tiles.length + " starter tiles");
 		}
-		console.log("load tiles, len = " + this.tiles.length + ", slot = " + slot);
 		this.editTiles = new EditTiles(this.tiles);
 		this.dirty = true;
 	}
 
 	#saveTiles(slot) {
-		console.log("save tiles, len = " + this.tiles.length + ", slot = " + slot);
+		console.log("saving " + this.tiles.length + " tiles on slot " + slot);
 		localStorage.setItem(slot, JSON.stringify(this.tiles));
 	}
 
@@ -389,25 +388,21 @@ class MainApp {
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.protoTiles = [];
-		// let proc position them proto tiles
+		// let proc position them proto tiles with zoom and pan UI
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.#loadTiles("penTiles", true);
 		this.editOptions = {
-			////snapMode: false, // set in proc
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
 			deselectFun: this.#deselectFun.bind(this),
-			moveFun: null,
 			doMove: true,
 			moveToTop: true
 		};
 		this.editProtoOptions = {
-			//snapMode: false,
 			rotStep: 0,
 			delDeselect: false,
 			deselectFun: null,
-			moveFun: null,
 			doMove: false,
 			moveToTop: false
 		};
@@ -495,12 +490,10 @@ class MainApp {
 
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
-		console.log('DESELECT: id =  ' + idx + ', tiles len = ' + tiles.length);
 		const tile = tiles[idx];
 		if (this.snapMode) {
 			tile.rot = snap(tile.rot, PenShape.smallAngle);
 		}
-		console.log("avg fps = " + this.avgFps.toFixed(3));
 	}
 	
 	#userProc() {
@@ -535,13 +528,6 @@ class MainApp {
 			this.dirty = true;
 			break;
 		}
-		//this.editOptions.snapMode = this.snapMode;
-		//if (this.snapMode) {
-		//	this.editOptions.deselectFun = this.#deselectFun.bind(this);
-		//	//MainApp.#deselectFun();
-		//} else {
-		//	this.editOptions.deselectFun = null;
-		//}
 
 		// remove tiles if deselected in the red area
 		this.editOptions.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;
@@ -564,6 +550,7 @@ class MainApp {
 			const ndc = [this.plotter2d.ndcMin[0] + this.redBarWidth / 2, yPos[i]]; 
 			const user = tile.pos;
 			this.plotter2d.ndcToUser(user, ndc);
+			tile.updateWorldPoly();
 		}
 		// select and add a proto tile to the main tiles
 		const protoSelected = this.editProtoTiles.getCurSelected()
@@ -584,7 +571,6 @@ class MainApp {
 		this.editProtoTiles.draw(this.drawPrim, options);
 		// main shapes
 		this.editTiles.draw(this.drawPrim, options, true);
-		//this.#testDraw();
 		// draw red add delete bar
 		this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 		const col = this.editOptions.delDeselect ? "#ff000040" : "#ff000020";

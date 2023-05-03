@@ -1,43 +1,9 @@
 'use strict';
 
-// test code
-class Shape {
-	// called only once, center and TODO: calc N and D
-	static setupPolyPnts() {
-		console.log("in static Shape setupPolyPnts");
-	}
-}
-
-// a test shape
-class SimpleShape1 extends Shape {
-	static setupPolyPnts() {
-		console.log("in static SimpleShape1 setupPolyPnts");
-		this.polyPnts = [
-			[-.25, .25],
-			[0, .5],
-			[.25, 0]
-		];
-		super.setupPolyPnts();
-	}
-
-	/*static { // doesn't work on ipad or iphone chrome and safari
-		console.log("in static SimpleShape1");
-		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-	}*/
-}
-
-function testStatics() {
-	console.log("test statics");
-	SimpleShape1.setupPolyPnts(); // use this if static {} doesn't work (ipad, iphone)
-}
-// end test code
-
-
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
 	constructor() {
-		testStatics(); // test code
 		console.log("creating instance of MainApp");
 
 		// vertical panel UI
@@ -167,7 +133,7 @@ class MainApp {
 		// calc ang bi/tri sectors
 		const sects = this.#calcSectors(this.pnts2);
 
-		const isects = new Array(3);
+		const isects = Array(3);
 		// draw sectors
 		for (let i = 0; i < sects.length; ++i) {
 			const k = (i + 1) % sects.length;
@@ -282,7 +248,7 @@ class MainApp {
 		}
 		// s0 + s1 = len0, s1 + s2 = len1, s2 + s0 = len2
 		// solve a, b, c
-		let slv = new Array(3);
+		let slv = Array(3);
 		slv[0]  = ( lens[0] - lens[1] + lens[2]) / 2;
 		slv[1]  = ( lens[0] + lens[1] - lens[2]) / 2;
 		slv[2]  = (-lens[0] + lens[1] + lens[2]) / 2;
@@ -290,7 +256,7 @@ class MainApp {
 		const newMidPnts = [];
 		for (let i = 0; i < 3; ++i) {
 			const j = (i + 1) % 3;
-			const newMidPnt = new Array(2);
+			const newMidPnt = Array(2);
 			const del = [pnts[j][0] - pnts[i][0], pnts[j][1] - pnts[i][1]];
 			const rat = slv[i] / lens[i]; // walk the line to where we want to go
 			newMidPnt[0] = pnts[i][0] + del[0] * rat;
@@ -301,7 +267,7 @@ class MainApp {
 	}
 
 	#deltaLine(pnt, angM) {
-		const delM = new Array(2);
+		const delM = Array(2);
 		delM[0] = Math.cos(angM);
 		delM[1] = Math.sin(angM);
 		const scl = .25;
@@ -312,14 +278,14 @@ class MainApp {
 
 	#calcSectors(pnts) {
 		const numSect = 3; // triSect angles
-		const ret = new Array(3); // 3 for triangle
+		const ret = Array(3); // 3 for triangle
 		for (let i = 0; i < 3; ++i) {
-			const sect = new Array(numSect - 1);
+			const sect = Array(numSect - 1);
 
 			const j = (i + 1) % 3;
 			const k = (i + 2) % 3;
-			const del0 = new Array(2);
-			const del1 = new Array(2);
+			const del0 = Array(2);
+			const del1 = Array(2);
 			del0[0] = pnts[j][0] - pnts[i][0];
 			del0[1] = pnts[j][1] - pnts[i][1];
 			del1[0] = pnts[k][0] - pnts[i][0];

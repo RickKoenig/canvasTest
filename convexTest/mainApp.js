@@ -130,7 +130,7 @@ class MainApp {
 			//rotStep: 0,
 			//delDeselect: false,
 			deselectFun: this.#deselectFun.bind(this),
-			moveFun: this.#moveFun.bind(this),
+			//moveFun: null, //this.#moveFun.bind(this),
 			//doMove: true,
 			moveToTop: false
 		};
@@ -148,28 +148,19 @@ class MainApp {
 	}		
 	
 	#isInside(tile, testPoint) {
-		const inside = penetrateLine(tile.shape.polyPnts[0], tile.shape.polyPnts[1], tile.pos, tile.rot, testPoint);
+		const inside = penetrateConvexPoly(tile.worldPolyPnts, testPoint);
 		return inside > 0;
 	}
 
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
-		console.log('DESELECT: id =  ' + idx + ', tiles len = ' + tiles.length);
 		const tile = tiles[idx];
 		tile.rot = snap(tile.rot, degToRad(22.5));
 		tile.pos[0] = snap(tile.pos[0], .0625);
 		tile.pos[1] = snap(tile.pos[1], .0625);
-		console.log("avg fps = " + this.avgFps.toFixed(3));
+		tile.updateWorldPoly();
 	}
-	
-	#moveFun(tiles, idx) {
-		console.log('MOVE: id =  ' + idx + ', tiles len = ' + tiles.length);
-		const tile = tiles[idx];
-		console.log("avg fps = " + this.avgFps.toFixed(3)
-			+ " pos = (" + tile.pos[0].toFixed(3) + "," 
-			+ tile.pos[1].toFixed(3) + ")");
-	}
-	
+
 	#userProc() {
 		// proc
 		//this.dirty = true;

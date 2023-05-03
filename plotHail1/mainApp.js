@@ -306,7 +306,7 @@ class MainApp {
 				}
 			}
 		}
-		this.nodePnts = new Array(this.nodes.length);
+		this.nodePnts = Array(this.nodes.length);
 		this.editPnts = new EditPnts(this.nodePnts, this.nodeRad);
 	}
 

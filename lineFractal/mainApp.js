@@ -167,7 +167,7 @@ class MainApp {
 				vec2.sub(pntsOff, pnts[pnts.length - 1], pnts[0]);
 				vec2.sub(pnts2Off, pnts[i + 1], pnts[i]);
 				let mat = this.#buildMat(pntsOff, pnts2Off);
-				const deepPnts = new Array(pnts.length);
+				const deepPnts = Array(pnts.length);
 				for (let j = 0; j < pnts.length; ++j) {
 					let pIn = vec2.clone(pnts[j]);
 					vec2.sub(pIn, pIn, pnts[0]);

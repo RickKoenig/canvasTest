@@ -176,7 +176,7 @@ class MainApp {
 	
 	#clipmask8(srcBm, dstBm, andArr, orArr) {
 		if (srcBm.size[0] != dstBm.size[0] || srcBm.size[1] != dstBm.size[1]) {
-			console.log("clipmask8 dim mismatch!");
+			console.error("clipmask8 dim mismatch!");
 			return;
 		}
 		const p = srcBm.size[0] * srcBm.size[1];

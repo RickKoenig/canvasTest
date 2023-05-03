@@ -434,7 +434,7 @@ class Bitmap32 {
 				dstIdx += dstSize[0];
 			}
 		} catch(e) {
-			console.log("Blit Error: " + e);
+			console.error("Blit Error: " + e);
 		}
 	}
 

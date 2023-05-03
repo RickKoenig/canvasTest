@@ -61,7 +61,6 @@ class DrawFun {
 	#drawNormal(lineStep, phase, graphPaper) {
         const p = this.plotter2d;
 		if (!this.functionG) {
-			//console.log("no draw functionG !!!");
 			return;
 		}
 		// draw a user defined function, default is a sine wave

@@ -62,7 +62,7 @@ fraction.reduce = function(f) {
 };
 
 fraction.create = function(w, n, d) {
-    var out = new Array(2);
+    var out = Array(2);
 	fraction.set(out, w, n, d);
     return out;
 };
@@ -74,7 +74,7 @@ fraction.create = function(w, n, d) {
  * @returns {fraction} a new fraction number
  */
 fraction.clone = function(a) {
-    var out = new Array(2);
+    var out = Array(2);
 	if (a == undefined) {
 		out[0] = 0n;
 		out[1] = 1n;

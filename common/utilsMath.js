@@ -121,7 +121,7 @@ function getIntSect(A, B, C, D) {
 		const u = uTop / bottom;
 		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
 	}
-	console.log("returning NULL from getIntSect");
+	console.error("returning NULL from getIntSect");
 	return null;
 }
 
@@ -140,33 +140,23 @@ function getIntSectParam(A, B, C, D) {
 
 // how far a test point 'T' goes 'inside' line 'P0' to 'P1' (opposite of normal)
 // TODO: optimize, cache N and D
-function penetrateLine(P0, P1, offset, rot, T) {
+function penetrateLine(P0, P1, T) {
 	const N = vec2.create();
 	vec2.sub(N, P1, P0);
 	vec2.perp(N, N);
 	vec2.normalize(N, N);
 	const D = vec2.dot(N, P0); // or P1, doesn't matter
-	const Toff = vec2.create();
-	//vec2.rot(N, N, rot);
-	if (offset) {
-		vec2.sub(Toff, T, offset);
-	} else {
-		vec2.copy(Toff, T);
-	}
-	if (rot) {
-		vec2.rotate(Toff, Toff, -rot);
-	}
-	return D - vec2.dot(N, Toff);
+	return D - vec2.dot(N, T);
 }
 
 // TODO: cache N and D
 // how far T is inside pnts
-function penetrateConvexPoly(pnts, offset, rot, T) {
+function penetrateConvexPoly(pnts, T) {
 	let pen = Number.MAX_VALUE;
 	for (let j = 0; j < pnts.length; ++j) {
 		const P0 = pnts[j];
 		const P1 = pnts[(j + 1) % pnts.length];
-		const p = penetrateLine(P0, P1, offset, rot, T);
+		const p = penetrateLine(P0, P1, T);
 		if (p < pen) {
 			pen = p;
 		}
@@ -177,7 +167,7 @@ function penetrateConvexPoly(pnts, offset, rot, T) {
 function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 	let insideA = [];
 	for (let pnt of polyA) {
-		insideA.push(penetrateLine(pntB0, pntB1, null, 0, pnt) > 0);
+		insideA.push(penetrateLine(pntB0, pntB1, pnt) > 0);
 	}
 	const clipPoly = [];
 	for (let i = 0; i < insideA.length; ++i) {
@@ -203,16 +193,6 @@ function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 	return clipPoly;
 }
 
-function calcPolyIntsectWorld(polyA, polyB) {
-	// clip away
-	let isectPoly = polyA;
-	for  (let i = 0; i < polyB.length; ++i) {
-		const j = (i + 1) %polyB.length;
-		isectPoly = calcPolyLineIntsectWorld(isectPoly, polyB[i], polyB[j]);
-	}
-	return isectPoly;
-}
-
 function calcPolyArea(poly) {
 	if (poly.length < 3) {
 		return 0;
@@ -232,43 +212,28 @@ function calcPolyArea(poly) {
 	return area * .5;
 }
 
-function calcPolyIntsectBoundcircle(polyA, radA, offsetA, rotA
-		, polyB, radB, offsetB, rotB) {
+function calcPolyIntsectBoundcircle(polyA, radA, offsetA
+		, polyB, radB, offsetB) {
+	// early out
 	const distPoints2 = vec2.sqrDist(offsetA, offsetB);
 	let distRad2 = radA + radB;
 	distRad2 *= distRad2;
 	if (distPoints2 >= distRad2) {
 		return [];
 	}
-	return calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB);
+	return calcPolyIntsect(polyA, polyB);
 }
 
-function calcPolyIntsect(polyA, offsetA, rotA, polyB, offsetB, rotB) {
+function calcPolyIntsect(polyA, polyB) {
 		// early out
 	if (polyA.length < 3 || polyB.length < 3) {
 		return [];
 	}
-	const polyAWorld = [];
-	for (let pnt of polyA) {
-		const pntW = vec2.clone(pnt);
-		if (rotA) {
-			vec2.rot(pntW, pntW, rotA);
-		}
-		if (offsetA) {
-			vec2.add(pntW, pntW, offsetA);
-		}
-		polyAWorld.push(pntW);
+	// clip away
+	let isectPoly = polyA;
+	for  (let i = 0; i < polyB.length; ++i) {
+		const j = (i + 1) %polyB.length;
+		isectPoly = calcPolyLineIntsectWorld(isectPoly, polyB[i], polyB[j]);
 	}
-	const polyBWorld = [];
-	for (let pnt of polyB) {
-		const pntW = vec2.clone(pnt);
-		if (rotB) {
-			vec2.rot(pntW, pntW, rotB);
-		}
-		if (offsetB) {
-			vec2.add(pntW, pntW, offsetB);
-		}
-		polyBWorld.push(pntW);
-	}
-	return calcPolyIntsectWorld(polyAWorld, polyBWorld);
+	return isectPoly;
 }

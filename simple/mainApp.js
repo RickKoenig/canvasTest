@@ -3,7 +3,6 @@
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javacript tests!");
-	//staticTests();
 	//inheritanceTests();
 	//const codeWord = rudolphSim();
 	//console.log("codeword = '" + codeWord + "'");

@@ -38,9 +38,27 @@ class Tile {
 		this.pos = vec2.clone(pos);
 		this.rot = rot;
 		this.kind = shape.kind; // for serialization
+		this.createWorldPoly();
+		this.updateWorldPoly();
 	}
 
-	clone(rhs) {
+	createWorldPoly() {
+		this.worldPolyPnts = Array(this.shape.polyPnts.length);
+		for (let i = 0; i < this.shape.polyPnts.length; ++i) {
+			this.worldPolyPnts[i] = vec2.create();
+		}
+	}
+
+	updateWorldPoly() {
+		for (let i = 0; i < this.worldPolyPnts.length; ++i) {
+			const pntO = this.shape.polyPnts[i];
+			const pntW = this.worldPolyPnts[i]; // reference
+			vec2.rot(pntW, pntO, this.rot);
+			vec2.add(pntW, pntW, this.pos);
+		}
+	}
+
+	clone() {
 		const ret = new Tile(this.shape, this.pos, this.rot);
 		return ret;
 	}
@@ -63,20 +81,20 @@ class Tile {
 	}
 
 	isInside(userMouse) {
-		return penetrateConvexPoly(this.shape.polyPnts, this.pos, this.rot, userMouse) > 0;
+		return penetrateConvexPoly(this.worldPolyPnts, userMouse) > 0;
 	}	
 
 	static doIsectTiles(tileA, tileB) {
-		return calcPolyIntsectBoundcircle(tileA.shape.polyPnts, tileA.shape.boundRadius, tileA.pos, tileA.rot
-			, tileB.shape.polyPnts, tileB.shape.boundRadius, tileB.pos, tileB.rot);
+		return calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
+			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
 	}
 
 	static isOverlap(tileA, tileB, thresh = .01) {
 		if (tileA === tileB) {
 			return false; // can't overlap over self
-		}
-		const isectPoly = calcPolyIntsectBoundcircle(tileA.shape.polyPnts, tileA.shape.boundRadius, tileA.pos, tileA.rot
-			, tileB.shape.polyPnts, tileB.shape.boundRadius, tileB.pos, tileB.rot);
+		} 
+		const isectPoly = calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
+			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
 		const areaIsect = calcPolyArea(isectPoly);
 		const totalArea = tileA.shape.area + tileB.shape.area;
 		return areaIsect > thresh * totalArea;
@@ -85,7 +103,7 @@ class Tile {
 
 // drag tiles around
 class EditTiles {
-	constructor(tiles/*, snapTransAmount = 0, snapRotAmount = degToRad(36)*/) {
+	constructor(tiles) {
 		this.tiles = tiles; // Tile
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
@@ -93,8 +111,6 @@ class EditTiles {
 		this.startRegPoint = vec2.create();
 		this.regPoint = vec2.create(); // where in tile, mouse is clicked on selection
 		this.lastUserMouse = vec2.create(); // for rotation of tile
-		//this.snapTransAmount = snapTransAmount;
-		//this.snapRotAmount = snapRotAmount;
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
@@ -141,27 +157,20 @@ class EditTiles {
 	}
 	
 	proc(mouse, userMouse
-		/*
-		//, snapMode = false
-		, rotStep = 0 // usually with arrow keys
-		, delDeselect = false // delete Tile when deselected
-		, deselectFun = null // call when deselected
-		, doMove = true//  mouse buttons and user/cam space mouse coord
-		, moveToTop = true//  deselect will put object to the top
-		*/
-		, options) {
-		
-		//let snapMode = false;
+			/*
+			, rotStep = 0 // usually with arrow keys
+			, delDeselect = false // delete Tile when deselected
+			, deselectFun = null // call when deselected
+			, doMove = true//  mouse buttons and user/cam space mouse coord
+			, moveToTop = true//  deselect will put object to the top
+			*/
+			, options) {
 		let rotStep = 0;
 		let delDeselect = false;
 		let deselectFun = null;
-		let moveFun = null;
 		let doMove = true; // allow tiles to move
 		let moveToTop = true; // reorder tiles
 		if (options) {
-			//if (options.snapMode !== undefined) {
-			//	snapMode = options.snapMode;
-			//}
 			if (options.rotStep !== undefined) {
 				rotStep = options.rotStep;
 			}
@@ -170,9 +179,6 @@ class EditTiles {
 			}
 			if (options.deselectFun !== undefined) {
 				deselectFun = options.deselectFun;
-			}
-			if (options.moveFun !== undefined) {
-				moveFun = options.moveFun;
 			}
 			if (options.doMove !== undefined) {
 				doMove = options.doMove;
@@ -219,13 +225,8 @@ class EditTiles {
 				} else {
 					if (deselectFun) { // custom do something when deselected
 						deselectFun(this.tiles, this.curPntIdx);
+						this.tiles[this.curPntIdx].updateWorldPoly();
 					}
-						//if (snapMode) {
-					//	const tile = this.tiles[this.curPntIdx];
-						//tile.rot = snap(tile.rot, this.snapRotAmount);
-						//tile.pos[0] = snap(tile.pos[0], this.snapTransAmount);
-						//tile.pos[1] = snap(tile.pos[1], this.snapTransAmount);
-					//}
 				}
 				dirt = true;
 			}
@@ -246,16 +247,14 @@ class EditTiles {
 			vec2.rot(this.regPoint, this.startRegPoint, tile.rot - this.startRot);
 			vec2.sub(tile.pos, userMouse, this.regPoint);
 			vec2.copy(this.lastUserMouse, userMouse);
-			if (moveFun) {
-				moveFun(this.tiles, this.curPntIdx);
-			}
+			tile.updateWorldPoly();
 		}
 		return dirt;
 	}
 
 	draw(drawPrim, options, doOverlap) {
 		// first pass, see which tiles overlap hilighted tile
-		const markOverlap = new Array(this.tiles.length);
+		const markOverlap = Array(this.tiles.length);
 		const hilitPntIdx = this.getHilitIdx();
 		if (hilitPntIdx >= 0 && doOverlap) {
 			let someOverlap = false;
