@@ -336,18 +336,20 @@ class MainApp {
 	#connectTiles() {
 		// for now if 2 tiles then make tile 0 attract tile 1
 		const tile0 = this.tiles[0];
+		const tile1 = this.tiles[1];
+
 		const offset0 = tile0.shape.polyPnts[0];
 		const rOffset0 = vec2.create();
-		vec2.rot(rOffset0, offset0, tile0.rot);
+		vec2.rot(rOffset0, offset0, tile1.rot + degToRad(180 + 36));
 
-		const tile1 = this.tiles[1];
 		const offset1 = tile1.shape.polyPnts[0];
 		const rOffset1 = vec2.create();
 		vec2.rot(rOffset1, offset1, tile1.rot);
 
-		vec2.add(tile0.pos, tile1.pos, rOffset1);
-		vec2.add(tile0.pos, tile0.pos, rOffset0);
+		vec2.sub(tile0.pos, tile1.pos, rOffset1);
 		tile0.rot = tile1.rot + degToRad(180 + 36);
+		vec2.sub(tile0.pos, tile0.pos, rOffset0);
+		vec2.add(tile0.pos, tile0.pos, [this.masterEdge, this.slaveEdge]);
 		tile0.updateWorldPoly();
 	}
 
@@ -505,6 +507,31 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, "short", "Load 5",this.#loadTiles.bind(this, "slot5", false));
 		makeEle(this.vp, "button", null, "short", "Save 5",this.#saveTiles.bind(this, "slot5"));
+		
+		// connect test
+		{
+			makeEle(this.vp, "hr");
+			const label = "master edge";
+			const min = 0;
+			const max = 3;
+			const start = 0;
+			const step = 1;
+			const precision = 0;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
+				this.masterEdge = val;
+				this.dirty = true;}, false);
+		}
+		{
+			const label = "slave edge";
+			const min = 0;
+			const max = 3;
+			const start = 0;
+			const step = 1;
+			const precision = 0;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
+				this.slaveEdge = val;
+				this.dirty = true;}, false);
+		}
 	}		
 
 	// tiles and tile index
@@ -554,13 +581,6 @@ class MainApp {
 			, this.editOptions) 
 			|| this.dirty;
 		
-
-
-		// test connect tiles
-		if (this.tiles.length == 2) {
-			this.#connectTiles();
-		}
-
 		this.dirty = this.editProtoTiles.proc(this.input.mouse, this.plotter2d.userMouse
 			, this.editProtoOptions) 
 			|| this.dirty;
@@ -584,6 +604,10 @@ class MainApp {
 			this.editProtoTiles.deselect();
 			const newTile = this.protoTiles[protoSelected].clone();
 			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
+		}
+		// test connect tiles
+		if (this.tiles.length == 2) {
+			this.#connectTiles();
 		}
 	}
 

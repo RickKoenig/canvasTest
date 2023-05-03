@@ -121,7 +121,7 @@ function getIntSect(A, B, C, D) {
 		const u = uTop / bottom;
 		return [lerp(A[0], B[0], t), lerp(A[1], B[1], t)];
 	}
-	console.error("returning NULL from getIntSect");
+	//console.error("returning NULL from getIntSect");
 	return null;
 }
 
