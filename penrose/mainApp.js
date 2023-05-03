@@ -332,6 +332,25 @@ class MainApp {
 		this.dirty = true;
 	}
 
+	// snap one tile next to another tile even if doesn't fit
+	#connectTiles() {
+		// for now if 2 tiles then make tile 0 attract tile 1
+		const tile0 = this.tiles[0];
+		const offset0 = tile0.shape.polyPnts[0];
+		const rOffset0 = vec2.create();
+		vec2.rot(rOffset0, offset0, tile0.rot);
+
+		const tile1 = this.tiles[1];
+		const offset1 = tile1.shape.polyPnts[0];
+		const rOffset1 = vec2.create();
+		vec2.rot(rOffset1, offset1, tile1.rot);
+
+		vec2.add(tile0.pos, tile1.pos, rOffset1);
+		vec2.add(tile0.pos, tile0.pos, rOffset0);
+		tile0.rot = tile1.rot + degToRad(180 + 36);
+		tile0.updateWorldPoly();
+	}
+
 	#loadTiles(slot, starterTiles) {
 		this.tiles = [];
 		const penTilesStr = localStorage.getItem(slot);
@@ -535,6 +554,13 @@ class MainApp {
 			, this.editOptions) 
 			|| this.dirty;
 		
+
+
+		// test connect tiles
+		if (this.tiles.length == 2) {
+			this.#connectTiles();
+		}
+
 		this.dirty = this.editProtoTiles.proc(this.input.mouse, this.plotter2d.userMouse
 			, this.editProtoOptions) 
 			|| this.dirty;

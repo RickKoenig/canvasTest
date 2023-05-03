@@ -179,12 +179,18 @@ function calcPolyLineIntsectWorld(polyA, pntB0, pntB1) {
 			} else { // going out
 				clipPoly.push(polyA[i]);
 				const isect = getIntSect(polyA[i], polyA[j], pntB0, pntB1);
+				if (!isect) {
+					return []; // can't find intersection, bail
+				}
 				clipPoly.push(isect);
 			}
 		} else {
 			if (insideA[j]) { // going in
 				const isect = getIntSect(polyA[i], polyA[j], pntB0, pntB1);
 				clipPoly.push(isect);
+				if (!isect) {
+					return []; // can't find intersection, bail
+				}
 			} else { // outside, do nothing
 	
 			}
