@@ -333,24 +333,37 @@ class MainApp {
 	}
 
 	// snap one tile next to another tile even if doesn't fit
-	#connectTiles() {
-		// for now if 2 tiles then make tile 0 attract tile 1
-		const tile0 = this.tiles[0];
-		const tile1 = this.tiles[1];
-
-		const offset0 = tile0.shape.polyPnts[0];
+	#connectTiles(master, slave) {
+		// for now if 2 tiles then make tile 0 (slave) attract to tile 1 (master)
+		const angsSkinny = [
+			degToRad(36),
+			degToRad(0),
+			degToRad(36 + 180),
+			degToRad(180)
+		];
+		const angsFat = [
+			degToRad(72),
+			degToRad(0),
+			degToRad(72 + 180),
+			degToRad(180)
+		];
 		const rOffset0 = vec2.create();
-		vec2.rot(rOffset0, offset0, tile1.rot + degToRad(180 + 36));
-
-		const offset1 = tile1.shape.polyPnts[0];
-		const rOffset1 = vec2.create();
-		vec2.rot(rOffset1, offset1, tile1.rot);
-
-		vec2.sub(tile0.pos, tile1.pos, rOffset1);
-		tile0.rot = tile1.rot + degToRad(180 + 36);
-		vec2.sub(tile0.pos, tile0.pos, rOffset0);
-		vec2.add(tile0.pos, tile0.pos, [this.masterEdge, this.slaveEdge]);
-		tile0.updateWorldPoly();
+		const totOffset = vec2.create();
+		const angs0 = slave.kind === "fat" ? angsFat : angsSkinny;
+		const angs1 = master.kind === "fat" ? angsFat : angsSkinny;
+		// meet up at 180 degrees
+		const ang = angs1[this.masterEdge] - angs0[this.slaveEdge] + degToRad(180);
+		const pidx0 = (this.slaveEdge + 1) % 4; // edge going in opposite direction
+		const pidx1 = this.masterEdge;
+		const offset1 = master.shape.polyPnts[pidx1];
+		const offset0 = slave.shape.polyPnts[pidx0];
+		vec2.rot(rOffset0, offset0, ang);
+		vec2.sub(totOffset, offset1, rOffset0);
+		vec2.rot(totOffset, totOffset, master.rot);
+		vec2.scale(totOffset, totOffset, 1.2);
+		vec2.add(slave.pos, master.pos, totOffset);
+		slave.rot = master.rot + ang;
+		slave.updateWorldPoly();
 	}
 
 	#loadTiles(slot, starterTiles) {
@@ -402,7 +415,8 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.snapMode = true;
+		this.snapAng = true;
+		this.snapTile = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
 		this.drawIds = true;
@@ -448,11 +462,20 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 
-		makeEle(this.vp, "span", null, "marg", "Snap Angle Mode");
-		this.eles.snapMode = makeEle(this.vp, "input", "snapMode", null, "ho", (val) => {
-			this.snapMode = val;
+		makeEle(this.vp, "span", null, "marg", "Snap Angle");
+		this.eles.snapAng = makeEle(this.vp, "input", "snapAng", null, "ho", (val) => {
+			this.snapAng = val;
 		}, "checkbox");
-		this.eles.snapMode.checked = this.snapMode;
+		this.eles.snapAng.checked = this.snapAng;
+		makeEle(this.vp, "br");
+
+		makeEle(this.vp, "span", null, "marg", "Snap Nearest Tile");
+		this.eles.snapTile = makeEle(this.vp, "input", "snapTile", null, "ho", (val) => {
+			this.snapTile = val;
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.snapTile.checked = this.snapTile;
+
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 
@@ -537,7 +560,7 @@ class MainApp {
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const tile = tiles[idx];
-		if (this.snapMode) {
+		if (this.snapAng) {
 			tile.rot = snap(tile.rot, PenShape.smallAngle);
 		}
 	}
@@ -606,8 +629,8 @@ class MainApp {
 			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
 		}
 		// test connect tiles
-		if (this.tiles.length == 2) {
-			this.#connectTiles();
+		if (this.snapTile && this.tiles.length == 2) {
+			this.#connectTiles(this.tiles[1], this.tiles[0]); // master, slave
 		}
 	}
 
