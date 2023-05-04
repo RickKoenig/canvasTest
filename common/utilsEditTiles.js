@@ -93,11 +93,20 @@ class Tile {
 		if (tileA === tileB) {
 			return false; // can't overlap over self
 		} 
-		const isectPoly = calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
-			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
-		const areaIsect = calcPolyArea(isectPoly);
-		const totalArea = tileA.shape.area + tileB.shape.area;
-		return areaIsect > thresh * totalArea;
+		const justCircleBounds = false;
+		if (justCircleBounds) {
+			// just check circle boundaries
+			return calcIntsectBoundcircle(tileA.shape.boundRadius, tileA.pos
+				, tileB.shape.boundRadius, tileB.pos);
+		} else {
+			// proper way
+			const isectPoly = calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
+				, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
+			const areaIsect = calcPolyArea(isectPoly);
+			const totalArea = tileA.shape.area + tileB.shape.area;
+			return areaIsect > thresh * totalArea;
+		}
+
 	}
 }
 
@@ -224,8 +233,8 @@ class EditTiles {
 					this.hilitPntIdx = -1;
 				} else {
 					if (deselectFun) { // custom do something when deselected
-						deselectFun(this.tiles, this.curPntIdx);
 						this.tiles[this.curPntIdx].updateWorldPoly();
+						deselectFun(this.tiles, this.curPntIdx);
 					}
 				}
 				dirt = true;

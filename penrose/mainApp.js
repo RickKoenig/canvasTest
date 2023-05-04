@@ -333,7 +333,7 @@ class MainApp {
 	}
 
 	// snap one tile next to another tile even if doesn't fit
-	#connectTiles(master, slave) {
+	#connectTiles(master, slave, masterEdge, slaveEdge) {
 		// for now if 2 tiles then make tile 0 (slave) attract to tile 1 (master)
 		const angsSkinny = [
 			degToRad(36),
@@ -352,9 +352,9 @@ class MainApp {
 		const angs0 = slave.kind === "fat" ? angsFat : angsSkinny;
 		const angs1 = master.kind === "fat" ? angsFat : angsSkinny;
 		// meet up at 180 degrees
-		const ang = angs1[this.masterEdge] - angs0[this.slaveEdge] + degToRad(180);
-		const pidx0 = (this.slaveEdge + 1) % 4; // edge going in opposite direction
-		const pidx1 = this.masterEdge;
+		const ang = angs1[masterEdge] - angs0[slaveEdge] + degToRad(180);
+		const pidx0 = (slaveEdge + 1) % 4; // edge going in opposite direction
+		const pidx1 = masterEdge;
 		const offset1 = master.shape.polyPnts[pidx1];
 		const offset0 = slave.shape.polyPnts[pidx0];
 		vec2.rot(rOffset0, offset0, ang);
@@ -542,7 +542,7 @@ class MainApp {
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
 				this.masterEdge = val;
-				this.dirty = true;}, false);
+				this.dirty = true;}, false); // no reset button
 		}
 		{
 			const label = "slave edge";
@@ -553,16 +553,23 @@ class MainApp {
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
 				this.slaveEdge = val;
-				this.dirty = true;}, false);
+				this.dirty = true;}, false); // no reset button
 		}
 	}		
 
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
-		const tile = tiles[idx];
+		const curTile = tiles[idx];
 		if (this.snapAng) {
-			tile.rot = snap(tile.rot, PenShape.smallAngle);
+			curTile.rot = snap(curTile.rot, PenShape.smallAngle);
+			curTile.updateWorldPoly();
 		}
+		if (this.snapTile & this.tiles.length >= 2) {
+			// for now always connect current tile to tile0 if enough tiles
+			this.#connectTiles(this.tiles[0], curTile, this.masterEdge, this.slaveEdge); // master, slave, master, slave
+		}
+		this.editTiles.deselect();
+		this.dirty = true;
 	}
 	
 	#userProc() {
@@ -628,10 +635,11 @@ class MainApp {
 			const newTile = this.protoTiles[protoSelected].clone();
 			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
 		}
+		/*
 		// test connect tiles
 		if (this.snapTile && this.tiles.length == 2) {
 			this.#connectTiles(this.tiles[1], this.tiles[0]); // master, slave
-		}
+		} */
 	}
 
 	#userDraw() {

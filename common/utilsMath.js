@@ -218,16 +218,20 @@ function calcPolyArea(poly) {
 	return area * .5;
 }
 
-function calcPolyIntsectBoundcircle(polyA, radA, offsetA
-		, polyB, radB, offsetB) {
+function calcIntsectBoundcircle(radA, offsetA, radB, offsetB) {
 	// early out
 	const distPoints2 = vec2.sqrDist(offsetA, offsetB);
 	let distRad2 = radA + radB;
 	distRad2 *= distRad2;
-	if (distPoints2 >= distRad2) {
+	return distPoints2 < distRad2;
+}
+
+function calcPolyIntsectBoundcircle(polyA, radA, offsetA, polyB, radB, offsetB) {
+	if (calcIntsectBoundcircle(radA, offsetA, radB, offsetB)) {
+		return calcPolyIntsect(polyA, polyB);
+	} else {
 		return [];
 	}
-	return calcPolyIntsect(polyA, polyB);
 }
 
 function calcPolyIntsect(polyA, polyB) {
