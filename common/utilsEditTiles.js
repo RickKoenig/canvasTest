@@ -93,7 +93,7 @@ class Tile {
 		if (tileA === tileB) {
 			return false; // can't overlap over self
 		} 
-		const justCircleBounds = false;
+		const justCircleBounds = true; // false for proper overlap operation
 		if (justCircleBounds) {
 			// just check circle boundaries
 			return calcIntsectBoundcircle(tileA.shape.boundRadius, tileA.pos

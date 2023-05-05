@@ -333,7 +333,7 @@ class MainApp {
 	}
 
 	// snap one tile next to another tile even if doesn't fit
-	#connectTiles(master, slave, masterEdge, slaveEdge) {
+	#connectTiles(master, masterEdge, slave, slaveEdge) {
 		// for now if 2 tiles then make tile 0 (slave) attract to tile 1 (master)
 		const angsSkinny = [
 			degToRad(36),
@@ -365,6 +365,14 @@ class MainApp {
 		slave.rot = master.rot + ang;
 		slave.updateWorldPoly();
 	}
+
+	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
+		// for now just edges are 0 0, ignore edge args
+		const d0 = vec2.sqrDist(master.worldPolyPnts[0], slave.worldPolyPnts[1])
+		const d1 = vec2.sqrDist(master.worldPolyPnts[1], slave.worldPolyPnts[0])
+		return d0 + d1;
+	}
+
 
 	#loadTiles(slot, starterTiles) {
 		this.tiles = [];
@@ -415,8 +423,8 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.snapAng = true;
-		this.snapTile = true;
+		this.snapAngle = false;
+		this.snapTile = false;
 		this.drawArcs = true;
 		this.drawNotches = true;
 		this.drawIds = true;
@@ -463,10 +471,10 @@ class MainApp {
 		makeEle(this.vp, "br");
 
 		makeEle(this.vp, "span", null, "marg", "Snap Angle");
-		this.eles.snapAng = makeEle(this.vp, "input", "snapAng", null, "ho", (val) => {
-			this.snapAng = val;
+		this.eles.snapAngle = makeEle(this.vp, "input", "snapAngle", null, "ho", (val) => {
+			this.snapAngle = val;
 		}, "checkbox");
-		this.eles.snapAng.checked = this.snapAng;
+		this.eles.snapAngle.checked = this.snapAngle;
 		makeEle(this.vp, "br");
 
 		makeEle(this.vp, "span", null, "marg", "Snap Nearest Tile");
@@ -560,13 +568,13 @@ class MainApp {
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
-		if (this.snapAng) {
+		if (this.snapAngle) {
 			curTile.rot = snap(curTile.rot, PenShape.smallAngle);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
 			// for now always connect current tile to tile0 if enough tiles
-			this.#connectTiles(this.tiles[0], curTile, this.masterEdge, this.slaveEdge); // master, slave, master, slave
+			this.#connectTiles(this.tiles[0], this.masterEdge, curTile, this.slaveEdge); // master, slave, master, slave
 		}
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -635,11 +643,6 @@ class MainApp {
 			const newTile = this.protoTiles[protoSelected].clone();
 			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
 		}
-		/*
-		// test connect tiles
-		if (this.snapTile && this.tiles.length == 2) {
-			this.#connectTiles(this.tiles[1], this.tiles[0]); // master, slave
-		} */
 	}
 
 	#userDraw() {
@@ -665,6 +668,40 @@ class MainApp {
 		let infoStr = "Dirty Count = " + this.dirtyCount;
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
+
+		const curSel = this.editTiles.getCurSelected();
+		if (curSel >= 0) {
+			infoStr += "\n Current selected = " + curSel;
+			const closeTiles = [];
+			const curTile = this.tiles[curSel];
+			let bestTile = -1;
+			let bestDist2 = Number.MAX_VALUE;
+			for (let i = 0; i < this.tiles.length; ++i) {
+				if (i === curSel) {
+					continue; // skip self
+				}
+				const tile = this.tiles[i];
+				const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
+				let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
+				distRad2 *= distRad2;
+				if (distPoints2 < distRad2) {
+					// do the best
+					const connectDist = this.#calcConnectDist(tile, this.masterEdge
+						, curTile, this.slaveEdge); // master, slave
+					if (connectDist < bestDist2) {
+						bestDist2 = connectDist;
+						bestTile = i;
+					}
+					// end do the best
+					closeTiles.push(i);
+				}
+			}
+			infoStr += "\n closetiles = (" + closeTiles + ")";
+			if (bestTile >= 0) {
+				infoStr += "\n besttile = " + bestTile + "\nbestdist = " + bestDist2.toFixed(2);
+			}
+			
+		}
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 

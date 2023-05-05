@@ -219,7 +219,6 @@ function calcPolyArea(poly) {
 }
 
 function calcIntsectBoundcircle(radA, offsetA, radB, offsetB) {
-	// early out
 	const distPoints2 = vec2.sqrDist(offsetA, offsetB);
 	let distRad2 = radA + radB;
 	distRad2 *= distRad2;
@@ -230,6 +229,7 @@ function calcPolyIntsectBoundcircle(polyA, radA, offsetA, polyB, radB, offsetB) 
 	if (calcIntsectBoundcircle(radA, offsetA, radB, offsetB)) {
 		return calcPolyIntsect(polyA, polyB);
 	} else {
+		// early out
 		return [];
 	}
 }
