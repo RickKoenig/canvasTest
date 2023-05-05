@@ -334,7 +334,6 @@ class MainApp {
 
 	// snap one tile next to another tile even if doesn't fit
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		// for now if 2 tiles then make tile 0 (slave) attract to tile 1 (master)
 		const angsSkinny = [
 			degToRad(36),
 			degToRad(0),
@@ -367,9 +366,8 @@ class MainApp {
 	}
 
 	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
-		// for now just edges are 0 0, ignore edge args
-		const d0 = vec2.sqrDist(master.worldPolyPnts[0], slave.worldPolyPnts[1])
-		const d1 = vec2.sqrDist(master.worldPolyPnts[1], slave.worldPolyPnts[0])
+		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge], slave.worldPolyPnts[(slaveEdge + 1) % 4])
+		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % 4], slave.worldPolyPnts[slaveEdge])
 		return d0 + d1;
 	}
 
@@ -565,6 +563,43 @@ class MainApp {
 		}
 	}		
 
+	// find best connection between tiles or null if none
+	#findBestSnapTile(curSel) {
+		const curTile = this.tiles[curSel];
+		let bestTile = -1;
+		let bestDist2 = Number.MAX_VALUE;
+		for (let i = 0; i < this.tiles.length; ++i) {
+			if (i === curSel) {
+				continue; // skip self
+			}
+			const tile = this.tiles[i];
+			const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
+			let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
+			distRad2 *= distRad2;
+			if (distPoints2 < distRad2) {
+				// do the best
+				const connectDist = this.#calcConnectDist(tile, this.masterEdge
+					, curTile, this.slaveEdge); // master, slave
+				if (connectDist < bestDist2) {
+					bestDist2 = connectDist;
+					bestTile = i;
+				}
+				// end do the best
+			}
+		}
+		if (bestTile >= 0) {
+			const ret = {
+				masterTile : bestTile,
+				masterEdge : this.masterEdge,
+				slaveTile : curSel,
+				slaveEdge : this.slaveEdge,
+				bestDist2: bestDist2
+			}
+			return ret;
+		}
+		return null;
+	}
+
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
@@ -573,8 +608,11 @@ class MainApp {
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
-			// for now always connect current tile to tile0 if enough tiles
-			this.#connectTiles(this.tiles[0], this.masterEdge, curTile, this.slaveEdge); // master, slave, master, slave
+			const info = this.#findBestSnapTile(idx);
+			if  (info) {
+				this.#connectTiles(this.tiles[info.masterTile], info.masterEdge
+					, this.tiles[info.slaveTile], this.slaveEdge); // master, slave, master, slave
+			}
 		}
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -672,35 +710,14 @@ class MainApp {
 		const curSel = this.editTiles.getCurSelected();
 		if (curSel >= 0) {
 			infoStr += "\n Current selected = " + curSel;
-			const closeTiles = [];
-			const curTile = this.tiles[curSel];
-			let bestTile = -1;
-			let bestDist2 = Number.MAX_VALUE;
-			for (let i = 0; i < this.tiles.length; ++i) {
-				if (i === curSel) {
-					continue; // skip self
-				}
-				const tile = this.tiles[i];
-				const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
-				let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
-				distRad2 *= distRad2;
-				if (distPoints2 < distRad2) {
-					// do the best
-					const connectDist = this.#calcConnectDist(tile, this.masterEdge
-						, curTile, this.slaveEdge); // master, slave
-					if (connectDist < bestDist2) {
-						bestDist2 = connectDist;
-						bestTile = i;
-					}
-					// end do the best
-					closeTiles.push(i);
-				}
+			const info = this.#findBestSnapTile(curSel);
+			if (info) {
+				infoStr += "\n mastertile = " + info.masterTile
+				infoStr += "\n masteredge = " + info.masterEdge
+				infoStr += "\n slavetile = " + info.slaveTile
+				infoStr += "\n slaveedge = " + info.slaveEdge
+				infoStr	+= "\nbestdist = " + info.bestDist2.toFixed(2);
 			}
-			infoStr += "\n closetiles = (" + closeTiles + ")";
-			if (bestTile >= 0) {
-				infoStr += "\n besttile = " + bestTile + "\nbestdist = " + bestDist2.toFixed(2);
-			}
-			
 		}
 		this.eles.textInfoLog.innerText = infoStr;
 	}
