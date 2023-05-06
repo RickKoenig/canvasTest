@@ -269,7 +269,20 @@ class EditTiles {
 			let someOverlap = false;
 			const hilitTile = this.tiles[hilitPntIdx];
 			for (let j = 0; j < this.tiles.length; ++j) {
-				const overlap = Tile.isOverlap(hilitTile, this.tiles[j]);
+				const tile = this.tiles[j];
+				// first check inner bounding radius, early in
+				let overlap = false;
+				if (tile.shape.nearRad !== undefined && hilitTile.shape.nearRad !== undefined
+						&& tile !== hilitTile) {
+					const dist2 = vec2.sqrDist(hilitTile.pos, tile.pos);
+					let sumRad = tile.shape.nearRad + hilitTile.shape.nearRad;
+					sumRad *= sumRad;
+					overlap = dist2 < sumRad;
+
+				}
+				if (!overlap) {
+					overlap = Tile.isOverlap(hilitTile, tile);
+				}
 				if (overlap) {
 					someOverlap = true;
 					markOverlap[j] = true;

@@ -83,6 +83,7 @@ class PenShape extends Shape {
 			pnt = vec2.create();
 			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
 			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
+			this.nearRad = .45; // easier overlap
 		} else { // skinny
 			let cmd = {
 				pnt: this.polyPnts[0],
@@ -135,6 +136,7 @@ class PenShape extends Shape {
 				ccw: false
 			}
 			this.cmdsNotches.push(cmd);
+			this.nearRad = .25; // easier overlap
 		}
 	}
 
@@ -234,9 +236,14 @@ class PenShape extends Shape {
 		// outline the tile
 		this.doPath(ctx, options);
 		const lineWidth = .025;
-		ctx.lineWidth = lineWidth;
+		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.strokeStyle = overlap ? "red" : "black";
 		ctx.stroke();
+
+		//drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
+		//drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
+
+
 	}
 
 	// horizontal level text
