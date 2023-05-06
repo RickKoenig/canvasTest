@@ -196,6 +196,7 @@ class PenShape extends Shape {
 	// draw the outline of a tile
 	static doPath(ctx, options) {
 		ctx.beginPath();
+        ctx.lineJoin = "round";
 		if (options.drawNotches) {
 			this.runCmds(ctx, this.cmdsNotches);
 		} else {
@@ -334,6 +335,7 @@ class MainApp {
 
 	// snap one tile next to another tile even if doesn't fit
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
+		const gap = 1.01; // > 1, then a gap
 		const angsSkinny = [
 			degToRad(36),
 			degToRad(0),
@@ -359,9 +361,9 @@ class MainApp {
 		vec2.rot(rOffset0, offset0, ang);
 		vec2.sub(totOffset, offset1, rOffset0);
 		vec2.rot(totOffset, totOffset, master.rot);
-		vec2.scale(totOffset, totOffset, 1.2);
+		vec2.scale(totOffset, totOffset, gap); // make a gap
 		vec2.add(slave.pos, master.pos, totOffset);
-		slave.rot = master.rot + ang;
+		slave.rot = normAngRadSigned(master.rot + ang);
 		slave.updateWorldPoly();
 	}
 
@@ -421,8 +423,8 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.snapAngle = false;
-		this.snapTile = false;
+		this.snapAngle = true;
+		this.snapTile = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
 		this.drawIds = true;
@@ -536,14 +538,14 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, "short", "Load 5",this.#loadTiles.bind(this, "slot5", false));
 		makeEle(this.vp, "button", null, "short", "Save 5",this.#saveTiles.bind(this, "slot5"));
-		
+		/*
 		// connect test
 		{
 			makeEle(this.vp, "hr");
 			const label = "master edge";
 			const min = 0;
 			const max = 3;
-			const start = 0;
+			const start = 2;
 			const step = 1;
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
@@ -554,45 +556,125 @@ class MainApp {
 			const label = "slave edge";
 			const min = 0;
 			const max = 3;
-			const start = 0;
+			const start = 1;
 			const step = 1;
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (val) => {
 				this.slaveEdge = val;
 				this.dirty = true;}, false); // no reset button
 		}
+		*/
 	}		
 
 	// find best connection between tiles or null if none
-	#findBestSnapTile(curSel) {
-		const curTile = this.tiles[curSel];
-		let bestTile = -1;
-		let bestDist2 = Number.MAX_VALUE;
-		for (let i = 0; i < this.tiles.length; ++i) {
-			if (i === curSel) {
+	#findBestSnapTile(curSelIdx) {
+		const curTile = this.tiles[curSelIdx]; //slave
+		let bestTileIdx = -1;
+		let bestSlaveEdge;
+		let bestMasterEdge;
+		const snapDistThresh = .3;
+		let bestDist2 = snapDistThresh; // must be less than this for a snap
+		for (let m = 0; m < this.tiles.length; ++m) {
+			if (m === curSelIdx) {
 				continue; // skip self
 			}
-			const tile = this.tiles[i];
+			const tile = this.tiles[m]; // master
 			const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
 			let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
 			distRad2 *= distRad2;
 			if (distPoints2 < distRad2) {
 				// do the best
-				const connectDist = this.#calcConnectDist(tile, this.masterEdge
-					, curTile, this.slaveEdge); // master, slave
-				if (connectDist < bestDist2) {
-					bestDist2 = connectDist;
-					bestTile = i;
+				// run through all the edge fits
+				// match arcs and notches edges
+				// [slave, master]
+				const skinnySkinnyList = [ // slave master
+					[0, 1],
+					[1, 0],
+					[2, 3],
+					[3, 2]
+				];
+				const fatFatList = [ // slave master
+					[0, 3],
+					[1, 2],
+					[2, 1],
+					[3, 0]
+				];
+				const skinnyFatList = [ // slave master
+					[0, 0],
+					[1, 3],
+					[2, 1],
+					[3, 2]
+				];
+				const fatSkinnyList = [ // slave master
+					[0, 0],
+					[1, 2],
+					[2, 3],
+					[3, 1]
+				];
+				let edgeEdgeList;
+				if (curTile.shape.kind == "skinny") { // slave
+					if (tile.shape.kind == "skinny") { // master
+						edgeEdgeList = skinnySkinnyList; // skinny slave, skinny master
+					} else {
+						edgeEdgeList = skinnyFatList; // skinny slave, fat master
+					}
+				} else {
+					if (tile.shape.kind == "skinny") { // master
+						edgeEdgeList = fatSkinnyList; // fat slave, skinny master
+					} else {
+						edgeEdgeList = fatFatList; // fat slave, fat master
+					}
 				}
+			for (let ee of edgeEdgeList) {
+					const se = ee[0];
+					const me = ee[1];
+					const connectDist = this.#calcConnectDist(tile, me
+						, curTile, se); // master, slave
+					if (connectDist < bestDist2) {
+						bestDist2 = connectDist;
+						bestTileIdx = m;
+						bestSlaveEdge = se;
+						bestMasterEdge = me;
+					}
+
+				}
+				/*
+				for (let me = 0; me < numEdges; ++me) {
+					for (let se = 0; se < numEdges; ++se) {
+						const connectDist = this.#calcConnectDist(tile, me
+							, curTile, se); // master, slave
+						if (connectDist < bestDist2) {
+							bestDist2 = connectDist;
+							bestTileIdx = m;
+							bestSlaveEdge = se;
+							bestMasterEdge = me;
+						}
+					}
+				}*/
+				/*
+				// all possibilities
+				const numEdges = 4;
+				for (let me = 0; me < numEdges; ++me) {
+					for (let se = 0; se < numEdges; ++se) {
+						const connectDist = this.#calcConnectDist(tile, me
+							, curTile, se); // master, slave
+						if (connectDist < bestDist2) {
+							bestDist2 = connectDist;
+							bestTileIdx = m;
+							bestSlaveEdge = se;
+							bestMasterEdge = me;
+						}
+					}
+				}*/
 				// end do the best
 			}
 		}
-		if (bestTile >= 0) {
+		if (bestTileIdx >= 0) {
 			const ret = {
-				masterTile : bestTile,
-				masterEdge : this.masterEdge,
-				slaveTile : curSel,
-				slaveEdge : this.slaveEdge,
+				masterTileIdx : bestTileIdx,
+				masterEdge : bestMasterEdge,
+				slaveTileIdx : curSelIdx,
+				slaveEdge : bestSlaveEdge,
 				bestDist2: bestDist2
 			}
 			return ret;
@@ -610,8 +692,8 @@ class MainApp {
 		if (this.snapTile & this.tiles.length >= 2) {
 			const info = this.#findBestSnapTile(idx);
 			if  (info) {
-				this.#connectTiles(this.tiles[info.masterTile], info.masterEdge
-					, this.tiles[info.slaveTile], this.slaveEdge); // master, slave, master, slave
+				this.#connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
+					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
 			}
 		}
 		this.editTiles.deselect();
@@ -707,14 +789,14 @@ class MainApp {
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
 
-		const curSel = this.editTiles.getCurSelected();
-		if (curSel >= 0) {
-			infoStr += "\n Current selected = " + curSel;
-			const info = this.#findBestSnapTile(curSel);
+		const curSelIdx = this.editTiles.getCurSelected();
+		if (curSelIdx >= 0) {
+			infoStr += "\n Current selected = " + curSelIdx;
+			const info = this.#findBestSnapTile(curSelIdx);
 			if (info) {
-				infoStr += "\n mastertile = " + info.masterTile
+				infoStr += "\n mastertile = " + info.masterTileIdx
 				infoStr += "\n masteredge = " + info.masterEdge
-				infoStr += "\n slavetile = " + info.slaveTile
+				infoStr += "\n slavetile = " + info.slaveTileIdx
 				infoStr += "\n slaveedge = " + info.slaveEdge
 				infoStr	+= "\nbestdist = " + info.bestDist2.toFixed(2);
 			}

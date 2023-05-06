@@ -94,7 +94,7 @@ function normAngRadSigned(a) {
 			break;
 		}
 		if (watchDog == 0) {
-			alert("watchDog: normAngRadUnsigned hit");
+			alert("watchDog: normAngRadSigned hit");
 			return 0;
 		}
 	}
