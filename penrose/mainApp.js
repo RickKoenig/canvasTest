@@ -2,6 +2,7 @@
 
 class PenShape extends Shape {
 	static smallAngle = degToRad(36);
+	static largeAngle = PenShape.smallAngle * 2;
 
 	static setupPolyPnts(ang, fat) {
 		// rhombus
@@ -377,36 +378,54 @@ class MainApp {
 	// generate more tiles
 	#deflateTiles() {
 		console.log("deflate tiles, len = " + this.tiles.length);
+		const smallAngle = PenShape.smallAngle;
+		const largeAngle = PenShape.largeAngle;
+		const oneEighty = Math.PI;
 		const newTiles = [];
 		for (let tile of this.tiles) {
-			const newTile0 = tile.clone();
-			vec2.add(newTile0.pos, newTile0.pos, [.5, .25]);
-			newTile0.updateWorldPoly();
-			newTiles.push(newTile0);
+			const rot = tile.rot;
+			const pos = vec2.clone(tile.pos);
+			if (tile.kind == "skinny") { // make 2 skinnys and 2 fats
+				let newTile = new Tile(SkinnyShape, [3, 2], normAngRadSigned(rot - 3 * smallAngle));
+				newTiles.push(newTile);
+				newTile = new Tile(SkinnyShape, [2.5, 2], normAngRadSigned(rot + 3 * smallAngle));
+				newTiles.push(newTile);
+				newTile = new Tile(FatShape, [3, 1], rot);
+				newTiles.push(newTile);
+				newTile = new Tile(FatShape, [4, 1], normAngRadSigned(rot + 2 * largeAngle));
+				newTiles.push(newTile);
+			} else { // fat, make 2 skinnys and 3 fats
+				let newTile = new Tile(FatShape, [2, 1], normAngRadSigned(rot + oneEighty));
+				newTiles.push(newTile);
+				newTile = new Tile(FatShape, [3, 1], normAngRadSigned(rot + oneEighty + smallAngle));
+				newTiles.push(newTile);
+				newTile = new Tile(FatShape, [4, 1], normAngRadSigned(rot + oneEighty - smallAngle));
+				newTiles.push(newTile);
+				newTile = new Tile(SkinnyShape, [2.5, 2], normAngRadSigned(rot + largeAngle));
+				newTiles.push(newTile);
+				newTile = new Tile(SkinnyShape, [3.5, 2], normAngRadSigned(rot + 2 * largeAngle));
+				newTiles.push(newTile);
+			}
 
-			const newTile1 = tile.clone();
-			vec2.add(newTile1.pos, newTile1.pos, [.5, -.25]);
-			newTile1.updateWorldPoly();
-			newTiles.push(newTile1);
 		}
 		this.tiles = newTiles;
 		this.editTiles = new EditTiles(this.tiles);
-		this.dirty = true;
+		this.#clearDups();
 	}
 
 	// snap one tile next to another tile even if doesn't fit
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
 		const angsSkinny = [
-			degToRad(36),
-			degToRad(0),
-			degToRad(36 + 180),
-			degToRad(180)
+			PenShape.smallAngle,
+			0,
+			PenShape.smallAngle + Math.PI,
+			Math.PI
 		];
 		const angsFat = [
-			degToRad(72),
-			degToRad(0),
-			degToRad(72 + 180),
-			degToRad(180)
+			PenShape.largeAngle,
+			0,
+			PenShape.largeAngle + Math.PI,
+			Math.PI
 		];
 		const rOffset0 = vec2.create();
 		const totOffset = vec2.create();
@@ -589,20 +608,20 @@ class MainApp {
 		// load save slots
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "slot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "slot1"));
+		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "penslot1", false));
+		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "penslot1"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "slot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "slot2"));
+		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "penslot2", false));
+		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "penslot2"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "slot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "slot3"));
+		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "penslot3", false));
+		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "penslot3"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "slot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "slot4"));
+		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "penslot4", false));
+		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "penslot4"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "slot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "slot5"));
+		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "penslot5", false));
+		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "penslot5"));
 		/*
 		// connect test
 		{
@@ -751,7 +770,7 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snap(curTile.rot, PenShape.smallAngle);
+			curTile.rot = snap(curTile.rot, PenShape.smallAngle * .5);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
@@ -787,10 +806,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= PenShape.smallAngle; // clockwise
+			this.editOptions.rotStep -= PenShape.smallAngle * .5; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += PenShape.smallAngle; // counter clockwise
+			this.editOptions.rotStep += PenShape.smallAngle * .5; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
