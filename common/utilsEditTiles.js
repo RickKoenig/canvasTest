@@ -36,7 +36,7 @@ class Tile {
 	constructor(shape, pos, rot) {
 		this.shape = shape;
 		this.pos = vec2.clone(pos);
-		this.rot = rot;
+		this.rot = normAngRadSigned(rot);
 		this.kind = shape.kind; // for serialization
 		this.createWorldPoly();
 		this.updateWorldPoly();
@@ -143,7 +143,7 @@ class EditTiles {
 		}
 	}
 
-	addTile(tile, userMouse) {
+	addTileSelect(tile, userMouse) {
 		this.curPntIdx = this.tiles.length;
 		this.hilitPntIdx = this.curPntIdx;
 		this.tiles.push(tile);

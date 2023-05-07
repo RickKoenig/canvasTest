@@ -337,12 +337,65 @@ class MainApp {
 
 	#clearTiles() {
 		this.tiles.length = 0;
+		this.editTiles.deselect();
+		this.dirty = true;
+	}
+
+	#clearDups() {
+		console.log("clear dups, len = " + this.tiles.length);
+		// TODO: optimize, go from N^2 to N*log(n)
+
+		const threshAng = degToRad(10);
+		const closeDist = .125;
+
+		for (let i = 0; i < this.tiles.length;) { // inc i only when not deleting
+			const ti1 = this.tiles[i];
+			let j;
+			for (j = i + 1; j < this.tiles.length; ++j) {
+				const ti2 = this.tiles[j];
+				let ra = Math.abs(ti1.rot - ti2.rot);
+				ra = normAngRadUnsigned(ra);
+				if (ti1.kind === ti2.kind
+					&& ra < threshAng 
+					&& vec2.sqrDist(ti1.pos, ti2.pos) < closeDist * closeDist) {
+					break;
+				}
+			}
+			if (j != this.tiles.length) {
+				//delete t;
+				//tiles.erase(tiles.begin()+i);
+				this.tiles.splice(i, 1);
+			} else {
+				++i;
+			}
+		}
+	
+		this.editTiles.deselect();
+		this.dirty = true;
+	}
+
+	// generate more tiles
+	#deflateTiles() {
+		console.log("deflate tiles, len = " + this.tiles.length);
+		const newTiles = [];
+		for (let tile of this.tiles) {
+			const newTile0 = tile.clone();
+			vec2.add(newTile0.pos, newTile0.pos, [.5, .25]);
+			newTile0.updateWorldPoly();
+			newTiles.push(newTile0);
+
+			const newTile1 = tile.clone();
+			vec2.add(newTile1.pos, newTile1.pos, [.5, -.25]);
+			newTile1.updateWorldPoly();
+			newTiles.push(newTile1);
+		}
+		this.tiles = newTiles;
+		this.editTiles = new EditTiles(this.tiles);
 		this.dirty = true;
 	}
 
 	// snap one tile next to another tile even if doesn't fit
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		const gap = 1.01; // > 1, then a gap
 		const angsSkinny = [
 			degToRad(36),
 			degToRad(0),
@@ -368,7 +421,7 @@ class MainApp {
 		vec2.rot(rOffset0, offset0, ang);
 		vec2.sub(totOffset, offset1, rOffset0);
 		vec2.rot(totOffset, totOffset, master.rot);
-		vec2.scale(totOffset, totOffset, gap); // make a gap
+		vec2.scale(totOffset, totOffset, this.gapTiles); // make a gap
 		vec2.add(slave.pos, master.pos, totOffset);
 		slave.rot = normAngRadSigned(master.rot + ang);
 		slave.updateWorldPoly();
@@ -408,8 +461,8 @@ class MainApp {
 				this.tiles.push(new Tile(kind, pos, rot));
 			}
 		} else if (starterTiles) {
-			this.tiles.push(new Tile(SkinnyShape, [0, 2], 0));
-			this.tiles.push(new Tile(FatShape, [2, 2], 0));
+			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
+			this.tiles.push(new Tile(FatShape, [2, 0], 0));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -430,6 +483,7 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
+		this.gapTiles = 1.01; // > 1, then a gap between tiles
 		this.snapAngle = true;
 		this.snapTile = true;
 		this.drawArcs = true;
@@ -526,25 +580,29 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
+		// deflate tiles
+		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
+		// clear duplicates
+		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
 		// clear tiles
-		makeEle(this.vp, "button", null, null, "Clear all tiles",this.#clearTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1",this.#loadTiles.bind(this, "slot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1",this.#saveTiles.bind(this, "slot1"));
+		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "slot1", false));
+		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "slot1"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2",this.#loadTiles.bind(this, "slot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2",this.#saveTiles.bind(this, "slot2"));
+		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "slot2", false));
+		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "slot2"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3",this.#loadTiles.bind(this, "slot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3",this.#saveTiles.bind(this, "slot3"));
+		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "slot3", false));
+		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "slot3"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4",this.#loadTiles.bind(this, "slot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4",this.#saveTiles.bind(this, "slot4"));
+		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "slot4", false));
+		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "slot4"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5",this.#loadTiles.bind(this, "slot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5",this.#saveTiles.bind(this, "slot5"));
+		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "slot5", false));
+		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "slot5"));
 		/*
 		// connect test
 		{
@@ -768,7 +826,7 @@ class MainApp {
 		if (protoSelected >= 0) {
 			this.editProtoTiles.deselect();
 			const newTile = this.protoTiles[protoSelected].clone();
-			this.editTiles.addTile(newTile, this.plotter2d.userMouse);
+			this.editTiles.addTileSelect(newTile, this.plotter2d.userMouse);
 		}
 	}
 
