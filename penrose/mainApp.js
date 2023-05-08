@@ -2,7 +2,7 @@
 
 class PenShape extends Shape {
 	static smallAngle = degToRad(36);
-	static largeAngle = PenShape.smallAngle * 2;
+	static largeAngle = this.smallAngle * 2;
 
 	static setupPolyPnts(ang, fat) {
 		// rhombus
@@ -382,9 +382,21 @@ class MainApp {
 		const largeAngle = PenShape.largeAngle;
 		const oneEighty = Math.PI;
 		const newTiles = [];
+		const skinnyCommand = [
+			{shape: SkinnyShape, pos: [3, 2], rot: 3 * smallAngle}
+		];
+		const fatCommand = [
+			{shape: FatShape, pos: [4, 2], rot: 4 * smallAngle}
+		];
 		for (let tile of this.tiles) {
 			const rot = tile.rot;
 			const pos = vec2.clone(tile.pos);
+			const penCommand = tile.kind === "skinny" ? skinnyCommand : fatCommand;
+			for (let com of penCommand) {
+				let newTile = new Tile(com.shape, com.pos, normAngRadSigned(rot + com.rot));
+				newTiles.push(newTile);
+			}
+			/*
 			if (tile.kind == "skinny") { // make 2 skinnys and 2 fats
 				let newTile = new Tile(SkinnyShape, [3, 2], normAngRadSigned(rot - 3 * smallAngle));
 				newTiles.push(newTile);
@@ -393,6 +405,9 @@ class MainApp {
 				newTile = new Tile(FatShape, [3, 1], rot);
 				newTiles.push(newTile);
 				newTile = new Tile(FatShape, [4, 1], normAngRadSigned(rot + 2 * largeAngle));
+				newTiles.push(newTile);
+				// original for ref
+				newTile = new Tile(SkinnyShape, [0, 0], rot);
 				newTiles.push(newTile);
 			} else { // fat, make 2 skinnys and 3 fats
 				let newTile = new Tile(FatShape, [2, 1], normAngRadSigned(rot + oneEighty));
@@ -405,7 +420,11 @@ class MainApp {
 				newTiles.push(newTile);
 				newTile = new Tile(SkinnyShape, [3.5, 2], normAngRadSigned(rot + 2 * largeAngle));
 				newTiles.push(newTile);
+				// original for ref
+				newTile = new Tile(FatShape, [0, 0], rot);
+				newTiles.push(newTile);
 			}
+			*/
 
 		}
 		this.tiles = newTiles;
@@ -600,10 +619,16 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
 		// deflate tiles
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
 		// clear duplicates
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
 		// clear tiles
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
