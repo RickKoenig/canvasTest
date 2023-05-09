@@ -3,6 +3,8 @@
 class PenShape extends Shape {
 	static smallAngle = degToRad(36);
 	static largeAngle = this.smallAngle * 2;
+	static golden = (Math.sqrt(5) + 1) / 2;
+	static invGolden = 1 / this.golden;
 
 	static setupPolyPnts(ang, fat) {
 		// rhombus
@@ -209,8 +211,12 @@ class PenShape extends Shape {
 	}
 
 	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
-		// fill the tile
 		const ctx = drawPrim.ctx;
+		/*if (doHilit) {
+			ctx.save();
+			ctx.scale(PenShape.golden, PenShape.golden);
+		}*/
+		// fill the tile
 		this.doPath(ctx, options);
 		const col = fat ? "#a08000" : "#008000";
 		let colAdjust = doHilit ? .3 : 0;
@@ -243,6 +249,9 @@ class PenShape extends Shape {
 
 		//drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
 		//drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
+		/*if (doHilit) {
+			ctx.restore();
+		}*/
 
 
 	}
@@ -377,55 +386,107 @@ class MainApp {
 
 	// generate more tiles
 	#deflateTiles() {
+		const spreadOnly = false;
 		console.log("deflate tiles, len = " + this.tiles.length);
+		if (!this.tiles.length) {
+			return;
+		}
+
+		const golden = PenShape.golden;
+		const invGolden = PenShape.invGolden;
+		// move tiles apart 
+		for (let tile of this.tiles) {
+			vec2.scale(tile.pos, tile.pos, golden);
+			// no need for updateWorldPoly since these tiles will be replaced	
+			if (spreadOnly) {
+				tile.updateWorldPoly();
+			}
+		}
+		if (spreadOnly) {
+			this.dirty = true;
+			return;
+		}
+
+		// setup the geometry for the new generated tiles
 		const smallAngle = PenShape.smallAngle;
-		const largeAngle = PenShape.largeAngle;
-		const oneEighty = Math.PI;
 		const newTiles = [];
+		const oxs = FatShape.polyPnts[0][0] + golden * SkinnyShape.polyPnts[2][0];
+		const oys = FatShape.polyPnts[0][1] + golden * SkinnyShape.polyPnts[2][1];
 		const skinnyCommand = [
-			{shape: SkinnyShape, pos: [3, 2], rot: 3 * smallAngle}
+			{shape: FatShape, pos: [
+				-oxs,
+				-oys
+			], rot: 0},
+
+			{shape: SkinnyShape, pos: [
+				0 + FatShape.polyPnts[2][0] - oxs,
+				0 + FatShape.polyPnts[2][1] - 2 * FatShape.polyPnts[1][1] - oys
+			], rot: -3 * smallAngle},
+
+			{shape: SkinnyShape, pos: [
+				0 + FatShape.polyPnts[2][0] + invGolden / 2 + invGolden / 2 * Math.cos(smallAngle) - oxs,
+				0 + FatShape.polyPnts[2][1] - 2 * FatShape.polyPnts[1][1] + invGolden / 2 * Math.sin(smallAngle) - oys
+			], rot: 3 * smallAngle},
+
+			{shape: FatShape, pos: [
+				0 + FatShape.polyPnts[2][0] + golden / 2 - oxs,
+				0 + FatShape.polyPnts[2][1] - oys
+			], rot: 4 * smallAngle},
+
+
+			 // original for ref
+			/*{shape: SkinnyShape, pos: [
+				0,
+				0
+			], rot: 0}*/
 		];
+		const r3 = vec2.create();
+		vec2.rot(r3, FatShape.polyPnts[1], smallAngle);
+		const oxf = (2 - invGolden) * FatShape.polyPnts[2][0];
+		const oyf = (2 - invGolden) * FatShape.polyPnts[2][1];
 		const fatCommand = [
-			{shape: FatShape, pos: [4, 2], rot: 4 * smallAngle}
+			{shape: FatShape, pos: [
+				FatShape.polyPnts[2][0] * 2 - oxf,
+				FatShape.polyPnts[2][1] * 2 - oyf,
+			], rot: 5 * smallAngle},
+			{shape: FatShape, pos: [
+				FatShape.polyPnts[2][0] - oxf,
+				FatShape.polyPnts[2][1] - Math.sin(smallAngle) - oyf		
+			], rot: 4 * smallAngle},
+
+			{shape: FatShape, pos: [
+				FatShape.polyPnts[2][0] + r3[0] - oxf,
+				FatShape.polyPnts[2][1] + r3[1] - oyf
+			], rot: 6 * smallAngle},
+			
+			{shape: SkinnyShape, pos: [
+				FatShape.polyPnts[2][0] + SkinnyShape.polyPnts[2][0] - oxf,
+				FatShape.polyPnts[2][1] - SkinnyShape.polyPnts[2][1] - oyf
+			], rot: 4 * smallAngle},
+
+			{shape: SkinnyShape, pos: [
+				FatShape.polyPnts[2][0] - oxf,
+				FatShape.polyPnts[2][1] + FatShape.polyPnts[1][1] * 2 - oyf
+			], rot: 2 * smallAngle},
+
+			 // original for ref
+			/*{shape: FatShape, pos: [
+				0,
+				0
+			], rot: 0}*/
 		];
 		for (let tile of this.tiles) {
 			const rot = tile.rot;
 			const pos = vec2.clone(tile.pos);
 			const penCommand = tile.kind === "skinny" ? skinnyCommand : fatCommand;
 			for (let com of penCommand) {
-				let newTile = new Tile(com.shape, com.pos, normAngRadSigned(rot + com.rot));
+				const comRot = com.rot;
+				const comPos = vec2.clone(com.pos);
+				vec2.rot(comPos, comPos, rot);
+				vec2.add(comPos, comPos, pos);
+				let newTile = new Tile(com.shape, comPos, normAngRadSigned(rot + comRot));
 				newTiles.push(newTile);
 			}
-			/*
-			if (tile.kind == "skinny") { // make 2 skinnys and 2 fats
-				let newTile = new Tile(SkinnyShape, [3, 2], normAngRadSigned(rot - 3 * smallAngle));
-				newTiles.push(newTile);
-				newTile = new Tile(SkinnyShape, [2.5, 2], normAngRadSigned(rot + 3 * smallAngle));
-				newTiles.push(newTile);
-				newTile = new Tile(FatShape, [3, 1], rot);
-				newTiles.push(newTile);
-				newTile = new Tile(FatShape, [4, 1], normAngRadSigned(rot + 2 * largeAngle));
-				newTiles.push(newTile);
-				// original for ref
-				newTile = new Tile(SkinnyShape, [0, 0], rot);
-				newTiles.push(newTile);
-			} else { // fat, make 2 skinnys and 3 fats
-				let newTile = new Tile(FatShape, [2, 1], normAngRadSigned(rot + oneEighty));
-				newTiles.push(newTile);
-				newTile = new Tile(FatShape, [3, 1], normAngRadSigned(rot + oneEighty + smallAngle));
-				newTiles.push(newTile);
-				newTile = new Tile(FatShape, [4, 1], normAngRadSigned(rot + oneEighty - smallAngle));
-				newTiles.push(newTile);
-				newTile = new Tile(SkinnyShape, [2.5, 2], normAngRadSigned(rot + largeAngle));
-				newTiles.push(newTile);
-				newTile = new Tile(SkinnyShape, [3.5, 2], normAngRadSigned(rot + 2 * largeAngle));
-				newTiles.push(newTile);
-				// original for ref
-				newTile = new Tile(FatShape, [0, 0], rot);
-				newTiles.push(newTile);
-			}
-			*/
-
 		}
 		this.tiles = newTiles;
 		this.editTiles = new EditTiles(this.tiles);
@@ -521,7 +582,7 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.gapTiles = 1.01; // > 1, then a gap between tiles
+		this.gapTiles = 1.0001; // > 1, then a gap between tiles
 		this.snapAngle = true;
 		this.snapTile = true;
 		this.drawArcs = true;
