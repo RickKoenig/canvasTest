@@ -22,6 +22,13 @@ class Plotter2d {
         this.coordReset = true;
     }
 
+    transReset() {
+        this.center[0] = this.startCenter[0];
+        this.center[1] = this.startCenter[1];
+        this.coordReset = true;
+
+    }
+
     constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize) {
         this.canvas = canvas;
         this.ctx = ctx; // only used for trans and scale, save and restore
@@ -125,13 +132,24 @@ class Plotter2d {
     }
 
     // return correct zoom for a given space
-    getZoom(ndcScale) {
+    // most of the time returns 1
+    getNdcZoom(ndcScale) {
         if (this.curSpace != Plotter2d.spaces.USER) {
             return 1;
         }
         // only in user space, scale back to NDC
         const zoom = ndcScale ? this.invZoom : 1;
         return zoom;
+    }
+
+    setZoom(newZoom) {
+        this.zoom = newZoom;
+        this.logZoom = Math.log(newZoom);
+        this.invZoom = 1 / newZoom;
+    }
+
+    getZoom() {
+        return this.zoom;
     }
 
     // set canvas to its background color by setting its dimensions

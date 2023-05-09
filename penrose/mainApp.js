@@ -387,13 +387,29 @@ class MainApp {
 	// generate more tiles
 	#deflateTiles() {
 		const spreadOnly = false;
+		const zoomOut = true;
 		console.log("deflate tiles, len = " + this.tiles.length);
 		if (!this.tiles.length) {
-			return;
+			return; // nothing to do!
 		}
-
 		const golden = PenShape.golden;
 		const invGolden = PenShape.invGolden;
+		if (zoomOut) {
+			this.plotter2d.setZoom(this.plotter2d.getZoom() / golden);
+			this.plotter2d.transReset();
+		}
+
+		// center tiles
+		const center = vec2.create();
+		for (let tile of this.tiles) {
+			vec2.add(center, center, tile.pos);
+		}
+		vec2.scale(center, center, 1 / this.tiles.length);
+		for (let tile of this.tiles) {
+			vec2.sub(tile.pos, tile.pos, center);
+		}
+
+
 		// move tiles apart 
 		for (let tile of this.tiles) {
 			vec2.scale(tile.pos, tile.pos, golden);

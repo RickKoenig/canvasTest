@@ -10,7 +10,7 @@ class DrawPrimitives {
 
     drawCircle(pnt, rad, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, Math.PI * 2);
         this.ctx.fillStyle = color;
         this.ctx.fill();
@@ -22,7 +22,7 @@ class DrawPrimitives {
 
     drawArcO(pnt, rad, lineWidth = .01, arcStart, arcEnd, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, arcStart, arcEnd);
         this.ctx.strokeStyle = color;
@@ -30,7 +30,7 @@ class DrawPrimitives {
     }
 
     drawRectangle(topLeft, size, color = "black", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         const sizeScale = vec2.create();
         vec2.scale(sizeScale, size, ndcZoom);
         this.ctx.fillStyle = color;
@@ -38,7 +38,7 @@ class DrawPrimitives {
     }
 
     drawRectangleO(topLeft, size, lineWidth, color = "black", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         const sizeScale = vec2.create();
         vec2.scale(sizeScale, size, ndcZoom);
@@ -47,7 +47,7 @@ class DrawPrimitives {
     }
 
     drawRectangleCenter(center, size, color = "black", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
         this.ctx.fillStyle = color;
@@ -58,7 +58,7 @@ class DrawPrimitives {
     }
 
     drawRectangleCenterO(center, size, lineWidth = .01, color = "black", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
@@ -70,7 +70,7 @@ class DrawPrimitives {
     }
 
     drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.beginPath();
         this.ctx.moveTo(p0[0], p0[1]);
         this.ctx.lineTo(p1[0], p1[1]);
@@ -84,7 +84,7 @@ class DrawPrimitives {
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = .02
         , startX = 0, stepX = 1
         , lineColor = "black", circleColor = "green", ndcScale = false) {
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         if (lineWidth > 0 && pntsY.length >= 2) {
             this.ctx.beginPath();
             this.ctx.lineJoin = "round";
@@ -119,7 +119,7 @@ class DrawPrimitives {
         if (pnts.length < 2) {
             return;
         }
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         if (lineWidth > 0) {
             this.ctx.beginPath();
             this.ctx.lineJoin = "round";
@@ -204,7 +204,7 @@ class DrawPrimitives {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         this.ctx.translate(center[0], center[1]);
-        const ndcZoom = this.plotter2d.getZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         let sy = size[1] * ndcZoom;
         // invert the font scale y for NDC and USER spaces for they run y from bottom to top
         this.ctx.scale(sy, this.plotter2d.curSpace == Plotter2d.spaces.SCREEN ? sy : -sy);
