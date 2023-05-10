@@ -182,7 +182,6 @@ class MainApp {
 	}
 
 	#buildSimBm() {
-		// for now random indices in 0 to numColors - 1, read red channel, make gray, palettize later
 		this.bitmapList.simBm = new Bitmap32([this.simBmSize, this.simBmSize]);
 		this.bitmapList.simBm2 = new Bitmap32([this.simBmSize, this.simBmSize]);
 	}
