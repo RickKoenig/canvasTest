@@ -245,7 +245,7 @@ class PenShape extends Shape {
 		// outline the tile
 		this.doPath(ctx, options);
 		const lineWidth = .025;
-		ctx.lineWidth = overlap ? lineWidth * 5 : lineWidth;
+		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.strokeStyle = overlap ? "red" : "black";
 		ctx.stroke();
 
@@ -781,16 +781,15 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
+		makeEle(this.vp, "span", null, "marg", "'Shift' key to clone select");
 		// deflate tiles
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
 		// clear duplicates
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
 		// clear tiles
-		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearTiles.bind(this));
 		// load save slots
@@ -862,6 +861,7 @@ class MainApp {
 			this.dirty = true;
 			break;
 		}
+		this.editOptions.cloneSelect = this.input.keyboard.keystate[keyCodes.SHIFT];
 
 		// remove tiles if deselected in the red area
 		this.editOptions.delDeselect = this.plotter2d.ndcMouse[0] - this.plotter2d.ndcMin[0] < this.redBarWidth;

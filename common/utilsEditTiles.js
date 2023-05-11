@@ -170,8 +170,9 @@ class EditTiles {
 			, rotStep = 0 // usually with arrow keys
 			, delDeselect = false // delete Tile when deselected
 			, deselectFun = null // call when deselected
-			, doMove = true//  mouse buttons and user/cam space mouse coord
-			, moveToTop = true//  deselect will put object to the top
+			, doMove = true // mouse buttons and user/cam space mouse coord
+			, moveToTop = true // deselect will put object to the top
+			, cloneSelect = false // clone when selected
 			*/
 			, options) {
 		let rotStep = 0;
@@ -179,6 +180,7 @@ class EditTiles {
 		let deselectFun = null;
 		let doMove = true; // allow tiles to move
 		let moveToTop = true; // reorder tiles
+		let cloneSelect = false; // clone when selected
 		if (options) {
 			if (options.rotStep !== undefined) {
 				rotStep = options.rotStep;
@@ -194,6 +196,9 @@ class EditTiles {
 			}
 			if (options.moveToTop !== undefined) {
 				moveToTop = options.moveToTop;
+			}
+			if (options.cloneSelect !== undefined) {
+				cloneSelect = options.cloneSelect;
 			}
 		}
 		let dirt = mouse.dmxy[0] || mouse.dmxy[1]; // any movement
@@ -211,7 +216,7 @@ class EditTiles {
 				if (but && !lastBut) {
 					//mouse button up to down, SELECT a piece for movement
 					this.curPntIdx = this.hilitPntIdx;
-					const tile = this.tiles[this.curPntIdx];
+					let tile = this.tiles[this.curPntIdx];
 					vec2.sub(this.startRegPoint, userMouse, tile.pos);
 					vec2.copy(this.lastUserMouse, userMouse);
 					this.startRot = tile.rot;
@@ -219,6 +224,12 @@ class EditTiles {
 						const result = this.tiles.splice(this.curPntIdx, 1);
 						this.tiles.push(result[0]);
 						this.curPntIdx = this.tiles.length - 1;
+						tile = this.tiles[this.curPntIdx];
+					}
+					if (cloneSelect) { // make a copy of a newly selected tile
+						const cloneTile = tile.clone();
+						this.curPntIdx = this.tiles.length;
+						this.tiles.push(cloneTile);
 					}
 				}
 			}

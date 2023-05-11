@@ -6,7 +6,7 @@ class Keyboard {
         // public
         this.key = 0; // current key click from buffer, 0 if no key pressed
         this.keybuff = Array(); // unicode keys pressed
-        this.keystate = Array(); // keycode keys currently down 0 or 1, indexed by keycode
+        this.keystate = Array(); // keycode keys up 0, down 1, indexed by keycode // TODO: false true
         this.events = "";
         this.stats = "";
 

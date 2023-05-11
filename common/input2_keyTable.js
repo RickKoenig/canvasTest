@@ -8,7 +8,7 @@ const keyTable = {
     // 00's 10 of them () done
         LEFTSHIFT:0x01,
         RIGHTSHIFT:0x02,
-        SHIFT:0x01, // for now tie to LEFTSHIFT
+        SHIFT:0x01, // both shift keys
         LEFTCTRL:0x03,
         RIGHTCTRL:0x04,
         CTRL:0x03,
