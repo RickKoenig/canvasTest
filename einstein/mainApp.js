@@ -1,22 +1,17 @@
 'use strict';
 
-class PenShape extends Shape {
-	static smallAngle = degToRad(36);
-	static largeAngle = this.smallAngle * 2;
-	static golden = (Math.sqrt(5) + 1) / 2;
-	static invGolden = 1 / this.golden;
+// TODO: just a square for now
+class RegShape extends Shape {
+	static ninetyAngle = degToRad(90);
 
-	static setupPolyPnts(ang, fat) {
-		// rhombus
-		const sa = Math.sin(ang);
-		const ca = Math.cos(ang);
+	static setupPolyPnts() {
+		// square
 		this.polyPnts = [
-			[0, 0],
-			[ca, sa],
-			[1 + ca, sa],
-			[1, 0]
+			[ -.5, -.5],
+			[ -.5,  .5],
+			[  .5,  .5],
+			[  .5, -.5]
 		];
-		this.fat = fat;
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
@@ -29,154 +24,6 @@ class PenShape extends Shape {
 			first = false;
 			this.cmdsNoNotches.push(cmd);
 		}
-		this.cmdsNotches = [];
-		const smallDist = 1 / 3;
-		const largeDist = 2 / 3;
-		let pnt;
-		// hand build the notches
-		if (this.fat) {
-			let cmd = {
-				pnt: this.polyPnts[0],
-				kind: "moveTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(72), false);
-
-			cmd = {
-				pnt: this.polyPnts[1],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(270),
-				ccw: false
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[2],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(72 + 90),
-				ccw: true
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[3],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
-			this.nearRad = .45; // easier overlap
-		} else { // skinny
-			let cmd = {
-				pnt: this.polyPnts[0],
-				kind: "moveTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(36), true);
-
-			cmd = {
-				pnt: this.polyPnts[1],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(0), false);
-
-			cmd = {
-				pnt: this.polyPnts[2],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(36 + 90),
-				ccw: true
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[3],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(90),
-				ccw: false
-			}
-			this.cmdsNotches.push(cmd);
-			this.nearRad = .25; // easier overlap
-		}
-	}
-
-	// add a triangle notch to the draw commands
-	static triOffs = [[-.05, 0], [0, .1], [.05, 0]];
-	static addTriNotchCmd(cmds, pos, ang, ccw = false) {
-		const rotOff = vec2.create();
-		let pnt = vec2.create();
-		vec2.rotate(rotOff, this.triOffs[0], ang);
-		vec2.add(pnt, rotOff, pos);
-		let cmd = {
-			pnt: pnt,
-			kind: "lineTo",
-		};
-		cmds.push(cmd);
-
-		pnt = vec2.create();
-		vec2.rotate(rotOff, this.triOffs[1], ang);
-		if  (ccw) {
-			vec2.add(pnt, pos, rotOff);
-		} else {
-			vec2.sub(pnt, pos, rotOff);
-		}
-		cmd = {
-			pnt: pnt,
-			kind: "lineTo",
-		};
-		cmds.push(cmd);
-
-		pnt = vec2.create();
-		vec2.rotate(rotOff, this.triOffs[2], ang);
-		vec2.add(pnt, rotOff, pos);
-		cmd = {
-			pnt: pnt,
-			kind: "lineTo",
-		};
-		cmds.push(cmd);
 	}
 
 	// draw commands from an array of commands
@@ -199,51 +46,25 @@ class PenShape extends Shape {
 	}
 
 	// draw the outline of a tile
-	static doPath(ctx, options) {
+	static doPath(ctx) {
 		ctx.beginPath();
         ctx.lineJoin = "round";
-		if (options.drawNotches) {
-			this.runCmds(ctx, this.cmdsNotches);
-		} else {
-			this.runCmds(ctx, this.cmdsNoNotches);
-		}
+		this.runCmds(ctx, this.cmdsNoNotches);
 		ctx.closePath();
 	}
 
 	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		const zoomHilit = false;
 		const bounds = false; // clipping circles
-		if (doHilit && zoomHilit) {
-			ctx.save();
-			ctx.scale(PenShape.golden, PenShape.golden);
-		}
 		// fill the tile
-		this.doPath(ctx, options);
+		this.doPath(ctx);
 		const col = fat ? "#a08000" : "#008000";
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
-		// draw arcs
-		if (options.drawArcs) {
-			const arcWidth = .075;
-			const arcRad1 = .25;
-			const arcRad2 = 1 - arcRad1;
-			const col1 = "#2040ff";   // a blue
-			const col2 = "indianred"; // a red
-			const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
-			const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
-			if (fat) {
-				drawPrim.drawArcO(this.polyPnts[0], arcRad1, arcWidth, degToRad(0), degToRad(72), col1Hilit);
-				drawPrim.drawArcO(this.polyPnts[2], arcRad2, arcWidth, degToRad(180), degToRad(180 + 72), col2Hilit);
-			} else {
-				drawPrim.drawArcO(this.polyPnts[1], arcRad1, arcWidth, degToRad(180 + 36), degToRad(0), col1Hilit);
-				drawPrim.drawArcO(this.polyPnts[3], arcRad1, arcWidth, degToRad(36), degToRad(180 ), col2Hilit);
-			}
-		}
 		// outline the tile
-		this.doPath(ctx, options);
+		this.doPath(ctx);
 		const lineWidth = .025;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.strokeStyle = overlap ? "red" : "black";
@@ -252,9 +73,6 @@ class PenShape extends Shape {
 		if (bounds) {
 			drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
 			drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
-		}
-		if (doHilit && zoomHilit) {
-			ctx.restore();
 		}
 	}
 
@@ -265,8 +83,14 @@ class PenShape extends Shape {
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, "white");
 	}
-}
 
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "skinny";
+	}
+
+}
+/*
 // tile 1
 class SkinnyShape extends PenShape {
 	static setupPolyPnts() {
@@ -298,6 +122,7 @@ class FatShape extends PenShape {
 		this.kind = "fat";
 	}
 }
+*/
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -640,8 +465,9 @@ class MainApp {
 		const penTilesStr = localStorage.getItem(slot);
 		let penTilesObj = [];
 		if (penTilesStr) {
-			penTilesObj = JSON.parse(penTilesStr);
+			//penTilesObj = JSON.parse(penTilesStr);
 		}
+		starterTiles = false;
 		if (penTilesObj.length) {
 			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
 			for (let penTileObj of penTilesObj) {
@@ -694,8 +520,8 @@ class MainApp {
 		// Penrose tiles
 		this.protoTiles = [];
 		// let proc position them proto tiles with zoom and pan UI
-		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
-		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(RegShape, [0, 0], 0));
+		//this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.#loadTiles("penTiles", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
@@ -785,7 +611,8 @@ class MainApp {
 		// deflate tiles
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
+		this.eles.decompose = makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
+		this.eles.decompose.disabled = true;
 		// clear duplicates
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
@@ -815,15 +642,15 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snap(curTile.rot, PenShape.smallAngle * .5);
+			curTile.rot = snap(curTile.rot, RegShape.ninetyAngle * .25);
 			curTile.updateWorldPoly();
 		}
-		if (this.snapTile & this.tiles.length >= 2) {
+		if (this.snapTile & this.tiles.length >= 2) { /*
 			const info = this.#findBestSnapTile(idx);
 			if  (info) {
 				this.#connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
 					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
-			}
+			} */
 		}
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -851,10 +678,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= PenShape.smallAngle * .5; // clockwise
+			this.editOptions.rotStep -= RegShape.ninetyAngle * .125; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += PenShape.smallAngle * .5; // counter clockwise
+			this.editOptions.rotStep += RegShape.ninetyAngle * .125; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();

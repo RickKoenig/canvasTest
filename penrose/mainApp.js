@@ -267,7 +267,7 @@ class PenShape extends Shape {
 	}
 }
 
-// tile 1
+// shape 1
 class SkinnyShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
@@ -283,7 +283,7 @@ class SkinnyShape extends PenShape {
 	}
 }
 
-// tile 2
+// shape 2
 class FatShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
