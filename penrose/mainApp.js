@@ -344,7 +344,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveTiles.bind(this, "penTiles"));
+		addEventListener("beforeunload", this.#saveTiles.bind(this, "penSlot0"));
 	}
 
 	#clearTiles() {
@@ -696,7 +696,7 @@ class MainApp {
 		// let proc position them proto tiles with zoom and pan UI
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
-		this.#loadTiles("penTiles", true);
+		this.#loadTiles("penSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -795,20 +795,20 @@ class MainApp {
 		// load save slots
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "penslot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "penslot1"));
+		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "penSlot1", false));
+		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "penSlot1"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "penslot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "penslot2"));
+		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "penSlot2", false));
+		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "penSlot2"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "penslot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "penslot3"));
+		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "penSlot3", false));
+		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "penSlot3"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "penslot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "penslot4"));
+		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "penSlot4", false));
+		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "penSlot4"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "penslot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "penslot5"));
+		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "penSlot5", false));
+		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "penSlot5"));
 	}		
 
 	// tiles and tile index

@@ -1,7 +1,7 @@
 'use strict';
 
 // TODO: just a square for now
-class RegShape extends Shape {
+class HatShape extends Shape {
 	static ninetyAngle = degToRad(90);
 
 	static setupPolyPnts() {
@@ -53,12 +53,12 @@ class RegShape extends Shape {
 		ctx.closePath();
 	}
 
-	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
+	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const bounds = false; // clipping circles
 		// fill the tile
 		this.doPath(ctx);
-		const col = fat ? "#a08000" : "#008000";
+		const col = "#008000";
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
@@ -74,6 +74,27 @@ class RegShape extends Shape {
 			drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
 			drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
 		}
+
+		ctx.moveTo(0, 0);
+		ctx.lineTo(7 / 16, 0);
+		ctx.stroke();
+
+		ctx.save();
+		ctx.translate(-.375, 0);
+		this.drawLevel(drawPrim, "0");
+		ctx.restore();
+		ctx.save();
+		ctx.translate(0, .375);
+		this.drawLevel(drawPrim, "1");
+		ctx.restore();
+		ctx.save();
+		ctx.translate(.375, 0);
+		this.drawLevel(drawPrim, "2");
+		ctx.restore();
+		ctx.save();
+		ctx.translate(0, -.375);
+		this.drawLevel(drawPrim, "3");
+		ctx.restore();
 	}
 
 	// horizontal level text
@@ -86,43 +107,10 @@ class RegShape extends Shape {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "skinny";
-	}
-
-}
-/*
-// tile 1
-class SkinnyShape extends PenShape {
-	static setupPolyPnts() {
-		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
-	}
-
-	static draw(drawPrim, id, doHilit = false, options, overlap) {
-		super.draw(drawPrim, id, doHilit, false, options, overlap);
-	}
-
-	static {
-		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "skinny";
+		this.kind = "hat";
+		this.nearRad = .45; // easier overlap
 	}
 }
-
-// tile 2
-class FatShape extends PenShape {
-	static setupPolyPnts() {
-		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
-	}
-
-	static draw(drawPrim, id, doHilit = false, options, overlap) {
-		super.draw(drawPrim, id, doHilit, true, options, overlap);
-	}
-
-	static {
-		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "fat";
-	}
-}
-*/
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -169,7 +157,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveTiles.bind(this, "penTiles"));
+		addEventListener("beforeunload", this.#saveTiles.bind(this, "hatSlot0"));
 	}
 
 	#clearTiles() {
@@ -178,6 +166,7 @@ class MainApp {
 		this.dirty = true;
 	}
 
+	// TODO: move to edit tiles
 	#clearDups() {
 		console.log("clear dups, len = " + this.tiles.length);
 		// TODO: optimize, go from N^2 to N*log(n)
@@ -210,127 +199,11 @@ class MainApp {
 	}
 
 	// generate more tiles
+	
 	#deflateTiles() {
-		const spreadOnly = false;
-		const zoomOut = true;
-		console.log("deflate tiles, len = " + this.tiles.length);
-		if (!this.tiles.length) {
-			return; // nothing to do!
-		}
-		const golden = PenShape.golden;
-		const invGolden = PenShape.invGolden;
-		if (zoomOut) {
-			this.plotter2d.setZoom(this.plotter2d.getZoom() / golden);
-			this.plotter2d.transReset();
-		}
-
-		// center tiles
-		const center = vec2.create();
-		for (let tile of this.tiles) {
-			vec2.add(center, center, tile.pos);
-		}
-		vec2.scale(center, center, 1 / this.tiles.length);
-		for (let tile of this.tiles) {
-			vec2.sub(tile.pos, tile.pos, center);
-		}
-
-		// move tiles apart 
-		for (let tile of this.tiles) {
-			vec2.scale(tile.pos, tile.pos, golden);
-			// no need for updateWorldPoly since these tiles will be replaced	
-			if (spreadOnly) {
-				tile.updateWorldPoly();
-			}
-		}
-		if (spreadOnly) {
-			this.dirty = true;
-			return;
-		}
-
-		// setup the geometry for the new generated tiles
-		const smallAngle = PenShape.smallAngle;
-		const newTiles = [];
-		const oxs = FatShape.polyPnts[0][0] + golden * SkinnyShape.polyPnts[2][0];
-		const oys = FatShape.polyPnts[0][1] + golden * SkinnyShape.polyPnts[2][1];
-		const skinnyCommand = [
-			{shape: FatShape, pos: [
-				-oxs,
-				-oys
-			], rot: 0},
-
-			{shape: SkinnyShape, pos: [
-				0 + FatShape.polyPnts[2][0] - oxs,
-				0 + FatShape.polyPnts[2][1] - 2 * FatShape.polyPnts[1][1] - oys
-			], rot: -3 * smallAngle},
-
-			{shape: SkinnyShape, pos: [
-				0 + FatShape.polyPnts[2][0] + invGolden / 2 + invGolden / 2 * Math.cos(smallAngle) - oxs,
-				0 + FatShape.polyPnts[2][1] - 2 * FatShape.polyPnts[1][1] + invGolden / 2 * Math.sin(smallAngle) - oys
-			], rot: 3 * smallAngle},
-
-			{shape: FatShape, pos: [
-				0 + FatShape.polyPnts[2][0] + golden / 2 - oxs,
-				0 + FatShape.polyPnts[2][1] - oys
-			], rot: 4 * smallAngle},
-
-			// original for reference
-			/*{shape: SkinnyShape, pos: [
-				0,
-				0
-			], rot: 0}*/
-		];
-		const r3 = vec2.create();
-		vec2.rot(r3, FatShape.polyPnts[1], smallAngle);
-		const oxf = (2 - invGolden) * FatShape.polyPnts[2][0];
-		const oyf = (2 - invGolden) * FatShape.polyPnts[2][1];
-		const fatCommand = [
-			{shape: FatShape, pos: [
-				FatShape.polyPnts[2][0] * 2 - oxf,
-				FatShape.polyPnts[2][1] * 2 - oyf,
-			], rot: 5 * smallAngle},
-			{shape: FatShape, pos: [
-				FatShape.polyPnts[2][0] - oxf,
-				FatShape.polyPnts[2][1] - Math.sin(smallAngle) - oyf		
-			], rot: 4 * smallAngle},
-
-			{shape: FatShape, pos: [
-				FatShape.polyPnts[2][0] + r3[0] - oxf,
-				FatShape.polyPnts[2][1] + r3[1] - oyf
-			], rot: 6 * smallAngle},
-			
-			{shape: SkinnyShape, pos: [
-				FatShape.polyPnts[2][0] + SkinnyShape.polyPnts[2][0] - oxf,
-				FatShape.polyPnts[2][1] - SkinnyShape.polyPnts[2][1] - oyf
-			], rot: 4 * smallAngle},
-
-			{shape: SkinnyShape, pos: [
-				FatShape.polyPnts[2][0] - oxf,
-				FatShape.polyPnts[2][1] + FatShape.polyPnts[1][1] * 2 - oyf
-			], rot: 2 * smallAngle},
-
-			// original for reference
-			/*{shape: FatShape, pos: [
-				0,
-				0
-			], rot: 0}*/
-		];
-		for (let tile of this.tiles) {
-			const rot = tile.rot;
-			const pos = vec2.clone(tile.pos);
-			const penCommand = tile.kind === "skinny" ? skinnyCommand : fatCommand;
-			for (let com of penCommand) {
-				const comRot = com.rot;
-				const comPos = vec2.clone(com.pos);
-				vec2.rot(comPos, comPos, rot);
-				vec2.add(comPos, comPos, pos);
-				let newTile = new Tile(com.shape, comPos, normAngRadSigned(rot + comRot));
-				newTiles.push(newTile);
-			}
-		}
-		this.tiles = newTiles;
-		this.editTiles = new EditTiles(this.tiles);
-		this.#clearDups();
+		console.log("deflate hat tiles");
 	}
+	
 
 	// find best connection between tiles or null if none
 	#findBestSnapTile(curSelIdx) {
@@ -353,45 +226,24 @@ class MainApp {
 				// run through all the edge fits
 				// match arcs and notches edges
 				// [slave, master]
-				const skinnySkinnyList = [ // slave master
-					[0, 1],
-					[1, 0],
-					[2, 3],
-					[3, 2]
-				];
-				const fatFatList = [ // slave master
-					[0, 3],
-					[1, 2],
-					[2, 1],
-					[3, 0]
-				];
-				const skinnyFatList = [ // slave master
-					[0, 0],
-					[1, 3],
-					[2, 1],
-					[3, 2]
-				];
-				const fatSkinnyList = [ // slave master
-					[0, 0],
-					[1, 2],
-					[2, 3],
-					[3, 1]
-				];
+				// TODO: for now do all combinations of edge edge
 				let edgeEdgeList;
-				if (curTile.shape.kind == "skinny") { // slave
-					if (tile.shape.kind == "skinny") { // master
-						edgeEdgeList = skinnySkinnyList; // skinny slave, skinny master
-					} else {
-						edgeEdgeList = skinnyFatList; // skinny slave, fat master
-					}
+				const allEdges = false;
+				if (allEdges) {
+					// everything
+					edgeEdgeList = [ // slave master
+						[0, 0], [1, 0], [2, 0], [3, 0],
+						[0, 1],	[1, 1],	[2, 1],	[3, 1],
+						[0, 2],	[1, 2],	[2, 2],	[3, 2],
+						[0, 3],	[1, 3],	[2, 3],	[3, 3]
+					];
 				} else {
-					if (tile.shape.kind == "skinny") { // master
-						edgeEdgeList = fatSkinnyList; // fat slave, skinny master
-					} else {
-						edgeEdgeList = fatFatList; // fat slave, fat master
-					}
+					// somethings
+					edgeEdgeList = [ // slave master
+						[0, 0], [1, 1], [2, 2], [3, 3]
+					];
 				}
-			for (let ee of edgeEdgeList) {
+				for (let ee of edgeEdgeList) {
 					const se = ee[0];
 					const me = ee[1];
 					const connectDist = this.#calcConnectDist(tile, me
@@ -402,11 +254,10 @@ class MainApp {
 						bestSlaveEdge = se;
 						bestMasterEdge = me;
 					}
-
 				}
 			}
 			// end do the best
-			}
+		}
 		if (bestTileIdx >= 0) {
 			const ret = {
 				masterTileIdx : bestTileIdx,
@@ -422,24 +273,12 @@ class MainApp {
 
 	// snap one tile next to another
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		const angsSkinny = [
-			PenShape.smallAngle,
-			0,
-			PenShape.smallAngle + Math.PI,
-			Math.PI
-		];
-		const angsFat = [
-			PenShape.largeAngle,
-			0,
-			PenShape.largeAngle + Math.PI,
-			Math.PI
-		];
+		//return;
+		const angs = [HatShape.ninetyAngle, 0, -HatShape.ninetyAngle, Math.PI];
 		const rOffset0 = vec2.create();
 		const totOffset = vec2.create();
-		const angs0 = slave.kind === "fat" ? angsFat : angsSkinny;
-		const angs1 = master.kind === "fat" ? angsFat : angsSkinny;
 		// meet up at 180 degrees
-		const ang = angs1[masterEdge] - angs0[slaveEdge] + degToRad(180);
+		const ang = angs[masterEdge] - angs[slaveEdge] + degToRad(180);
 		const pidx0 = (slaveEdge + 1) % 4; // edge going in opposite direction
 		const pidx1 = masterEdge;
 		const offset1 = master.shape.polyPnts[pidx1];
@@ -453,31 +292,28 @@ class MainApp {
 		slave.updateWorldPoly();
 	}
 
+	// TODO: move to edit tiles
 	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
 		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge], slave.worldPolyPnts[(slaveEdge + 1) % 4])
 		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % 4], slave.worldPolyPnts[slaveEdge])
 		return d0 + d1;
 	}
 
-
+	// TODO: move to edit tiles
 	#loadTiles(slot, starterTiles) {
 		this.tiles = [];
 		const penTilesStr = localStorage.getItem(slot);
 		let penTilesObj = [];
 		if (penTilesStr) {
-			//penTilesObj = JSON.parse(penTilesStr);
+			penTilesObj = JSON.parse(penTilesStr);
 		}
-		starterTiles = false;
 		if (penTilesObj.length) {
 			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
 			for (let penTileObj of penTilesObj) {
 				let kind = null;
 				switch(penTileObj.kind) {
-				case 'skinny':
-					kind = SkinnyShape;
-					break;
-				case 'fat':
-					kind = FatShape;
+				case 'hat':
+					kind = HatShape;
 					break;
 				default:
 					console.error("unknown tile kind " + penTileObj.kind);
@@ -488,14 +324,15 @@ class MainApp {
 				this.tiles.push(new Tile(kind, pos, rot));
 			}
 		} else if (starterTiles) {
-			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
-			this.tiles.push(new Tile(FatShape, [2, 0], 0));
+			this.tiles.push(new Tile(HatShape, [0, 0], 0));
+			this.tiles.push(new Tile(HatShape, [2, 0], degToRad(22.5)));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
 		this.dirty = true;
 	}
 
+	// TODO: move to edit tiles
 	#saveTiles(slot) {
 		console.log("saving " + this.tiles.length + " tiles on slot " + slot);
 		localStorage.setItem(slot, JSON.stringify(this.tiles));
@@ -520,9 +357,9 @@ class MainApp {
 		// Penrose tiles
 		this.protoTiles = [];
 		// let proc position them proto tiles with zoom and pan UI
-		this.protoTiles.push(new Tile(RegShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(HatShape, [0, 0], 0));
 		//this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
-		this.#loadTiles("penTiles", true);
+		this.#loadTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -622,35 +459,35 @@ class MainApp {
 		// load save slots
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "penslot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "penslot1"));
+		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "hatSlot1", false));
+		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "hatSlot1"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "penslot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "penslot2"));
+		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "hatSlot2", false));
+		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "hatSlot2"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "penslot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "penslot3"));
+		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "hatSlot3", false));
+		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "hatSlot3"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "penslot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "penslot4"));
+		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "hatSlot4", false));
+		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "hatSlot4"));
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "penslot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "penslot5"));
+		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "hatSlot5", false));
+		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "hatSlot5"));
 	}		
 
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snap(curTile.rot, RegShape.ninetyAngle * .25);
+			curTile.rot = snap(curTile.rot, HatShape.ninetyAngle * .25);
 			curTile.updateWorldPoly();
 		}
-		if (this.snapTile & this.tiles.length >= 2) { /*
+		if (this.snapTile & this.tiles.length >= 2) {
 			const info = this.#findBestSnapTile(idx);
 			if  (info) {
 				this.#connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
 					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
-			} */
+			}
 		}
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -678,10 +515,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= RegShape.ninetyAngle * .125; // clockwise
+			this.editOptions.rotStep -= HatShape.ninetyAngle * .125; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += RegShape.ninetyAngle * .125; // counter clockwise
+			this.editOptions.rotStep += HatShape.ninetyAngle * .125; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
