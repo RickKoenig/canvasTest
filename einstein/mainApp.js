@@ -4,14 +4,24 @@
 class HatShape extends Shape {
 	static ninetyAngle = degToRad(90);
 
-	static setupPolyPnts() {
-		// square
-		this.polyPnts = [
-			[ -.5, -.5],
-			[ -.5,  .5],
-			[  .5,  .5],
-			[  .5, -.5]
-		];
+	static setupPolyPnts(oct) {
+		if (oct) {
+			// oct
+			this.polyPnts = [
+				[ -.5, -.5],
+				[ -.5,  .5],
+				[  .5,  .5],
+				[  .5, -.5]
+			];
+		} else {
+			// square
+			this.polyPnts = [
+				[ -2.5, -2.5],
+				[ -.5,  .5],
+				[  .5,  .5],
+				[  .5, -.5]
+			];
+		}
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
@@ -112,6 +122,38 @@ class HatShape extends Shape {
 	}
 }
 
+// shape 1
+class OrigHatShape extends HatShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
+	}
+
+	static draw(drawPrim, id, doHilit = false, options, overlap) {
+		super.draw(drawPrim, id, doHilit, options, overlap);
+	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "hatOrig";
+	}
+}
+
+// shape 2
+class MirrorHatShape extends HatShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(degToRad(45), true); // make a fat rhombus
+	}
+
+	static draw(drawPrim, id, doHilit = false, options, overlap) {
+		super.draw(drawPrim, id, doHilit, options, overlap);
+	}
+
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "hitMirror";
+	}
+}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
@@ -161,6 +203,7 @@ class MainApp {
 	}
 
 	#clearTiles() {
+		this.input.setFocus(); // back to canvas/div
 		this.tiles.length = 0;
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -169,6 +212,9 @@ class MainApp {
 	// TODO: move to edit tiles
 	#clearDups() {
 		console.log("clear dups, len = " + this.tiles.length);
+
+		this.input.setFocus(); // back to canvas/div
+
 		// TODO: optimize, go from N^2 to N*log(n)
 
 		const threshAng = degToRad(10);
@@ -317,7 +363,7 @@ class MainApp {
 					break;
 				default:
 					console.error("unknown tile kind " + penTileObj.kind);
-					break;
+					continue;
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
@@ -357,8 +403,8 @@ class MainApp {
 		// Penrose tiles
 		this.protoTiles = [];
 		// let proc position them proto tiles with zoom and pan UI
-		this.protoTiles.push(new Tile(HatShape, [0, 0], 0));
-		//this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(OrigHatShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(MirrorHatShape, [0, 0], 0));
 		this.#loadTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
@@ -582,7 +628,8 @@ class MainApp {
 		let infoStr = "Dirty Count = " + this.dirtyCount;
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
-
+		const keyCodes = keyTable.keyCodes;
+		infoStr += "\n Shift = " + this.input.keyboard.keystate[keyCodes.SHIFT];
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

@@ -348,6 +348,7 @@ class MainApp {
 	}
 
 	#clearTiles() {
+		this.input.setFocus(); // back to canvas/div
 		this.tiles.length = 0;
 		this.editTiles.deselect();
 		this.dirty = true;
@@ -355,6 +356,9 @@ class MainApp {
 
 	#clearDups() {
 		console.log("clear dups, len = " + this.tiles.length);
+
+		this.input.setFocus(); // back to canvas/div
+
 		// TODO: optimize, go from N^2 to N*log(n)
 
 		const threshAng = degToRad(10);
@@ -655,7 +659,7 @@ class MainApp {
 					break;
 				default:
 					console.error("unknown tile kind " + penTileObj.kind);
-					break;
+					continue;
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
@@ -918,6 +922,8 @@ class MainApp {
 		let infoStr = "Dirty Count = " + this.dirtyCount;
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
+		const keyCodes = keyTable.keyCodes;
+		infoStr += "\n Shift = " + this.input.keyboard.keystate[keyCodes.SHIFT];
 
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
