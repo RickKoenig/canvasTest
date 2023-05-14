@@ -619,7 +619,7 @@ class MainApp {
 		const angs1 = master.kind === "fat" ? angsFat : angsSkinny;
 		// meet up at 180 degrees
 		const ang = angs1[masterEdge] - angs0[slaveEdge] + degToRad(180);
-		const pidx0 = (slaveEdge + 1) % 4; // edge going in opposite direction
+		const pidx0 = (slaveEdge + 1) % slave.shape.polyPnts.length; // edge going in opposite direction
 		const pidx1 = masterEdge;
 		const offset1 = master.shape.polyPnts[pidx1];
 		const offset0 = slave.shape.polyPnts[pidx0];
@@ -633,8 +633,10 @@ class MainApp {
 	}
 
 	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
-		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge], slave.worldPolyPnts[(slaveEdge + 1) % 4])
-		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % 4], slave.worldPolyPnts[slaveEdge])
+		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
+			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
+		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % master.shape.polyPnts.length]
+			, slave.worldPolyPnts[slaveEdge])
 		return d0 + d1;
 	}
 

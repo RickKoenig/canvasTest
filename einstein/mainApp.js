@@ -4,19 +4,20 @@
 class HatShape extends Shape {
 	static ninetyAngle = degToRad(90);
 
-	static setupPolyPnts(oct) {
-		if (oct) {
+	static setupPolyPnts(mir) {
+		if (mir) {
 			// oct
-			this.polyPnts = [
-				[ -.5, -.5],
-				[ -.5,  .5],
-				[  .5,  .5],
-				[  .5, -.5]
-			];
+			const rad = 1 / (2 * Math.sin(degToRad(22.5)));
+			this.polyPnts = [];
+			for (let e = 0; e < 8; ++e) {
+				const ang = degToRad(180 + 3 * 22.5) - e * degToRad(45) 
+				const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
+				this.polyPnts.push(pnt);
+			}
 		} else {
 			// square
 			this.polyPnts = [
-				[ -2.5, -2.5],
+				[ -.75, -.75],
 				[ -.5,  .5],
 				[  .5,  .5],
 				[  .5, -.5]
@@ -86,38 +87,52 @@ class HatShape extends Shape {
 		}
 
 		ctx.moveTo(0, 0);
-		ctx.lineTo(7 / 16, 0);
+		ctx.lineTo(7 / 16, 0); // reference angle
 		ctx.stroke();
 
+		for (let i = 0; i < this.polyPnts.length; ++i) {
+			const p0 = this.polyPnts[i];
+			const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
+			const avg = vec2.create();
+			vec2.add(avg, p0, p1);
+			const closer = .875;
+			vec2.scale(avg, avg, .5 * closer); // move in closer
+			ctx.save();
+			ctx.translate(avg[0], avg[1]);
+			this.drawLevel(drawPrim, i, true);
+			ctx.restore();
+		}
+/*
 		ctx.save();
 		ctx.translate(-.375, 0);
-		this.drawLevel(drawPrim, "0");
+		this.drawLevel(drawPrim, "0", true);
 		ctx.restore();
 		ctx.save();
 		ctx.translate(0, .375);
-		this.drawLevel(drawPrim, "1");
+		this.drawLevel(drawPrim, "1", true);
 		ctx.restore();
 		ctx.save();
 		ctx.translate(.375, 0);
-		this.drawLevel(drawPrim, "2");
+		this.drawLevel(drawPrim, "2", true);
 		ctx.restore();
 		ctx.save();
 		ctx.translate(0, -.375);
-		this.drawLevel(drawPrim, "3");
+		this.drawLevel(drawPrim, "3", true);
 		ctx.restore();
+*/
 	}
 
 	// horizontal level text
-	static drawLevel(drawPrim, id) {
+	static drawLevel(drawPrim, id, edgeHilit = false) {
 		const radius = .075;
-		drawPrim.drawCircle([0,0], radius, "brown"); // center
+		drawPrim.drawCircle([0,0], radius, edgeHilit ? "yellow" : "brown"); // center
 		const size = radius * 2;
-		drawPrim.drawText([0, 0], [size, size], id, "white");
+		drawPrim.drawText([0, 0], [size, size], id, edgeHilit ? "black" : "white");
 	}
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hat";
+		this.kind = "hat"; // generic
 		this.nearRad = .45; // easier overlap
 	}
 }
@@ -125,7 +140,7 @@ class HatShape extends Shape {
 // shape 1
 class OrigHatShape extends HatShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
+		super.setupPolyPnts(false); // default
 	}
 
 	static draw(drawPrim, id, doHilit = false, options, overlap) {
@@ -141,7 +156,7 @@ class OrigHatShape extends HatShape {
 // shape 2
 class MirrorHatShape extends HatShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(degToRad(45), true); // make a fat rhombus
+		super.setupPolyPnts(true); // mirror
 	}
 
 	static draw(drawPrim, id, doHilit = false, options, overlap) {
@@ -150,7 +165,7 @@ class MirrorHatShape extends HatShape {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hitMirror";
+		this.kind = "hatMirror";
 	}
 }
 
@@ -340,8 +355,10 @@ class MainApp {
 
 	// TODO: move to edit tiles
 	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
-		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge], slave.worldPolyPnts[(slaveEdge + 1) % 4])
-		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % 4], slave.worldPolyPnts[slaveEdge])
+		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
+			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
+		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % master.shape.polyPnts.length]
+			, slave.worldPolyPnts[slaveEdge])
 		return d0 + d1;
 	}
 
@@ -358,8 +375,11 @@ class MainApp {
 			for (let penTileObj of penTilesObj) {
 				let kind = null;
 				switch(penTileObj.kind) {
-				case 'hat':
-					kind = HatShape;
+				case 'hatOrig':
+					kind = OrigHatShape;
+					break;
+				case 'hatMirror':
+					kind = MirrorHatShape;
 					break;
 				default:
 					console.error("unknown tile kind " + penTileObj.kind);
@@ -370,8 +390,8 @@ class MainApp {
 				this.tiles.push(new Tile(kind, pos, rot));
 			}
 		} else if (starterTiles) {
-			this.tiles.push(new Tile(HatShape, [0, 0], 0));
-			this.tiles.push(new Tile(HatShape, [2, 0], degToRad(22.5)));
+			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
+			this.tiles.push(new Tile(MirrorHatShape, [2, 0], degToRad(22.5)));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
