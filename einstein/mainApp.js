@@ -1,6 +1,5 @@
 'use strict';
 
-// TODO: just a square for now
 class HatShape extends Shape {
 	static ninetyAngle = degToRad(90);
 
@@ -102,24 +101,6 @@ class HatShape extends Shape {
 			this.drawLevel(drawPrim, i, true);
 			ctx.restore();
 		}
-/*
-		ctx.save();
-		ctx.translate(-.375, 0);
-		this.drawLevel(drawPrim, "0", true);
-		ctx.restore();
-		ctx.save();
-		ctx.translate(0, .375);
-		this.drawLevel(drawPrim, "1", true);
-		ctx.restore();
-		ctx.save();
-		ctx.translate(.375, 0);
-		this.drawLevel(drawPrim, "2", true);
-		ctx.restore();
-		ctx.save();
-		ctx.translate(0, -.375);
-		this.drawLevel(drawPrim, "3", true);
-		ctx.restore();
-*/
 	}
 
 	// horizontal level text
@@ -217,21 +198,17 @@ class MainApp {
 		addEventListener("beforeunload", this.#saveTiles.bind(this, "hatSlot0"));
 	}
 
-	#clearTiles() {
-		this.input.setFocus(); // back to canvas/div
+	#clearHatTiles() {
 		this.tiles.length = 0;
 		this.editTiles.deselect();
+		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
 	// TODO: move to edit tiles
-	#clearDups() {
-		console.log("clear dups, len = " + this.tiles.length);
-
-		this.input.setFocus(); // back to canvas/div
-
+	#clearHatDups() {
+		console.log("clear hat dups, len = " + this.tiles.length);
 		// TODO: optimize, go from N^2 to N*log(n)
-
 		const threshAng = degToRad(10);
 		const closeDist = .125;
 
@@ -254,18 +231,17 @@ class MainApp {
 				++i;
 			}
 		}
-	
 		this.editTiles.deselect();
+		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
 	// generate more tiles
-	
 	#deflateTiles() {
 		console.log("deflate hat tiles");
 	}
 	
-
+	// TODO: move to edit tiles
 	// find best connection between tiles or null if none
 	#findBestSnapTile(curSelIdx) {
 		const curTile = this.tiles[curSelIdx]; //slave
@@ -332,6 +308,7 @@ class MainApp {
 		return null;
 	}
 
+	// TODO: move to edit tiles
 	// snap one tile next to another
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
 		//return;
@@ -518,10 +495,10 @@ class MainApp {
 		this.eles.decompose.disabled = true;
 		// clear duplicates
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearHatDups.bind(this));
 		// clear tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearHatTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");

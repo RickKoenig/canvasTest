@@ -18,6 +18,21 @@ class PenShape extends Shape {
 		];
 		this.fat = fat;
 		super.setupPolyPnts();
+		if (fat) { // for connect tiles
+			this.edgeAngles = [
+				this.largeAngle,
+				0,
+				this.largeAngle + Math.PI,
+				Math.PI
+			];
+		} else {
+			this.edgeAngles = [
+				this.smallAngle,
+				0,
+				this.smallAngle + Math.PI,
+				Math.PI
+			];
+		}
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
 		let first = true;
@@ -299,17 +314,22 @@ class FatShape extends PenShape {
 	}
 }
 
+PenShape.factory = {
+	skinny: SkinnyShape,
+	fat: FatShape
+}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static #numInstances = 0; // test static members
+	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return this.#numInstances;
+		return this.numInstances;
 	}
 
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
-		++MainApp.#numInstances;
+		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -344,23 +364,20 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveTiles.bind(this, "penSlot0"));
+		addEventListener("beforeunload", this.#savePenTiles.bind(this, "penSlot0"));
 	}
 
-	#clearTiles() {
-		this.input.setFocus(); // back to canvas/div
+	#clearPenTiles() {
 		this.tiles.length = 0;
 		this.editTiles.deselect();
+		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
-	#clearDups() {
-		console.log("clear dups, len = " + this.tiles.length);
-
-		this.input.setFocus(); // back to canvas/div
-
+	// TODO: move to edit tiles
+	#clearPenDups() {
+		console.log("clear pen dups, len = " + this.tiles.length);
 		// TODO: optimize, go from N^2 to N*log(n)
-
 		const threshAng = degToRad(10);
 		const closeDist = .125;
 
@@ -383,13 +400,13 @@ class MainApp {
 				++i;
 			}
 		}
-	
 		this.editTiles.deselect();
+		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
 	// generate more tiles
-	#deflateTiles() {
+	#deflatePenTiles() {
 		const spreadOnly = false;
 		const zoomOut = true;
 		console.log("deflate tiles, len = " + this.tiles.length);
@@ -508,9 +525,10 @@ class MainApp {
 		}
 		this.tiles = newTiles;
 		this.editTiles = new EditTiles(this.tiles);
-		this.#clearDups();
+		this.#clearPenDups();
 	}
 
+	// TODO: move to edit tiles
 	// find best connection between tiles or null if none
 	#findBestSnapTile(curSelIdx) {
 		const curTile = this.tiles[curSelIdx]; //slave
@@ -599,26 +617,16 @@ class MainApp {
 		return null;
 	}
 
+	// TODO: move to edit tiles
 	// snap one tile next to another
 	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		const angsSkinny = [
-			PenShape.smallAngle,
-			0,
-			PenShape.smallAngle + Math.PI,
-			Math.PI
-		];
-		const angsFat = [
-			PenShape.largeAngle,
-			0,
-			PenShape.largeAngle + Math.PI,
-			Math.PI
-		];
+		const gapTiles = 1.0001; // > 1, then a gap between tiles
 		const rOffset0 = vec2.create();
 		const totOffset = vec2.create();
-		const angs0 = slave.kind === "fat" ? angsFat : angsSkinny;
-		const angs1 = master.kind === "fat" ? angsFat : angsSkinny;
+		const angs0 = slave.shape.edgeAngles;
+		const angs1 = master.shape.edgeAngles;
 		// meet up at 180 degrees
-		const ang = angs1[masterEdge] - angs0[slaveEdge] + degToRad(180);
+		const ang = angs1[masterEdge] - angs0[slaveEdge] + Math.PI;
 		const pidx0 = (slaveEdge + 1) % slave.shape.polyPnts.length; // edge going in opposite direction
 		const pidx1 = masterEdge;
 		const offset1 = master.shape.polyPnts[pidx1];
@@ -626,12 +634,13 @@ class MainApp {
 		vec2.rot(rOffset0, offset0, ang);
 		vec2.sub(totOffset, offset1, rOffset0);
 		vec2.rot(totOffset, totOffset, master.rot);
-		vec2.scale(totOffset, totOffset, this.gapTiles); // make a gap
+		vec2.scale(totOffset, totOffset, gapTiles); // make a gap
 		vec2.add(slave.pos, master.pos, totOffset);
 		slave.rot = normAngRadSigned(master.rot + ang);
 		slave.updateWorldPoly();
 	}
 
+	// TODO: move to edit tiles
 	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
 		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
 			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
@@ -640,45 +649,25 @@ class MainApp {
 		return d0 + d1;
 	}
 
-
-	#loadTiles(slot, starterTiles) {
-		this.tiles = [];
-		const penTilesStr = localStorage.getItem(slot);
-		let penTilesObj = [];
-		if (penTilesStr) {
-			penTilesObj = JSON.parse(penTilesStr);
-		}
-		if (penTilesObj.length) {
-			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
-			for (let penTileObj of penTilesObj) {
-				let kind = null;
-				switch(penTileObj.kind) {
-				case 'skinny':
-					kind = SkinnyShape;
-					break;
-				case 'fat':
-					kind = FatShape;
-					break;
-				default:
-					console.error("unknown tile kind " + penTileObj.kind);
-					continue;
-				}
-				const pos = vec2.clone(penTileObj.pos);
-				const rot = penTileObj.rot;
-				this.tiles.push(new Tile(kind, pos, rot));
-			}
-		} else if (starterTiles) {
-			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
-			this.tiles.push(new Tile(FatShape, [2, 0], 0));
-			console.log("creating " + this.tiles.length + " starter tiles");
+	#loadPenTiles(slot, starter) {
+		this.tiles = Tile.loadTiles(slot, PenShape.factory);
+		if (starter && !this.tiles.length) {
+			tiles.push(new Tile(SkinnyShape, [0, 0], 0));
+			tiles.push(new Tile(FatShape, [2, 0], 0));
+			console.log("creating " + tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
+		if (this.input) {
+			this.input.setFocus(); // back to canvas/div, input might not be ready
+		}
 		this.dirty = true;
 	}
 
-	#saveTiles(slot) {
-		console.log("saving " + this.tiles.length + " tiles on slot " + slot);
-		localStorage.setItem(slot, JSON.stringify(this.tiles));
+	#savePenTiles(slot) {
+		Tile.saveTiles(this.tiles, slot);
+		if (this.input) {
+			this.input.setFocus(); // back to canvas/div
+		}
 	}
 
 	// USER: add more members or classes to MainApp
@@ -690,7 +679,6 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.gapTiles = 1.0001; // > 1, then a gap between tiles
 		this.snapAngle = true;
 		this.snapTile = true;
 		this.drawArcs = true;
@@ -702,7 +690,7 @@ class MainApp {
 		// let proc position them proto tiles with zoom and pan UI
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
-		this.#loadTiles("penSlot0", true);
+		this.#loadPenTiles("penSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -791,30 +779,23 @@ class MainApp {
 		// deflate tiles
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflatePenTiles.bind(this));
 		// clear duplicates
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearDups.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearPenDups.bind(this));
 		// clear tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearPenTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "penSlot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "penSlot1"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "penSlot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "penSlot2"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "penSlot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "penSlot3"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "penSlot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "penSlot4"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "penSlot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "penSlot5"));
+		const numSlots = 5;
+		for (let sn = 1; sn <= numSlots; ++sn) {
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "button", null, "short", "Load " + sn
+				, this.#loadPenTiles.bind(this, "penSlot" + sn, false));
+			makeEle(this.vp, "button", null, "short", "Save " + sn
+				, this.#savePenTiles.bind(this, "penSlot" + sn));
+		}
 	}		
 
 	// tiles and tile index

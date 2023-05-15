@@ -42,6 +42,35 @@ class Tile {
 		this.updateWorldPoly();
 	}
 
+	static loadTiles(slot, factory) {
+		const tiles = [];
+		const penTilesStr = localStorage.getItem(slot);
+		let penTilesObj = [];
+		if (penTilesStr) {
+			penTilesObj = JSON.parse(penTilesStr);
+		}
+		if (penTilesObj.length) {
+			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
+			for (let penTileObj of penTilesObj) {
+				const kind = penTileObj.kind; // name of object
+				const shapeObj = factory[kind]; // object itself
+				if (!shapeObj) { // skip unrecognized shapes
+					console.error("unknown tile kind " + kind);
+					continue;
+				}
+				const pos = vec2.clone(penTileObj.pos);
+				const rot = penTileObj.rot;
+				tiles.push(new Tile(shapeObj, pos, rot));
+			}
+		}
+		return tiles;
+	}
+
+	static saveTiles(tiles, slot) {
+		console.log("saving " + tiles.length + " tiles on slot " + slot);
+		localStorage.setItem(slot, JSON.stringify(tiles));
+	}
+
 	createWorldPoly() {
 		this.worldPolyPnts = Array(this.shape.polyPnts.length);
 		for (let i = 0; i < this.shape.polyPnts.length; ++i) {
@@ -106,7 +135,6 @@ class Tile {
 			const totalArea = tileA.shape.area + tileB.shape.area;
 			return areaIsect > thresh * totalArea;
 		}
-
 	}
 }
 
