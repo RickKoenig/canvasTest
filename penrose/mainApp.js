@@ -18,6 +18,7 @@ class PenShape extends Shape {
 		];
 		this.fat = fat;
 		super.setupPolyPnts();
+/*
 		if (fat) { // for connect tiles
 			this.edgeAngles = [
 				this.largeAngle,
@@ -33,6 +34,7 @@ class PenShape extends Shape {
 				Math.PI
 			];
 		}
+*/
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
 		let first = true;
@@ -507,20 +509,20 @@ class MainApp {
 
 	// TODO: move to edit tiles
 	// find best connection between tiles or null if none
-	#findBestSnapTile(curSelIdx) {
+	#findBestSnapTile(slaveIdx) {
 		const snapDistThresh = .3;
-		const curTile = this.tiles[curSelIdx]; //slave
+		const sTile = this.tiles[slaveIdx]; //slave
 		let bestTileIdx = -1;
 		let bestSlaveEdge;
 		let bestMasterEdge;
 		let bestDist2 = snapDistThresh; // must be less than this for a snap
-		for (let m = 0; m < this.tiles.length; ++m) {
-			if (m === curSelIdx) {
+		for (let masteridx = 0; masteridx < this.tiles.length; ++masteridx) {
+			if (masteridx === slaveIdx) {
 				continue; // skip self
 			}
-			const tile = this.tiles[m]; // master
-			const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
-			let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
+			const mtile = this.tiles[masteridx]; // master
+			const distPoints2 = vec2.sqrDist(sTile.pos, mtile.pos);
+			let distRad2 = sTile.shape.boundRadius + mtile.shape.boundRadius;
 			distRad2 *= distRad2;
 			// do the best
 			if (distPoints2 < distRad2) {
@@ -552,14 +554,14 @@ class MainApp {
 					[3, 1]
 				];
 				let edgeEdgeList;
-				if (curTile.shape.kind == "skinny") { // slave
-					if (tile.shape.kind == "skinny") { // master
+				if (sTile.shape.kind == "skinny") { // slave
+					if (mtile.shape.kind == "skinny") { // master
 						edgeEdgeList = skinnySkinnyList; // skinny slave, skinny master
 					} else {
 						edgeEdgeList = skinnyFatList; // skinny slave, fat master
 					}
 				} else {
-					if (tile.shape.kind == "skinny") { // master
+					if (mtile.shape.kind == "skinny") { // master
 						edgeEdgeList = fatSkinnyList; // fat slave, skinny master
 					} else {
 						edgeEdgeList = fatFatList; // fat slave, fat master
@@ -568,11 +570,11 @@ class MainApp {
 				for (let ee of edgeEdgeList) {
 						const se = ee[0];
 						const me = ee[1];
-						const connectDist = Tile.calcConnectDist(tile, me
-							, curTile, se); // master, slave
+						const connectDist = Tile.calcConnectDist(mtile, me
+							, sTile, se); // master, slave
 						if (connectDist < bestDist2) {
 							bestDist2 = connectDist;
-							bestTileIdx = m;
+							bestTileIdx = masteridx;
 							bestSlaveEdge = se;
 							bestMasterEdge = me;
 						}
@@ -585,7 +587,7 @@ class MainApp {
 			const ret = {
 				masterTileIdx : bestTileIdx,
 				masterEdge : bestMasterEdge,
-				slaveTileIdx : curSelIdx,
+				slaveTileIdx : slaveIdx,
 				slaveEdge : bestSlaveEdge,
 				bestDist2: bestDist2
 			}
@@ -755,7 +757,7 @@ class MainApp {
 			if  (info) {
 				// master, slave, master, slave, and has edge angles
 				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
-					, this.tiles[info.slaveTileIdx], info.slaveEdge, true); 
+					, this.tiles[info.slaveTileIdx], info.slaveEdge); 
 			}
 		}
 		this.editTiles.deselect();

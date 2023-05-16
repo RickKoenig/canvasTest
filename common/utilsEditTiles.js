@@ -26,8 +26,17 @@ class Shape {
 			}
 		}
 		this.boundRadius = Math.sqrt(farDist2);
-		this.rotFactor = 1.25 / farDist2; // That's it!, try a little more turn
+		this.rotFactor = 1.25 / farDist2; // (torque) That's it!, try a little more turn
 		this.area = calcPolyArea(this.polyPnts);
+		// edge angles
+		const anEdge = vec2.create();
+		this.edgeAngles = Array(this.polyPnts.length);
+		for (let i = 0; i < this.polyPnts.length; ++i) {
+			let j = (i + 1) % this.polyPnts.length;
+			vec2.sub(anEdge, this.polyPnts[j], this.polyPnts[i]);
+			const ang = Math.atan2(anEdge[1], anEdge[0]);
+			this.edgeAngles[i] = ang;
+		}
 	}
 }
 
@@ -146,23 +155,12 @@ class Tile {
 	}
 
 	// snap one tile next to another
-	static connectTiles(master, masterEdge, slave, slaveEdge, hasAngEdges) {
+	static connectTiles(master, masterEdge, slave, slaveEdge) {
 		const gapTiles = 1.0001; // > 1, then a gap between tiles
 		const rOffset0 = vec2.create();
 		const totOffset = vec2.create();
-		const ein = true;
-		let angsSlave;
-		let angsMaster;
-		if (hasAngEdges) { // for now only penrose has edge angles
-			angsSlave = slave.shape.edgeAngles;
-			angsMaster = master.shape.edgeAngles;
-		} else {
-			// TODO: temp until all tiles have edge angles
-			//const angs = [HatShape.ninetyAngle, 0, -HatShape.ninetyAngle, Math.PI];
-			const angs = [degToRad(90), 0, degToRad(-90), degToRad(180)];
-			angsSlave = angs;
-			angsMaster = angs;
-		}
+		const angsSlave = slave.shape.edgeAngles;
+		const angsMaster = master.shape.edgeAngles;
 
 		// meet up at 180 degrees
 		const ang = angsMaster[masterEdge] - angsSlave[slaveEdge] + Math.PI;
