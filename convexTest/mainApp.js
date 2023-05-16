@@ -155,9 +155,9 @@ class MainApp {
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const tile = tiles[idx];
-		tile.rot = snap(tile.rot, degToRad(22.5));
-		tile.pos[0] = snap(tile.pos[0], .0625);
-		tile.pos[1] = snap(tile.pos[1], .0625);
+		tile.rot = snapNum(tile.rot, degToRad(22.5));
+		tile.pos[0] = snapNum(tile.pos[0], .0625);
+		tile.pos[1] = snapNum(tile.pos[1], .0625);
 		tile.updateWorldPoly();
 	}
 

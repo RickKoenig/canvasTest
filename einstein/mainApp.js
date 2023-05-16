@@ -150,6 +150,11 @@ class MirrorHatShape extends HatShape {
 	}
 }
 
+HatShape.factory = {
+	hatOrig: OrigHatShape,
+	hatMirror: MirrorHatShape
+}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
@@ -195,7 +200,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveTiles.bind(this, "hatSlot0"));
+		addEventListener("beforeunload", this.#saveHatTiles.bind(this, "hatSlot0"));
 	}
 
 	#clearHatTiles() {
@@ -205,32 +210,11 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	// TODO: move to edit tiles
 	#clearHatDups() {
 		console.log("clear hat dups, len = " + this.tiles.length);
-		// TODO: optimize, go from N^2 to N*log(n)
+		Tile.clearDups(this.tiles);
 		const threshAng = degToRad(10);
 		const closeDist = .125;
-
-		for (let i = 0; i < this.tiles.length;) { // inc i only when not deleting
-			const ti1 = this.tiles[i];
-			let j;
-			for (j = i + 1; j < this.tiles.length; ++j) {
-				const ti2 = this.tiles[j];
-				let ra = Math.abs(ti1.rot - ti2.rot);
-				ra = normAngRadUnsigned(ra);
-				if (ti1.kind === ti2.kind
-					&& ra < threshAng 
-					&& vec2.sqrDist(ti1.pos, ti2.pos) < closeDist * closeDist) {
-					break;
-				}
-			}
-			if (j != this.tiles.length) {
-				this.tiles.splice(i, 1);
-			} else {
-				++i;
-			}
-		}
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
@@ -244,11 +228,12 @@ class MainApp {
 	// TODO: move to edit tiles
 	// find best connection between tiles or null if none
 	#findBestSnapTile(curSelIdx) {
+		const snapDistThresh = .3;
+		const allEdges = false;
 		const curTile = this.tiles[curSelIdx]; //slave
 		let bestTileIdx = -1;
 		let bestSlaveEdge;
 		let bestMasterEdge;
-		const snapDistThresh = .3;
 		let bestDist2 = snapDistThresh; // must be less than this for a snap
 		for (let m = 0; m < this.tiles.length; ++m) {
 			if (m === curSelIdx) {
@@ -265,7 +250,6 @@ class MainApp {
 				// [slave, master]
 				// TODO: for now do all combinations of edge edge
 				let edgeEdgeList;
-				const allEdges = false;
 				if (allEdges) {
 					// everything
 					edgeEdgeList = [ // slave master
@@ -283,7 +267,7 @@ class MainApp {
 				for (let ee of edgeEdgeList) {
 					const se = ee[0];
 					const me = ee[1];
-					const connectDist = this.#calcConnectDist(tile, me
+					const connectDist = Tile.calcConnectDist(tile, me
 						, curTile, se); // master, slave
 					if (connectDist < bestDist2) {
 						bestDist2 = connectDist;
@@ -308,77 +292,25 @@ class MainApp {
 		return null;
 	}
 
-	// TODO: move to edit tiles
-	// snap one tile next to another
-	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		//return;
-		const angs = [HatShape.ninetyAngle, 0, -HatShape.ninetyAngle, Math.PI];
-		const rOffset0 = vec2.create();
-		const totOffset = vec2.create();
-		// meet up at 180 degrees
-		const ang = angs[masterEdge] - angs[slaveEdge] + degToRad(180);
-		const pidx0 = (slaveEdge + 1) % 4; // edge going in opposite direction
-		const pidx1 = masterEdge;
-		const offset1 = master.shape.polyPnts[pidx1];
-		const offset0 = slave.shape.polyPnts[pidx0];
-		vec2.rot(rOffset0, offset0, ang);
-		vec2.sub(totOffset, offset1, rOffset0);
-		vec2.rot(totOffset, totOffset, master.rot);
-		vec2.scale(totOffset, totOffset, this.gapTiles); // make a gap
-		vec2.add(slave.pos, master.pos, totOffset);
-		slave.rot = normAngRadSigned(master.rot + ang);
-		slave.updateWorldPoly();
-	}
-
-	// TODO: move to edit tiles
-	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
-		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
-			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
-		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % master.shape.polyPnts.length]
-			, slave.worldPolyPnts[slaveEdge])
-		return d0 + d1;
-	}
-
-	// TODO: move to edit tiles
-	#loadTiles(slot, starterTiles) {
-		this.tiles = [];
-		const penTilesStr = localStorage.getItem(slot);
-		let penTilesObj = [];
-		if (penTilesStr) {
-			penTilesObj = JSON.parse(penTilesStr);
-		}
-		if (penTilesObj.length) {
-			console.log("loading " + penTilesObj.length + " tiles on slot " + slot);
-			for (let penTileObj of penTilesObj) {
-				let kind = null;
-				switch(penTileObj.kind) {
-				case 'hatOrig':
-					kind = OrigHatShape;
-					break;
-				case 'hatMirror':
-					kind = MirrorHatShape;
-					break;
-				default:
-					console.error("unknown tile kind " + penTileObj.kind);
-					continue;
-				}
-				const pos = vec2.clone(penTileObj.pos);
-				const rot = penTileObj.rot;
-				this.tiles.push(new Tile(kind, pos, rot));
-			}
-		} else if (starterTiles) {
+	#loadHatTiles(slot, starter) {
+		this.tiles = Tile.loadTiles(slot, HatShape.factory);
+		if (starter && !this.tiles.length) {
 			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
 			this.tiles.push(new Tile(MirrorHatShape, [2, 0], degToRad(22.5)));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
+		if (this.input) {
+			this.input.setFocus(); // back to canvas/div, input might not be ready
+		}
 		this.dirty = true;
 	}
 
-	// TODO: move to edit tiles
-	#saveTiles(slot) {
-		console.log("saving " + this.tiles.length + " tiles on slot " + slot);
-		localStorage.setItem(slot, JSON.stringify(this.tiles));
+	#saveHatTiles(slot) {
+		Tile.saveTiles(this.tiles, slot);
+		if (this.input) {
+			this.input.setFocus(); // back to canvas/div
+		}
 	}
 
 	// USER: add more members or classes to MainApp
@@ -390,19 +322,18 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.gapTiles = 1.0001; // > 1, then a gap between tiles
 		this.snapAngle = true;
 		this.snapTile = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
 		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
-		// Penrose tiles
+		// Hat tiles
 		this.protoTiles = [];
-		// let proc position them proto tiles with zoom and pan UI
+		// let proc position those proto tiles with zoom and pan UI
 		this.protoTiles.push(new Tile(OrigHatShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(MirrorHatShape, [0, 0], 0));
-		this.#loadTiles("hatSlot0", true);
+		this.#loadHatTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -421,7 +352,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .35;
+		this.startZoom = .15;
 	}
 
 	#userBuildUI() {
@@ -501,34 +432,28 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearHatTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 1", this.#loadTiles.bind(this, "hatSlot1", false));
-		makeEle(this.vp, "button", null, "short", "Save 1", this.#saveTiles.bind(this, "hatSlot1"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 2", this.#loadTiles.bind(this, "hatSlot2", false));
-		makeEle(this.vp, "button", null, "short", "Save 2", this.#saveTiles.bind(this, "hatSlot2"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 3", this.#loadTiles.bind(this, "hatSlot3", false));
-		makeEle(this.vp, "button", null, "short", "Save 3", this.#saveTiles.bind(this, "hatSlot3"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 4", this.#loadTiles.bind(this, "hatSlot4", false));
-		makeEle(this.vp, "button", null, "short", "Save 4", this.#saveTiles.bind(this, "hatSlot4"));
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, "short", "Load 5", this.#loadTiles.bind(this, "hatSlot5", false));
-		makeEle(this.vp, "button", null, "short", "Save 5", this.#saveTiles.bind(this, "hatSlot5"));
+
+		const numSlots = 5;
+		for (let sn = 1; sn <= numSlots; ++sn) {
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "button", null, "short", "Load " + sn
+				, this.#loadHatTiles.bind(this, "hatSlot" + sn, false));
+			makeEle(this.vp, "button", null, "short", "Save " + sn
+				, this.#saveHatTiles.bind(this, "hatSlot" + sn));
+		}
 	}		
 
 	// tiles and tile index
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snap(curTile.rot, HatShape.ninetyAngle * .25);
+			curTile.rot = snapNum(curTile.rot, HatShape.ninetyAngle * .25);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
 			const info = this.#findBestSnapTile(idx);
 			if  (info) {
-				this.#connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
+				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
 					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
 			}
 		}
@@ -626,7 +551,7 @@ class MainApp {
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
 		const keyCodes = keyTable.keyCodes;
-		infoStr += "\n Shift = " + this.input.keyboard.keystate[keyCodes.SHIFT];
+		infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

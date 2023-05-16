@@ -50,7 +50,7 @@ function radToDeg(a) {
 }
 
 // snap to nearest multiple of amount
-function snap(v, amount) {
+function snapNum(v, amount) {
 	if (amount) {
 		v /= amount;
 		v = Math.round(v);

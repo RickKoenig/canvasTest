@@ -136,6 +136,73 @@ class Tile {
 			return areaIsect > thresh * totalArea;
 		}
 	}
+
+	static calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
+		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
+			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
+		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % master.shape.polyPnts.length]
+			, slave.worldPolyPnts[slaveEdge])
+		return d0 + d1;
+	}
+
+	// snap one tile next to another
+	static connectTiles(master, masterEdge, slave, slaveEdge, hasAngEdges) {
+		const gapTiles = 1.0001; // > 1, then a gap between tiles
+		const rOffset0 = vec2.create();
+		const totOffset = vec2.create();
+		const ein = true;
+		let angsSlave;
+		let angsMaster;
+		if (hasAngEdges) { // for now only penrose has edge angles
+			angsSlave = slave.shape.edgeAngles;
+			angsMaster = master.shape.edgeAngles;
+		} else {
+			// TODO: temp until all tiles have edge angles
+			//const angs = [HatShape.ninetyAngle, 0, -HatShape.ninetyAngle, Math.PI];
+			const angs = [degToRad(90), 0, degToRad(-90), degToRad(180)];
+			angsSlave = angs;
+			angsMaster = angs;
+		}
+
+		// meet up at 180 degrees
+		const ang = angsMaster[masterEdge] - angsSlave[slaveEdge] + Math.PI;
+		const pidx0 = (slaveEdge + 1) % slave.shape.polyPnts.length; // edge going in opposite direction
+		const pidx1 = masterEdge;
+		const offset1 = master.shape.polyPnts[pidx1];
+		const offset0 = slave.shape.polyPnts[pidx0];
+		vec2.rot(rOffset0, offset0, ang);
+		vec2.sub(totOffset, offset1, rOffset0);
+		vec2.rot(totOffset, totOffset, master.rot);
+		vec2.scale(totOffset, totOffset, gapTiles); // make a gap
+		vec2.add(slave.pos, master.pos, totOffset);
+		slave.rot = normAngRadSigned(master.rot + ang);
+		slave.updateWorldPoly();
+	}
+
+	static clearDups(tiles) {
+		// TODO: optimize, go from N^2 to N*log(n)
+		const threshAng = degToRad(10);
+		const closeDist = .125;
+		for (let i = 0; i < tiles.length;) { // inc i only when not deleting
+			const ti1 = tiles[i];
+			let j;
+			for (j = i + 1; j < tiles.length; ++j) {
+				const ti2 = tiles[j];
+				let ra = Math.abs(ti1.rot - ti2.rot);
+				ra = normAngRadUnsigned(ra);
+				if (ti1.kind === ti2.kind
+					&& ra < threshAng 
+					&& vec2.sqrDist(ti1.pos, ti2.pos) < closeDist * closeDist) {
+					break;
+				}
+			}
+			if (j != tiles.length) {
+				tiles.splice(i, 1);
+			} else {
+				++i;
+			}
+		}
+	}
 }
 
 // drag tiles around

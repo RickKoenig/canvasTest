@@ -374,32 +374,9 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	// TODO: move to edit tiles
 	#clearPenDups() {
 		console.log("clear pen dups, len = " + this.tiles.length);
-		// TODO: optimize, go from N^2 to N*log(n)
-		const threshAng = degToRad(10);
-		const closeDist = .125;
-
-		for (let i = 0; i < this.tiles.length;) { // inc i only when not deleting
-			const ti1 = this.tiles[i];
-			let j;
-			for (j = i + 1; j < this.tiles.length; ++j) {
-				const ti2 = this.tiles[j];
-				let ra = Math.abs(ti1.rot - ti2.rot);
-				ra = normAngRadUnsigned(ra);
-				if (ti1.kind === ti2.kind
-					&& ra < threshAng 
-					&& vec2.sqrDist(ti1.pos, ti2.pos) < closeDist * closeDist) {
-					break;
-				}
-			}
-			if (j != this.tiles.length) {
-				this.tiles.splice(i, 1);
-			} else {
-				++i;
-			}
-		}
+		Tile.clearDups(this.tiles);
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
@@ -531,11 +508,11 @@ class MainApp {
 	// TODO: move to edit tiles
 	// find best connection between tiles or null if none
 	#findBestSnapTile(curSelIdx) {
+		const snapDistThresh = .3;
 		const curTile = this.tiles[curSelIdx]; //slave
 		let bestTileIdx = -1;
 		let bestSlaveEdge;
 		let bestMasterEdge;
-		const snapDistThresh = .3;
 		let bestDist2 = snapDistThresh; // must be less than this for a snap
 		for (let m = 0; m < this.tiles.length; ++m) {
 			if (m === curSelIdx) {
@@ -588,20 +565,20 @@ class MainApp {
 						edgeEdgeList = fatFatList; // fat slave, fat master
 					}
 				}
-			for (let ee of edgeEdgeList) {
-					const se = ee[0];
-					const me = ee[1];
-					const connectDist = this.#calcConnectDist(tile, me
-						, curTile, se); // master, slave
-					if (connectDist < bestDist2) {
-						bestDist2 = connectDist;
-						bestTileIdx = m;
-						bestSlaveEdge = se;
-						bestMasterEdge = me;
-					}
+				for (let ee of edgeEdgeList) {
+						const se = ee[0];
+						const me = ee[1];
+						const connectDist = Tile.calcConnectDist(tile, me
+							, curTile, se); // master, slave
+						if (connectDist < bestDist2) {
+							bestDist2 = connectDist;
+							bestTileIdx = m;
+							bestSlaveEdge = se;
+							bestMasterEdge = me;
+						}
 
+					}
 				}
-			}
 			// end do the best
 			}
 		if (bestTileIdx >= 0) {
@@ -617,44 +594,12 @@ class MainApp {
 		return null;
 	}
 
-	// TODO: move to edit tiles
-	// snap one tile next to another
-	#connectTiles(master, masterEdge, slave, slaveEdge) {
-		const gapTiles = 1.0001; // > 1, then a gap between tiles
-		const rOffset0 = vec2.create();
-		const totOffset = vec2.create();
-		const angs0 = slave.shape.edgeAngles;
-		const angs1 = master.shape.edgeAngles;
-		// meet up at 180 degrees
-		const ang = angs1[masterEdge] - angs0[slaveEdge] + Math.PI;
-		const pidx0 = (slaveEdge + 1) % slave.shape.polyPnts.length; // edge going in opposite direction
-		const pidx1 = masterEdge;
-		const offset1 = master.shape.polyPnts[pidx1];
-		const offset0 = slave.shape.polyPnts[pidx0];
-		vec2.rot(rOffset0, offset0, ang);
-		vec2.sub(totOffset, offset1, rOffset0);
-		vec2.rot(totOffset, totOffset, master.rot);
-		vec2.scale(totOffset, totOffset, gapTiles); // make a gap
-		vec2.add(slave.pos, master.pos, totOffset);
-		slave.rot = normAngRadSigned(master.rot + ang);
-		slave.updateWorldPoly();
-	}
-
-	// TODO: move to edit tiles
-	#calcConnectDist(master, masterEdge, slave, slaveEdge) { // master, slave
-		const d0 = vec2.sqrDist(master.worldPolyPnts[masterEdge]
-			, slave.worldPolyPnts[(slaveEdge + 1) % slave.shape.polyPnts.length])
-		const d1 = vec2.sqrDist(master.worldPolyPnts[(masterEdge + 1) % master.shape.polyPnts.length]
-			, slave.worldPolyPnts[slaveEdge])
-		return d0 + d1;
-	}
-
 	#loadPenTiles(slot, starter) {
 		this.tiles = Tile.loadTiles(slot, PenShape.factory);
 		if (starter && !this.tiles.length) {
-			tiles.push(new Tile(SkinnyShape, [0, 0], 0));
-			tiles.push(new Tile(FatShape, [2, 0], 0));
-			console.log("creating " + tiles.length + " starter tiles");
+			this.tiles.push(new Tile(SkinnyShape, [0, 0], 0));
+			this.tiles.push(new Tile(FatShape, [2, 0], 0));
+			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
 		if (this.input) {
@@ -687,7 +632,7 @@ class MainApp {
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.protoTiles = [];
-		// let proc position them proto tiles with zoom and pan UI
+		// let proc position those proto tiles with zoom and pan UI
 		this.protoTiles.push(new Tile(SkinnyShape, [0, 0], 0));
 		this.protoTiles.push(new Tile(FatShape, [0, 0], 0));
 		this.#loadPenTiles("penSlot0", true);
@@ -802,14 +747,15 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snap(curTile.rot, PenShape.smallAngle * .5);
+			curTile.rot = snapNum(curTile.rot, PenShape.smallAngle * .5);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
 			const info = this.#findBestSnapTile(idx);
 			if  (info) {
-				this.#connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
-					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
+				// master, slave, master, slave, and has edge angles
+				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
+					, this.tiles[info.slaveTileIdx], info.slaveEdge, true); 
 			}
 		}
 		this.editTiles.deselect();
@@ -906,7 +852,7 @@ class MainApp {
 		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
 		const keyCodes = keyTable.keyCodes;
-		infoStr += "\n Shift = " + this.input.keyboard.keystate[keyCodes.SHIFT];
+		infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
 
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
