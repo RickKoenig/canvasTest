@@ -6,7 +6,7 @@ class PenShape extends Shape {
 	static golden = (Math.sqrt(5) + 1) / 2;
 	static invGolden = 1 / this.golden;
 
-	static setupPolyPnts(ang, fat) {
+	static setupPolyPnts(ang) {
 		// rhombus
 		const sa = Math.sin(ang);
 		const ca = Math.cos(ang);
@@ -19,23 +19,6 @@ class PenShape extends Shape {
 		super.setupPolyPnts();
 		// swap in and out for slave, (notch in 'fits' notch out)
 		this.notchEnum = makeEnum(["TRI_IN", "TRI_OUT", "ARC_IN", "ARC_OUT"]);
-/*
-		if (fat) { // for connect tiles
-			this.edgeAngles = [
-				this.largeAngle,
-				0,
-				this.largeAngle + Math.PI,
-				Math.PI
-			];
-		} else {
-			this.edgeAngles = [
-				this.smallAngle,
-				0,
-				this.smallAngle + Math.PI,
-				Math.PI
-			];
-		}
-*/
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
 		let first = true;
@@ -47,116 +30,10 @@ class PenShape extends Shape {
 			first = false;
 			this.cmdsNoNotches.push(cmd);
 		}
+		// prep notch commands
 		this.cmdsNotches = [];
-		const smallDist = 1 / 3;
-		const largeDist = 2 / 3;
-		let pnt = vec2.create();
-		// hand build the notches
-		if (fat) {
-			let cmd = {
-				pnt: this.polyPnts[0],
-				kind: "moveTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(72), false);
-
-			cmd = {
-				pnt: this.polyPnts[1],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(270),
-				ccw: false
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[2],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(72 + 90),
-				ccw: true
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[3],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], smallDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
-			this.nearRad = .45; // easier overlap
-		} else { // skinny
-			let cmd = {
-				pnt: this.polyPnts[0],
-				kind: "moveTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(36), true);
-
-			cmd = {
-				pnt: this.polyPnts[1],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], largeDist);
-			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(0), false);
-
-			cmd = {
-				pnt: this.polyPnts[2],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], smallDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(36 + 90),
-				ccw: true
-			}
-			this.cmdsNotches.push(cmd);
-
-			cmd = {
-				pnt: this.polyPnts[3],
-				kind: "lineTo"
-			}
-			this.cmdsNotches.push(cmd);
-
-			pnt = vec2.create();
-			vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], largeDist);
-			cmd = {
-				pnt: pnt,
-				kind: "arc",
-				ang: degToRad(90),
-				ccw: false
-			}
-			this.cmdsNotches.push(cmd);
-			this.nearRad = .25; // easier overlap
-		}
+		this.smallDist = 1 / 3;
+		this.largeDist = 2 / 3;
 	}
 
 	// add a triangle notch to the draw commands
@@ -286,7 +163,7 @@ class PenShape extends Shape {
 // shape 1
 class SkinnyShape extends PenShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
+		super.setupPolyPnts(this.smallAngle); // make a skinny rhombus
 		
 		const ne = this.notchEnum;
 		this.masterNotches = [ne.TRI_OUT, ne.TRI_IN, ne.ARC_OUT, ne.ARC_IN];
@@ -300,14 +177,68 @@ class SkinnyShape extends PenShape {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "skinny";
+		this.nearRad = .25; // easier overlap
+		this.kind = "skinny"; // serialization
+
+		// build notches for skinny shape
+		let pnt = vec2.create();
+		let cmd = {
+			pnt: this.polyPnts[0],
+			kind: "moveTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], this.smallDist);
+		this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(36), true);
+
+		cmd = {
+			pnt: this.polyPnts[1],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], this.largeDist);
+		this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(0), false);
+
+		cmd = {
+			pnt: this.polyPnts[2],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], this.smallDist);
+		cmd = {
+			pnt: pnt,
+			kind: "arc",
+			ang: degToRad(36 + 90),
+			ccw: true
+		}
+		this.cmdsNotches.push(cmd);
+
+		cmd = {
+			pnt: this.polyPnts[3],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], this.largeDist);
+		cmd = {
+			pnt: pnt,
+			kind: "arc",
+			ang: degToRad(90),
+			ccw: false
+		}
+		this.cmdsNotches.push(cmd);
 	}
 }
 
 // shape 2
 class FatShape extends PenShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
+		super.setupPolyPnts(this.smallAngle * 2); // make a fat rhombus
 
 		const ne = this.notchEnum;
 		this.masterNotches = [ne.TRI_IN, ne.ARC_IN, ne.ARC_OUT, ne.TRI_OUT];
@@ -321,7 +252,62 @@ class FatShape extends PenShape {
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "fat";
+		
+		this.nearRad = .45; // easier overlap
+		this.kind = "fat"; // for serialization
+
+		// build notches for fat shape
+		let pnt = vec2.create();
+		let cmd = {
+			pnt: this.polyPnts[0],
+			kind: "moveTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], this.largeDist);
+		this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(72), false);
+
+		cmd = {
+			pnt: this.polyPnts[1],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[1], this.polyPnts[2], this.largeDist);
+		cmd = {
+			pnt: pnt,
+			kind: "arc",
+			ang: degToRad(270),
+			ccw: false
+		}
+		this.cmdsNotches.push(cmd);
+
+		cmd = {
+			pnt: this.polyPnts[2],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[2], this.polyPnts[3], this.smallDist);
+		cmd = {
+			pnt: pnt,
+			kind: "arc",
+			ang: degToRad(72 + 90),
+			ccw: true
+		}
+		this.cmdsNotches.push(cmd);
+
+		cmd = {
+			pnt: this.polyPnts[3],
+			kind: "lineTo"
+		}
+		this.cmdsNotches.push(cmd);
+
+		pnt = vec2.create();
+		vec2.lerp(pnt, this.polyPnts[3], this.polyPnts[0], this.smallDist);
+		this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(180), true);
 	}
 }
 
@@ -537,6 +523,25 @@ class MainApp {
 		}
 	}
 
+	// tiles and tile index
+	#deselectFun(tiles, idx) {
+		const curTile = tiles[idx];
+		if (this.snapAngle) {
+			curTile.rot = snapNum(curTile.rot, PenShape.smallAngle * .5);
+			curTile.updateWorldPoly();
+		}
+		if (this.snapTile & this.tiles.length >= 2) {
+			const info = Tile.findBestSnapTile(this.tiles, idx);
+			if  (info) {
+				// master, slave, master, slave, and has edge angles
+				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
+					, this.tiles[info.slaveTileIdx], info.slaveEdge); 
+			}
+		}
+		this.editTiles.deselect();
+		this.dirty = true;
+	}
+	
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -665,25 +670,6 @@ class MainApp {
 		}
 	}		
 
-	// tiles and tile index
-	#deselectFun(tiles, idx) {
-		const curTile = tiles[idx];
-		if (this.snapAngle) {
-			curTile.rot = snapNum(curTile.rot, PenShape.smallAngle * .5);
-			curTile.updateWorldPoly();
-		}
-		if (this.snapTile & this.tiles.length >= 2) {
-			const info = Tile.findBestSnapTile(this.tiles, idx);
-			if  (info) {
-				// master, slave, master, slave, and has edge angles
-				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
-					, this.tiles[info.slaveTileIdx], info.slaveEdge); 
-			}
-		}
-		this.editTiles.deselect();
-		this.dirty = true;
-	}
-	
 	#userProc() {
 		// proc
 		// this.dirty = true;

@@ -5,7 +5,7 @@ class HatShape extends Shape {
 
 	static setupPolyPnts(mir) {
 		if (mir) {
-			// oct
+			// octagon
 			const rad = 1 / (2 * Math.sin(degToRad(22.5)));
 			this.polyPnts = [];
 			for (let e = 0; e < 8; ++e) {
@@ -13,14 +13,16 @@ class HatShape extends Shape {
 				const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
 				this.polyPnts.push(pnt);
 			}
+			this.nearRad = .9 * rad; // easier overlap
 		} else {
-			// square
+			// almost square
 			this.polyPnts = [
 				[ -.75, -.75],
 				[ -.5,  .5],
 				[  .5,  .5],
 				[  .5, -.5]
 			];
+			this.nearRad = .45; // easier overlap
 		}
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
@@ -66,6 +68,7 @@ class HatShape extends Shape {
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const bounds = false; // clipping circles
+		const edgeLabels = false;
 		// fill the tile
 		this.doPath(ctx);
 		const col = "#008000";
@@ -85,21 +88,23 @@ class HatShape extends Shape {
 			drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
 		}
 
-		ctx.moveTo(0, 0);
-		ctx.lineTo(7 / 16, 0); // reference angle
-		ctx.stroke();
-
-		for (let i = 0; i < this.polyPnts.length; ++i) {
-			const p0 = this.polyPnts[i];
-			const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
-			const avg = vec2.create();
-			vec2.add(avg, p0, p1);
-			const closer = .875;
-			vec2.scale(avg, avg, .5 * closer); // move in closer
-			ctx.save();
-			ctx.translate(avg[0], avg[1]);
-			this.drawLevel(drawPrim, i, true);
-			ctx.restore();
+		if (edgeLabels) {
+			ctx.moveTo(0, 0);
+			ctx.lineTo(this.nearRad, 0); // reference angle
+			ctx.stroke();
+	
+			for (let i = 0; i < this.polyPnts.length; ++i) {
+				const p0 = this.polyPnts[i];
+				const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
+				const avg = vec2.create();
+				vec2.add(avg, p0, p1);
+				const closer = .875;
+				vec2.scale(avg, avg, .5 * closer); // move in closer
+				ctx.save();
+				ctx.translate(avg[0], avg[1]);
+				this.drawLevel(drawPrim, i, true);
+				ctx.restore();
+			}
 		}
 	}
 
@@ -109,12 +114,6 @@ class HatShape extends Shape {
 		drawPrim.drawCircle([0,0], radius, edgeHilit ? "yellow" : "brown"); // center
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, edgeHilit ? "black" : "white");
-	}
-
-	static {
-		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hat"; // generic
-		this.nearRad = .45; // easier overlap
 	}
 }
 
@@ -246,6 +245,24 @@ class MainApp {
 		}
 	}
 
+	// tiles and tile index
+	#deselectFun(tiles, idx) {
+		const curTile = tiles[idx];
+		if (this.snapAngle) {
+			curTile.rot = snapNum(curTile.rot, HatShape.ninetyAngle * .25);
+			curTile.updateWorldPoly();
+		}
+		if (this.snapTile & this.tiles.length >= 2) {
+			const info = Tile.findBestSnapTile(this.tiles, idx);
+			if  (info) {
+				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
+					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
+			}
+		}
+		this.editTiles.deselect();
+		this.dirty = true;
+	}
+	
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -376,24 +393,6 @@ class MainApp {
 		}
 	}		
 
-	// tiles and tile index
-	#deselectFun(tiles, idx) {
-		const curTile = tiles[idx];
-		if (this.snapAngle) {
-			curTile.rot = snapNum(curTile.rot, HatShape.ninetyAngle * .25);
-			curTile.updateWorldPoly();
-		}
-		if (this.snapTile & this.tiles.length >= 2) {
-			const info = Tile.findBestSnapTile(this.tiles, idx);
-			if  (info) {
-				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
-					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
-			}
-		}
-		this.editTiles.deselect();
-		this.dirty = true;
-	}
-	
 	#userProc() {
 		// proc
 		// this.dirty = true;
