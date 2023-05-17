@@ -108,9 +108,9 @@ function extend(base, sub) {
 // pass in an array of strings OR an object with member name, and return an enum object, numbering all members
 function makeEnum(strArr) {
 	var ret = {};
-	for (var i=0;i<strArr.length;++i) {
+	for (var i = 0; i < strArr.length; ++i) {
 		var str = strArr[i];
-		if (typeof str == 'string') {
+		if (typeof str === 'string') {
 			ret[str] = i;
 		} else { // assume an object with a 'name' member
 			ret[str.name] = i;

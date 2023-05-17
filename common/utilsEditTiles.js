@@ -201,6 +201,66 @@ class Tile {
 			}
 		}
 	}
+
+	// find best connection between tiles or null if none
+	static findBestSnapTile(tiles, slaveIdx) {
+		const snapDistThresh = .3;
+		const sTile = tiles[slaveIdx]; //slave
+		let bestTileIdx = -1;
+		let bestSlaveEdge;
+		let bestMasterEdge;
+		let bestNotchID;
+		let bestDist2 = snapDistThresh; // must be less than this for a snap
+		for (let masteridx = 0; masteridx < tiles.length; ++masteridx) {
+			if (masteridx === slaveIdx) {
+				continue; // skip self
+			}
+			const mTile = tiles[masteridx]; // master
+			const distPoints2 = vec2.sqrDist(sTile.pos, mTile.pos);
+			let distRad2 = sTile.shape.boundRadius + mTile.shape.boundRadius;
+			distRad2 *= distRad2;
+			// do the best
+			if (distPoints2 < distRad2) {
+				// run through all the edge fits
+				for (let me = 0; me < mTile.shape.polyPnts.length; ++me ) {
+					for (let se = 0; se < sTile.shape.polyPnts.length; ++se) {
+						let mnid, snid;
+						// match up select edges if notches tables exist, otherwise just connect any edges
+						if (mTile.shape.masterNotches && sTile.shape.slaveNotches) {
+							mnid = mTile.shape.masterNotches[me];
+							snid = sTile.shape.slaveNotches[se];
+							if (mnid != snid) {
+								continue; // doesn't match
+							}
+						}
+						// have matching edges OR no notch check, all edges are valid then
+						const connectDist = Tile.calcConnectDist(mTile, me
+							, sTile, se); // master, slave
+						if (connectDist < bestDist2) {
+							bestDist2 = connectDist;
+							bestTileIdx = masteridx;
+							bestSlaveEdge = se;
+							bestMasterEdge = me;
+							bestNotchID = mnid;
+						}
+					}
+				}
+			// end do the best
+			}
+		}
+		if (bestTileIdx >= 0) {
+			const ret = {
+				masterTileIdx : bestTileIdx,
+				masterEdge : bestMasterEdge,
+				slaveTileIdx : slaveIdx,
+				slaveEdge : bestSlaveEdge,
+				bestDist2: bestDist2,
+				notchId: bestNotchID
+			}
+			return ret;
+		}
+		return null;
+	}
 }
 
 // drag tiles around

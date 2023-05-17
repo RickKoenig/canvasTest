@@ -224,73 +224,6 @@ class MainApp {
 	#deflateTiles() {
 		console.log("deflate hat tiles");
 	}
-	
-	// TODO: move to edit tiles
-	// find best connection between tiles or null if none
-	#findBestSnapTile(curSelIdx) {
-		const snapDistThresh = .3;
-		const allEdges = false;
-		const curTile = this.tiles[curSelIdx]; //slave
-		let bestTileIdx = -1;
-		let bestSlaveEdge;
-		let bestMasterEdge;
-		let bestDist2 = snapDistThresh; // must be less than this for a snap
-		for (let m = 0; m < this.tiles.length; ++m) {
-			if (m === curSelIdx) {
-				continue; // skip self
-			}
-			const tile = this.tiles[m]; // master
-			const distPoints2 = vec2.sqrDist(curTile.pos, tile.pos);
-			let distRad2 = curTile.shape.boundRadius + tile.shape.boundRadius;
-			distRad2 *= distRad2;
-			// do the best
-			if (distPoints2 < distRad2) {
-				// run through all the edge fits
-				// match arcs and notches edges
-				// [slave, master]
-				// TODO: for now do all combinations of edge edge
-				let edgeEdgeList;
-				if (allEdges) {
-					// everything
-					edgeEdgeList = [ // slave master
-						[0, 0], [1, 0], [2, 0], [3, 0],
-						[0, 1],	[1, 1],	[2, 1],	[3, 1],
-						[0, 2],	[1, 2],	[2, 2],	[3, 2],
-						[0, 3],	[1, 3],	[2, 3],	[3, 3]
-					];
-				} else {
-					// somethings
-					edgeEdgeList = [ // slave master
-						[0, 0], [1, 1], [2, 2], [3, 3]
-					];
-				}
-				for (let ee of edgeEdgeList) {
-					const se = ee[0];
-					const me = ee[1];
-					const connectDist = Tile.calcConnectDist(tile, me
-						, curTile, se); // master, slave
-					if (connectDist < bestDist2) {
-						bestDist2 = connectDist;
-						bestTileIdx = m;
-						bestSlaveEdge = se;
-						bestMasterEdge = me;
-					}
-				}
-			}
-			// end do the best
-		}
-		if (bestTileIdx >= 0) {
-			const ret = {
-				masterTileIdx : bestTileIdx,
-				masterEdge : bestMasterEdge,
-				slaveTileIdx : curSelIdx,
-				slaveEdge : bestSlaveEdge,
-				bestDist2: bestDist2
-			}
-			return ret;
-		}
-		return null;
-	}
 
 	#loadHatTiles(slot, starter) {
 		this.tiles = Tile.loadTiles(slot, HatShape.factory);
@@ -451,7 +384,7 @@ class MainApp {
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
-			const info = this.#findBestSnapTile(idx);
+			const info = Tile.findBestSnapTile(this.tiles, idx);
 			if  (info) {
 				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
 					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
@@ -555,7 +488,7 @@ class MainApp {
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;
-			const info = this.#findBestSnapTile(curSelIdx);
+			const info = Tile.findBestSnapTile(this.tiles, curSelIdx);
 			if (info) {
 				infoStr += "\n mastertile = " + info.masterTileIdx
 				infoStr += "\n masteredge = " + info.masterEdge

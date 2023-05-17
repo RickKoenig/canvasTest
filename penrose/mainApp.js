@@ -16,8 +16,9 @@ class PenShape extends Shape {
 			[1 + ca, sa],
 			[1, 0]
 		];
-		this.fat = fat;
 		super.setupPolyPnts();
+		// swap in and out for slave, (notch in 'fits' notch out)
+		this.notchEnum = makeEnum(["TRI_IN", "TRI_OUT", "ARC_IN", "ARC_OUT"]);
 /*
 		if (fat) { // for connect tiles
 			this.edgeAngles = [
@@ -49,16 +50,15 @@ class PenShape extends Shape {
 		this.cmdsNotches = [];
 		const smallDist = 1 / 3;
 		const largeDist = 2 / 3;
-		let pnt;
+		let pnt = vec2.create();
 		// hand build the notches
-		if (this.fat) {
+		if (fat) {
 			let cmd = {
 				pnt: this.polyPnts[0],
 				kind: "moveTo"
 			}
 			this.cmdsNotches.push(cmd);
 
-			pnt = vec2.create();
 			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], largeDist);
 			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(72), false);
 
@@ -111,7 +111,6 @@ class PenShape extends Shape {
 			}
 			this.cmdsNotches.push(cmd);
 
-			pnt = vec2.create();
 			vec2.lerp(pnt, this.polyPnts[0], this.polyPnts[1], smallDist);
 			this.addTriNotchCmd(this.cmdsNotches, pnt, degToRad(36), true);
 
@@ -288,6 +287,11 @@ class PenShape extends Shape {
 class SkinnyShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle, false); // make a skinny rhombus
+		
+		const ne = this.notchEnum;
+		this.masterNotches = [ne.TRI_OUT, ne.TRI_IN, ne.ARC_OUT, ne.ARC_IN];
+		// swap slave notches in and out for edge matcher
+		this.slaveNotches = [ne.TRI_IN, ne.TRI_OUT, ne.ARC_IN, ne.ARC_OUT];
 	}
 
 	static draw(drawPrim, id, doHilit = false, options, overlap) {
@@ -304,6 +308,11 @@ class SkinnyShape extends PenShape {
 class FatShape extends PenShape {
 	static setupPolyPnts() {
 		super.setupPolyPnts(this.smallAngle * 2, true); // make a fat rhombus
+
+		const ne = this.notchEnum;
+		this.masterNotches = [ne.TRI_IN, ne.ARC_IN, ne.ARC_OUT, ne.TRI_OUT];
+		// swap slave notches in and out for edge matcher
+		this.slaveNotches = [ne.TRI_OUT, ne.ARC_OUT, ne.ARC_IN, ne.TRI_IN];
 	}
 
 	static draw(drawPrim, id, doHilit = false, options, overlap) {
@@ -506,96 +515,7 @@ class MainApp {
 		this.editTiles = new EditTiles(this.tiles);
 		this.#clearPenDups();
 	}
-
-	// TODO: move to edit tiles
-	// find best connection between tiles or null if none
-	#findBestSnapTile(slaveIdx) {
-		const snapDistThresh = .3;
-		const sTile = this.tiles[slaveIdx]; //slave
-		let bestTileIdx = -1;
-		let bestSlaveEdge;
-		let bestMasterEdge;
-		let bestDist2 = snapDistThresh; // must be less than this for a snap
-		for (let masteridx = 0; masteridx < this.tiles.length; ++masteridx) {
-			if (masteridx === slaveIdx) {
-				continue; // skip self
-			}
-			const mtile = this.tiles[masteridx]; // master
-			const distPoints2 = vec2.sqrDist(sTile.pos, mtile.pos);
-			let distRad2 = sTile.shape.boundRadius + mtile.shape.boundRadius;
-			distRad2 *= distRad2;
-			// do the best
-			if (distPoints2 < distRad2) {
-				// run through all the edge fits
-				// match arcs and notches edges
-				// [slave, master]
-				const skinnySkinnyList = [ // slave master
-					[0, 1],
-					[1, 0],
-					[2, 3],
-					[3, 2]
-				];
-				const fatFatList = [ // slave master
-					[0, 3],
-					[1, 2],
-					[2, 1],
-					[3, 0]
-				];
-				const skinnyFatList = [ // slave master
-					[0, 0],
-					[1, 3],
-					[2, 1],
-					[3, 2]
-				];
-				const fatSkinnyList = [ // slave master
-					[0, 0],
-					[1, 2],
-					[2, 3],
-					[3, 1]
-				];
-				let edgeEdgeList;
-				if (sTile.shape.kind == "skinny") { // slave
-					if (mtile.shape.kind == "skinny") { // master
-						edgeEdgeList = skinnySkinnyList; // skinny slave, skinny master
-					} else {
-						edgeEdgeList = skinnyFatList; // skinny slave, fat master
-					}
-				} else {
-					if (mtile.shape.kind == "skinny") { // master
-						edgeEdgeList = fatSkinnyList; // fat slave, skinny master
-					} else {
-						edgeEdgeList = fatFatList; // fat slave, fat master
-					}
-				}
-				for (let ee of edgeEdgeList) {
-						const se = ee[0];
-						const me = ee[1];
-						const connectDist = Tile.calcConnectDist(mtile, me
-							, sTile, se); // master, slave
-						if (connectDist < bestDist2) {
-							bestDist2 = connectDist;
-							bestTileIdx = masteridx;
-							bestSlaveEdge = se;
-							bestMasterEdge = me;
-						}
-
-					}
-				}
-			// end do the best
-			}
-		if (bestTileIdx >= 0) {
-			const ret = {
-				masterTileIdx : bestTileIdx,
-				masterEdge : bestMasterEdge,
-				slaveTileIdx : slaveIdx,
-				slaveEdge : bestSlaveEdge,
-				bestDist2: bestDist2
-			}
-			return ret;
-		}
-		return null;
-	}
-
+	
 	#loadPenTiles(slot, starter) {
 		this.tiles = Tile.loadTiles(slot, PenShape.factory);
 		if (starter && !this.tiles.length) {
@@ -753,7 +673,7 @@ class MainApp {
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
-			const info = this.#findBestSnapTile(idx);
+			const info = Tile.findBestSnapTile(this.tiles, idx);
 			if  (info) {
 				// master, slave, master, slave, and has edge angles
 				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
@@ -859,13 +779,14 @@ class MainApp {
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;
-			const info = this.#findBestSnapTile(curSelIdx);
+			const info = Tile.findBestSnapTile(this.tiles, curSelIdx);
 			if (info) {
-				infoStr += "\n mastertile = " + info.masterTileIdx
-				infoStr += "\n masteredge = " + info.masterEdge
-				infoStr += "\n slavetile = " + info.slaveTileIdx
-				infoStr += "\n slaveedge = " + info.slaveEdge
-				infoStr	+= "\nbestdist = " + info.bestDist2.toFixed(2);
+				infoStr += "\n master tile = " + info.masterTileIdx
+				infoStr += "\n master edge = " + info.masterEdge
+				infoStr += "\n slave tile = " + info.slaveTileIdx
+				infoStr += "\n slave edge = " + info.slaveEdge
+				infoStr += "\n notch id = " + info.notchId
+				infoStr	+= "\nbest dist = " + info.bestDist2.toFixed(2);
 			}
 		}
 		this.eles.textInfoLog.innerText = infoStr;
