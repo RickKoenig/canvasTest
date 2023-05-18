@@ -103,6 +103,7 @@ class PenShape extends Shape {
 		ctx.closePath();
 	}
 
+	// fat is for colors and arcs
 	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const zoomHilit = false;

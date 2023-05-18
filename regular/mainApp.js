@@ -1,29 +1,18 @@
 'use strict';
 
-class HatShape extends Shape {
+class RegShape extends Shape {
 	static ninetyAngle = degToRad(90);
 
-	static setupPolyPnts(mir) {
-		if (mir) {
-			// octagon
-			const rad = 1 / (2 * Math.sin(degToRad(22.5)));
-			this.polyPnts = [];
-			for (let e = 0; e < 8; ++e) {
-				const ang = degToRad(180 + 3 * 22.5) - e * degToRad(45) 
-				const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
-				this.polyPnts.push(pnt);
-			}
-			this.nearRad = .9 * rad; // easier overlap
-		} else {
-			// almost square
-			this.polyPnts = [
-				[ -.75, -.75],
-				[ -.5,  .5],
-				[  .5,  .5],
-				[  .5, -.5]
-			];
-			this.nearRad = .45; // easier overlap
+	static setupPolyPnts(sides) {
+		// regular polygon
+		const rad = 1 / (2 * Math.sin(Math.PI / sides));
+		this.polyPnts = [];
+		for (let e = 0; e < sides; ++e) {
+			const ang = degToRad(180 + 3 * 22.5) - e * degToRad(45) 
+			const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
+			this.polyPnts.push(pnt);
 		}
+		this.nearRad = .9 * rad; // easier overlap
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
@@ -117,32 +106,79 @@ class HatShape extends Shape {
 	}
 }
 
-// shape 1
-class OrigHatShape extends HatShape {
+// shape 3
+class ThreeShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(false); // default
+		super.setupPolyPnts(3); // default
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hatOrig";
+		this.kind = "three";
 	}
 }
 
-// shape 2
-class MirrorHatShape extends HatShape {
+// shape 4
+class FourShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(true); // mirror
+		super.setupPolyPnts(4); // mirror
 	}
-
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hatMirror";
+		this.kind = "four";
 	}
 }
 
-HatShape.factory = {
-	hatOrig: OrigHatShape,
-	hatMirror: MirrorHatShape
+// shape 5
+class FiveShape extends RegShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(5); // mirror
+	}
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "five";
+	}
+}
+
+// shape 6
+class SixShape extends RegShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(6); // mirror
+	}
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "six";
+	}
+}
+
+// shape 7
+class SevenShape extends RegShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(7); // mirror
+	}
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "seven";
+	}
+}
+
+// shape 8
+class EightShape extends RegShape {
+	static setupPolyPnts() {
+		super.setupPolyPnts(8); // mirror
+	}
+	static {
+		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
+		this.kind = "eight";
+	}
+}
+
+RegShape.factory = {
+	three: ThreeShape,
+	four: FourShape,
+	five: FiveShape,
+	six: SixShape,
+	seven: SevenShape,
+	eight: EightShape
 }
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
@@ -190,18 +226,18 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveHatTiles.bind(this, "hatSlot0"));
+		addEventListener("beforeunload", this.#saveRegTiles.bind(this, "regSlot0"));
 	}
 
-	#clearHatTiles() {
+	#clearRegTiles() {
 		this.tiles.length = 0;
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
-	#clearHatDups() {
-		console.log("clear hat dups, len = " + this.tiles.length);
+	#clearRegDups() {
+		console.log("clear reg dups, len = " + this.tiles.length);
 		Tile.clearDups(this.tiles);
 		const threshAng = degToRad(10);
 		const closeDist = .125;
@@ -212,14 +248,14 @@ class MainApp {
 
 	// generate more tiles
 	#deflateTiles() {
-		console.log("deflate hat tiles");
+		console.log("deflate reg tiles");
 	}
 
-	#loadHatTiles(slot, starter) {
-		this.tiles = Tile.loadTiles(slot, HatShape.factory);
+	#loadRegTiles(slot, starter) {
+		this.tiles = Tile.loadTiles(slot, RegShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
-			this.tiles.push(new Tile(MirrorHatShape, [2, 0], degToRad(22.5)));
+			this.tiles.push(new Tile(ThreeShape, [0, 0], 0));
+			this.tiles.push(new Tile(FourShape, [2, 0], degToRad(22.5)));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -229,7 +265,7 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	#saveHatTiles(slot) {
+	#saveRegTiles(slot) {
 		Tile.saveTiles(this.tiles, slot);
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
@@ -240,7 +276,7 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snapNum(curTile.rot, HatShape.ninetyAngle * .25);
+			curTile.rot = snapNum(curTile.rot, RegShape.ninetyAngle * .25);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
@@ -267,12 +303,16 @@ class MainApp {
 		this.snapTile = true;
 		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
-		// Hat tiles
+		// Reg tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new Tile(OrigHatShape, [0, 0], 0));
-		this.protoTiles.push(new Tile(MirrorHatShape, [0, 0], 0));
-		this.#loadHatTiles("hatSlot0", true);
+		this.protoTiles.push(new Tile(ThreeShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(FourShape, [0, 0], 0)); 
+		this.protoTiles.push(new Tile(FiveShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(SixShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(SevenShape, [0, 0], 0));
+		this.protoTiles.push(new Tile(EightShape, [0, 0], 0));
+		this.#loadRegTiles("regSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -343,10 +383,10 @@ class MainApp {
 		this.eles.decompose.disabled = true;
 		// clear duplicates
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearHatDups.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearRegDups.bind(this));
 		// clear tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearHatTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearRegTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
 
@@ -354,9 +394,9 @@ class MainApp {
 		for (let sn = 1; sn <= numSlots; ++sn) {
 			makeEle(this.vp, "br");
 			makeEle(this.vp, "button", null, "short", "Load " + sn
-				, this.#loadHatTiles.bind(this, "hatSlot" + sn, false));
+				, this.#loadRegTiles.bind(this, "regSlot" + sn, false));
 			makeEle(this.vp, "button", null, "short", "Save " + sn
-				, this.#saveHatTiles.bind(this, "hatSlot" + sn));
+				, this.#saveRegTiles.bind(this, "regSlot" + sn));
 		}
 	}		
 
@@ -382,10 +422,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= HatShape.ninetyAngle * .125; // clockwise
+			this.editOptions.rotStep -= RegShape.ninetyAngle * .125; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += HatShape.ninetyAngle * .125; // counter clockwise
+			this.editOptions.rotStep += RegShape.ninetyAngle * .125; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
@@ -409,10 +449,11 @@ class MainApp {
 			this.editProtoTiles.deselect();
 		}
 		// update proto tiles positions to user space
-		const yPos = [.75, .25]; // skinny, fat
+		//const yPos = [.75, .65, .55]; // skinny, fat
 		for (let i = 0; i < this.protoTiles.length; ++i) {
+			const yPos = .75 - i * .3;
 			const tile = this.protoTiles[i];
-			const ndc = [this.plotter2d.ndcMin[0] + this.redBarWidth / 2, yPos[i]]; 
+			const ndc = [this.plotter2d.ndcMin[0] + this.redBarWidth / 2, yPos]; 
 			const user = tile.pos;
 			this.plotter2d.ndcToUser(user, ndc);
 			tile.updateWorldPoly();

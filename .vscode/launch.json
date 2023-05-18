@@ -91,6 +91,13 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, regular",
+            "url": "http://localhost:88/plotter2d/regular/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, poly intsect",
             "url": "http://localhost:88/plotter2d/convexTest/index.html",
             "webRoot": "${workspaceFolder}"
