@@ -1,18 +1,19 @@
 'use strict';
 
 class RegShape extends Shape {
-	static ninetyAngle = degToRad(90);
+	static snapAmount = degToRad(15);
 
-	static setupPolyPnts(sides) {
+	static setupPolyPnts(numSides) {
 		// regular polygon
-		const rad = 1 / (2 * Math.sin(Math.PI / sides));
+		const rad = 1 / (2 * Math.sin(Math.PI / numSides));
 		this.polyPnts = [];
-		for (let e = 0; e < sides; ++e) {
-			const ang = degToRad(180 + 3 * 22.5) - e * degToRad(45) 
+		// last edge is on the bottom, go clockwise
+		for (let edge = 0; edge < numSides; ++edge) {
+			const ang = Math.PI * (3 / 2 - (1 + edge * 2) / numSides);
 			const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
 			this.polyPnts.push(pnt);
 		}
-		this.nearRad = .9 * rad; // easier overlap
+		this.nearRad = .95 * rad * Math.cos(Math.PI / numSides); // easier overlap, a little in
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
 		this.cmdsNoNotches = [];
@@ -38,10 +39,6 @@ class RegShape extends Shape {
 			case "lineTo":
 				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
 				break;
-			case "arc":
-				const ang0 = cmd.ang - Math.PI / 2;
-				const ang1 = cmd.ang + Math.PI / 2;
-				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
 			}
 		}
 	}
@@ -56,8 +53,8 @@ class RegShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		const bounds = true; // clipping circles
-		const edgeLabels = true;
+		const bounds = false; // clipping circles
+		const edgeLabels = false;
 		// fill the tile
 		this.doPath(ctx);
 		const col = "#008000";
@@ -88,7 +85,7 @@ class RegShape extends Shape {
 				const avg = vec2.create();
 				vec2.add(avg, p0, p1);
 				const closer = .875;
-				vec2.scale(avg, avg, .5 * closer); // move in closer
+				vec2.scale(avg, avg, .5 * closer); // move text in closer to center
 				ctx.save();
 				ctx.translate(avg[0], avg[1]);
 				this.drawLevel(drawPrim, i, true);
@@ -276,7 +273,7 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snapNum(curTile.rot, RegShape.ninetyAngle * .25);
+			curTile.rot = snapNum(curTile.rot, RegShape.snapAmount);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
@@ -331,7 +328,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .15;
+		this.startZoom = .1;
 	}
 
 	#userBuildUI() {
@@ -422,10 +419,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= RegShape.ninetyAngle * .125; // clockwise
+			this.editOptions.rotStep -= RegShape.snapAmount; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += RegShape.ninetyAngle * .125; // counter clockwise
+			this.editOptions.rotStep += RegShape.snapAmount; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();
@@ -451,7 +448,7 @@ class MainApp {
 		// update proto tiles positions to user space
 		//const yPos = [.75, .65, .55]; // skinny, fat
 		for (let i = 0; i < this.protoTiles.length; ++i) {
-			const yPos = .75 - i * .3;
+			const yPos = 1 - 2 / this.protoTiles.length * (i + .5);
 			const tile = this.protoTiles[i];
 			const ndc = [this.plotter2d.ndcMin[0] + this.redBarWidth / 2, yPos]; 
 			const user = tile.pos;

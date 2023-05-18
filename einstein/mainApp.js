@@ -1,7 +1,7 @@
 'use strict';
 
 class HatShape extends Shape {
-	static ninetyAngle = degToRad(90);
+	static snapAmount = degToRad(22.5);
 
 	static setupPolyPnts(mir) {
 		if (mir) {
@@ -53,6 +53,7 @@ class HatShape extends Shape {
 				const ang0 = cmd.ang - Math.PI / 2;
 				const ang1 = cmd.ang + Math.PI / 2;
 				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
+				break;
 			}
 		}
 	}
@@ -99,7 +100,7 @@ class HatShape extends Shape {
 				const avg = vec2.create();
 				vec2.add(avg, p0, p1);
 				const closer = .875;
-				vec2.scale(avg, avg, .5 * closer); // move in closer
+				vec2.scale(avg, avg, .5 * closer); // move text in closer to center
 				ctx.save();
 				ctx.translate(avg[0], avg[1]);
 				this.drawLevel(drawPrim, i, true);
@@ -240,7 +241,7 @@ class MainApp {
 	#deselectFun(tiles, idx) {
 		const curTile = tiles[idx];
 		if (this.snapAngle) {
-			curTile.rot = snapNum(curTile.rot, HatShape.ninetyAngle * .25);
+			curTile.rot = snapNum(curTile.rot, HatShape.snapAmount);
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
@@ -382,10 +383,10 @@ class MainApp {
 		this.editOptions.rotStep = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
-			this.editOptions.rotStep -= HatShape.ninetyAngle * .125; // clockwise
+			this.editOptions.rotStep -= HatShape.snapAmount; // clockwise
 			break;
 		case keyCodes.LEFT:
-			this.editOptions.rotStep += HatShape.ninetyAngle * .125; // counter clockwise
+			this.editOptions.rotStep += HatShape.snapAmount; // counter clockwise
 			break;
 		case keyCodes.DELETE:
 			this.editTiles.deleteHilited();

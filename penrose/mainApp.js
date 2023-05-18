@@ -87,6 +87,7 @@ class PenShape extends Shape {
 				const ang0 = cmd.ang - Math.PI / 2;
 				const ang1 = cmd.ang + Math.PI / 2;
 				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
+				break;
 			}
 		}
 	}
