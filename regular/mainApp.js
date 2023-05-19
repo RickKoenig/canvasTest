@@ -26,6 +26,32 @@ class RegShape extends Shape {
 			first = false;
 			this.cmdsNoNotches.push(cmd);
 		}
+	} 
+
+	static {
+		// make some colors for regular polys
+		const brt = .2 * 255;
+		const sat = .6 * 255;
+		this.colorTable = [];
+		for (let i = 0; i < 3; ++i) {
+			this.colorTable[i] = ""; // no colors for polys of size 0,1 or 2
+		}
+		const colObj = {};
+		const numAngs = 6;
+		for (let i = 0; i < numAngs; ++i) {
+			const ang = i * 2 * Math.PI / numAngs; // 0 is the brightest, 180 is darkest
+			const angR = ang;
+			const angG = ang - degToRad(120);
+			const angB = ang - degToRad(240);
+			colObj.r = brt + sat * Math.cos(angR);
+			colObj.g = brt + sat * Math.cos(angG);
+			colObj.b = brt + sat * Math.cos(angB);
+			colObj.a = 255;
+			const col32 = Bitmap32.RGBATocolor32(colObj);
+			const colStr = Bitmap32.color32ToStr(col32);
+			console.log("colstr = " + colStr);
+			this.colorTable[i + 3] = colStr;
+		}
 	}
 
 	// draw commands from an array of commands
@@ -57,7 +83,7 @@ class RegShape extends Shape {
 		const edgeLabels = false;
 		// fill the tile
 		this.doPath(ctx);
-		const col = "#008000";
+		const col = this.colorTable[this.polyPnts.length];
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
@@ -106,7 +132,7 @@ class RegShape extends Shape {
 // shape 3
 class ThreeShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(3); // default
+		super.setupPolyPnts(3); // triangle
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -117,7 +143,7 @@ class ThreeShape extends RegShape {
 // shape 4
 class FourShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(4); // mirror
+		super.setupPolyPnts(4); // square
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -128,7 +154,7 @@ class FourShape extends RegShape {
 // shape 5
 class FiveShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(5); // mirror
+		super.setupPolyPnts(5); // pentagon
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -139,7 +165,7 @@ class FiveShape extends RegShape {
 // shape 6
 class SixShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(6); // mirror
+		super.setupPolyPnts(6); // hexagon
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -150,7 +176,7 @@ class SixShape extends RegShape {
 // shape 7
 class SevenShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(7); // mirror
+		super.setupPolyPnts(7); // heptagon
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -161,7 +187,7 @@ class SevenShape extends RegShape {
 // shape 8
 class EightShape extends RegShape {
 	static setupPolyPnts() {
-		super.setupPolyPnts(8); // mirror
+		super.setupPolyPnts(8); // octagon
 	}
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
@@ -298,7 +324,7 @@ class MainApp {
 
 		this.snapAngle = true;
 		this.snapTile = true;
-		this.drawIds = true;
+		this.drawIds = false;
 		this.redBarWidth = .25; // for add remove tiles
 		// Reg tiles
 		this.protoTiles = [];

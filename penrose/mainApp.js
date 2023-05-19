@@ -557,7 +557,7 @@ class MainApp {
 		this.snapTile = true;
 		this.drawArcs = true;
 		this.drawNotches = true;
-		this.drawIds = true;
+		this.drawIds = false;
 		this.redBarWidth = .25; // for add remove tiles
 		// Penrose tiles
 		this.protoTiles = [];

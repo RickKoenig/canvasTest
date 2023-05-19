@@ -79,12 +79,18 @@ class Bitmap32 {
 	}
 
 	static RGBATocolor32(colObj) {
-		return 256 * (256 * (256 * colObj.a + colObj.b) + colObj.g) + colObj.r;
+		const r = Math.round(range(0, colObj.r, 255));
+		const g = Math.round(range(0, colObj.g, 255));
+		const b = Math.round(range(0, colObj.b, 255));
+		const a = colObj.a !== undefined ? Math.round(range(0, colObj.a, 255)) : 255;
+		return 256 * (256 * (256 * a + b) + g) + r;
 	}
 
 	 // #rrggbb : hex 00 to ff, no alpha
 	 // OR
 	 // rgba(r,g,b,a)
+	 // OR
+	 // CSS named color
 	static strToColor32(str, alpha = 1) {
 		var ctx = document.createElement("canvas").getContext("2d");
 		ctx.fillStyle = str;

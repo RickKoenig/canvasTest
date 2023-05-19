@@ -4,10 +4,10 @@
 
 
 // 1d
-function range(a,b,c) {
-	if (b<a)
+function range(a, b, c) {
+	if (b < a)
 		return a;
-	if (b>c)
+	if (b > c)
 		return c;
 	return b;
 }
@@ -22,7 +22,7 @@ function ilog2(t) {
 		return -1; // error, can YOU take the log of 0?
 	// there's a 1 out there somewhere
 	while (t) {
-		t>>=1;
+		t >>= 1;
 		++r;
 	}
 	return r-1;

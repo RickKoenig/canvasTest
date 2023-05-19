@@ -149,14 +149,14 @@ HatShape.factory = {
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static #numInstances = 0; // test static members
+	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return this.#numInstances;
+		return this.numInstances;
 	}
 
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
-		++MainApp.#numInstances;
+		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -266,7 +266,7 @@ class MainApp {
 
 		this.snapAngle = true;
 		this.snapTile = true;
-		this.drawIds = true;
+		this.drawIds = false;
 		this.redBarWidth = .25; // for add remove tiles
 		// Hat tiles
 		this.protoTiles = [];
