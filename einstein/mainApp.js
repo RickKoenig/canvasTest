@@ -4,29 +4,31 @@ class HatShape extends Shape {
 	static snapAmount = degToRad(22.5);
 
 	static setupPolyPnts(mir) {
+		// almost square
+		this.polyPnts = [
+			[ -.5, -.5],
+			[ -.5,  .5],
+			[  .75,  .75],
+			[ 1, .5],
+			[  .75, -.5]
+		];
+		this.nearRad = .45; // easier overlap
 		if (mir) {
-			// octagon
-			const rad = 1 / (2 * Math.sin(degToRad(22.5)));
-			this.polyPnts = [];
-			for (let e = 0; e < 8; ++e) {
-				const ang = degToRad(180 + 3 * 22.5) - e * degToRad(45) 
-				const pnt = [rad * Math.cos(ang), rad * Math.sin(ang)];
-				this.polyPnts.push(pnt);
+			this.color = "#22f";
+			// and flip the geometry
+			// first flip the points in the X
+			for (let i = 0; i < this.polyPnts.length; ++i) {
+				this.polyPnts[i][0] *= -1;
 			}
-			this.nearRad = .9 * rad; // easier overlap
+			// next reverse the array
+			this.polyPnts.reverse();
 		} else {
-			// almost square
-			this.polyPnts = [
-				[ -.75, -.75],
-				[ -.5,  .5],
-				[  .5,  .5],
-				[  .5, -.5]
-			];
-			this.nearRad = .45; // easier overlap
+			this.color = "#282";
 		}
+
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
-		this.cmdsNoNotches = [];
+		this.drawCmds = [];
 		let first = true;
 		for (let polyPnt of this.polyPnts) {
 			const cmd = {
@@ -34,13 +36,12 @@ class HatShape extends Shape {
 				kind: first ? "moveTo" : "lineTo"
 			}
 			first = false;
-			this.cmdsNoNotches.push(cmd);
+			this.drawCmds.push(cmd);
 		}
 	}
 
 	// draw commands from an array of commands
 	static runCmds(ctx, cmds) {
-		const rad = .075;
 		for (let cmd of cmds) {
 			switch (cmd.kind) {
 			case "moveTo":
@@ -48,11 +49,6 @@ class HatShape extends Shape {
 				break;
 			case "lineTo":
 				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
-				break;
-			case "arc":
-				const ang0 = cmd.ang - Math.PI / 2;
-				const ang1 = cmd.ang + Math.PI / 2;
-				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
 				break;
 			}
 		}
@@ -62,7 +58,7 @@ class HatShape extends Shape {
 	static doPath(ctx) {
 		ctx.beginPath();
         ctx.lineJoin = "round";
-		this.runCmds(ctx, this.cmdsNoNotches);
+		this.runCmds(ctx, this.drawCmds);
 		ctx.closePath();
 	}
 
@@ -72,7 +68,7 @@ class HatShape extends Shape {
 		const edgeLabels = true;
 		// fill the tile
 		this.doPath(ctx);
-		const col = "#008000";
+		const col = this.color;
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
@@ -220,7 +216,7 @@ class MainApp {
 		this.tiles = Tile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
 			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
-			this.tiles.push(new Tile(MirrorHatShape, [2, 0], degToRad(22.5)));
+			this.tiles.push(new Tile(MirrorHatShape, [3, 0], 0));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -292,7 +288,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .15;
+		this.startZoom = .2;
 	}
 
 	#userBuildUI() {

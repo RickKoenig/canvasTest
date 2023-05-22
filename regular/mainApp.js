@@ -56,7 +56,6 @@ class RegShape extends Shape {
 
 	// draw commands from an array of commands
 	static runCmds(ctx, cmds) {
-		const rad = .075;
 		for (let cmd of cmds) {
 			switch (cmd.kind) {
 			case "moveTo":

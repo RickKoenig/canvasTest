@@ -442,7 +442,6 @@ class EditTiles {
 					let sumRad = tile.shape.nearRad + hilitTile.shape.nearRad;
 					sumRad *= sumRad;
 					overlap = dist2 < sumRad;
-
 				}
 				if (!overlap) {
 					overlap = Tile.isOverlap(hilitTile, tile);
