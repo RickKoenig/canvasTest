@@ -2,18 +2,20 @@
 
 class HatShape extends Shape {
 	static snapAmount = degToRad(15);
+	static innerRad = .5;
+	static outerRad = this.innerRad / Math.cos(degToRad(30));
 
 	// a tiling of hexagons, 12 points 30 degrees
 	static hexagonCoordCenter(i, j) {
-		const ret = vec2.fromValues(0, 0);
+		const ret = vec2.fromValues(
+			  i * 2 * this.innerRad * Math.cos(degToRad(30))
+			, i * 2 * this.innerRad * Math.sin(degToRad(30)) + j * 2 * this.innerRad);
 		return ret;
 	}
 	
 	static hexagonCoord(i, j, ang = 0, doLong = false) {
-		const innerRad = .5;
-		const outerRad = innerRad / Math.cos(degToRad(30));
 		const centPos = this.hexagonCoordCenter(i, j);
-		const curRad = doLong ? outerRad : innerRad;
+		const curRad = doLong ? this.outerRad : this.innerRad;
 		const offset = vec2.fromValues(
 			curRad * Math.cos(ang)
 			, curRad * Math.sin(ang));
@@ -25,13 +27,23 @@ class HatShape extends Shape {
 	static setupPolyPnts(mir) {
 		// 13 points
 		this.polyPnts = [
-			this.hexagonCoordCenter(0, 0), 
+			this.hexagonCoordCenter(0, 0), 			
 			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
 			this.hexagonCoord(0, 0, degToRad(180), true),
 			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
-			this.hexagonCoord(0, 0, degToRad(90), false)
+			this.hexagonCoord(0, 0, degToRad(90), false),
+
+			this.hexagonCoordCenter(0, 1),
+			this.hexagonCoord(0, 1, degToRad(30), false),
+			this.hexagonCoord(0, 1, degToRad(0), true),
+			this.hexagonCoord(0, 1, degToRad(-30), false),
+			this.hexagonCoordCenter(1, 0),
+
+			this.hexagonCoord(1, 0, degToRad(270), false),
+			this.hexagonCoord(0, 0, degToRad(0), true),
+			this.hexagonCoord(0, 0, degToRad(0 - 30), false)
 		];
-		this.nearRad = .18; // easier overlap, hand picked visually
+		this.nearRad = .36 * this.innerRad; // easier overlap, hand picked visually
 		if (mir) {
 			this.color = "#22f";
 			// and flip the geometry
