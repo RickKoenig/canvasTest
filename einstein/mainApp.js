@@ -1,18 +1,37 @@
 'use strict';
 
 class HatShape extends Shape {
-	static snapAmount = degToRad(22.5);
+	static snapAmount = degToRad(15);
+
+	// a tiling of hexagons, 12 points 30 degrees
+	static hexagonCoordCenter(i, j) {
+		const ret = vec2.fromValues(0, 0);
+		return ret;
+	}
+	
+	static hexagonCoord(i, j, ang = 0, doLong = false) {
+		const innerRad = .5;
+		const outerRad = innerRad / Math.cos(degToRad(30));
+		const centPos = this.hexagonCoordCenter(i, j);
+		const curRad = doLong ? outerRad : innerRad;
+		const offset = vec2.fromValues(
+			curRad * Math.cos(ang)
+			, curRad * Math.sin(ang));
+		const ret = vec2.create();
+		vec2.add(ret, centPos, offset);
+		return ret;
+	}
 
 	static setupPolyPnts(mir) {
-		// almost square
+		// 13 points
 		this.polyPnts = [
-			[ -.5, -.5],
-			[ -.5,  .5],
-			[  .75,  .75],
-			[ 1, .5],
-			[  .75, -.5]
+			this.hexagonCoordCenter(0, 0), 
+			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
+			this.hexagonCoord(0, 0, degToRad(180), true),
+			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
+			this.hexagonCoord(0, 0, degToRad(90), false)
 		];
-		this.nearRad = .45; // easier overlap
+		this.nearRad = .18; // easier overlap, hand picked visually
 		if (mir) {
 			this.color = "#22f";
 			// and flip the geometry
@@ -25,8 +44,8 @@ class HatShape extends Shape {
 		} else {
 			this.color = "#282";
 		}
-
 		super.setupPolyPnts();
+
 		// setup draw commands for faster drawing
 		this.drawCmds = [];
 		let first = true;
@@ -64,6 +83,7 @@ class HatShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
+		ctx.strokeStyle = overlap ? "red" : "black";
 		const bounds = true; // clipping circles
 		const edgeLabels = true;
 		// fill the tile
@@ -75,9 +95,8 @@ class HatShape extends Shape {
 		ctx.fill();
 		// outline the tile
 		this.doPath(ctx);
-		const lineWidth = .025;
+		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
-		ctx.strokeStyle = overlap ? "red" : "black";
 		ctx.stroke();
 
 		if (bounds) {
@@ -86,9 +105,12 @@ class HatShape extends Shape {
 		}
 
 		if (edgeLabels) {
+			
+			ctx.beginPath();
 			ctx.moveTo(0, 0);
 			ctx.lineTo(this.nearRad, 0); // reference angle
-			ctx.stroke();
+			ctx.strokeStyle = "pink";
+			ctx.stroke(); 
 	
 			for (let i = 0; i < this.polyPnts.length; ++i) {
 				const p0 = this.polyPnts[i];
@@ -107,7 +129,7 @@ class HatShape extends Shape {
 
 	// horizontal level text
 	static drawLevel(drawPrim, id, edgeHilit = false) {
-		const radius = .075;
+		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, edgeHilit ? "yellow" : "brown"); // center
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, edgeHilit ? "black" : "white");
@@ -216,7 +238,7 @@ class MainApp {
 		this.tiles = Tile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
 			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
-			this.tiles.push(new Tile(MirrorHatShape, [3, 0], 0));
+			this.tiles.push(new Tile(MirrorHatShape, [2, 0], 0));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -241,7 +263,7 @@ class MainApp {
 			curTile.updateWorldPoly();
 		}
 		if (this.snapTile & this.tiles.length >= 2) {
-			const info = Tile.findBestSnapTile(this.tiles, idx);
+			const info = Tile.findBestSnapTile(this.tiles, idx, this.snapTileThresh);
 			if  (info) {
 				Tile.connectTiles(this.tiles[info.masterTileIdx], info.masterEdge
 					, this.tiles[info.slaveTileIdx], info.slaveEdge); // master, slave, master, slave
@@ -262,7 +284,8 @@ class MainApp {
 
 		this.snapAngle = true;
 		this.snapTile = true;
-		this.drawIds = false;
+		this.snapTileThresh = .03;
+		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
 		// Hat tiles
 		this.protoTiles = [];
@@ -288,7 +311,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .2;
+		this.startZoom = .6;
 	}
 
 	#userBuildUI() {
@@ -449,13 +472,13 @@ class MainApp {
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;
-			const info = Tile.findBestSnapTile(this.tiles, curSelIdx);
+			const info = Tile.findBestSnapTile(this.tiles, curSelIdx, this.snapTileThresh);
 			if (info) {
 				infoStr += "\n mastertile = " + info.masterTileIdx
 				infoStr += "\n masteredge = " + info.masterEdge
 				infoStr += "\n slavetile = " + info.slaveTileIdx
 				infoStr += "\n slaveedge = " + info.slaveEdge
-				infoStr	+= "\nbestdist = " + info.bestDist2.toFixed(2);
+				infoStr	+= "\nbestdist = " + info.bestDist2.toFixed(3);
 			}
 		}
 		this.eles.textInfoLog.innerText = infoStr;

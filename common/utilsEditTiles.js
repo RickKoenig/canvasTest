@@ -203,8 +203,7 @@ class Tile {
 	}
 
 	// find best connection between tiles or null if none
-	static findBestSnapTile(tiles, slaveIdx) {
-		const snapDistThresh = .3;
+	static findBestSnapTile(tiles, slaveIdx, snapDistThresh = .3) {
 		const sTile = tiles[slaveIdx]; //slave
 		let bestTileIdx = -1;
 		let bestSlaveEdge;
@@ -429,6 +428,7 @@ class EditTiles {
 		// first pass, see which tiles overlap hilighted tile
 		const markOverlap = Array(this.tiles.length);
 		const hilitPntIdx = this.getHilitIdx();
+		const nearRadOnly = false; // proper way is this is false
 		if (hilitPntIdx >= 0 && doOverlap) {
 			let someOverlap = false;
 			const hilitTile = this.tiles[hilitPntIdx];
@@ -443,7 +443,7 @@ class EditTiles {
 					sumRad *= sumRad;
 					overlap = dist2 < sumRad;
 				}
-				if (!overlap) {
+				if (!overlap && !nearRadOnly) {
 					overlap = Tile.isOverlap(hilitTile, tile);
 				}
 				if (overlap) {
