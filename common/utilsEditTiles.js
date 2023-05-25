@@ -51,7 +51,7 @@ class Tile {
 		this.updateWorldPoly();
 	}
 
-	static loadTiles(slot, factory) {
+	static loadTiles(slot, factory, TileKind = Tile) {
 		const tiles = [];
 		const penTilesStr = localStorage.getItem(slot);
 		let penTilesObj = [];
@@ -69,7 +69,7 @@ class Tile {
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
-				tiles.push(new Tile(shapeObj, pos, rot));
+				tiles.push(new TileKind(shapeObj, pos, rot));
 			}
 		}
 		return tiles;
@@ -119,6 +119,11 @@ class Tile {
 	}
 
 	isInside(userMouse) {
+		const br = this.shape.boundRadius;
+		const sd = vec2.sqrDist(userMouse, this.pos);
+		if (sd > br * br) {
+			return false; // early out
+		}
 		return penetrateConvexPoly(this.worldPolyPnts, userMouse) > 0;
 	}	
 
@@ -265,7 +270,7 @@ class Tile {
 // drag tiles around
 class EditTiles {
 	constructor(tiles) {
-		this.tiles = tiles; // Tile
+		this.tiles = tiles; // array of Tiles
 		this.curPntIdx = -1; // current select point for edit
 		this.hilitPntIdx = -1; // hover over
 		this.startRot = 0;

@@ -43,7 +43,7 @@ class HatShape extends Shape {
 			this.hexagonCoord(0, 0, degToRad(0), true),
 			this.hexagonCoord(0, 0, degToRad(0 - 30), false)
 		];
-		this.nearRad = .36 * this.innerRad; // easier overlap, hand picked visually
+		this.nearRad = .45 * this.innerRad; // easier overlap, hand picked visually
 		if (mir) {
 			this.color = "#22f";
 			// and flip the geometry
@@ -176,6 +176,23 @@ HatShape.factory = {
 	hatMirror: MirrorHatShape
 }
 
+class HatTile extends Tile {
+	isInside(userMouse) {
+		const br = this.shape.boundRadius;
+		const sd = vec2.sqrDist(userMouse, this.pos);
+		if (sd > br * br) {
+			return false; // early out
+		}
+		return true;//penetrateConvexPoly(this.worldPolyPnts, userMouse) > 0;
+	}	
+
+	clone() {
+		const ret = new HatTile(this.shape, this.pos, this.rot);
+		return ret;
+	}
+
+}
+
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
@@ -247,10 +264,10 @@ class MainApp {
 	}
 
 	#loadHatTiles(slot, starter) {
-		this.tiles = Tile.loadTiles(slot, HatShape.factory);
+		this.tiles = Tile.loadTiles(slot, HatShape.factory, HatTile);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new Tile(OrigHatShape, [0, 0], 0));
-			this.tiles.push(new Tile(MirrorHatShape, [2, 0], 0));
+			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0));
+			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -294,16 +311,16 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.snapAngle = true;
-		this.snapTile = true;
+		this.snapAngle = false;
+		this.snapTile = false;
 		this.snapTileThresh = .03;
 		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
 		// Hat tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new Tile(OrigHatShape, [0, 0], 0));
-		this.protoTiles.push(new Tile(MirrorHatShape, [0, 0], 0));
+		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0));
+		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0));
 		this.#loadHatTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc

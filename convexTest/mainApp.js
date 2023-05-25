@@ -196,7 +196,7 @@ class MainApp {
 	#userUpdateInfo() {
 		let countStr = "Dirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
-		countStr += "\nInside = " + this.inside;
+		countStr += "\nInside[0] = " + this.inside;
 		//countStr += "\nNum inside = " + this.isectPoly[0][[0]];
 		countStr += "\nPoly points = " + this.isectPoly.length;
 		countStr += "\nPoly area = " + calcPolyArea(this.isectPoly).toFixed(3); 
