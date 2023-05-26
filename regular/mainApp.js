@@ -268,11 +268,6 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	// generate more tiles
-	#deflateTiles() {
-		console.log("deflate reg tiles");
-	}
-
 	#loadRegTiles(slot, starter) {
 		this.tiles = Tile.loadTiles(slot, RegShape.factory);
 		if (starter && !this.tiles.length) {
@@ -398,11 +393,7 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
 		makeEle(this.vp, "span", null, "marg", "'Shift' key to clone select");
-		// deflate tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		this.eles.decompose = makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
-		this.eles.decompose.disabled = true;
 		// clear duplicates
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearRegDups.bind(this));

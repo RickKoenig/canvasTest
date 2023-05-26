@@ -2,26 +2,40 @@
 
 class HatShape extends Shape {
 	static snapAmount = degToRad(15);
-	static innerRad = .5;
-	static outerRad = this.innerRad / Math.cos(degToRad(30));
+	static hexInnerRad = .5;
+	static outerRad = this.hexInnerRad / Math.cos(degToRad(30));
 
 	// a tiling of hexagons, 12 points 30 degrees
 	static hexagonCoordCenter(i, j) {
 		const ret = vec2.fromValues(
-			  i * 2 * this.innerRad * Math.cos(degToRad(30))
-			, i * 2 * this.innerRad * Math.sin(degToRad(30)) + j * 2 * this.innerRad);
+			  i * 2 * this.hexInnerRad * Math.cos(degToRad(30))
+			, i * 2 * this.hexInnerRad * Math.sin(degToRad(30)) + j * 2 * this.hexInnerRad);
 		return ret;
 	}
 	
 	static hexagonCoord(i, j, ang = 0, doLong = false) {
 		const centPos = this.hexagonCoordCenter(i, j);
-		const curRad = doLong ? this.outerRad : this.innerRad;
+		const curRad = doLong ? this.outerRad : this.hexInnerRad;
 		const offset = vec2.fromValues(
 			curRad * Math.cos(ang)
 			, curRad * Math.sin(ang));
 		const ret = vec2.create();
 		vec2.add(ret, centPos, offset);
 		return ret;
+	}
+
+	static makeCmds(pnts) {
+		const cmds = [];
+		let first = true;
+		for (let polyPnt of pnts) {
+			const cmd = {
+				pnt: polyPnt,
+				kind: first ? "moveTo" : "lineTo"
+			}
+			first = false;
+			cmds.push(cmd);
+		}
+		return cmds;
 	}
 
 	static setupPolyPnts(mir) {
@@ -43,7 +57,61 @@ class HatShape extends Shape {
 			this.hexagonCoord(0, 0, degToRad(0), true),
 			this.hexagonCoord(0, 0, degToRad(0 - 30), false)
 		];
-		this.nearRad = .45 * this.innerRad; // easier overlap, hand picked visually
+
+		// 4 five sided convex polygons for inside and overlap tests
+		const pnts0 = [
+			this.hexagonCoordCenter(0, 0), 			
+			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
+			this.hexagonCoord(0, 0, degToRad(180), true),
+			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
+			this.hexagonCoord(0, 0, degToRad(90), false)
+		];
+		const pnts1 = [
+			this.hexagonCoordCenter(0, 0),
+			this.hexagonCoord(0, 0, degToRad(90), false),
+			this.hexagonCoord(0, 0, degToRad(60), true),
+			this.hexagonCoord(0, 0, degToRad(0), true),
+			this.hexagonCoord(0, 0, degToRad(-30), false)
+		];
+		const pnts2 = [
+			this.hexagonCoordCenter(1, 0),
+			this.hexagonCoord(1, 0, degToRad(270), false),
+			this.hexagonCoord(1, 0, degToRad(270 - 30), true),
+			this.hexagonCoord(1, 0, degToRad(180), true),
+			this.hexagonCoord(1, 0, degToRad(180 - 30), false)
+		];
+		const pnts3 = [
+			this.hexagonCoordCenter(0, 1),
+			this.hexagonCoord(0, 1, degToRad(30), false),
+			this.hexagonCoord(0, 1, degToRad(0), true),
+			this.hexagonCoord(0, 1, degToRad(-60), true),
+			this.hexagonCoord(0, 1, degToRad(270), false)
+		];
+		this.convexPnts = [
+			pnts0, pnts1, pnts2, pnts3
+		];
+
+		const numConvexPolys = this.convexPnts.length;
+		const numConvexSides = pnts0.length;
+		 // scratch for isInside()
+		this.worldConvexInside = Array(numConvexSides);
+		for (let i = 0; i < numConvexSides; ++i) {
+			this.worldConvexInside[i] = vec2.create();
+		}
+		// scratch for overlap four sets of 5 points
+		// in world coords for 2 hat tiles
+		this.worldOverlapA = Array(numConvexPolys);
+		this.worldOverlapB = Array(numConvexPolys);
+		for (let i = 0; i < numConvexPolys; ++i) {
+			const A = this.worldOverlapA[i] = Array(numConvexSides);
+			const B = this.worldOverlapB[i] = Array(numConvexSides);
+			for (let j = 0; j < numConvexSides; ++j) {
+				A[j] = vec2.create();
+				B[j] = vec2.create();
+			}
+		}
+
+		this.nearRad = .45 * this.hexInnerRad; // easier overlap, number hand picked visually
 		if (mir) {
 			this.color = "#22f";
 			// and flip the geometry
@@ -56,19 +124,22 @@ class HatShape extends Shape {
 		} else {
 			this.color = "#282";
 		}
-		super.setupPolyPnts();
+		const centerOffset = super.setupPolyPnts();
+		for (let pnts of this.convexPnts) {
+			for (let pnt of pnts) {
+				if (mir) {
+					pnt[0] *= -1;
+				}
+				vec2.sub(pnt, pnt, centerOffset);
+			}
+			if (mir) {
+				pnts.reverse();
+			}
+		}
 
 		// setup draw commands for faster drawing
-		this.drawCmds = [];
-		let first = true;
-		for (let polyPnt of this.polyPnts) {
-			const cmd = {
-				pnt: polyPnt,
-				kind: first ? "moveTo" : "lineTo"
-			}
-			first = false;
-			this.drawCmds.push(cmd);
-		}
+		this.drawCmds = this.makeCmds(this.polyPnts);
+		this.convexCmds = this.makeCmds(this.convexPnts[0]);
 	}
 
 	// draw commands from an array of commands
@@ -86,10 +157,10 @@ class HatShape extends Shape {
 	}
 
 	// draw the outline of a tile
-	static doPath(ctx) {
+	static doPath(ctx, cmds) {
 		ctx.beginPath();
         ctx.lineJoin = "round";
-		this.runCmds(ctx, this.drawCmds);
+		this.runCmds(ctx, cmds);
 		ctx.closePath();
 	}
 
@@ -99,31 +170,32 @@ class HatShape extends Shape {
 		const bounds = true; // clipping circles
 		const edgeLabels = true;
 		// fill the tile
-		this.doPath(ctx);
+		this.doPath(ctx, this.drawCmds);
 		const col = this.color;
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
 		// outline the tile
-		this.doPath(ctx);
+		this.doPath(ctx, this.drawCmds);
 		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.stroke();
-
+		// draw some convex five sided polys
+		ctx.strokeStyle = "cyan";
+		this.doPath(ctx, this.convexCmds);
+		ctx.lineWidth = .02;
+		ctx.stroke();
 		if (bounds) {
 			drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
 			drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
 		}
-
 		if (edgeLabels) {
-			
 			ctx.beginPath();
 			ctx.moveTo(0, 0);
 			ctx.lineTo(this.nearRad, 0); // reference angle
 			ctx.strokeStyle = "pink";
 			ctx.stroke(); 
-	
 			for (let i = 0; i < this.polyPnts.length; ++i) {
 				const p0 = this.polyPnts[i];
 				const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
@@ -177,20 +249,93 @@ HatShape.factory = {
 }
 
 class HatTile extends Tile {
-	isInside(userMouse) {
-		const br = this.shape.boundRadius;
-		const sd = vec2.sqrDist(userMouse, this.pos);
-		if (sd > br * br) {
-			return false; // early out
-		}
-		return true;//penetrateConvexPoly(this.worldPolyPnts, userMouse) > 0;
-	}	
+	
+	constructor(shape, pos, rot) {
+		super(shape, pos, rot);
+	}
 
 	clone() {
 		const ret = new HatTile(this.shape, this.pos, this.rot);
 		return ret;
 	}
 
+	isInside(userMouse) {
+		const br = this.shape.boundRadius;
+		const sd = vec2.sqrDist(userMouse, this.pos);
+		if (sd > br * br) {
+			return false; // early out
+		}
+		// see if inside one of four 5 sided convex polys
+		const thresh = -.01;
+		for (let convexPoly of this.shape.convexPnts) {
+			for (let i = 0; i < convexPoly.length; ++i) {
+				const pntO = convexPoly[i];
+				const pntW = this.shape.worldConvexInside[i]; // reference
+				vec2.rot(pntW, pntO, this.rot);
+				vec2.add(pntW, pntW, this.pos);
+			}
+			const pen = penetrateConvexPoly(this.shape.worldConvexInside, userMouse);
+			if (pen > thresh) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	isOverlap(tileB, thresh = .01) {
+		const tileA = this;
+		if (tileA === tileB) {
+			return false; // can't overlap over self
+		}
+		const td = vec2.sqrDist(tileA.pos, tileB.pos);
+		if (td < tileA.shape.nearRad * tileA.shape.nearRad) {
+			return true; // early in
+		}
+		if (!calcIntsectBoundcircle(tileA.shape.boundRadius, tileA.pos
+				, tileB.shape.boundRadius, tileB.pos)) {
+			return false; // early out
+		}
+		// move everything to world coords
+		const numConvexPolys = tileA.shape.convexPnts.length;
+		const pnts0 = tileA.shape.convexPnts[0];
+		const numConvexSides = pnts0.length;
+		for (let i = 0; i < numConvexPolys; ++i) {
+			const Ao = tileA.shape.convexPnts[i];
+			const Bo = tileB.shape.convexPnts[i];
+			const Aw = tileA.shape.worldOverlapA[i];
+			const Bw = tileB.shape.worldOverlapB[i];
+			for (let j = 0; j < numConvexSides; ++j) {
+				let pntO = Ao[j];
+				let pntW = Aw[j]; // reference
+				vec2.rot(pntW, pntO, tileA.rot);
+				vec2.add(pntW, pntW, tileA.pos);
+				pntO = Bo[j];
+				pntW = Bw[j]; // reference
+				vec2.rot(pntW, pntO, tileB.rot);
+				vec2.add(pntW, pntW, tileB.pos);
+			}
+		}
+
+		const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[0], tileB.shape.worldOverlapB[0]);
+		const areaIsect = calcPolyArea(isectPoly);
+		MainApp.areaIsect = areaIsect;
+		return areaIsect > thresh;
+
+
+		//return true;
+		// proper way
+		//return calcPolyIntsect(polyA, polyB);
+		/*
+		const isectPoly = calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
+			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
+		const areaIsect = calcPolyArea(isectPoly);
+		const totalArea = tileA.shape.area + tileB.shape.area;
+		return areaIsect > thresh * totalArea;*/
+
+
+
+		return true; // remove later
+	}
 }
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
@@ -264,7 +409,7 @@ class MainApp {
 	}
 
 	#loadHatTiles(slot, starter) {
-		this.tiles = Tile.loadTiles(slot, HatShape.factory, HatTile);
+		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
 			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0));
 			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0));
@@ -311,8 +456,8 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.snapAngle = false;
-		this.snapTile = false;
+		this.snapAngle = true;
+		this.snapTile = true;
 		this.snapTileThresh = .03;
 		this.drawIds = true;
 		this.redBarWidth = .25; // for add remove tiles
@@ -340,7 +485,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .6;
+		this.startZoom = .3;
 	}
 
 	#userBuildUI() {
@@ -498,6 +643,7 @@ class MainApp {
 		infoStr += "\n Number of tiles = " + this.tiles.length;
 		const keyCodes = keyTable.keyCodes;
 		infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
+		infoStr += "\n areaIsect = " + MainApp.areaIsect;
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

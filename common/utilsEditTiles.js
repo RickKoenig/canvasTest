@@ -8,6 +8,7 @@ class Shape {
 	// rotFactor: for UI rotate object with drag mouse
 	// boundRadius: smallest circle containing all points
 	// area: area of poly
+	// return offset of points to center them
 	static setupPolyPnts() {
 		// center points
 		const avg = vec2.create();
@@ -37,6 +38,7 @@ class Shape {
 			const ang = Math.atan2(anEdge[1], anEdge[0]);
 			this.edgeAngles[i] = ang;
 		}
+		return avg;
 	}
 }
 
@@ -46,12 +48,12 @@ class Tile {
 		this.shape = shape;
 		this.pos = vec2.clone(pos);
 		this.rot = normAngRadSigned(rot);
-		this.kind = shape.kind; // for serialization
+		this.kind = shape.kind; // string for serialization
 		this.createWorldPoly();
 		this.updateWorldPoly();
 	}
 
-	static loadTiles(slot, factory, TileKind = Tile) {
+	static loadTiles(slot, factory) {
 		const tiles = [];
 		const penTilesStr = localStorage.getItem(slot);
 		let penTilesObj = [];
@@ -69,7 +71,7 @@ class Tile {
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
-				tiles.push(new TileKind(shapeObj, pos, rot));
+				tiles.push(new this(shapeObj, pos, rot)); // create the callers class
 			}
 		}
 		return tiles;
@@ -132,7 +134,8 @@ class Tile {
 			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
 	}
 
-	static isOverlap(tileA, tileB, thresh = .01) {
+	isOverlap(tileB, thresh = .01) {
+		const tileA = this;
 		if (tileA === tileB) {
 			return false; // can't overlap over self
 		} 
@@ -449,7 +452,7 @@ class EditTiles {
 					overlap = dist2 < sumRad;
 				}
 				if (!overlap && !nearRadOnly) {
-					overlap = Tile.isOverlap(hilitTile, tile);
+					overlap = hilitTile.isOverlap(tile);
 				}
 				if (overlap) {
 					someOverlap = true;
