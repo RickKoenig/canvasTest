@@ -3,7 +3,8 @@
 class HatShape extends Shape {
 	static snapAmount = degToRad(15);
 	static hexInnerRad = .5;
-	static outerRad = this.hexInnerRad / Math.cos(degToRad(30));
+	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
+	static debug = true;
 
 	// a tiling of hexagons, 12 points 30 degrees
 	static hexagonCoordCenter(i, j) {
@@ -15,7 +16,7 @@ class HatShape extends Shape {
 	
 	static hexagonCoord(i, j, ang = 0, doLong = false) {
 		const centPos = this.hexagonCoordCenter(i, j);
-		const curRad = doLong ? this.outerRad : this.hexInnerRad;
+		const curRad = doLong ? this.hexOuterRad : this.hexInnerRad;
 		const offset = vec2.fromValues(
 			curRad * Math.cos(ang)
 			, curRad * Math.sin(ang));
@@ -125,6 +126,7 @@ class HatShape extends Shape {
 			this.color = "#282";
 		}
 		const centerOffset = super.setupPolyPnts();
+		// adjust all the 4 pentagon convex polys
 		for (let pnts of this.convexPnts) {
 			for (let pnt of pnts) {
 				if (mir) {
@@ -139,20 +141,9 @@ class HatShape extends Shape {
 
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
-		this.convexCmds = this.makeCmds(this.convexPnts[0]);
-	}
-
-	// draw commands from an array of commands
-	static runCmds(ctx, cmds) {
-		for (let cmd of cmds) {
-			switch (cmd.kind) {
-			case "moveTo":
-				ctx.moveTo(cmd.pnt[0], cmd.pnt[1]);
-				break;
-			case "lineTo":
-				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
-				break;
-			}
+		if (this.debug) {
+			// draw one of four convex pentagons
+			this.convexCmds = this.makeCmds(this.convexPnts[2]);
 		}
 	}
 
@@ -169,6 +160,7 @@ class HatShape extends Shape {
 		ctx.strokeStyle = overlap ? "red" : "black";
 		const bounds = true; // clipping circles
 		const edgeLabels = true;
+
 		// fill the tile
 		this.doPath(ctx, this.drawCmds);
 		const col = this.color;
@@ -176,37 +168,43 @@ class HatShape extends Shape {
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
+
 		// outline the tile
 		this.doPath(ctx, this.drawCmds);
 		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.stroke();
-		// draw some convex five sided polys
-		ctx.strokeStyle = "cyan";
-		this.doPath(ctx, this.convexCmds);
-		ctx.lineWidth = .02;
-		ctx.stroke();
-		if (bounds) {
-			drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
-			drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
-		}
-		if (edgeLabels) {
-			ctx.beginPath();
-			ctx.moveTo(0, 0);
-			ctx.lineTo(this.nearRad, 0); // reference angle
-			ctx.strokeStyle = "pink";
-			ctx.stroke(); 
-			for (let i = 0; i < this.polyPnts.length; ++i) {
-				const p0 = this.polyPnts[i];
-				const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
-				const avg = vec2.create();
-				vec2.add(avg, p0, p1);
-				const closer = .875;
-				vec2.scale(avg, avg, .5 * closer); // move text in closer to center
-				ctx.save();
-				ctx.translate(avg[0], avg[1]);
-				this.drawLevel(drawPrim, i, true);
-				ctx.restore();
+
+		if (this.debug) {
+			// draw some convex five sided polys
+			ctx.strokeStyle = "cyan";
+			this.doPath(ctx, this.convexCmds);
+			ctx.lineWidth = .02;
+			ctx.stroke();
+
+			// debugging stuff
+			if (bounds) {
+				drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
+				drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
+			}
+			if (edgeLabels) {
+				ctx.beginPath();
+				ctx.moveTo(0, 0);
+				ctx.lineTo(this.nearRad, 0); // reference angle
+				ctx.strokeStyle = "pink";
+				ctx.stroke(); 
+				for (let i = 0; i < this.polyPnts.length; ++i) {
+					const p0 = this.polyPnts[i];
+					const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
+					const avg = vec2.create();
+					vec2.add(avg, p0, p1);
+					const closer = .875;
+					vec2.scale(avg, avg, .5 * closer); // move text in closer to center
+					ctx.save();
+					ctx.translate(avg[0], avg[1]);
+					this.drawLevel(drawPrim, i, true);
+					ctx.restore();
+				}
 			}
 		}
 	}
@@ -249,11 +247,7 @@ HatShape.factory = {
 }
 
 class HatTile extends Tile {
-	
-	constructor(shape, pos, rot) {
-		super(shape, pos, rot);
-	}
-
+	// TODO: can this be used from the base class
 	clone() {
 		const ret = new HatTile(this.shape, this.pos, this.rot);
 		return ret;
@@ -315,32 +309,27 @@ class HatTile extends Tile {
 				vec2.add(pntW, pntW, tileB.pos);
 			}
 		}
-
-		const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[0], tileB.shape.worldOverlapB[0]);
-		const areaIsect = calcPolyArea(isectPoly);
-		MainApp.areaIsect = areaIsect;
-		return areaIsect > thresh;
-
-
-		//return true;
-		// proper way
-		//return calcPolyIntsect(polyA, polyB);
-		/*
-		const isectPoly = calcPolyIntsectBoundcircle(tileA.worldPolyPnts, tileA.shape.boundRadius, tileA.pos
-			, tileB.worldPolyPnts, tileB.shape.boundRadius, tileB.pos);
-		const areaIsect = calcPolyArea(isectPoly);
-		const totalArea = tileA.shape.area + tileB.shape.area;
-		return areaIsect > thresh * totalArea;*/
-
-
-
-		return true; // remove later
+		// check all convex polys
+		for (let i = 0; i < numConvexPolys; ++i) {
+			for (let j = 0; j < numConvexPolys; ++j) {
+				const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[i], tileB.shape.worldOverlapB[j]);
+				const areaIsect = calcPolyArea(isectPoly);
+				MainApp.areaIsect += areaIsect;
+				if (MainApp.areaIsect > thresh) {
+					return true;
+				}
+		
+			}
+		}
+		// nothing
+		return false;
 	}
 }
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
+	static areaIsect = 0;
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
 		return this.numInstances;
@@ -621,6 +610,7 @@ class MainApp {
 	}
 
 	#userDraw() {
+		MainApp.areaIsect = 0;
 		const options = {
 			drawIds: this.drawIds
 		};
@@ -643,7 +633,7 @@ class MainApp {
 		infoStr += "\n Number of tiles = " + this.tiles.length;
 		const keyCodes = keyTable.keyCodes;
 		infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
-		infoStr += "\n areaIsect = " + MainApp.areaIsect;
+		infoStr += "\n areaIsect = " + MainApp.areaIsect.toFixed(2);
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

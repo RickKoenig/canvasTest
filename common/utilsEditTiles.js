@@ -1,6 +1,6 @@
 'use strict';
 
-// a generic poly tile, abstract, needs a draw and point
+// a generic poly tile, abstract, needs a draw and points
 // static
 class Shape {
 	// called only once, center and TODO: calc N and D
@@ -40,6 +40,26 @@ class Shape {
 		}
 		return avg;
 	}
+
+	// draw commands from an array of commands
+	static runCmds(ctx, cmds) {
+		const rad = .075;
+		for (let cmd of cmds) {
+			switch (cmd.kind) {
+			case "moveTo":
+				ctx.moveTo(cmd.pnt[0], cmd.pnt[1]);
+				break;
+			case "lineTo":
+				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
+				break;
+			case "arc":
+				const ang0 = cmd.ang - Math.PI / 2;
+				const ang1 = cmd.ang + Math.PI / 2;
+				ctx.arc(cmd.pnt[0], cmd.pnt[1], rad, ang0, ang1, cmd.ccw);
+				break;
+			}
+		}
+	}
 }
 
 // has a Shape, not static
@@ -71,7 +91,7 @@ class Tile {
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
-				tiles.push(new this(shapeObj, pos, rot)); // create the callers class
+				tiles.push(new this(shapeObj, pos, rot)); // WOW, 'new this' create the callers class
 			}
 		}
 		return tiles;

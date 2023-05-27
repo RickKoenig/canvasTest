@@ -2,7 +2,6 @@
 
 // math helpers
 
-
 // 1d
 function range(a, b, c) {
 	if (b < a)

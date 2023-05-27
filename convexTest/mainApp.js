@@ -7,9 +7,6 @@ class SimpleShape1 extends Shape {
 			[-1, 0],
 			[0, 3],
 			[1, 0]
-/*			[-.25, 0],
-			[0, .75],
-			[.25, 0] */
 		];
 		super.setupPolyPnts();
 	}
@@ -126,16 +123,10 @@ class MainApp {
 		this.tiles.push(new Tile(SimpleShape1, [0, 0], degToRad(0)));
 		this.tiles.push(new Tile(SimpleShape2, [1, 0], degToRad(0)));
 		this.editOptions = {
-			////snapMode: true,
-			//rotStep: 0,
-			//delDeselect: false,
 			deselectFun: this.#deselectFun.bind(this),
-			//moveFun: null, //this.#moveFun.bind(this),
-			//doMove: true,
 			moveToTop: false
 		};
 		this.editTiles = new EditTiles(this.tiles, .0625, degToRad(22.5)); // snap amount if snapMode == true
-		//this.testPoly = [[-.3,-.2], [-.1, 0], [.3,-.3]];
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
@@ -197,7 +188,6 @@ class MainApp {
 		let countStr = "Dirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		countStr += "\nInside[0] = " + this.inside;
-		//countStr += "\nNum inside = " + this.isectPoly[0][[0]];
 		countStr += "\nPoly points = " + this.isectPoly.length;
 		countStr += "\nPoly area = " + calcPolyArea(this.isectPoly).toFixed(3); 
 		this.eles.textInfoLog.innerText = countStr;

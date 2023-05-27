@@ -54,20 +54,6 @@ class RegShape extends Shape {
 		}
 	}
 
-	// draw commands from an array of commands
-	static runCmds(ctx, cmds) {
-		for (let cmd of cmds) {
-			switch (cmd.kind) {
-			case "moveTo":
-				ctx.moveTo(cmd.pnt[0], cmd.pnt[1]);
-				break;
-			case "lineTo":
-				ctx.lineTo(cmd.pnt[0], cmd.pnt[1]);
-				break;
-			}
-		}
-	}
-
 	// draw the outline of a tile
 	static doPath(ctx) {
 		ctx.beginPath();
