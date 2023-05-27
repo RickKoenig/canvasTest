@@ -163,7 +163,8 @@ class HatShape extends Shape {
 
 		// fill the tile
 		this.doPath(ctx, this.drawCmds);
-		const col = this.color;
+		//const col = this.color;
+		const col = options.color;
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
@@ -247,9 +248,25 @@ HatShape.factory = {
 }
 
 class HatTile extends Tile {
-	// TODO: can this be used from the base class
+
+	static colorTable = [
+		"#000",
+		"#00f",
+		"#0f0",
+		"#0ff",
+		"#f00",
+		"#f0f",
+		"#ff0",
+		"#fff"
+	];
+	constructor(shape, pos, rot, colorIdx) {
+		super(shape, pos, rot);
+		this.colorIdx = colorIdx;
+	}
+
+	// TODO: Can this be implemented from the base class?
 	clone() {
-		const ret = new HatTile(this.shape, this.pos, this.rot);
+		const ret = new HatTile(this.shape, this.pos, this.rot, this.colorIdx);
 		return ret;
 	}
 
@@ -323,6 +340,14 @@ class HatTile extends Tile {
 		}
 		// nothing
 		return false;
+	}
+
+	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
+		if (!options) {
+			options = {};
+		}
+		options.color = HatTile.colorTable[this.colorIdx];
+		super.draw(drawPrim, id, doHilit, options, overlap);
 	}
 }
 
@@ -400,8 +425,8 @@ class MainApp {
 	#loadHatTiles(slot, starter) {
 		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0));
-			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0));
+			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0, 4));
+			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0, 7));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -453,8 +478,8 @@ class MainApp {
 		// Hat tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0));
-		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0));
+		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0, 1));
+		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0, 3));
 		this.#loadHatTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
@@ -482,12 +507,25 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
 
-		makeEle(this.vp, "span", null, "marg", "Rotate Tiles");
+		makeEle(this.vp, "span", null, "marg", "Rotate Tiles:");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Left Right Arrow Keys");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "While Selected");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
 
+		makeEle(this.vp, "span", null, "marg", "Color Change:");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Up Down Arrow Keys");
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "While Hilighted");
+
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "br");
+
+		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
+		makeEle(this.vp, "span", null, "marg", "'Shift' key to clone select");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 
@@ -506,7 +544,6 @@ class MainApp {
 		this.eles.snapTile.checked = this.snapTile;
 
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
 
 		makeEle(this.vp, "span", null, "marg", "Draw Center Ids");
 		this.eles.drawIds = makeEle(this.vp, "input", "draw ids", null, "ho", (val) => {
@@ -515,10 +552,6 @@ class MainApp {
 		}, "checkbox");
 		this.eles.drawIds.checked = this.drawIds;
 
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "'Del' key to delete hilited tiles");
-		makeEle(this.vp, "span", null, "marg", "'Shift' key to clone select");
 		// deflate tiles
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
@@ -628,12 +661,12 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let infoStr = "Dirty Count = " + this.dirtyCount;
-		infoStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		//let infoStr = "Dirty Count = " + this.dirtyCount;
+		let infoStr = "Avg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
-		const keyCodes = keyTable.keyCodes;
-		infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
-		infoStr += "\n areaIsect = " + MainApp.areaIsect.toFixed(2);
+		//const keyCodes = keyTable.keyCodes;
+		//infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
+		//infoStr += "\n areaIsect = " + MainApp.areaIsect.toFixed(2);
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

@@ -91,7 +91,8 @@ class Tile {
 				}
 				const pos = vec2.clone(penTileObj.pos);
 				const rot = penTileObj.rot;
-				tiles.push(new this(shapeObj, pos, rot)); // WOW, 'new this' create the callers class
+				const colorIdx = penTileObj.colorIdx !== undefined ? penTileObj.colorIdx : 0; // only used on hat tiles
+				tiles.push(new this(shapeObj, pos, rot, colorIdx)); // WOW, 'new this' create the callers class
 			}
 		}
 		return tiles;
