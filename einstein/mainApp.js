@@ -221,6 +221,10 @@ class HatShape extends Shape {
 
 // shape 1
 class OrigHatShape extends HatShape {
+	static colorTable = [
+		"#000",
+		"#00f"
+	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(false); // default
 	}
@@ -232,6 +236,10 @@ class OrigHatShape extends HatShape {
 
 // shape 2
 class MirrorHatShape extends HatShape {
+	static colorTable = [
+		"#0f0",
+		"#0ff"
+	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(true); // mirror
 	}
@@ -249,16 +257,6 @@ HatShape.factory = {
 
 class HatTile extends Tile {
 
-	static colorTable = [
-		"#000",
-		"#00f",
-		"#0f0",
-		"#0ff",
-		"#f00",
-		"#f0f",
-		"#ff0",
-		"#fff"
-	];
 	constructor(shape, pos, rot, colorIdx) {
 		super(shape, pos, rot);
 		this.colorIdx = colorIdx;
@@ -346,7 +344,7 @@ class HatTile extends Tile {
 		if (!options) {
 			options = {};
 		}
-		options.color = HatTile.colorTable[this.colorIdx];
+		options.color = this.shape.colorTable[this.colorIdx];
 		super.draw(drawPrim, id, doHilit, options, overlap);
 	}
 }
@@ -425,8 +423,8 @@ class MainApp {
 	#loadHatTiles(slot, starter) {
 		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0, 4));
-			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0, 7));
+			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0, 1));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -478,8 +476,8 @@ class MainApp {
 		// Hat tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0, 1));
-		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0, 3));
+		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0, 0));
+		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0, 0));
 		this.#loadHatTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
@@ -517,7 +515,7 @@ class MainApp {
 
 		makeEle(this.vp, "span", null, "marg", "Color Change:");
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "Up Down Arrow Keys");
+		makeEle(this.vp, "span", null, "marg", "Up Down Arrow Keys or 'c'");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "While Hilighted");
 
@@ -596,6 +594,7 @@ class MainApp {
 		const key = this.input.keyboard.key;
 		const keyCodes = keyTable.keyCodes;
 		this.editOptions.rotStep = 0;
+		let colorChange = 0;
 		switch(key) {
 		case keyCodes.RIGHT:
 			this.editOptions.rotStep -= HatShape.snapAmount; // clockwise
@@ -607,6 +606,27 @@ class MainApp {
 			this.editTiles.deleteHilited();
 			this.dirty = true;
 			break;
+		case keyCodes.UP:
+			--colorChange;
+			break;
+		case keyCodes.DOWN:
+		case "c".charCodeAt(0):
+			++colorChange;
+			break;
+		}
+		if (colorChange) {
+			const hilitIdx = this.editTiles.getHilitIdx();
+			if (hilitIdx >= 0) {
+				const tile = this.tiles[hilitIdx];
+				const len = tile.shape.colorTable.length;
+				tile.colorIdx += colorChange;
+				if (tile.colorIdx < 0) {
+					tile.colorIdx += len;
+				} else if (tile.colorIdx >= len) {
+					tile.colorIdx -= len;
+				}
+				this.dirty = true;
+			}
 		}
 		this.editOptions.cloneSelect = this.input.keyboard.keystate[keyCodes.SHIFT];
 
