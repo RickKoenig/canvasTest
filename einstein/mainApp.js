@@ -138,6 +138,14 @@ class HatShape extends Shape {
 				pnts.reverse();
 			}
 		}
+		// mark center of hexagons
+		const numCentHex = 3;
+		//this.hexagonCoordCenter(0, 0),
+		this.centHex = Array(numCentHex);
+		for (let i = 0; i < numCentHex; ++i) {
+			const pnt = vec2.fromValues(0, 0);
+			this.centHex[i] = pnt;
+		}
 
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
@@ -158,14 +166,15 @@ class HatShape extends Shape {
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		ctx.strokeStyle = overlap ? "red" : "black";
-		const bounds = true; // clipping circles
-		const edgeLabels = true;
+		const bounds = false; // clipping circles
+		const edgeLabels = false;
+		const doHexCent = true;
 
 		// fill the tile
 		this.doPath(ctx, this.drawCmds);
 		//const col = this.color;
 		const col = options.color;
-		let colAdjust = doHilit ? .3 : 0;
+		let colAdjust = doHilit ? .1 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
@@ -178,10 +187,11 @@ class HatShape extends Shape {
 
 		if (this.debug) {
 			// draw some convex five sided polys
+			/*
 			ctx.strokeStyle = "cyan";
 			this.doPath(ctx, this.convexCmds);
 			ctx.lineWidth = .02;
-			ctx.stroke();
+			ctx.stroke(); */
 
 			// debugging stuff
 			if (bounds) {
@@ -207,6 +217,11 @@ class HatShape extends Shape {
 					ctx.restore();
 				}
 			}
+			if (doHexCent) {
+				for (let pnt of this.centHex) {
+					drawPrim.drawArcO(pnt, .05, .01, degToRad(0), degToRad(360), "yellow");
+				}
+			}
 		}
 	}
 
@@ -222,8 +237,8 @@ class HatShape extends Shape {
 // shape 1
 class OrigHatShape extends HatShape {
 	static colorTable = [
-		"#000",
-		"#00f"
+		"#ccc",
+		"#999"
 	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(false); // default
@@ -237,8 +252,8 @@ class OrigHatShape extends HatShape {
 // shape 2
 class MirrorHatShape extends HatShape {
 	static colorTable = [
-		"#0f0",
-		"#0ff"
+		"#0cc",
+		"#099"
 	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(true); // mirror
@@ -423,8 +438,10 @@ class MainApp {
 	#loadHatTiles(slot, starter) {
 		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new HatTile(OrigHatShape, [0, 0], 0, 1));
-			this.tiles.push(new HatTile(MirrorHatShape, [2, 0], 0, 1));
+			this.tiles.push(new HatTile(OrigHatShape, [-1, 1], 0, 0));
+			this.tiles.push(new HatTile(MirrorHatShape, [1, 1], 0, 0));
+			this.tiles.push(new HatTile(OrigHatShape, [-1, -1], 0, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [1, -1], 0, 1));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -497,7 +514,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .3;
+		this.startZoom = .22;
 	}
 
 	#userBuildUI() {
