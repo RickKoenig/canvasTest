@@ -4,7 +4,6 @@ class HatShape extends Shape {
 	static snapAmount = degToRad(15);
 	static hexInnerRad = .5;
 	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
-	static debug = true;
 
 	// a tiling of hexagons, 12 points 30 degrees
 	static hexagonCoordCenter(i, j) {
@@ -138,21 +137,32 @@ class HatShape extends Shape {
 				pnts.reverse();
 			}
 		}
-		// mark center of hexagons
-		const numCentHex = 3;
-		//this.hexagonCoordCenter(0, 0),
-		this.centHex = Array(numCentHex);
-		for (let i = 0; i < numCentHex; ++i) {
-			const pnt = vec2.fromValues(0, 0);
-			this.centHex[i] = pnt;
+		// mark center of hexagons on hat tile
+		this.centHex = [];
+		this.centHex.push(this.hexagonCoordCenter(0, 0));
+		this.centHex.push(this.hexagonCoordCenter(0, 1));
+		this.centHex.push(this.hexagonCoordCenter(1, 0));
+		for (let pnt of this.centHex) {
+			if (mir) {
+				pnt[0] *= -1;
+			}
+			vec2.sub(pnt, pnt, centerOffset);
+		}
+
+		// common point for all three hexagons
+		this.commonPnt = this.hexagonCoord(0, 0, degToRad(60), true);
+		if (mir) {
+			this.commonPnt[0] *= -1;
+		}
+		vec2.sub(this.commonPnt, this.commonPnt, centerOffset);
+		if (mir) {
+			this.outlinePnts = [8, 1, 4];
+		} else {
+			this.outlinePnts = [4, 8, 11];
 		}
 
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
-		if (this.debug) {
-			// draw one of four convex pentagons
-			this.convexCmds = this.makeCmds(this.convexPnts[2]);
-		}
 	}
 
 	// draw the outline of a tile
@@ -168,7 +178,7 @@ class HatShape extends Shape {
 		ctx.strokeStyle = overlap ? "red" : "black";
 		const bounds = false; // clipping circles
 		const edgeLabels = false;
-		const doHexCent = true;
+		const doPatterns = options.drawPattern;
 
 		// fill the tile
 		this.doPath(ctx, this.drawCmds);
@@ -181,53 +191,54 @@ class HatShape extends Shape {
 
 		// outline the tile
 		this.doPath(ctx, this.drawCmds);
-		const lineWidth = .01;
-		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
+		const lineWidth = .03;
+		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.stroke();
 
-		if (this.debug) {
-			// draw some convex five sided polys
-			/*
-			ctx.strokeStyle = "cyan";
-			this.doPath(ctx, this.convexCmds);
-			ctx.lineWidth = .02;
-			ctx.stroke(); */
+		// debugging stuff
+		if (bounds) {
+			drawPrim.drawCircleO([0, 0], this.nearRad, lineWidth, "white");
+			drawPrim.drawCircleO([0, 0], this.boundRadius, lineWidth, "blue");
+		}
+		if (edgeLabels) {
+			ctx.beginPath();
+			ctx.moveTo(0, 0);
+			ctx.lineTo(this.nearRad, 0); // reference angle
+			ctx.strokeStyle = "pink";
+			ctx.stroke(); 
+			for (let i = 0; i < this.polyPnts.length; ++i) {
+				const p0 = this.polyPnts[i];
+				const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
+				const avg = vec2.create();
+				vec2.add(avg, p0, p1);
+				const closer = .875;
+				vec2.scale(avg, avg, .5 * closer); // move text in closer to center
+				ctx.save();
+				ctx.translate(avg[0], avg[1]);
+				ctx.scale(2, 2);
+				this.drawLevel(drawPrim, i, true);
+				ctx.restore();
+			}
+		}
+		if (doPatterns) {
+			// draw hexagon centers
+			for (let pnt of this.centHex) {
+				drawPrim.drawCircle(pnt, .05, "brown");
+			}
 
-			// debugging stuff
-			if (bounds) {
-				drawPrim.drawArcO([0, 0], this.nearRad, lineWidth, degToRad(0), degToRad(360), "white");
-				drawPrim.drawArcO([0, 0], this.boundRadius, lineWidth, degToRad(0), degToRad(360), "blue");
-			}
-			if (edgeLabels) {
-				ctx.beginPath();
-				ctx.moveTo(0, 0);
-				ctx.lineTo(this.nearRad, 0); // reference angle
-				ctx.strokeStyle = "pink";
-				ctx.stroke(); 
-				for (let i = 0; i < this.polyPnts.length; ++i) {
-					const p0 = this.polyPnts[i];
-					const p1 = this.polyPnts[(i + 1) % this.polyPnts.length];
-					const avg = vec2.create();
-					vec2.add(avg, p0, p1);
-					const closer = .875;
-					vec2.scale(avg, avg, .5 * closer); // move text in closer to center
-					ctx.save();
-					ctx.translate(avg[0], avg[1]);
-					this.drawLevel(drawPrim, i, true);
-					ctx.restore();
-				}
-			}
-			if (doHexCent) {
-				for (let pnt of this.centHex) {
-					drawPrim.drawArcO(pnt, .05, .01, degToRad(0), degToRad(360), "yellow");
-				}
+			// draw outine of hexagons
+			const closer = vec2.create();
+			//this.polyPnts[pntIdx]
+			for (let pntIdx of this.outlinePnts) {
+				vec2.lerp(closer, this.commonPnt, this.polyPnts[pntIdx], .9);
+				drawPrim.drawLine(this.commonPnt,closer, .015,"green");
 			}
 		}
 	}
 
 	// horizontal level text
 	static drawLevel(drawPrim, id, edgeHilit = false) {
-		const radius = .025;
+		const radius = .05;
 		drawPrim.drawCircle([0,0], radius, edgeHilit ? "yellow" : "brown"); // center
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, edgeHilit ? "black" : "white");
@@ -430,11 +441,6 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	// generate more tiles
-	#deflateTiles() {
-		console.log("deflate hat tiles");
-	}
-
 	#loadHatTiles(slot, starter) {
 		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
@@ -487,8 +493,9 @@ class MainApp {
 
 		this.snapAngle = true;
 		this.snapTile = true;
+		this.drawPattern = true;
 		this.snapTileThresh = .03;
-		this.drawIds = true;
+		this.drawIds = false;
 		this.redBarWidth = .25; // for add remove tiles
 		// Hat tiles
 		this.protoTiles = [];
@@ -514,7 +521,7 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .22;
+		this.startZoom = .36;
 	}
 
 	#userBuildUI() {
@@ -560,6 +567,14 @@ class MainApp {
 
 		makeEle(this.vp, "br");
 
+		makeEle(this.vp, "span", null, "marg", "Draw Pattern");
+		this.eles.drawPattern = makeEle(this.vp, "input", "drawPattern", null, "ho", (val) => {
+			this.drawPattern = val;
+			this.dirty = true;
+		}, "checkbox");
+		this.eles.drawPattern.checked = this.drawPattern;
+		makeEle(this.vp, "br");
+
 		makeEle(this.vp, "span", null, "marg", "Draw Center Ids");
 		this.eles.drawIds = makeEle(this.vp, "input", "draw ids", null, "ho", (val) => {
 			this.drawIds = val;
@@ -569,9 +584,6 @@ class MainApp {
 
 		// deflate tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "br");
-		this.eles.decompose = makeEle(this.vp, "button", null, null, "Decompose tiles", this.#deflateTiles.bind(this));
-		this.eles.decompose.disabled = true;
 		// clear duplicates
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearHatDups.bind(this));
@@ -682,7 +694,8 @@ class MainApp {
 	#userDraw() {
 		MainApp.areaIsect = 0;
 		const options = {
-			drawIds: this.drawIds
+			drawIds: this.drawIds,
+			drawPattern: this.drawPattern
 		};
 		// proto shapes
 		this.editProtoTiles.draw(this.drawPrim, options);
