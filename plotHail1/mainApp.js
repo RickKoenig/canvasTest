@@ -67,7 +67,7 @@ class MainApp {
 	}
 
 	#drawPowers() {
-		this.drawPrim.drawLinesSimple(this.arrHailRatio, .125, .2, 1, 1, "green", "black");
+		this.drawPrim.drawLinesSimple(this.arrHailRatio, .0125, .02, .02, .1, "green", "black");
 	}
 
 
