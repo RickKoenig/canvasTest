@@ -238,7 +238,7 @@ class MainApp {
 			, this.ctx, this.vp, center, zoom, false, false);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim, [-4000, -4000], [4000, 4000]);
+		this.graphPaper = new GraphPaper(this.drawPrim, [-400, -400], [400, 400]);
 
 		// USER build UI
 		this.#userBuildUI();

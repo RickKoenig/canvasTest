@@ -215,10 +215,10 @@ class Tile {
 			let j;
 			for (j = i + 1; j < tiles.length; ++j) {
 				const ti2 = tiles[j];
-				let ra = Math.abs(ti1.rot - ti2.rot);
-				ra = normAngRadUnsigned(ra);
+				let ra = ti1.rot - ti2.rot;
+				ra = normAngRadSigned(ra);
 				if (ti1.kind === ti2.kind
-					&& ra < threshAng 
+					&& Math.abs(ra) < threshAng 
 					&& vec2.sqrDist(ti1.pos, ti2.pos) < closeDist * closeDist) {
 					break;
 				}

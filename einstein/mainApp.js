@@ -248,8 +248,8 @@ class HatShape extends Shape {
 // shape 1
 class OrigHatShape extends HatShape {
 	static colorTable = [
-		"#ccc",
-		"#999"
+		"#999",
+		"#099"
 	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(false); // default
@@ -263,8 +263,8 @@ class OrigHatShape extends HatShape {
 // shape 2
 class MirrorHatShape extends HatShape {
 	static colorTable = [
-		"#0cc",
-		"#099"
+		"#ccc",
+		"#0cc"
 	];
 	static setupPolyPnts() {
 		super.setupPolyPnts(true); // mirror
@@ -444,10 +444,15 @@ class MainApp {
 	#loadHatTiles(slot, starter) {
 		this.tiles = HatTile.loadTiles(slot, HatShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new HatTile(OrigHatShape, [-1, 1], 0, 0));
-			this.tiles.push(new HatTile(MirrorHatShape, [1, 1], 0, 0));
-			this.tiles.push(new HatTile(OrigHatShape, [-1, -1], 0, 1));
-			this.tiles.push(new HatTile(MirrorHatShape, [1, -1], 0, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [1.833, 1.210], 0.000, 0));
+			this.tiles.push(new HatTile(MirrorHatShape, [0.767, 0.825], -2.094, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [0.767, 1.826], -2.094, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [2.277, 0.210], -1.047, 0));
+			this.tiles.push(new HatTile(OrigHatShape, [0.967, -0.059], 3.142, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [1.633, -0.675], -2.094, 1));
+			this.tiles.push(new HatTile(MirrorHatShape, [1.633, -1.675], -2.094, 0));
+			this.tiles.push(new HatTile(MirrorHatShape, [0.545, -1.559], 3.142, 0));
+			this.tiles.push(new HatTile(MirrorHatShape, [0.101, -0.559], 2.094, 1));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -461,6 +466,17 @@ class MainApp {
 		Tile.saveTiles(this.tiles, slot);
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
+		}
+		const verbose = false;
+		if (verbose) {
+			for (let tile of this.tiles) {
+				const shapeName = tile.kind == "hatOrig" ? "OrigHatShape" : "MirrorHatShape";
+				console.log("this.tiles.push(new HatTile(" + shapeName 
+					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
+					+ "], " + tile.rot.toFixed(3)
+					+ ", " + tile.colorIdx +"));");
+				//this.tiles.push(new HatTile(MirrorHatShape, [1, -1], 0, 1));
+			}
 		}
 	}
 
@@ -500,8 +516,8 @@ class MainApp {
 		// Hat tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0, 0));
-		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0, 0));
+		this.protoTiles.push(new HatTile(MirrorHatShape, [0, 0], 0, 1));
+		this.protoTiles.push(new HatTile(OrigHatShape, [0, 0], 0, 1));
 		this.#loadHatTiles("hatSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
