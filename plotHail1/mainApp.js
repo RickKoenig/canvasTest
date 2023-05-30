@@ -2,10 +2,10 @@
 
 // draw a tree of hail nodes
 class Node {
-	static offset = 20; // draw node tree starting at position 20,20
+	static offset = [30,10];// draw node tree starting at position 'offset'
 
 	constructor(x, y, n, rad) {
-		this.p = vec2.fromValues(x * .5 + Node.offset + .5, y * .5 + Node.offset + .5);
+		this.p = vec2.fromValues(x * .5 + Node.offset[0] + .5, y * .5 + Node.offset[1] + .5);
 		this.n = n;
 		this.r = rad;
 		this.next = []; // next x, 1 or 2
@@ -36,7 +36,7 @@ class MainApp {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
 
-		const maxHailBlocks = 20;
+		const maxHailBlocks = 40;
 		const hailBlockSize = 100;
 		this.arrHailRatio = [];
 		// setup worker thread
@@ -67,11 +67,12 @@ class MainApp {
 	}
 
 	#drawPowers() {
-		this.drawPrim.drawLinesSimple(this.arrHailRatio, .0125, .02, .02, .1, "green", "black");
+		this.drawPrim.drawLinesSimple(this.arrHailRatio, .0125, .02 // linewidth, circlesize
+			, .1, .1 // start, stepX
+			, "green", "black");
 	}
 
-
-
+	
 	// use bigFraction
 	static big2o3 = fraction.create(2, 3);
 	static big3o2 = fraction.create(3, 2);
@@ -105,7 +106,7 @@ class MainApp {
 	}
 
 	#initFreeGroup() {
-		this.fgNode = [10, 30];
+		this.fgNode = [10, 20];
 		this.fgValue = fraction.create(7);
 		this.fgLevels = 6;
 	}
@@ -229,10 +230,10 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		const center = [10, 30]; // focus on freegroup
-		const zoom = .0958;
-		//const center = [800, 100]; // focus on powers of 2
-		//const zoom = .0014;
+		//const center = [10, 30]; // focus on freegroup
+		//const zoom = .0958;
+		const center = [20, 6]; // focus on powers of 2
+		const zoom = .07;
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
 			, this.ctx, this.vp, center, zoom, false, false);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
@@ -339,6 +340,7 @@ class MainApp {
 		}
 	}
 
+	// some kind of hack
 	#nodeToPnts() {
 		for (let i = 0; i < this.nodes.length; ++i) {
 			this.nodePnts[i] = this.nodes[i].p;
@@ -365,14 +367,19 @@ class MainApp {
 		
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
-		
+
+
+		makeEle(this.vp, "hr");
 		// value
+		makeEle(this.vp, "span", null, "fgv", "Free Group Value");
+		makeEle(this.vp, "br");
+
 		this.eles.fgEdit = makeEle(this.vp, "textarea", "editValue", "editbox", fraction.toString(this.fgValue, false));
 		// submit value
-		makeEle(this.vp, "button", null, null, "Update value",this.#updateValue.bind(this));
+		makeEle(this.vp, "button", null, null, "Update freegroupValue",this.#updateValue.bind(this));
+		makeEle(this.vp, "hr");
 		
 		// check boxes
-		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show nodes");
 		this.eles.showNodes = makeEle(this.vp, "input", "showNodes", null, "hy", () => this.dirty = true, "checkbox");
 		this.eles.showNodes.checked = false;
@@ -380,16 +387,16 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show powers of 2");
 		this.eles.checkboxPow2 = makeEle(this.vp, "input", "checkboxPow2", null, "hi", () => this.dirty = true, "checkbox");
-		this.eles.checkboxPow2.checked = false;
+		this.eles.checkboxPow2.checked = true;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show freeGroup");
 		this.eles.freeGroup = makeEle(this.vp, "input", "freeGroup", null, "hu", () => this.dirty = true, "checkbox");
-		this.eles.freeGroup.checked = true;
+		this.eles.freeGroup.checked = false;
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show graph paper");
 		this.eles.showGraph = makeEle(this.vp, "input", "showGraphpaper", null, "ho", () => this.dirty = true, "checkbox");
-		this.eles.showGraph.checked = false;
+		this.eles.showGraph.checked = true;
 
 		// freegroup start text size slider combo
 		{
@@ -505,7 +512,7 @@ class MainApp {
 		// show inputEventsStats
 		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n"
 			+ "\nUse the arrow keys\nto navigate\nthe Free Group\n"
-			+ "\nDirty Count = " + this.dirtyCount + "\n ";
+			+ "\nDirty Count = " + this.dirtyCount;
 		this.eles.textInfoLog.innerText = fpsStr;
 	}
 
