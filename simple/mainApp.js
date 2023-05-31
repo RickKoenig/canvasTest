@@ -5,6 +5,7 @@ function javaScriptTests() {
 	console.log("START javacript tests!");
 	//inheritanceTests();
 	//const codeWord = rudolphSim();
+	runScratch();
 	//console.log("codeword = '" + codeWord + "'");
 	console.log("DONE javacript tests!");
 }
