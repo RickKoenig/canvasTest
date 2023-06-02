@@ -1,6 +1,6 @@
 'use strict';
 
-// javacript helpers
+// javascript helpers
 // deep copy of object, includes it's constructor too
 function clone(obj) {
     var copy;

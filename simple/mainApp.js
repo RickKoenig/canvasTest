@@ -2,12 +2,12 @@
 
 function javaScriptTests() {
 	// test out features of javascript here
-	console.log("START javacript tests!");
+	console.log("START javascript tests!");
 	//inheritanceTests();
 	//const codeWord = rudolphSim();
 	runScratch();
 	//console.log("codeword = '" + codeWord + "'");
-	console.log("DONE javacript tests!");
+	console.log("DONE javascript tests!");
 }
 
 // a test shape
