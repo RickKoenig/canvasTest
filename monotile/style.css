@@ -1,0 +1,111 @@
+body{
+	margin:0;
+	background: darkgray;
+	overflow: hidden;
+	display: flex;
+}
+
+pre{
+	margin:0;
+	text-align: center;
+	font-size: 135%;
+	overflow:hidden;
+	white-space: pre-wrap;
+}
+
+p{
+	margin:0;
+	text-align: center;
+	font-size: 110%;
+	overflow:hidden;
+}
+
+hr{
+	background-color: rgb(107, 146, 129);
+	height: 3px;
+	margin: 0;
+}
+
+span{
+	margin:0;
+	display: inline-block;
+}
+
+.slidecontainer{
+	text-align: center;
+	margin:0;
+}
+
+.slider{
+	margin: 0;
+	width: 280px;
+}
+
+.centerg{
+	background-color: green;
+}
+
+div{
+	margin: 0;
+	outline: none;
+	padding: none;
+	position: relative;
+	background-color: rgba(0,0,0,0);
+}
+
+canvas{
+	margin: 0;
+	outline: none;
+	border: none;
+	background: lightgray;
+}
+
+#verticalPanel{
+	width: 250px;
+	min-width: 250px;
+	text-align: center;
+	margin-left: 10px;
+	margin-top: 5px;
+}
+
+button{
+	width: 200px;
+	border: none;
+	border-radius: 10px;
+	margin: 4px 4px 5px 4px;
+	cursor: pointer;
+	font-size: 85%;
+}
+
+.editbox{
+	text-align: center;
+	width: 300px;
+	height: 60px;
+	border: none;
+	border-radius: 5px;
+	margin: 4px 4px 4px 4px;
+	font-size: 120%;
+	background-color: rgb(185, 204, 219);
+}
+
+button:hover{
+	background:rgb(204, 196, 175);
+}
+
+#plotter2dDiv{
+	background: rgba(0,0,0,0);
+	margin: 50px;
+}
+
+.textFunction{
+	font-size: 130%;
+	background: rgb(146, 171, 190);
+}
+
+test{
+	background: rgb(74, 184, 231)
+}
+
+.short{
+	width: 70px;
+}
