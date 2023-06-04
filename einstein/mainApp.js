@@ -424,8 +424,6 @@ class MainApp {
 	#clearHatDups() {
 		console.log("clear hat dups, len = " + this.tiles.length);
 		Tile.clearDups(this.tiles);
-		const threshAng = degToRad(10);
-		const closeDist = .125;
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;

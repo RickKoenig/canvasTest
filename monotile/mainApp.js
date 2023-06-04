@@ -28,21 +28,7 @@ class MonoShape extends Shape {
 		vec2.add(ret, centPos, offset);
 		return ret;
 	}
-/*
-	static makeCmds(pnts) {
-		const cmds = [];
-		let first = true;
-		for (let polyPnt of pnts) {
-			const cmd = {
-				pnt: polyPnt,
-				kind: first ? "moveTo" : "lineTo"
-			}
-			first = false;
-			cmds.push(cmd);
-		}
-		return cmds;
-	}
-*/
+
 	static setupPolyPnts() {
 		// 13 points, TODO: 14 points
 		this.polyPnts = [
@@ -131,9 +117,9 @@ class MonoShape extends Shape {
 	}
 }
 
+// name : class
 MonoShape.factory = {
-	monoshape: MonoShape,
-	//hatmonoSlotror: monoSlotrorMonoShape
+	monoshape: MonoShape
 }
 
 class MonoTile extends Tile {
@@ -211,8 +197,6 @@ class MainApp {
 	#clearMonoDups() {
 		console.log("clear hat dups, len = " + this.tiles.length);
 		Tile.clearDups(this.tiles);
-		const threshAng = degToRad(10);
-		const closeDist = .125;
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
@@ -221,9 +205,9 @@ class MainApp {
 	#loadMonoTiles(slot, starter) {
 		this.tiles = MonoTile.loadTiles(slot, MonoShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new MonoTile(MonoShape, [-.5, 0], 0, 0));
+			this.tiles.push(new MonoTile(MonoShape, [-1, 0], 0, 0));
 			this.tiles.push(new MonoTile(MonoShape, [0, 0], 0, 1));
-			this.tiles.push(new MonoTile(MonoShape, [.5, 0], degToRad(90), 2));
+			this.tiles.push(new MonoTile(MonoShape, [1, 0], degToRad(45), 2));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -246,7 +230,6 @@ class MainApp {
 					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
 					+ "], " + tile.rot.toFixed(3)
 					+ ", " + tile.colorIdx +"));");
-				//this.tiles.push(new MonoTile(monoSlotrorMonoShape, [1, -1], 0, 1));
 			}
 		}
 	}
