@@ -1,6 +1,11 @@
 'use strict';
 
 class MonoShape extends Shape {
+	static colorTable = [
+		"#844",
+		"#884",
+		"#bbb"
+	];
 	static snapAmount = degToRad(15);
 	static hexInnerRad = .5;
 	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
@@ -23,7 +28,7 @@ class MonoShape extends Shape {
 		vec2.add(ret, centPos, offset);
 		return ret;
 	}
-
+/*
 	static makeCmds(pnts) {
 		const cmds = [];
 		let first = true;
@@ -37,7 +42,7 @@ class MonoShape extends Shape {
 		}
 		return cmds;
 	}
-
+*/
 	static setupPolyPnts() {
 		// 13 points, TODO: 14 points
 		this.polyPnts = [
@@ -48,15 +53,7 @@ class MonoShape extends Shape {
 			this.hexagonCoord(0, 0, degToRad(90), false)
 		];
 		this.nearRad = .35 * this.hexInnerRad; // easier overlap, number hand picked visually
-		this.color = "#282";
-		super.setupPolyPnts();
-
-		// mark center of hexagons on hat tile
-		this.centHex = [];
-		this.centHex.push(this.hexagonCoordCenter(0, 0));
-		this.centHex.push(this.hexagonCoordCenter(0, 1));
-		this.centHex.push(this.hexagonCoordCenter(1, 0));
-
+		super.setupPolyPnts(); // prep points for center, snap etc.
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
 	}
@@ -71,7 +68,6 @@ class MonoShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		ctx.strokeStyle = overlap ? "red" : "black";
 		const bounds = true; // clipping circles
 		const edgeLabels = true;
 		const doPatterns = options.drawPattern;
@@ -86,6 +82,7 @@ class MonoShape extends Shape {
 		ctx.fill();
 
 		// outline the tile
+		ctx.strokeStyle = overlap ? "red" : "black";
 		this.doPath(ctx, this.drawCmds);
 		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
@@ -117,20 +114,6 @@ class MonoShape extends Shape {
 			}
 		}
 		if (doPatterns) {
-			/*
-			// draw hexagon centers
-			for (let pnt of this.centHex) {
-				drawPrim.drawCircle(pnt, .05, "brown");
-			}
-
-			// draw outine of hexagons
-			const closer = vec2.create();
-			//this.polyPnts[pntIdx]
-			for (let pntIdx of this.outlinePnts) {
-				vec2.lerp(closer, this.commonPnt, this.polyPnts[pntIdx], .9);
-				drawPrim.drawLine(this.commonPnt,closer, .015,"green");
-			}
-			*/
 		}
 	}
 
@@ -141,42 +124,16 @@ class MonoShape extends Shape {
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, edgeHilit ? "black" : "white");
 	}
-}
-
-// shape 1
-class OrigHatShape extends MonoShape {
-	static colorTable = [
-		"#999",
-		"#099"
-	];
-	static setupPolyPnts() {
-		super.setupPolyPnts(false); // default
-	}
-	static {
-		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hatOrig";
-	}
-}
-
-// shape 2
-class monoSlotrorHatShape extends MonoShape {
-	static colorTable = [
-		"#ccc",
-		"#0cc"
-	];
-	static setupPolyPnts() {
-		super.setupPolyPnts(true); // monoSlotror
-	}
 
 	static {
 		this.setupPolyPnts(); // call once, center points,  maybe setup some statics
-		this.kind = "hatmonoSlotror";
+		this.kind = "monoshape";
 	}
 }
 
 MonoShape.factory = {
-	hatOrig: OrigHatShape,
-	hatmonoSlotror: monoSlotrorHatShape
+	monoshape: MonoShape,
+	//hatmonoSlotror: monoSlotrorMonoShape
 }
 
 class MonoTile extends Tile {
@@ -186,86 +143,6 @@ class MonoTile extends Tile {
 		this.colorIdx = colorIdx;
 	}
 
-	// TODO: Can this be implemented from the base class?
-	clone() {
-		const ret = new MonoTile(this.shape, this.pos, this.rot, this.colorIdx);
-		return ret;
-	}
-
-	/*
-	isInside(userMouse) {
-		const br = this.shape.boundRadius;
-		const sd = vec2.sqrDist(userMouse, this.pos);
-		if (sd > br * br) {
-			return false; // early out
-		}
-		// see if inside one of four 5 sided convex polys
-		const thresh = -.01;
-		for (let convexPoly of this.shape.convexPnts) {
-			for (let i = 0; i < convexPoly.length; ++i) {
-				const pntO = convexPoly[i];
-				const pntW = this.shape.worldConvexInside[i]; // reference
-				vec2.rot(pntW, pntO, this.rot);
-				vec2.add(pntW, pntW, this.pos);
-			}
-			const pen = penetrateConvexPoly(this.shape.worldConvexInside, userMouse);
-			if (pen > thresh) {
-				return true;
-			}
-		}
-		return false;
-	}
-	*/
-/*
-	isOverlap(tileB, thresh = .01) {
-		const tileA = this;
-		if (tileA === tileB) {
-			return false; // can't overlap over self
-		}
-		const td = vec2.sqrDist(tileA.pos, tileB.pos);
-		if (td < tileA.shape.nearRad * tileA.shape.nearRad) {
-			return true; // early in
-		}
-		if (!calcIntsectBoundcircle(tileA.shape.boundRadius, tileA.pos
-				, tileB.shape.boundRadius, tileB.pos)) {
-			return false; // early out
-		}
-		// move everything to world coords
-		const numConvexPolys = tileA.shape.convexPnts.length;
-		const pnts0 = tileA.shape.convexPnts[0];
-		const numConvexSides = pnts0.length;
-		for (let i = 0; i < numConvexPolys; ++i) {
-			const Ao = tileA.shape.convexPnts[i];
-			const Bo = tileB.shape.convexPnts[i];
-			const Aw = tileA.shape.worldOverlapA[i];
-			const Bw = tileB.shape.worldOverlapB[i];
-			for (let j = 0; j < numConvexSides; ++j) {
-				let pntO = Ao[j];
-				let pntW = Aw[j]; // reference
-				vec2.rot(pntW, pntO, tileA.rot);
-				vec2.add(pntW, pntW, tileA.pos);
-				pntO = Bo[j];
-				pntW = Bw[j]; // reference
-				vec2.rot(pntW, pntO, tileB.rot);
-				vec2.add(pntW, pntW, tileB.pos);
-			}
-		}
-		// check all convex polys
-		for (let i = 0; i < numConvexPolys; ++i) {
-			for (let j = 0; j < numConvexPolys; ++j) {
-				const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[i], tileB.shape.worldOverlapB[j]);
-				const areaIsect = calcPolyArea(isectPoly);
-				MainApp.areaIsect += areaIsect;
-				if (MainApp.areaIsect > thresh) {
-					return true;
-				}
-		
-			}
-		}
-		// nothing
-		return false;
-	}
-*/
 	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
 		if (!options) {
 			options = {};
@@ -321,17 +198,17 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveHatTiles.bind(this, "monoSlot0"));
+		addEventListener("beforeunload", this.#saveMonoTiles.bind(this, "monoSlot0"));
 	}
 
-	#clearHatTiles() {
+	#clearMonoTiles() {
 		this.tiles.length = 0;
 		this.editTiles.deselect();
 		this.input.setFocus(); // back to canvas/div
 		this.dirty = true;
 	}
 
-	#clearHatDups() {
+	#clearMonoDups() {
 		console.log("clear hat dups, len = " + this.tiles.length);
 		Tile.clearDups(this.tiles);
 		const threshAng = degToRad(10);
@@ -341,18 +218,12 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	#loadHatTiles(slot, starter) {
+	#loadMonoTiles(slot, starter) {
 		this.tiles = MonoTile.loadTiles(slot, MonoShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [1.833, 1.210], 0.000, 0));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [0.767, 0.825], -2.094, 1));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [0.767, 1.826], -2.094, 1));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [2.277, 0.210], -1.047, 0));
-			this.tiles.push(new MonoTile(OrigHatShape, [0.967, -0.059], 3.142, 1));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [1.633, -0.675], -2.094, 1));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [1.633, -1.675], -2.094, 0));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [0.545, -1.559], 3.142, 0));
-			this.tiles.push(new MonoTile(monoSlotrorHatShape, [0.101, -0.559], 2.094, 1));
+			this.tiles.push(new MonoTile(MonoShape, [-.5, 0], 0, 0));
+			this.tiles.push(new MonoTile(MonoShape, [0, 0], 0, 1));
+			this.tiles.push(new MonoTile(MonoShape, [.5, 0], degToRad(90), 2));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -362,7 +233,7 @@ class MainApp {
 		this.dirty = true;
 	}
 
-	#saveHatTiles(slot) {
+	#saveMonoTiles(slot) {
 		Tile.saveTiles(this.tiles, slot);
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
@@ -370,12 +241,12 @@ class MainApp {
 		const verbose = false;
 		if (verbose) {
 			for (let tile of this.tiles) {
-				const shapeName = tile.kind == "hatOrig" ? "OrigHatShape" : "monoSlotrorHatShape";
+				const shapeName = tile.kind == "hatOrig" ? "OrigMonoShape" : "monoSlotrorMonoShape";
 				console.log("this.tiles.push(new MonoTile(" + shapeName 
 					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
 					+ "], " + tile.rot.toFixed(3)
 					+ ", " + tile.colorIdx +"));");
-				//this.tiles.push(new MonoTile(monoSlotrorHatShape, [1, -1], 0, 1));
+				//this.tiles.push(new MonoTile(monoSlotrorMonoShape, [1, -1], 0, 1));
 			}
 		}
 	}
@@ -413,12 +284,11 @@ class MainApp {
 		this.snapTileThresh = .03;
 		this.drawIds = false;
 		this.redBarWidth = .25; // for add remove tiles
-		// Hat tiles
+		// Mono tiles
 		this.protoTiles = [];
 		// let proc position those proto tiles with zoom and pan UI
-		this.protoTiles.push(new MonoTile(monoSlotrorHatShape, [0, 0], 0, 1));
-		this.protoTiles.push(new MonoTile(OrigHatShape, [0, 0], 0, 1));
-		this.#loadHatTiles("monoSlot0", true);
+		this.protoTiles.push(new MonoTile(MonoShape, [0, 0], 0, 0));
+		this.#loadMonoTiles("monoSlot0", true);
 		this.editOptions = {
 			rotStep: 0, // set in proc
 			delDeselect: false, // set in proc
@@ -502,10 +372,10 @@ class MainApp {
 		makeEle(this.vp, "br");
 		// clear duplicates
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearHatDups.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear Duplicates", this.#clearMonoDups.bind(this));
 		// clear tiles
 		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearHatTiles.bind(this));
+		makeEle(this.vp, "button", null, null, "Clear all tiles", this.#clearMonoTiles.bind(this));
 		// load save slots
 		makeEle(this.vp, "br");
 
@@ -513,9 +383,9 @@ class MainApp {
 		for (let sn = 1; sn <= numSlots; ++sn) {
 			makeEle(this.vp, "br");
 			makeEle(this.vp, "button", null, "short", "Load " + sn
-				, this.#loadHatTiles.bind(this, "monoSlot" + sn, false));
+				, this.#loadMonoTiles.bind(this, "monoSlot" + sn, false));
 			makeEle(this.vp, "button", null, "short", "Save " + sn
-				, this.#saveHatTiles.bind(this, "monoSlot" + sn));
+				, this.#saveMonoTiles.bind(this, "monoSlot" + sn));
 		}
 	}		
 
@@ -630,9 +500,6 @@ class MainApp {
 		//let infoStr = "Dirty Count = " + this.dirtyCount;
 		let infoStr = "Avg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
-		//const keyCodes = keyTable.keyCodes;
-		//infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
-		//infoStr += "\n areaIsect = " + MainApp.areaIsect.toFixed(2);
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;

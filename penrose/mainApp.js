@@ -20,16 +20,7 @@ class PenShape extends Shape {
 		// swap in and out for slave, (notch in 'fits' notch out)
 		this.notchEnum = makeEnum(["TRI_IN", "TRI_OUT", "ARC_IN", "ARC_OUT"]);
 		// setup draw commands for faster drawing
-		this.cmdsNoNotches = [];
-		let first = true;
-		for (let polyPnt of this.polyPnts) {
-			const cmd = {
-				pnt: polyPnt,
-				kind: first ? "moveTo" : "lineTo"
-			}
-			first = false;
-			this.cmdsNoNotches.push(cmd);
-		}
+		this.cmdsNoNotches = this.makeCmds(this.polyPnts);
 		// prep notch commands
 		this.cmdsNotches = [];
 		this.smallDist = 1 / 3;

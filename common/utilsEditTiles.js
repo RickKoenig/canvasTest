@@ -41,6 +41,22 @@ class Shape {
 		return avg;
 	}
 
+
+	// make commands for simple polys, (no arcs or notches)
+	static makeCmds(pnts) {
+		const cmds = [];
+		let first = true;
+		for (let polyPnt of pnts) {
+			const cmd = {
+				pnt: polyPnt,
+				kind: first ? "moveTo" : "lineTo"
+			}
+			first = false;
+			cmds.push(cmd);
+		}
+		return cmds;
+	}
+
 	// draw commands from an array of commands
 	static runCmds(ctx, cmds) {
 		const rad = .075;

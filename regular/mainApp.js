@@ -16,16 +16,7 @@ class RegShape extends Shape {
 		this.nearRad = .95 * rad * Math.cos(Math.PI / numSides); // easier overlap, a little in
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
-		this.cmdsNoNotches = [];
-		let first = true;
-		for (let polyPnt of this.polyPnts) {
-			const cmd = {
-				pnt: polyPnt,
-				kind: first ? "moveTo" : "lineTo"
-			}
-			first = false;
-			this.cmdsNoNotches.push(cmd);
-		}
+		this.cmdsNoNotches = this.makeCmds(this.polyPnts);
 	} 
 
 	static {
@@ -34,7 +25,7 @@ class RegShape extends Shape {
 		const sat = .6 * 255;
 		this.colorTable = [];
 		for (let i = 0; i < 3; ++i) {
-			this.colorTable[i] = ""; // no colors for polys of size 0,1 or 2
+			this.colorTable[i] = "";
 		}
 		const colObj = {};
 		const numAngs = 6;

@@ -23,7 +23,7 @@ class HatShape extends Shape {
 		vec2.add(ret, centPos, offset);
 		return ret;
 	}
-
+/*
 	static makeCmds(pnts) {
 		const cmds = [];
 		let first = true;
@@ -37,7 +37,7 @@ class HatShape extends Shape {
 		}
 		return cmds;
 	}
-
+*/
 	static setupPolyPnts(mir) {
 		// 13 points
 		this.polyPnts = [
@@ -113,7 +113,6 @@ class HatShape extends Shape {
 
 		this.nearRad = .45 * this.hexInnerRad; // easier overlap, number hand picked visually
 		if (mir) {
-			this.color = "#22f";
 			// and flip the geometry
 			// first flip the points in the X
 			for (let i = 0; i < this.polyPnts.length; ++i) {
@@ -121,8 +120,6 @@ class HatShape extends Shape {
 			}
 			// next reverse the array
 			this.polyPnts.reverse();
-		} else {
-			this.color = "#282";
 		}
 		const centerOffset = super.setupPolyPnts();
 		// adjust all the 4 pentagon convex polys
@@ -175,14 +172,12 @@ class HatShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		ctx.strokeStyle = overlap ? "red" : "black";
 		const bounds = false; // clipping circles
 		const edgeLabels = false;
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
 		this.doPath(ctx, this.drawCmds);
-		//const col = this.color;
 		const col = options.color;
 		let colAdjust = doHilit ? .1 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
@@ -190,11 +185,26 @@ class HatShape extends Shape {
 		ctx.fill();
 
 		// outline the tile
+		ctx.strokeStyle = overlap ? "red" : "black";
 		this.doPath(ctx, this.drawCmds);
 		const lineWidth = .03;
 		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.stroke();
 
+		if (doPatterns) {
+			// draw hexagon centers
+			for (let pnt of this.centHex) {
+				drawPrim.drawCircle(pnt, .05, "brown");
+			}
+
+			// draw outine of hexagons
+			const closer = vec2.create();
+			//this.polyPnts[pntIdx]
+			for (let pntIdx of this.outlinePnts) {
+				vec2.lerp(closer, this.commonPnt, this.polyPnts[pntIdx], .9);
+				drawPrim.drawLine(this.commonPnt,closer, .015,"green");
+			}
+		}
 		// debugging stuff
 		if (bounds) {
 			drawPrim.drawCircleO([0, 0], this.nearRad, lineWidth, "white");
@@ -218,20 +228,6 @@ class HatShape extends Shape {
 				ctx.scale(2, 2);
 				this.drawLevel(drawPrim, i, true);
 				ctx.restore();
-			}
-		}
-		if (doPatterns) {
-			// draw hexagon centers
-			for (let pnt of this.centHex) {
-				drawPrim.drawCircle(pnt, .05, "brown");
-			}
-
-			// draw outine of hexagons
-			const closer = vec2.create();
-			//this.polyPnts[pntIdx]
-			for (let pntIdx of this.outlinePnts) {
-				vec2.lerp(closer, this.commonPnt, this.polyPnts[pntIdx], .9);
-				drawPrim.drawLine(this.commonPnt,closer, .015,"green");
 			}
 		}
 	}
@@ -286,12 +282,6 @@ class HatTile extends Tile {
 	constructor(shape, pos, rot, colorIdx) {
 		super(shape, pos, rot);
 		this.colorIdx = colorIdx;
-	}
-
-	// TODO: Can this be implemented from the base class?
-	clone() {
-		const ret = new HatTile(this.shape, this.pos, this.rot, this.colorIdx);
-		return ret;
 	}
 
 	isInside(userMouse) {
@@ -475,7 +465,6 @@ class MainApp {
 					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
 					+ "], " + tile.rot.toFixed(3)
 					+ ", " + tile.colorIdx +"));");
-				//this.tiles.push(new HatTile(MirrorHatShape, [1, -1], 0, 1));
 			}
 		}
 	}
@@ -727,12 +716,8 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		//let infoStr = "Dirty Count = " + this.dirtyCount;
 		let infoStr = "Avg fps = " + this.avgFps.toFixed(2);
 		infoStr += "\n Number of tiles = " + this.tiles.length;
-		//const keyCodes = keyTable.keyCodes;
-		//infoStr += "\n Shift = " + !!this.input.keyboard.keystate[keyCodes.SHIFT];
-		//infoStr += "\n areaIsect = " + MainApp.areaIsect.toFixed(2);
 		const curSelIdx = this.editTiles.getCurSelected();
 		if (curSelIdx >= 0) {
 			infoStr += "\n Current selected = " + curSelIdx;
