@@ -7,11 +7,12 @@ class MonoShape extends Shape {
 		"#bbb"
 	];
 	static snapAmount = degToRad(15);
-	static hexInnerRad = .5;
-	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
+	static rad = 1;
+	//static hexInnerRad = .5;
+	//static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
 
 	// a tiling of hexagons, 12 points 30 degrees
-	static hexagonCoordCenter(i, j) {
+	/*static hexagonCoordCenter(i, j) {
 		const ret = vec2.fromValues(
 			  i * 2 * this.hexInnerRad * Math.cos(degToRad(30))
 			, i * 2 * this.hexInnerRad * Math.sin(degToRad(30)) + j * 2 * this.hexInnerRad);
@@ -28,17 +29,28 @@ class MonoShape extends Shape {
 		vec2.add(ret, centPos, offset);
 		return ret;
 	}
+	*/
 
 	static setupPolyPnts() {
 		// 13 points, TODO: 14 points
 		this.polyPnts = [
+			/*
 			this.hexagonCoordCenter(0, 0), 			
 			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
 			this.hexagonCoord(0, 0, degToRad(180), true),
 			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
 			this.hexagonCoord(0, 0, degToRad(90), false)
+			*/
+			[0, -1],
+			[0, 0],
+			[0, 1],
+			[1, 0]
 		];
-		this.nearRad = .35 * this.hexInnerRad; // easier overlap, number hand picked visually
+		for (let pnt of this.polyPnts) {
+			vec2.scale(pnt, pnt, this.rad);
+		}
+		this.nearRad = .22 * this.rad; // easier overlap, number hand picked visually
+		//this.nearRad = .35 * this.hexInnerRad; // easier overlap, number hand picked visually
 		super.setupPolyPnts(); // prep points for center, snap etc.
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
@@ -65,6 +77,11 @@ class MonoShape extends Shape {
 		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.stroke();
+
+		// draw points
+		for (let pnt of this.polyPnts) {
+			drawPrim.drawCircle(pnt, this.rad * .05, "green");
+		}
 
 		// debugging stuff
 		if (bounds) {
@@ -202,9 +219,9 @@ class MainApp {
 	#loadMonoTiles(slot, starter) {
 		this.tiles = MonoTile.loadTiles(slot, MonoShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new MonoTile(MonoShape, [-1, 0], 0, 0));
+			this.tiles.push(new MonoTile(MonoShape, [-2, 0], 0, 0));
 			this.tiles.push(new MonoTile(MonoShape, [0, 0], 0, 1));
-			this.tiles.push(new MonoTile(MonoShape, [1, 0], degToRad(45), 2));
+			this.tiles.push(new MonoTile(MonoShape, [2, 0], degToRad(15), 2));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
