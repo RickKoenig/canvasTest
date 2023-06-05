@@ -62,18 +62,6 @@ class PenShape extends Shape {
 		};
 		cmds.push(cmd);
 	}
-	
-	// draw the outline of a tile
-	static doPath(ctx, options) {
-		ctx.beginPath();
-        ctx.lineJoin = "round";
-		if (options.drawNotches) {
-			this.runCmds(ctx, this.cmdsNotches);
-		} else {
-			this.runCmds(ctx, this.cmdsNoNotches);
-		}
-		ctx.closePath();
-	}
 
 	// fat is for colors and arcs
 	static draw(drawPrim, id, doHilit = false, fat, options, overlap = false) {
@@ -85,7 +73,7 @@ class PenShape extends Shape {
 			ctx.scale(PenShape.golden, PenShape.golden);
 		}
 		// fill the tile
-		this.doPath(ctx, options);
+		Tile.doPath(ctx, options.drawNotches ? this.cmdsNotches: this.cmdsNoNotches);
 		const col = fat ? "#a08000" : "#008000";
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
@@ -109,7 +97,7 @@ class PenShape extends Shape {
 			}
 		}
 		// outline the tile
-		this.doPath(ctx, options);
+		Tile.doPath(ctx, options.drawNotches ? this.cmdsNotches: this.cmdsNoNotches);
 		const lineWidth = .025;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.strokeStyle = overlap ? "red" : "black";

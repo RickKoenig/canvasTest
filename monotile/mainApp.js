@@ -44,14 +44,6 @@ class MonoShape extends Shape {
 		this.drawCmds = this.makeCmds(this.polyPnts);
 	}
 
-	// draw the outline of a tile
-	static doPath(ctx, cmds) {
-		ctx.beginPath();
-        ctx.lineJoin = "round";
-		this.runCmds(ctx, cmds);
-		ctx.closePath();
-	}
-
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const bounds = true; // clipping circles
@@ -59,7 +51,7 @@ class MonoShape extends Shape {
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
-		this.doPath(ctx, this.drawCmds);
+		Tile.doPath(ctx, this.drawCmds);
 		//const col = this.color;
 		const col = options.color;
 		let colAdjust = doHilit ? .1 : 0;
@@ -69,7 +61,7 @@ class MonoShape extends Shape {
 
 		// outline the tile
 		ctx.strokeStyle = overlap ? "red" : "black";
-		this.doPath(ctx, this.drawCmds);
+		Tile.doPath(ctx, this.drawCmds);
 		const lineWidth = .01;
 		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.stroke();

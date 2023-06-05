@@ -140,6 +140,14 @@ class Tile {
 		return ret;
 	}
 
+	// draw the outline of a tile
+	static doPath(ctx, cmds) {
+		ctx.beginPath();
+        ctx.lineJoin = "round";
+		Shape.runCmds(ctx, cmds);
+		ctx.closePath();
+	}
+
 	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
 		const ctx = drawPrim.ctx;
 		ctx.save();

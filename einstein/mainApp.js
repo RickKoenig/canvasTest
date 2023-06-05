@@ -23,21 +23,7 @@ class HatShape extends Shape {
 		vec2.add(ret, centPos, offset);
 		return ret;
 	}
-/*
-	static makeCmds(pnts) {
-		const cmds = [];
-		let first = true;
-		for (let polyPnt of pnts) {
-			const cmd = {
-				pnt: polyPnt,
-				kind: first ? "moveTo" : "lineTo"
-			}
-			first = false;
-			cmds.push(cmd);
-		}
-		return cmds;
-	}
-*/
+
 	static setupPolyPnts(mir) {
 		// 13 points
 		this.polyPnts = [
@@ -162,14 +148,6 @@ class HatShape extends Shape {
 		this.drawCmds = this.makeCmds(this.polyPnts);
 	}
 
-	// draw the outline of a tile
-	static doPath(ctx, cmds) {
-		ctx.beginPath();
-        ctx.lineJoin = "round";
-		this.runCmds(ctx, cmds);
-		ctx.closePath();
-	}
-
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const bounds = false; // clipping circles
@@ -177,7 +155,7 @@ class HatShape extends Shape {
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
-		this.doPath(ctx, this.drawCmds);
+		Tile.doPath(ctx, this.drawCmds);
 		const col = options.color;
 		let colAdjust = doHilit ? .1 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
@@ -186,7 +164,7 @@ class HatShape extends Shape {
 
 		// outline the tile
 		ctx.strokeStyle = overlap ? "red" : "black";
-		this.doPath(ctx, this.drawCmds);
+		Tile.doPath(ctx, this.drawCmds);
 		const lineWidth = .03;
 		ctx.lineWidth = overlap ? lineWidth * 2 : lineWidth;
 		ctx.stroke();

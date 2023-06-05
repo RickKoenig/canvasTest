@@ -16,7 +16,7 @@ class RegShape extends Shape {
 		this.nearRad = .95 * rad * Math.cos(Math.PI / numSides); // easier overlap, a little in
 		super.setupPolyPnts();
 		// setup draw commands for faster drawing
-		this.cmdsNoNotches = this.makeCmds(this.polyPnts);
+		this.drawCmds = this.makeCmds(this.polyPnts);
 	} 
 
 	static {
@@ -45,27 +45,19 @@ class RegShape extends Shape {
 		}
 	}
 
-	// draw the outline of a tile
-	static doPath(ctx) {
-		ctx.beginPath();
-        ctx.lineJoin = "round";
-		this.runCmds(ctx, this.cmdsNoNotches);
-		ctx.closePath();
-	}
-
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
 		const bounds = false; // clipping circles
 		const edgeLabels = false;
 		// fill the tile
-		this.doPath(ctx);
+		Tile.doPath(ctx, this.drawCmds);
 		const col = this.colorTable[this.polyPnts.length];
 		let colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
 		// outline the tile
-		this.doPath(ctx);
+		Tile.doPath(ctx, this.drawCmds);
 		const lineWidth = .025;
 		ctx.lineWidth = overlap ? lineWidth * 3 : lineWidth;
 		ctx.strokeStyle = overlap ? "red" : "black";
