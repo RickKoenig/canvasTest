@@ -284,6 +284,11 @@ class HatTile extends Tile {
 		this.colorIdx = colorIdx;
 	}
 
+	clone() {
+		const ret = new HatTile(this.shape, this.pos, this.rot, this.colorIdx);
+		return ret;
+	}
+
 	isInside(userMouse) {
 		const br = this.shape.boundRadius;
 		const sd = vec2.sqrDist(userMouse, this.pos);

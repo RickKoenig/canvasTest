@@ -129,6 +129,11 @@ class MonoTile extends Tile {
 		this.colorIdx = colorIdx;
 	}
 
+	clone() {
+		const ret = new MonoTile(this.shape, this.pos, this.rot, this.colorIdx);
+		return ret;
+	}
+
 	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
 		if (!options) {
 			options = {};
@@ -221,16 +226,6 @@ class MainApp {
 		Tile.saveTiles(this.tiles, slot);
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
-		}
-		const verbose = false;
-		if (verbose) {
-			for (let tile of this.tiles) {
-				const shapeName = tile.kind == "hatOrig" ? "OrigMonoShape" : "monoSlotrorMonoShape";
-				console.log("this.tiles.push(new MonoTile(" + shapeName 
-					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
-					+ "], " + tile.rot.toFixed(3)
-					+ ", " + tile.colorIdx +"));");
-			}
 		}
 	}
 
