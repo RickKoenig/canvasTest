@@ -7,50 +7,56 @@ class MonoShape extends Shape {
 		"#bbb"
 	];
 	static snapAmount = degToRad(15);
-	static rad = 1;
-	//static hexInnerRad = .5;
-	//static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
+	static rad = .5;
 
-	// a tiling of hexagons, 12 points 30 degrees
-	/*static hexagonCoordCenter(i, j) {
-		const ret = vec2.fromValues(
-			  i * 2 * this.hexInnerRad * Math.cos(degToRad(30))
-			, i * 2 * this.hexInnerRad * Math.sin(degToRad(30)) + j * 2 * this.hexInnerRad);
-		return ret;
+	static nextPnt(pnt, radius, deg) {
+		const next = vec2.clone(pnt);
+		const ang = degToRad(deg);
+		const stepPnt = vec2.fromValues(radius * Math.cos(ang), radius * Math.sin(ang));
+		vec2.add(next, next, stepPnt);
+		return next;
 	}
-	
-	static hexagonCoord(i, j, ang = 0, doLong = false) {
-		const centPos = this.hexagonCoordCenter(i, j);
-		const curRad = doLong ? this.hexOuterRad : this.hexInnerRad;
-		const offset = vec2.fromValues(
-			curRad * Math.cos(ang)
-			, curRad * Math.sin(ang));
-		const ret = vec2.create();
-		vec2.add(ret, centPos, offset);
-		return ret;
-	}
-	*/
 
 	static setupPolyPnts() {
-		// 13 points, TODO: 14 points
-		this.polyPnts = [
+		// 13 angles
+		const degAngs = [
 			/*
-			this.hexagonCoordCenter(0, 0), 			
-			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
-			this.hexagonCoord(0, 0, degToRad(180), true),
-			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
-			this.hexagonCoord(0, 0, degToRad(90), false)
-			*/
-			[0, -1],
-			[0, 0],
-			[0, 1],
-			[1, 0]
+			270,
+			210,
+			120,
+			180,
+
+			90,
+			150,
+			60,
+			0,
+
+			90,
+			30,
+			300,
+			240,
+
+			330*/
+			/*
+			90, 150, 240, 180,
+			270, 210, 300, 0,
+			270, 330, 60, 120,
+			30*/
+
+			30, 120, 60, 330, 270, 0, 300, 210, 270, 180, 240, 150, 90
 		];
+		// 14 points (13 from angles, and 1 starter point)
+		let pnt = vec2.create();
+		this.polyPnts = [pnt];
+		for (let deg of degAngs) {
+			pnt = this.nextPnt(pnt, this.rad, deg);
+			this.polyPnts.push(pnt);
+		}
+
 		for (let pnt of this.polyPnts) {
 			vec2.scale(pnt, pnt, this.rad);
 		}
 		this.nearRad = .22 * this.rad; // easier overlap, number hand picked visually
-		//this.nearRad = .35 * this.hexInnerRad; // easier overlap, number hand picked visually
 		super.setupPolyPnts(); // prep points for center, snap etc.
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
@@ -132,7 +138,6 @@ MonoShape.factory = {
 }
 
 class MonoTile extends Tile {
-
 	constructor(shape, pos, rot, colorIdx) {
 		super(shape, pos, rot);
 		this.colorIdx = colorIdx;
