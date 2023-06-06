@@ -8,7 +8,29 @@ class MonoShape extends Shape {
 	];
 	static snapAmount = degToRad(15);
 	static rad = .5;
+	static hexInnerRad = .5;
+	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
 
+	// a tiling of hexagons, 12 points 30 degrees
+	static hexagonCoordCenter(i, j) {
+		const ret = vec2.fromValues(
+			  i * 2 * this.hexInnerRad * Math.cos(degToRad(30))
+			, i * 2 * this.hexInnerRad * Math.sin(degToRad(30)) + j * 2 * this.hexInnerRad);
+		return ret;
+	}
+	
+	static hexagonCoord(i, j, ang = 0, doLong = false) {
+		const centPos = this.hexagonCoordCenter(i, j);
+		const curRad = doLong ? this.hexOuterRad : this.hexInnerRad;
+		const offset = vec2.fromValues(
+			curRad * Math.cos(ang)
+			, curRad * Math.sin(ang));
+		const ret = vec2.create();
+		vec2.add(ret, centPos, offset);
+		return ret;
+	}
+
+	// draw monoshape
 	static nextPnt(pnt, radius, deg) {
 		const next = vec2.clone(pnt);
 		const ang = degToRad(deg);
@@ -17,32 +39,10 @@ class MonoShape extends Shape {
 		return next;
 	}
 
+	// turtle graphics
 	static setupPolyPnts() {
 		// 13 angles
 		const degAngs = [
-			/*
-			270,
-			210,
-			120,
-			180,
-
-			90,
-			150,
-			60,
-			0,
-
-			90,
-			30,
-			300,
-			240,
-
-			330*/
-			/*
-			90, 150, 240, 180,
-			270, 210, 300, 0,
-			270, 330, 60, 120,
-			30*/
-
 			30, 120, 60, 330, 270, 0, 300, 210, 270, 180, 240, 150, 90
 		];
 		// 14 points (13 from angles, and 1 starter point)
@@ -56,6 +56,55 @@ class MonoShape extends Shape {
 		for (let pnt of this.polyPnts) {
 			vec2.scale(pnt, pnt, this.rad);
 		}
+
+		// 4 five sided convex polygons for inside and overlap tests
+		const pnts0 = [
+			this.polyPnts[1],
+			this.polyPnts[2],
+			this.polyPnts[3],
+			this.polyPnts[4],
+			this.polyPnts[5],
+			/*
+			this.hexagonCoordCenter(0, 0), 			
+			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
+			this.hexagonCoord(0, 0, degToRad(180), true),
+			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
+			this.hexagonCoord(0, 0, degToRad(90), false)
+			*/
+		];
+		const pnts1 = [
+			this.hexagonCoordCenter(0, 0),
+			this.hexagonCoord(0, 0, degToRad(90), false),
+			this.hexagonCoord(0, 0, degToRad(60), true),
+			this.hexagonCoord(0, 0, degToRad(0), true),
+			this.hexagonCoord(0, 0, degToRad(-30), false)
+		];
+		const pnts2 = [
+			this.hexagonCoordCenter(1, 0),
+			this.hexagonCoord(1, 0, degToRad(270), false),
+			this.hexagonCoord(1, 0, degToRad(270 - 30), true),
+			this.hexagonCoord(1, 0, degToRad(180), true),
+			this.hexagonCoord(1, 0, degToRad(180 - 30), false)
+		];
+		const pnts3 = [
+			this.hexagonCoordCenter(0, 1),
+			this.hexagonCoord(0, 1, degToRad(30), false),
+			this.hexagonCoord(0, 1, degToRad(0), true),
+			this.hexagonCoord(0, 1, degToRad(-60), true),
+			this.hexagonCoord(0, 1, degToRad(270), false)
+		];
+		this.convexPnts = [
+			pnts0, pnts1, pnts2, pnts3
+		];
+
+		const numConvexPolys = this.convexPnts.length;
+		const numConvexSides = pnts0.length;
+		 // scratch for isInside()
+		 this.worldConvexInside = Array(numConvexSides);
+		 for (let i = 0; i < numConvexSides; ++i) {
+			 this.worldConvexInside[i] = vec2.create();
+		 }
+ 
 		this.nearRad = .22 * this.rad; // easier overlap, number hand picked visually
 		super.setupPolyPnts(); // prep points for center, snap etc.
 		// setup draw commands for faster drawing
@@ -66,6 +115,8 @@ class MonoShape extends Shape {
 		const ctx = drawPrim.ctx;
 		const bounds = true; // clipping circles
 		const edgeLabels = true;
+		const drawConvexPolys = true;
+		const convexIdx = 0; // 0 to 3
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
@@ -89,6 +140,8 @@ class MonoShape extends Shape {
 			drawPrim.drawCircle(pnt, this.rad * .05, "green");
 		}
 
+		if (doPatterns) {
+		}
 		// debugging stuff
 		if (bounds) {
 			drawPrim.drawCircleO([0, 0], this.nearRad, lineWidth, "white");
@@ -114,7 +167,8 @@ class MonoShape extends Shape {
 				ctx.restore();
 			}
 		}
-		if (doPatterns) {
+		if (drawConvexPolys) {
+			drawPrim.drawLinesParametric(this.convexPnts[convexIdx], .025, undefined, close = true, "#f0f");
 		}
 	}
 
@@ -146,6 +200,30 @@ class MonoTile extends Tile {
 	clone() {
 		const ret = new MonoTile(this.shape, this.pos, this.rot, this.colorIdx);
 		return ret;
+	}
+
+	isInside(userMouse) {
+		const br = this.shape.boundRadius;
+		const sd = vec2.sqrDist(userMouse, this.pos);
+		if (sd > br * br) {
+			return false; // early out
+		}
+		//return true;
+		// see if inside one of four 5 sided convex polys
+		const thresh = -.01;
+		for (let convexPoly of this.shape.convexPnts) {
+			for (let i = 0; i < convexPoly.length; ++i) {
+				const pntO = convexPoly[i];
+				const pntW = this.shape.worldConvexInside[i]; // reference
+				vec2.rot(pntW, pntO, this.rot);
+				vec2.add(pntW, pntW, this.pos);
+			}
+			const pen = penetrateConvexPoly(this.shape.worldConvexInside, userMouse);
+			if (pen > thresh) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	draw(drawPrim, id, doHilit = false, options = null, overlap = false) {
@@ -224,9 +302,24 @@ class MainApp {
 	#loadMonoTiles(slot, starter) {
 		this.tiles = MonoTile.loadTiles(slot, MonoShape.factory);
 		if (starter && !this.tiles.length) {
-			this.tiles.push(new MonoTile(MonoShape, [-2, 0], 0, 0));
-			this.tiles.push(new MonoTile(MonoShape, [0, 0], 0, 1));
-			this.tiles.push(new MonoTile(MonoShape, [2, 0], degToRad(15), 2));
+			this.tiles.push(new MonoTile(MonoShape, [0.295, -0.464], 1.571, 2));
+			this.tiles.push(new MonoTile(MonoShape, [0.612, 0.719], 1.571, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.059, -0.988], 2.094, 1));
+			this.tiles.push(new MonoTile(MonoShape, [1.180, 0.996], 1.047, 1));
+			this.tiles.push(new MonoTile(MonoShape, [1.239, 0.156], 2.618, 2));
+			this.tiles.push(new MonoTile(MonoShape, [1.061, -0.664], 0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [0.699, -1.358], -2.618, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.103, -1.619], 2.618, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.888, -1.647], 1.571, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.714, -0.822], 0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.345, -0.128], -0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [-0.167, 0.691], -2.618, 2));
+			this.tiles.push(new MonoTile(MonoShape, [0.195, 1.385], 0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [0.996, 1.647], -0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [1.782, 1.675], -1.571, 2));
+			this.tiles.push(new MonoTile(MonoShape, [1.811, 0.952], 0.524, 2));
+			this.tiles.push(new MonoTile(MonoShape, [2.606, -1.214], -3.142, 0));
+			this.tiles.push(new MonoTile(MonoShape, [0.453, 0.127], 1.571, 2));
 			console.log("creating " + this.tiles.length + " starter tiles");
 		}
 		this.editTiles = new EditTiles(this.tiles);
@@ -240,6 +333,17 @@ class MainApp {
 		Tile.saveTiles(this.tiles, slot);
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
+		}
+		// generate starter tiles
+		const verbose = false;
+		if (verbose) {
+			for (let tile of this.tiles) {
+				const shapeName = "MonoShape";
+				console.log("this.tiles.push(new MonoTile(" + shapeName 
+					+ ", [" + tile.pos[0].toFixed(3) + ", " + tile.pos[1].toFixed(3)
+					+ "], " + tile.rot.toFixed(3)
+					+ ", " + tile.colorIdx +"));");
+			}
 		}
 	}
 

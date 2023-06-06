@@ -150,8 +150,10 @@ class HatShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		const bounds = false; // clipping circles
-		const edgeLabels = false;
+		const bounds = true; // clipping circles
+		const edgeLabels = true;
+		const drawConvexPolys = true;
+		const convexIdx = 0; // 0 to 3
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
@@ -207,6 +209,9 @@ class HatShape extends Shape {
 				this.drawLevel(drawPrim, i, true);
 				ctx.restore();
 			}
+		}
+		if (drawConvexPolys) {
+			drawPrim.drawLinesParametric(this.convexPnts[convexIdx], .025, undefined, close = true, "#f0f");
 		}
 	}
 
@@ -438,6 +443,7 @@ class MainApp {
 		if (this.input) {
 			this.input.setFocus(); // back to canvas/div
 		}
+		// generate starter tiles
 		const verbose = false;
 		if (verbose) {
 			for (let tile of this.tiles) {
