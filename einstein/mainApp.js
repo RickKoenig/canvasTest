@@ -150,9 +150,9 @@ class HatShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		const bounds = true; // clipping circles
-		const edgeLabels = true;
-		const drawConvexPolys = true;
+		const bounds = false; // clipping circles
+		const edgeLabels = false;
+		const drawConvexPolys = false;
 		const convexIdx = 0; // 0 to 3
 		const doPatterns = options.drawPattern;
 
@@ -310,7 +310,7 @@ class HatTile extends Tile {
 		}
 		// move everything to world coords
 		const numConvexPolys = tileA.shape.convexPnts.length;
-		const pnts0 = tileA.shape.convexPnts[0];
+		const pnts0 = tileA.shape.convexPnts[0]; // all polys have 5 sides
 		const numConvexSides = pnts0.length;
 		for (let i = 0; i < numConvexPolys; ++i) {
 			const Ao = tileA.shape.convexPnts[i];
@@ -329,15 +329,15 @@ class HatTile extends Tile {
 			}
 		}
 		// check all convex polys
+		let areaIsect = 0;
 		for (let i = 0; i < numConvexPolys; ++i) {
 			for (let j = 0; j < numConvexPolys; ++j) {
 				const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[i], tileB.shape.worldOverlapB[j]);
-				const areaIsect = calcPolyArea(isectPoly);
-				MainApp.areaIsect += areaIsect;
-				if (MainApp.areaIsect > thresh) {
+				const area = calcPolyArea(isectPoly);
+				areaIsect += area;
+				if (areaIsect > thresh) {
 					return true;
 				}
-		
 			}
 		}
 		// nothing
@@ -356,7 +356,6 @@ class HatTile extends Tile {
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static areaIsect = 0;
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
 		return this.numInstances;
@@ -684,7 +683,6 @@ class MainApp {
 	}
 
 	#userDraw() {
-		MainApp.areaIsect = 0;
 		const options = {
 			drawIds: this.drawIds,
 			drawPattern: this.drawPattern

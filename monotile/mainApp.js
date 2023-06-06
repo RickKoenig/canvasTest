@@ -8,29 +8,8 @@ class MonoShape extends Shape {
 	];
 	static snapAmount = degToRad(15);
 	static rad = .5;
-	static hexInnerRad = .5;
-	static hexOuterRad = this.hexInnerRad / Math.cos(degToRad(30));
 
-	// a tiling of hexagons, 12 points 30 degrees
-	static hexagonCoordCenter(i, j) {
-		const ret = vec2.fromValues(
-			  i * 2 * this.hexInnerRad * Math.cos(degToRad(30))
-			, i * 2 * this.hexInnerRad * Math.sin(degToRad(30)) + j * 2 * this.hexInnerRad);
-		return ret;
-	}
-	
-	static hexagonCoord(i, j, ang = 0, doLong = false) {
-		const centPos = this.hexagonCoordCenter(i, j);
-		const curRad = doLong ? this.hexOuterRad : this.hexInnerRad;
-		const offset = vec2.fromValues(
-			curRad * Math.cos(ang)
-			, curRad * Math.sin(ang));
-		const ret = vec2.create();
-		vec2.add(ret, centPos, offset);
-		return ret;
-	}
-
-	// draw monoshape
+	// build monoshape
 	static nextPnt(pnt, radius, deg) {
 		const next = vec2.clone(pnt);
 		const ang = degToRad(deg);
@@ -57,55 +36,61 @@ class MonoShape extends Shape {
 			vec2.scale(pnt, pnt, this.rad);
 		}
 
-		// 4 five sided convex polygons for inside and overlap tests
+		// convex polygons for inside and overlap tests
 		const pnts0 = [
 			this.polyPnts[1],
 			this.polyPnts[2],
 			this.polyPnts[3],
 			this.polyPnts[4],
-			this.polyPnts[5],
-			/*
-			this.hexagonCoordCenter(0, 0), 			
-			this.hexagonCoord(0, 0, degToRad(180 + 30), false),
-			this.hexagonCoord(0, 0, degToRad(180), true),
-			this.hexagonCoord(0, 0, degToRad(90 + 30), true),
-			this.hexagonCoord(0, 0, degToRad(90), false)
-			*/
+			this.polyPnts[5]
 		];
 		const pnts1 = [
-			this.hexagonCoordCenter(0, 0),
-			this.hexagonCoord(0, 0, degToRad(90), false),
-			this.hexagonCoord(0, 0, degToRad(60), true),
-			this.hexagonCoord(0, 0, degToRad(0), true),
-			this.hexagonCoord(0, 0, degToRad(-30), false)
+			this.polyPnts[0],
+			this.polyPnts[1],
+			this.polyPnts[5],
+			this.polyPnts[6],
+			this.polyPnts[7],
+			this.polyPnts[8]
 		];
 		const pnts2 = [
-			this.hexagonCoordCenter(1, 0),
-			this.hexagonCoord(1, 0, degToRad(270), false),
-			this.hexagonCoord(1, 0, degToRad(270 - 30), true),
-			this.hexagonCoord(1, 0, degToRad(180), true),
-			this.hexagonCoord(1, 0, degToRad(180 - 30), false)
+			this.polyPnts[0],
+			this.polyPnts[8],
+			this.polyPnts[9],
+			this.polyPnts[10]
 		];
 		const pnts3 = [
-			this.hexagonCoordCenter(0, 1),
-			this.hexagonCoord(0, 1, degToRad(30), false),
-			this.hexagonCoord(0, 1, degToRad(0), true),
-			this.hexagonCoord(0, 1, degToRad(-60), true),
-			this.hexagonCoord(0, 1, degToRad(270), false)
+			this.polyPnts[0],
+			this.polyPnts[10],
+			this.polyPnts[11],
+			this.polyPnts[12]
 		];
 		this.convexPnts = [
-			pnts0, pnts1, pnts2, pnts3
+			pnts0,
+			pnts1,
+			pnts2,
+			pnts3
 		];
 
+		// scratch for overlap four sets of convex polys
+		// in world coords for 2 mono tiles
+		// and scratch for isInside()
 		const numConvexPolys = this.convexPnts.length;
-		const numConvexSides = pnts0.length;
-		 // scratch for isInside()
-		 this.worldConvexInside = Array(numConvexSides);
-		 for (let i = 0; i < numConvexSides; ++i) {
-			 this.worldConvexInside[i] = vec2.create();
-		 }
+		this.worldOverlapA = Array(numConvexPolys);
+		this.worldOverlapB = Array(numConvexPolys);
+		this.worldConvexInside = Array(numConvexPolys);
+		for (let i = 0; i < numConvexPolys; ++i) {
+			const numConvexSides = this.convexPnts[i].length;
+			const A = this.worldOverlapA[i] = Array(numConvexSides);
+			const B = this.worldOverlapB[i] = Array(numConvexSides);
+			const I = this.worldConvexInside[i] = Array(numConvexSides);
+			for (let j = 0; j < numConvexSides; ++j) {
+				A[j] = vec2.create();
+				B[j] = vec2.create();
+				I[j] = vec2.create();
+			}
+		}
  
-		this.nearRad = .22 * this.rad; // easier overlap, number hand picked visually
+		this.nearRad = .35 * this.rad; // easier overlap, number hand picked visually
 		super.setupPolyPnts(); // prep points for center, snap etc.
 		// setup draw commands for faster drawing
 		this.drawCmds = this.makeCmds(this.polyPnts);
@@ -113,15 +98,14 @@ class MonoShape extends Shape {
 
 	static draw(drawPrim, id, doHilit = false, options, overlap = false) {
 		const ctx = drawPrim.ctx;
-		const bounds = true; // clipping circles
-		const edgeLabels = true;
-		const drawConvexPolys = true;
+		const bounds = false; // clipping circles
+		const edgeLabels = false;
+		const drawConvexPolys = false;
 		const convexIdx = 0; // 0 to 3
 		const doPatterns = options.drawPattern;
 
 		// fill the tile
 		Tile.doPath(ctx, this.drawCmds);
-		//const col = this.color;
 		const col = options.color;
 		let colAdjust = doHilit ? .1 : 0;
 		const colHilit = Bitmap32.colorAdd(col, colAdjust);
@@ -137,7 +121,7 @@ class MonoShape extends Shape {
 
 		// draw points
 		for (let pnt of this.polyPnts) {
-			drawPrim.drawCircle(pnt, this.rad * .05, "green");
+			drawPrim.drawCircle(pnt, this.rad * .025, "green");
 		}
 
 		if (doPatterns) {
@@ -208,21 +192,75 @@ class MonoTile extends Tile {
 		if (sd > br * br) {
 			return false; // early out
 		}
-		//return true;
-		// see if inside one of four 5 sided convex polys
+		// see if inside one of four convex polys
 		const thresh = -.01;
-		for (let convexPoly of this.shape.convexPnts) {
+		for (let j = 0; j < this.shape.convexPnts.length; ++j) {
+			const convexPoly = this.shape.convexPnts[j];
+			const convexInside = this.shape.worldConvexInside[j];
 			for (let i = 0; i < convexPoly.length; ++i) {
 				const pntO = convexPoly[i];
-				const pntW = this.shape.worldConvexInside[i]; // reference
+				const pntW = convexInside[i]; // reference
 				vec2.rot(pntW, pntO, this.rot);
 				vec2.add(pntW, pntW, this.pos);
 			}
-			const pen = penetrateConvexPoly(this.shape.worldConvexInside, userMouse);
+			const pen = penetrateConvexPoly(convexInside, userMouse);
 			if (pen > thresh) {
 				return true;
 			}
 		}
+		return false;
+	}
+
+	isOverlap(tileB, thresh = .001) {
+		const tileA = this;
+		if (tileA === tileB) {
+			return false; // can't overlap over self
+		}
+		const td = vec2.sqrDist(tileA.pos, tileB.pos);
+		if (td < tileA.shape.nearRad * tileA.shape.nearRad) {
+			return true; // early in
+		}
+		if (!calcIntsectBoundcircle(tileA.shape.boundRadius, tileA.pos
+				, tileB.shape.boundRadius, tileB.pos)) {
+			return false; // early out
+		}
+		// move everything to world coords for both tiles
+		const numConvexPolys = tileA.shape.convexPnts.length;
+		for (let i = 0; i < numConvexPolys; ++i) {
+			const pntsIA = tileA.shape.convexPnts[i];
+			const numConvexSidesA = pntsIA.length;
+			const Ao = tileA.shape.convexPnts[i];
+			const Aw = tileA.shape.worldOverlapA[i];
+			for (let j = 0; j < numConvexSidesA; ++j) {
+				let pntO = Ao[j];
+				let pntW = Aw[j]; // reference
+				vec2.rot(pntW, pntO, tileA.rot);
+				vec2.add(pntW, pntW, tileA.pos);
+			}
+			const pntsIB = tileB.shape.convexPnts[i];
+			const numConvexSidesB = pntsIB.length;
+			const Bo = tileB.shape.convexPnts[i];
+			const Bw = tileB.shape.worldOverlapB[i];
+			for (let j = 0; j < numConvexSidesB; ++j) {
+				let pntO = Bo[j];
+				let pntW = Bw[j]; // reference
+				vec2.rot(pntW, pntO, tileB.rot);
+				vec2.add(pntW, pntW, tileB.pos);
+			}
+		}
+		// check all convex polys
+		let areaIsect = 0;
+		for (let i = 0; i < numConvexPolys; ++i) {
+			for (let j = 0; j < numConvexPolys; ++j) {
+				const isectPoly = calcPolyIntsect(tileA.shape.worldOverlapA[i], tileB.shape.worldOverlapB[j]);
+				const area = calcPolyArea(isectPoly);
+				areaIsect += area;
+				if (areaIsect > thresh) {
+					return true;
+				}
+			}
+		}
+		// nothing
 		return false;
 	}
 
@@ -238,7 +276,6 @@ class MonoTile extends Tile {
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
-	static areaIsect = 0;
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
 		return this.numInstances;
@@ -574,7 +611,6 @@ class MainApp {
 	}
 
 	#userDraw() {
-		MainApp.areaIsect = 0;
 		const options = {
 			drawIds: this.drawIds,
 			drawPattern: this.drawPattern
