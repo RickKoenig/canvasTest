@@ -42,7 +42,7 @@ class DrawPrimitives {
         this.ctx.lineWidth = lineWidth * ndcZoom;
         const sizeScale = vec2.create();
         vec2.scale(sizeScale, size, ndcZoom);
-        this.ctx.fillStyle = color;
+        this.ctx.strokeStyle = color;
         this.ctx.strokeRect(topLeft[0], topLeft[1], sizeScale[0], sizeScale[1]);
     }
 
@@ -62,7 +62,7 @@ class DrawPrimitives {
         this.ctx.lineWidth = lineWidth * ndcZoom;
         let sx = size[0] * ndcZoom;
         let sy = size[1] * ndcZoom;
-        this.ctx.fillStyle = color;
+        this.ctx.strokeStyle = color;
         this.ctx.strokeRect(center[0] - sx / 2
             , center[1] - sy / 2
             , sx

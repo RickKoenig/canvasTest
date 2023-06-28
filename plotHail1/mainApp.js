@@ -36,7 +36,7 @@ class MainApp {
 		console.log("Hail Stats");
 		console.log("2^n - 1 START");
 
-		const maxHailBlocks = 40;
+		const maxHailBlocks = 4;//40;
 		const hailBlockSize = 100;
 		this.arrHailRatio = [];
 		// setup worker thread
@@ -67,8 +67,9 @@ class MainApp {
 	}
 
 	#drawPowers() {
-		this.drawPrim.drawLinesSimple(this.arrHailRatio, .0125, .02 // linewidth, circlesize
-			, .1, .1 // start, stepX
+		const step = 1; // .1;
+		this.drawPrim.drawLinesSimple(this.arrHailRatio, .0175, .02 // linewidth, circlesize
+			, step, step // start, stepX
 			, "green", "black");
 	}
 
@@ -190,23 +191,6 @@ class MainApp {
 		return ret;
 	}
 
-	static #hailStep(bn) {
-		if (bn % 2n == 0) { // even
-			return bn / 2n;
-		} else { // odd
-			return (3n * bn + 1n) / 2n;
-		}
-	}
-
-	static #countHailSteps(bn) {
-		let ret = 0;
-		while(bn != 1) {
-			bn = MainApp.#hailStep(bn);
-			++ret;
-		}
-		return ret;
-	}
-
 	constructor() {
 		console.log("mainapp hail");
 
@@ -232,8 +216,8 @@ class MainApp {
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		//const center = [10, 30]; // focus on freegroup
 		//const zoom = .0958;
-		const center = [20, 6]; // focus on powers of 2
-		const zoom = .07;
+		const center = [7, 6.7]; // focus on hail blocks
+		const zoom = .14;
 		this.plotter2d = new Plotter2d(this.plotter2dCanvas
 			, this.ctx, this.vp, center, zoom, false, false);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
@@ -253,10 +237,10 @@ class MainApp {
 		// params
 		this.nodeRad = .15;
 		//this.doExpand = true; // draw the loop 1-2-1-2 etc.
-		//this.doThrees = true; // don't create multiples of 3
-		this.drawThrees = true; // don't expand 3-6-12, 9-18-36 etc.
+		this.doThrees = false; // don't create multiples of 3
+		this.drawThrees = false; // don't expand 3-6-12, 9-18-36 etc. if false
 		this.loose = true; // make look cleaner
-		this.numLevels = 20;
+		this.numLevels = 15;
 
 		this.levels = []; // array of level, level is array of nodes
 		this.nodes = []; // all the nodes location
@@ -359,6 +343,8 @@ class MainApp {
 		this.#initPowers();
 		this.#initFreeGroup();
 		this.#initLevels();
+		this.minHailBlocksMoves = 5;
+		this.hailBlocks = new HailBlocks(this.drawPrim);
 	}
 
 	#userBuildUI() {
@@ -366,7 +352,7 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		
 		// info
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, "textInfo", "textInfoLog placeholder");
 
 
 		makeEle(this.vp, "hr");
@@ -387,12 +373,18 @@ class MainApp {
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show powers of 2");
 		this.eles.checkboxPow2 = makeEle(this.vp, "input", "checkboxPow2", null, "hi", () => this.dirty = true, "checkbox");
-		this.eles.checkboxPow2.checked = true;
+		this.eles.checkboxPow2.checked = false;
 
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show freeGroup");
 		this.eles.freeGroup = makeEle(this.vp, "input", "freeGroup", null, "hu", () => this.dirty = true, "checkbox");
 		this.eles.freeGroup.checked = false;
+		
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Show hailBlocks");
+		this.eles.hailBlocks = makeEle(this.vp, "input", "hailBlocks", null, "hu", () => this.dirty = true, "checkbox");
+		this.eles.hailBlocks.checked = true;
+		
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Show graph paper");
 		this.eles.showGraph = makeEle(this.vp, "input", "showGraphpaper", null, "ho", () => this.dirty = true, "checkbox");
@@ -501,6 +493,9 @@ class MainApp {
 		if (this.eles.showNodes.checked) {
 			this.#drawLevels();
 		}
+		if (this.eles.hailBlocks.checked) {
+			this.hailBlocks.draw(this.drawPrim, this.minHailBlocksMoves);
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -511,8 +506,9 @@ class MainApp {
 		const p = this.plotter2d;
 		// show inputEventsStats
 		const fpsStr = "FPS = " + this.avgFps.toFixed(2) + "\n"
-			+ "\nUse the arrow keys\nto navigate\nthe Free Group\n"
-			+ "\nDirty Count = " + this.dirtyCount;
+			+ "Use the arrow keys\nto navigate\nthe Free Group\n"
+			+ "Dirty Count = " + this.dirtyCount + "\n"
+			+ "Max Value = " + this.hailBlocks.getMaxValue();
 		this.eles.textInfoLog.innerText = fpsStr;
 	}
 
