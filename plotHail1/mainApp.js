@@ -343,7 +343,7 @@ class MainApp {
 		this.#initPowers();
 		this.#initFreeGroup();
 		this.#initLevels();
-		this.minHailBlocksMoves = 5;
+		this.minHailBlocksMoves = 7;
 		this.hailBlocks = new HailBlocks(this.drawPrim);
 	}
 
