@@ -108,7 +108,7 @@ class MonoShape extends Shape {
 		Tile.doPath(ctx, this.drawCmds);
 		const col = options.color;
 		let colAdjust = doHilit ? .1 : 0;
-		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		const colHilit = Bitmap32p.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
 

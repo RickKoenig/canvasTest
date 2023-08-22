@@ -38,8 +38,8 @@ class RegShape extends Shape {
 			colObj.g = brt + sat * Math.cos(angG);
 			colObj.b = brt + sat * Math.cos(angB);
 			colObj.a = 255;
-			const col32 = Bitmap32.RGBATocolor32(colObj);
-			const colStr = Bitmap32.color32ToStr(col32);
+			const col32 = Bitmap32p.RGBATocolor32(colObj);
+			const colStr = Bitmap32p.color32ToStr(col32);
 			console.log("colstr = " + colStr);
 			this.colorTable[i + 3] = colStr;
 		}
@@ -53,7 +53,7 @@ class RegShape extends Shape {
 		Tile.doPath(ctx, this.drawCmds);
 		const col = this.colorTable[this.polyPnts.length];
 		let colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		const colHilit = Bitmap32p.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
 		// outline the tile

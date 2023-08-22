@@ -41,7 +41,7 @@ class MainApp {
 		this.frame = 0;
 		this.fracFrame = 0;
 
-		this.backgndColor = Bitmap32.strToColor32("lightblue");
+		this.backgndColor = Bitmap32p.strToColor32("lightblue");
 
 		// bitmaps
 		this.#initBitmaps();
@@ -182,8 +182,8 @@ class MainApp {
 	}
 
 	#buildSimBm() {
-		this.bitmapList.simBm = new Bitmap32([this.simBmSize, this.simBmSize]);
-		this.bitmapList.simBm2 = new Bitmap32([this.simBmSize, this.simBmSize]);
+		this.bitmapList.simBm = new Bitmap32p([this.simBmSize, this.simBmSize]);
+		this.bitmapList.simBm2 = new Bitmap32p([this.simBmSize, this.simBmSize]);
 	}
 
 	#restartSim() {
@@ -209,7 +209,7 @@ class MainApp {
 	#runSimFrame() {
 		const simBm = this.bitmapList.simBm; // current
 		const simBm2 = this.bitmapList.simBm2; // copy, read from simBm2 to update simBm
-		Bitmap32.clipBlit(simBm, [0, 0], simBm2, [0, 0], simBm.size);
+		Bitmap32p.clipBlit(simBm, [0, 0], simBm2, [0, 0], simBm.size);
 		this.eatCount = 0;
 
 		// run the simulation
@@ -242,11 +242,11 @@ class MainApp {
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
-		this.bitmapList.mainBm = new Bitmap32(this.fixedSize);
+		this.bitmapList.mainBm = new Bitmap32p(this.fixedSize);
 
 		// already fully loaded images, copy images to bitmap list
 		for (const imageName in this.images) {
-			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
+			this.bitmapList[imageName] = new Bitmap32p(this.images[imageName]); // construct Bitmap32p from <images>
 		}
 
 		// color management
@@ -262,8 +262,8 @@ class MainApp {
 		this.#restartSim();
 
 		// create palletized simBM and zoomSimBmPal
-		this.bitmapList.simBmPal = new Bitmap32([this.simBmSize, this.simBmSize]);
-		this.bitmapList.zoomSimBmPal =  new Bitmap32(
+		this.bitmapList.simBmPal = new Bitmap32p([this.simBmSize, this.simBmSize]);
+		this.bitmapList.zoomSimBmPal =  new Bitmap32p(
 			[this.bitmapList.simBm.size[0] * this.zoomRatio
 			, this.bitmapList.simBm.size[1] * this.zoomRatio]);
 
@@ -314,24 +314,24 @@ class MainApp {
 			const x = Math.floor(j / 16);
 			const y = j % 16;
 			if (this.hilit == j) {
-				mainBm.clipRect([19 + 20 * x, 19 + 20 * y], [20, 20], Bitmap32.strToColor32("white"));
+				mainBm.clipRect([19 + 20 * x, 19 + 20 * y], [20, 20], Bitmap32p.strToColor32("white"));
 			}
 			mainBm.clipRect([21 + 20 * x, 21 + 20 * y], [16, 16], val);
 
 		}
 		// palettize and zoom simBm
-		Bitmap32.palettize(this.bitmapList.simBm
+		Bitmap32p.palettize(this.bitmapList.simBm
 			, this.bitmapList.simBmPal
 			, this.bitmapList.dpaint2Palette.data32)
-		Bitmap32.zoomBM(simBmPal, zoomSimBmPal, [this.zoomRatio, this.zoomRatio]);
+		Bitmap32p.zoomBM(simBmPal, zoomSimBmPal, [this.zoomRatio, this.zoomRatio]);
 		// draw zoomSimBmPal
-		Bitmap32.clipBlit(zoomSimBmPal, [0, 0]
+		Bitmap32p.clipBlit(zoomSimBmPal, [0, 0]
 			, mainBm, offSim
 			, zoomSimBmPal.size);
 
 		// very simple cursor
 		const p = this.input.mouse.mxy;
-		const colRed = Bitmap32.strToColor32("red");
+		const colRed = Bitmap32p.strToColor32("red");
 		mainBm.clipCircle(p, 1, colRed);
 
 		// finally draw background to canvas

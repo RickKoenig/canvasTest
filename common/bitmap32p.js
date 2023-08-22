@@ -1,6 +1,6 @@
-class Bitmap32 {
+class Bitmap32p {
 
-	//static errorColor = Bitmap32.strToColor32("hotpink");
+	//static errorColor = Bitmap32p.strToColor32("hotpink");
 	static errorColor = NaN;
 	// members:
 	//		size : 2d array of dimensions
@@ -16,7 +16,7 @@ class Bitmap32 {
 	
     constructor(arg1, arg2) {
 		let isfillColor32 = false;
-		let fillColor32 = Bitmap32.color32(); // opaque black is the default
+		let fillColor32 = Bitmap32p.color32(); // opaque black is the default
 		if (Array.isArray(arg1) || arg1.constructor == Float32Array) { // size and optional uInt8ClampedData or color32
 			this.size = vec2.clone(arg1);
 			if (arg2 && arg2.constructor == Uint32Array) { // data32
@@ -34,7 +34,7 @@ class Bitmap32 {
 				this.imageData = new ImageData(this.size[0], this.size[1]);
 				if (arg2 !== undefined) {
 					if (typeof arg2 == 'string') {
-						fillColor32 = Bitmap32.strToColor32(arg2);
+						fillColor32 = Bitmap32p.strToColor32(arg2);
 					} else {
 						fillColor32 = arg2; 
 					}
@@ -101,7 +101,7 @@ class Bitmap32 {
 			const g = Number("0x" + rgbaStr.slice(3,5));
 			const b = Number("0x" + rgbaStr.slice(5,7));
 			const a8 = Math.round(alpha * 255);
-			return Bitmap32.color32(r, g, b, a8);
+			return Bitmap32p.color32(r, g, b, a8);
 		// has alpha, rgba(r,g,b,a) : decimal 0 to 255, alpha 0 to 1
 		} else if (rgbaStr.startsWith('rgba(')) { 
 			const stIdx = rgbaStr.indexOf("(") + 1;
@@ -113,7 +113,7 @@ class Bitmap32 {
 			const b = Number(splt[2]);
 			const a = Number(splt[3]);
 			const a8 = Math.round(alpha * a * 255);
-			return Bitmap32.color32(r, g, b, a8);
+			return Bitmap32p.color32(r, g, b, a8);
 		}
 	}
 
@@ -126,6 +126,18 @@ class Bitmap32 {
 				   + g.toString(16).padStart(2, "0") 
 				   + b.toString(16).padStart(2, "0") 
 				   + a.toString(16).padStart(2, "0");
+	}
+
+	static color32ToArray(c32) {
+		const r = c32 & 0xff;
+		const g = (c32 >> 8) & 0xff;
+		const b = (c32 >> 16) & 0xff;
+		const a = (c32 >> 24) & 0xff;
+		return [r / 255, g / 255, b / 255, a / 255];
+	}
+
+	static colorStrToArray(colStr) {
+		return this.color32ToArray(this.strToColor32(colStr));
 	}
 
 	static #chanMul(chan, mul = 1) {
@@ -150,27 +162,27 @@ class Bitmap32 {
 
 	// in CSS str, out CSS str, leave alpha alone
 	static colorMul(colStr, mul) {
-		const col32 = Bitmap32.strToColor32(colStr);
-		let colObj = Bitmap32.color32ToRGBA(col32);
-		colObj.r = Bitmap32.#chanMul(colObj.r, mul);
-		colObj.g = Bitmap32.#chanMul(colObj.g, mul);
-		colObj.b = Bitmap32.#chanMul(colObj.b, mul);
-		const col32Adj = Bitmap32.RGBATocolor32(colObj);
-		return Bitmap32.color32ToStr(col32Adj);
+		const col32 = Bitmap32p.strToColor32(colStr);
+		let colObj = Bitmap32p.color32ToRGBA(col32);
+		colObj.r = Bitmap32p.#chanMul(colObj.r, mul);
+		colObj.g = Bitmap32p.#chanMul(colObj.g, mul);
+		colObj.b = Bitmap32p.#chanMul(colObj.b, mul);
+		const col32Adj = Bitmap32p.RGBATocolor32(colObj);
+		return Bitmap32p.color32ToStr(col32Adj);
 	}
 
 	// in CSS str, out CSS str, leave alpha alone
 	static colorAdd(colStr, add) {
-		const col32 = Bitmap32.strToColor32(colStr);
-		let colObj = Bitmap32.color32ToRGBA(col32);
-		colObj.r = Bitmap32.#chanAdd(colObj.r, add);
-		colObj.g = Bitmap32.#chanAdd(colObj.g, add);
-		colObj.b = Bitmap32.#chanAdd(colObj.b, add);
-		const col32Adj = Bitmap32.RGBATocolor32(colObj);
-		return Bitmap32.color32ToStr(col32Adj);
+		const col32 = Bitmap32p.strToColor32(colStr);
+		let colObj = Bitmap32p.color32ToRGBA(col32);
+		colObj.r = Bitmap32p.#chanAdd(colObj.r, add);
+		colObj.g = Bitmap32p.#chanAdd(colObj.g, add);
+		colObj.b = Bitmap32p.#chanAdd(colObj.b, add);
+		const col32Adj = Bitmap32p.RGBATocolor32(colObj);
+		return Bitmap32p.color32ToStr(col32Adj);
 	}
 
-	fill(color32 = Bitmap32.color32()) {
+	fill(color32 = Bitmap32p.color32()) {
 		this.data32.fill(color32);
 	}
 
@@ -201,7 +213,7 @@ class Bitmap32 {
 		if (this.pointClip(p)) {
 			return this.data32[p[0] + Math.round(p[1]) * this.size[0]];
 		}
-		return Bitmap32.errorColor;
+		return Bitmap32p.errorColor;
 	}
 
 	fastPutPixel(p, color32) {
@@ -281,7 +293,7 @@ class Bitmap32 {
 				return false; // don't draw line that can't be seen
 			}
 			if (!code0) {
-				Bitmap32.swapPoints(p0, p1);
+				Bitmap32p.swapPoints(p0, p1);
 				// swap codes
 				[code0, code1] = [code1, code0];
 			}
@@ -448,7 +460,7 @@ class Bitmap32 {
 		const sourceStart = vec2.clone(sourceStartOrig);
 		const destStart = vec2.clone(destStartOrig);
 		const xferSize = vec2.clone(xferSizeOrig);
-		if (Bitmap32.blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize)) {
+		if (Bitmap32p.blitterClip(sourceBM, sourceStart, destBM, destStart, xferSize)) {
 			this.fastBlit(sourceBM, sourceStart, destBM, destStart, xferSize);
 		}
 	}
@@ -646,7 +658,7 @@ class Bitmap32 {
 		let y = p[1];
 		this.fillStack = [];
 		const r = this.clipGetPixel([x, y]);
-		if (r == c || isNaN(r) || r == Bitmap32.errorColor) {
+		if (r == c || isNaN(r) || r == Bitmap32p.errorColor) {
 			return;
 		}
 		this.#fillPush(x, y);

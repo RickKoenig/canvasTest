@@ -39,7 +39,7 @@ class MainApp {
 		this.frame = 0;
 		this.fracFrame = 0;
 
-		this.backgndColor = Bitmap32.strToColor32("lightblue");
+		this.backgndColor = Bitmap32p.strToColor32("lightblue");
 
 		// bitmaps
 		this.#initBitmaps();
@@ -164,13 +164,13 @@ class MainApp {
 	}
 
 	#setDacRange(dacs, sIdx, eIdx, sCol, eCol) {
-		sCol = Bitmap32.color32ToRGBA(sCol); // convert to .r, .g, .b, .a
-		eCol = Bitmap32.color32ToRGBA(eCol); // convert to .r, .g, .b, .a
+		sCol = Bitmap32p.color32ToRGBA(sCol); // convert to .r, .g, .b, .a
+		eCol = Bitmap32p.color32ToRGBA(eCol); // convert to .r, .g, .b, .a
 		for (let i = sIdx; i <= eIdx; ++i) {
 			const r = Math.floor((eCol.r * (i - sIdx) + sCol.r * (eIdx - i)) / (eIdx - sIdx));
 			const g = Math.floor((eCol.g * (i - sIdx) + sCol.g * (eIdx - i)) / (eIdx - sIdx));
 			const b = Math.floor((eCol.b * (i - sIdx) + sCol.b * (eIdx - i)) / (eIdx - sIdx));
-			dacs[i] = Bitmap32.color32(r, g, b);
+			dacs[i] = Bitmap32p.color32(r, g, b);
 		}
 	}
 	
@@ -281,8 +281,8 @@ class MainApp {
 		this.YSIZE = 768;
 		this.zoomRatio = 8;
 		// build palettized Bm here
-		this.bitmapList.work8Bm = new Bitmap32([this.RX, this.RY], this.colorsEnum.blue);
-		this.bitmapList.work8BmZoom = new Bitmap32([this.XSIZE, this.YSIZE]);
+		this.bitmapList.work8Bm = new Bitmap32p([this.RX, this.RY], this.colorsEnum.blue);
+		this.bitmapList.work8BmZoom = new Bitmap32p([this.XSIZE, this.YSIZE]);
 		const roomsDac = this.bitmapList.roomsPal.data32;
 		// strip off tracer colors from room
 		const roomsIdxBm = this.bitmapList.roomsIdx;
@@ -302,11 +302,11 @@ class MainApp {
 		this.andArr = new Uint8Array(256);
 		this.orArr = new Uint8Array(256);
 
-		const C32BLUE = Bitmap32.color32(0,0,170);
-		const C32LIGHTGREEN = Bitmap32.color32(85,255,85);
-		const C32YELLOW = Bitmap32.color32(255,255,85);
-		const C32RED = Bitmap32.color32(170,0,0);
-		const C32MAGENTA = Bitmap32.color32(170,0,170);
+		const C32BLUE = Bitmap32p.color32(0,0,170);
+		const C32LIGHTGREEN = Bitmap32p.color32(85,255,85);
+		const C32YELLOW = Bitmap32p.color32(255,255,85);
+		const C32RED = Bitmap32p.color32(170,0,0);
+		const C32MAGENTA = Bitmap32p.color32(170,0,170);
 
 		// setup dacs
 		this.dacs.set(roomsDac.subarray(0, 16), 0);
@@ -437,11 +437,11 @@ class MainApp {
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
-		this.bitmapList.mainBm = new Bitmap32(this.fixedSize);
+		this.bitmapList.mainBm = new Bitmap32p(this.fixedSize);
 
 		// already fully loaded images, copy images to bitmap list
 		for (const imageName in this.images) {
-			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
+			this.bitmapList[imageName] = new Bitmap32p(this.images[imageName]); // construct Bitmap32p from <images>
 		}
 
 		// build rooms32 and zoom
@@ -476,7 +476,7 @@ class MainApp {
 
 		// build and draw palettized rooms Bm
 		this.#clipmask8(roomsIdxBm, work8Bm, this.andArr, this.orArr);
-		Bitmap32.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
+		Bitmap32p.zoomBM(work8Bm, work8BmZoom, [this.zoomRatio, this.zoomRatio]);
 		// draw palette
 		for (let i = 0; i < 256; i++) {
 			work8BmZoom.clipRect([i * 4 ,0 ], [4, 16], i);
@@ -492,12 +492,12 @@ class MainApp {
 		work8BmZoom.clipLine([palIdx * 4 + 4, 0], [palIdx * 4 + 4, 15], black);
 		work8BmZoom.clipLine([palIdx * 4 + 5, 0], [palIdx * 4 + 5, 15], black);
 
-		Bitmap32.palettize(work8BmZoom, mainBm, this.dacs);
+		Bitmap32p.palettize(work8BmZoom, mainBm, this.dacs);
 
 		const drawCursor = true;
 		if (drawCursor) {
 			// very simple cursor
-			const colGreen = Bitmap32.strToColor32("red");
+			const colGreen = Bitmap32p.strToColor32("red");
 			mainBm.clipCircle(mxy, 2, colGreen);
 		}
 

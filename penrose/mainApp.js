@@ -76,7 +76,7 @@ class PenShape extends Shape {
 		Tile.doPath(ctx, options.drawNotches ? this.cmdsNotches: this.cmdsNoNotches);
 		const col = fat ? "#a08000" : "#008000";
 		let colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd(col, colAdjust);
+		const colHilit = Bitmap32p.colorAdd(col, colAdjust);
 		ctx.fillStyle = colHilit;
 		ctx.fill();
 		// draw arcs
@@ -86,8 +86,8 @@ class PenShape extends Shape {
 			const arcRad2 = 1 - arcRad1;
 			const col1 = "#2040ff";   // a blue
 			const col2 = "indianred"; // a red
-			const col1Hilit = Bitmap32.colorAdd(col1, colAdjust);
-			const col2Hilit = Bitmap32.colorAdd(col2, colAdjust);
+			const col1Hilit = Bitmap32p.colorAdd(col1, colAdjust);
+			const col2Hilit = Bitmap32p.colorAdd(col2, colAdjust);
 			if (fat) {
 				drawPrim.drawArcO(this.polyPnts[0], arcRad1, arcWidth, degToRad(0), degToRad(72), col1Hilit);
 				drawPrim.drawArcO(this.polyPnts[2], arcRad2, arcWidth, degToRad(180), degToRad(180 + 72), col2Hilit);

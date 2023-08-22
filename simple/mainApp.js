@@ -25,7 +25,7 @@ class SimpleShape1 extends Shape {
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("green", colAdjust);
+		const colHilit = Bitmap32p.colorAdd("green", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "black");
 	}
 
@@ -58,7 +58,7 @@ class SimpleShape2 extends Shape {
 	static draw(drawPrim, id, doHilit = false) {
 		const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
-		const colHilit = Bitmap32.colorAdd("gray", colAdjust);
+		const colHilit = Bitmap32p.colorAdd("gray", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "blue");
 		const radius = .025;
 		drawPrim.drawCircle([0,0], radius, "red", ); // center

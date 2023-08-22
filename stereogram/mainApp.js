@@ -47,7 +47,7 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.backgndColor = Bitmap32.strToColor32("lightblue");
+		this.backgndColor = Bitmap32p.strToColor32("lightblue");
 
 		// bitmaps
 		this.frame = 0;
@@ -203,7 +203,7 @@ class MainApp {
 	}
 
 	#makeTextBM(depthColor32) {
-		// create a bitmap32 with some text on it
+		// create a Bitmap32p with some text on it
 		const textString = "Hello!";
 		// make a 2D context for the text
 		const cvs = document.createElement('canvas');
@@ -224,9 +224,9 @@ class MainApp {
 		ctxTxt.translate(-centerX, -centerY + adjCenter);
 		// text font and color
 		ctxTxt.font = 'bold 1px serif';
-		ctxTxt.fillStyle = Bitmap32.color32ToStr(depthColor32); // text color
+		ctxTxt.fillStyle = Bitmap32p.color32ToStr(depthColor32); // text color
 		ctxTxt.fillText(textString, centerX, centerY);
-		const textBM = new Bitmap32([cvs.width, cvs.height]
+		const textBM = new Bitmap32p([cvs.width, cvs.height]
 			, ctxTxt.getImageData(0, 0, cvs.width, cvs.height).data);
 		return textBM;
 	}
@@ -241,7 +241,7 @@ class MainApp {
 		const r16 = r * 16;
 		let g = r16 & 0xff;
 		let b = (r16 >> 4) & 0xff;
-		const col32 = Bitmap32.color32(r, g, b);
+		const col32 = Bitmap32p.color32(r, g, b);
 		return col32;
 	}
 
@@ -262,7 +262,7 @@ class MainApp {
 		// depth bitmap, use red channel for depth
 		const mainBM = this.bitmapList.mainBM;
 		if (!this.bitmapList.depthmap) {
-			this.bitmapList.depthmap = new Bitmap32([mainBM.size[0], mainBM.size[1] - this.triSize]);
+			this.bitmapList.depthmap = new Bitmap32p([mainBM.size[0], mainBM.size[1] - this.triSize]);
 		} else {
 			this.bitmapList.depthmap.fill();
 		}
@@ -270,7 +270,7 @@ class MainApp {
 		const depthTextColor32 = this.#depthToColor32(this.depthText);
 		// some text
 		const textBM = this.#makeTextBM(depthTextColor32);
-		Bitmap32.clipBlit(textBM, [0 ,0]
+		Bitmap32p.clipBlit(textBM, [0 ,0]
 			, depthmapBM, [100, 0]
 			, textBM.size);
 		// rectangles
@@ -303,11 +303,11 @@ class MainApp {
 	#initBitmaps() {
 		this.bitmapList = {};
 		// draw everything here before sent to canvas
-		this.bitmapList.mainBM = new Bitmap32(this.fixedSize);
+		this.bitmapList.mainBM = new Bitmap32p(this.fixedSize);
 
 		// already fully loaded images, copy to bitmap list
 		for (const imageName in this.images) {
-			this.bitmapList[imageName] = new Bitmap32(this.images[imageName]); // construct bitmap32 from <images>
+			this.bitmapList[imageName] = new Bitmap32p(this.images[imageName]); // construct Bitmap32p from <images>
 		}
 		
 		// draw depth map
@@ -315,16 +315,16 @@ class MainApp {
 
 
 		// pattern bitmap, for now use random
-		this.bitmapList.pattern = new Bitmap32([this.maxSep, this.fixedSize[1] - this.triSize]);
+		this.bitmapList.pattern = new Bitmap32p([this.maxSep, this.fixedSize[1] - this.triSize]);
 		const patData = this.bitmapList.pattern.data32;
 		for (let i = 0; i < patData.length; ++i) {
 			patData[i] = 0xff000000 + 0x1000000 * Math.random();
 		}
 
 		// triangle bitmap used for cross eye alignment
-		this.bitmapList.triangle = new Bitmap32([2 * this.triSize - 1, this.triSize], this.backgndColor);
+		this.bitmapList.triangle = new Bitmap32p([2 * this.triSize - 1, this.triSize], this.backgndColor);
 		for (let i = 0; i < this.triSize; ++i) {
-			this.bitmapList.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32.strToColor32("black"));
+			this.bitmapList.triangle.clipRect([this.triSize - i - 1, i], [2 * i + 1, 1], Bitmap32p.strToColor32("black"));
 		}
 
 		// list all bitmaps created
@@ -347,7 +347,7 @@ class MainApp {
 		// draw pattern bm onto background, no depthmap
 		if (patternToStereo) {
 			for (let x = 0; x < this.fixedSize[0]; x += this.separation) {
-				Bitmap32.clipBlit(this.bitmapList.pattern, [0, 0]
+				Bitmap32p.clipBlit(this.bitmapList.pattern, [0, 0]
 					, mainBM, [x, 0]
 					, [this.separation, this.bitmapList.pattern.size[1]]);
 			}
@@ -367,7 +367,7 @@ class MainApp {
 			let imageIdxStart = imageIdx;
 
 			// copy 1 copy of pattern to left to start things off
-			Bitmap32.clipBlit(patternBM, [0, 0]
+			Bitmap32p.clipBlit(patternBM, [0, 0]
 				, mainBM, [0, 0]
 				, [this.separation, patternBM.size[1]]);
 			// now copy pixel by pixel using a depth bitmap
@@ -391,7 +391,7 @@ class MainApp {
 		let drawDepthmap = this.eles.showDepthmap.checked;
 		if (drawDepthmap) {
 			const patternOffset = [this.separation, 0];
-			Bitmap32.clipBlit(this.bitmapList.depthmap, [0, 0]
+			Bitmap32p.clipBlit(this.bitmapList.depthmap, [0, 0]
 				, mainBM, patternOffset
 				, this.bitmapList.depthmap.size);
 		}
@@ -399,16 +399,16 @@ class MainApp {
 		// draw alignment triangles to backgound
 		const leftTriX = mainBM.size[0] / 2 - Math.floor((1 + this.separation) / 2);
 		const rightTriX = mainBM.size[0] / 2 + Math.floor(this.separation / 2);
-		Bitmap32.clipBlit(this.bitmapList.triangle, [0,0]
+		Bitmap32p.clipBlit(this.bitmapList.triangle, [0,0]
 			, mainBM, [leftTriX - this.bitmapList.triangle.size[1] + 1, mainBM.size[1] - this.bitmapList.triangle.size[1]]
 			, this.bitmapList.triangle.size);
-		Bitmap32.clipBlit(this.bitmapList.triangle, [0,0]
+		Bitmap32p.clipBlit(this.bitmapList.triangle, [0,0]
 			, mainBM, [rightTriX - this.bitmapList.triangle.size[1] + 1, mainBM.size[1] - this.bitmapList.triangle.size[1]]
 			, this.bitmapList.triangle.size);
 
 		// very simple cursor
 		const p = this.input.mouse.mxy;
-		const colRed = Bitmap32.strToColor32("red");
+		const colRed = Bitmap32p.strToColor32("red");
 		const p0 = [p[0] - 2, p[1]];
 		const p1 = [p[0] + 2, p[1]];
 		const p2 = [p[0], p[1] - 2];
