@@ -32,10 +32,10 @@ class FunGen {
 		"floor",	// Returns the largest integer less than or equal to x
 		"log10",	// Returns the base 10 logarithm of x
 		"log2",		// Returns the base 2 logarithm of x
-		"log",		// Returns the natural logarithm of x",
+		"log",		// Returns the natural logarithm of x
 		"min",		// Returns the smallest of the given numbers
 		"max",		// Returns the largest of the given numbers
-		"pow",		// Returns base x to exponent y",
+		"pow",		// Returns base x to exponent y
 		"random",	// Returns a random number between [0 and 1)
 		"round",	// Returns the value of number rounded to nearest integer
 		"sign",		// Returns sign of x, -1 or 0 or 1
