@@ -51,7 +51,7 @@ class MainApp {
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
-		this.runFunGenTests = false; // unit test: function generator
+		this.runFunGenTests = true; // unit test: function generator
 		// end some SWITCHES
 
 		// measure frame rate

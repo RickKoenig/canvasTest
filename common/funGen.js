@@ -50,12 +50,13 @@ class FunGen {
 		42,
 		"42",
 		null,
+		"E + EE",
 		"10 + exp(t) + log10(t) + sinhmin",
 		"sin(t) + sinh(t) + PI + E + acosh(t) + cosh(t)",
 		"LN2 + LN10",
 		"log(t) + log10(t) + log2(t) + log3(t)",
 		"tan(t) + atan(t) + atan2(3,x) + atanh(t) + tanh(t)",
-		"tanh(t) + atanh(t) + atan2(3,x) + atan(t) + tan(t)",
+		"tanh(t)+atanh(t)+ atan2(3,x) +atan(t) + tan(t)",
 		"do nothing",
 		"maybe sinEEacosh more PEPI fee",
 	];
@@ -93,7 +94,7 @@ class FunGen {
 			return null;
 		let pos = 0; // in f
 		let offsetSpace = 17; // approx length of 'input function '
-		let log = " ".repeat(offsetSpace); // keep for now
+		let log = "?".repeat(offsetSpace); // keep for now
 		let g = "";
 		while(pos < f.length) {
 			let step = 1;
@@ -123,6 +124,7 @@ class FunGen {
 			pos += step;
 		}
 		//console.log(log);
+		//console.log("input = '" + f + "', output = '" + g + "'");
 		return g;
 	}
 

@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         
         {
             "name": "Launch Program",
@@ -107,6 +108,13 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, poly intsect",
             "url": "http://localhost:88/plotter2d/convexTest/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, PI Bounce",
+            "url": "http://localhost:88/plotter2d/piBounce/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
