@@ -43,6 +43,10 @@ class MainApp {
 		this.#animate();
 	}
 
+	#clickSound() {
+		console.log("click sound");
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -53,7 +57,7 @@ class MainApp {
 		this.rightWall = 3;
 		this.wallWidth = .01;
 		this.posX = 1;
-		this.velX = 5;
+		this.velX = 1;
 		this.rad = .125;
 
 		// measure frame rate
@@ -87,6 +91,11 @@ class MainApp {
 			const callback = null;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
 		}
+		makeEle(this.vp, "button", null, null, "Setup audio context, PLAY",
+			() => {
+				console.log("gesture sound");
+			}
+		);
 	}		
 	
 	#userProc() {
@@ -98,9 +107,11 @@ class MainApp {
 			if (penLeft > 0) {
 				this.posX += 2 * penLeft;
 				this.velX = -this.velX;
+				this.#clickSound();
 			} else if (penRight > 0) {
 				this.posX -= 2 * penRight;
 				this.velX = -this.velX;
+				this.#clickSound();
 			}
 		}
 		
