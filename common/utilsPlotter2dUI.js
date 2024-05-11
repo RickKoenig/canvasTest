@@ -66,7 +66,7 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 
 // text, slider and a reset button
 class makeEleCombo {
-	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, doButton = true) {
+	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, conversionCallback) {
 		// pre/span
 		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;
@@ -80,23 +80,23 @@ class makeEleCombo {
 		this.slider.value = start;
 		this.precision = precision;
 		this.outerCallback = outerCallback;
+		this.conversionCallback = conversionCallback;
 		this.#callbackSlider(); // fire off one callback at init
-		if (doButton) {
-			// button
-			makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.#callbackResetButton.bind(this));
-		}
+		// reset button
+		makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.callbackResetButton.bind(this));
 	}
 
-	#callbackResetButton() {
+	callbackResetButton() {
 		this.slider.value = this.start;
 		this.#callbackSlider();
 	}
 
 	#callbackSlider() {
-		const val = parseFloat(this.slider.value);
-		this.label.innerText = this.labelStr + " = " + val.toFixed(this.precision);
+		const inVal = parseFloat(this.slider.value);
+		const outVal = this.conversionCallback ? this.conversionCallback(inVal) : inVal;
+		this.label.innerText = this.labelStr + " = " + outVal.toFixed(this.precision);
 		if (this.outerCallback) {
-			this.outerCallback(val);
+			this.outerCallback(outVal);
 		}
 	}
 

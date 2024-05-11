@@ -1,25 +1,14 @@
 'use strict';
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
-// TODO: for now assume 60hz refresh rate
 class MainApp {
-	static numInstances = 0; // test static members
-	static getNumInstances() { // test static methods
-		return MainApp.numInstances;
-	}
 
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
-		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
-		//this.vp = null; // OR, no vertical panel UI
 		this.eles = {}; // keep track of eles in vertical panel
-
-		// add all elements from vp to ele if needed
-		// uncomment if you need elements from vp html
-		//populateElementIds(this.vp, this.eles);
 
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
@@ -44,7 +33,41 @@ class MainApp {
 	}
 
 	#clickSound() {
-		console.log("click sound");
+	// audio context from gesture
+		if (!this.audioCtx) {
+			this.audioCtx = new window.AudioContext();
+		}
+		const oscillator = this.audioCtx.createOscillator();
+		const gainNode = this.audioCtx.createGain();
+
+		oscillator.connect(gainNode);
+		gainNode.connect(this.audioCtx.destination);
+
+		gainNode.gain.value = .125;
+		oscillator.frequency.value = 2000;
+		const duration = .5;
+		oscillator.type = 'sine';
+		oscillator.start();
+		oscillator.stop(this.audioCtx.currentTime + duration / 1000); // click
+	}
+
+	#physicsReset() {
+		let massM1;
+		// keep mass M1 when reseting
+		if (this.phyObjs) massM1 = this.phyObjs[1].mass;
+		this.phyObjs = [
+			{ // Obj0
+				mass: 1,
+				velX: .5,
+				posX: 1.25
+			}, { // Obj1
+				mass: 1,
+				velX: .4,
+				posX: 2.25
+			}
+		];
+		if (massM1) this.phyObjs[1].mass = massM1;
+		this.count = 0;
 	}
 
 	// USER: add more members or classes to MainApp
@@ -56,9 +79,9 @@ class MainApp {
 		this.leftWall = 0;
 		this.rightWall = 3;
 		this.wallWidth = .01;
-		this.posX = 1;
-		this.velX = 1;
-		this.rad = .125;
+		this.objRadius = .25;
+		this.#physicsReset();
+		this.running = false;
 
 		// measure frame rate
 		this.fps;
@@ -73,47 +96,122 @@ class MainApp {
 
 	#userBuildUI() {
 		makeEle(this.vp, "hr");
+		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
-		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
+		makeEle(this.vp, "hr");
+		// combo playback speed
+		{
+			const label = "Playback speed";
+			const min = -3;
+			const max = 3;
+			const start = 0;
+			const step = .25;
+			const precision = 3;
+			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (outVal) => {
+					this.playSpeed = outVal;
+				}
+				// conversion from internal 'in' value to an external 'out' value
+				, (val) => Math.pow(10, val)
+			);
+		}
+		// stop / pause button
+		this.eles.playStopButton = makeEle(this.vp, "button", null, null, "PLAY",
 			() => {
-				this.count = 10000;
+				this.running = !this.running;
+				this.eles.playStopButton.innerHTML = this.running ? "STOP" : "PLAY";
+			}
+		);
+		// resetsimulation button
+		makeEle(this.vp, "button", null, null, "Start over",
+			() => {
+				this.#physicsReset();
+				this.running = false;
+				this.eles.playStopButton.innerHTML = "PLAY";
 			}
 		);
 		makeEle(this.vp, "hr");
+
+		// combo mass right object
 		{
-			const label = "test combo";
-			const min = 33;
-			const max = 87;
-			const start = 44;
-			const step = 3;
-			const precision = 4;
-			const callback = null;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
+			const label = "Mass of Obj2";
+			const min = 0;
+			const max = 6;
+			const start = 0;
+			const step = .5;
+			const precision = 0;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (outVal) => {
+					this.#physicsReset();
+					this.phyObjs[1].mass = outVal;
+					this.running = false;
+					this.eles.playStopButton.innerHTML = "PLAY";
+				}
+				// conversion from internal 'in' value to an external 'out' value
+				, (val) => Math.floor(Math.pow(10, val))
+			);
 		}
-		makeEle(this.vp, "button", null, null, "Setup audio context, PLAY",
-			() => {
-				console.log("gesture sound");
+	}
+
+	#updatePhysics(step) {
+		if (this.running && this.avgFps) {
+			for (const phyObj of this.phyObjs) {
+				// move
+				phyObj.posX += phyObj.velX * step / this.avgFps;
 			}
-		);
-	}		
-	
-	#userProc() {
-		// proc objects
-		if (this.avgFps) {
-			this.posX += this.velX / this.avgFps;
-			let penLeft = this.leftWall - this.posX;
-			let penRight = this.posX - this.rightWall;
+			for (const phyObj of this.phyObjs) {
+				// collide with walls
+				// left wall
+				if (phyObj.velX < 0) {
+					let penLeft = this.leftWall - phyObj.posX + this.objRadius;
+					if (penLeft > 0) {
+						phyObj.posX += 2 * penLeft;
+						phyObj.velX = -phyObj.velX;
+						this.#clickSound();
+						++this.count;
+					}
+				}
+				// right wall
+				if (phyObj.velX > 0) {
+					let penRight = phyObj.posX - this.rightWall + this.objRadius;
+					if (penRight > 0) {
+						phyObj.posX -= 2 * penRight;
+						phyObj.velX = -phyObj.velX;
+						this.#clickSound();
+						++this.count;
+					}
+				}
+				for (const phyObj of this.phyObjs) {
+					// collide with phyObjs, assume only 2 phyObjs, and for now just a mass of 1 for both objects
+				}
+			}
+		}
+	} 
+
+	/*	#updatePhysics(step) {
+		if (this.running && this.avgFps) {
+			// move
+			this.posX += this.velX * step / this.avgFps;
+			// collide
+			let penLeft = this.leftWall - this.posX + this.objRadius;
+			let penRight = this.posX - this.rightWall + this.objRadius;
 			if (penLeft > 0) {
 				this.posX += 2 * penLeft;
 				this.velX = -this.velX;
 				this.#clickSound();
+				++this.count;
 			} else if (penRight > 0) {
 				this.posX -= 2 * penRight;
 				this.velX = -this.velX;
 				this.#clickSound();
+				++this.count;
 			}
 		}
+	} */
+
+	#userProc() {
+		// proc objects
+		this.#updatePhysics(this.playSpeed);
 		
 		// update FPS
 		if (this.oldTime === undefined) {
@@ -126,22 +224,25 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
-
-		// update count
-		++this.count;
 	}
 
 	#userDraw() {
-		// pnts
-		const pnt = [1.5, 1];
-		this.drawPrim.drawCircleO([this.posX, 0], this.rad, undefined, "magenta");
+		// phyObjs
+		for (const phyObj of this.phyObjs) {
+			const center = [phyObj.posX, .25];
+			let size = this.objRadius * 2.9 / (.5 + Math.floor(Math.log10(phyObj.mass)));
+			size = Math.min(.5, size);
+			this.drawPrim.drawCircleO(center, this.objRadius, undefined, "magenta");
+			this.drawPrim.drawText(center, [size, size], phyObj.mass);
+		}
+		// walls
 		this.drawPrim.drawLine([this.leftWall, -5], [this.leftWall, 5], this.wallWidth, "red");
 		this.drawPrim.drawLine([this.rightWall, -5], [this.rightWall, 5], this.wallWidth, "red");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let countStr = "Frame Count = " + this.count;
+		let countStr = "Collisions = " + this.count;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		this.eles.textInfoLog.innerText = countStr;
 	}
@@ -169,11 +270,6 @@ class MainApp {
 		// keep animation going
 		requestAnimationFrame(() => this.#animate());
 	}
-
-	#resetCounter() {
-		this.count = 0;
-	}
 }
 
 const mainApp = new MainApp();
-console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods
