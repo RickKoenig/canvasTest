@@ -51,35 +51,12 @@ class MainApp {
 		oscillator.stop(this.audioCtx.currentTime + duration / 1000); // click
 	}
 
-	#physicsReset() {
-		let massM1;
-		// keep mass M1 when reseting
-		if (this.phyObjs) massM1 = this.phyObjs[1].mass;
-		this.phyObjs = [
-			{ // Obj0
-				mass: 1,
-				velX: .5,
-				posX: 1.25
-			}, { // Obj1
-				mass: 1,
-				velX: .4,
-				posX: 2.25
-			}
-		];
-		if (massM1) this.phyObjs[1].mass = massM1;
-		this.count = 0;
-	}
-
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
-		this.count = 0; // frame counter
+		this.collisions = 0; // frame counter
 
 		// objects
-		this.leftWall = 0;
-		this.rightWall = 3;
-		this.wallWidth = .01;
-		this.objRadius = .25;
 		this.#physicsReset();
 		this.running = false;
 
@@ -90,7 +67,7 @@ class MainApp {
 		this.avgFpsObj = new Runavg(500);
 
 		// before firing up Plotter2d
-		this.startCenter = [2, 0];
+		this.startCenter = [3, 0];
 		this.startZoom = .5;
 	}
 
@@ -105,7 +82,7 @@ class MainApp {
 			const min = -3;
 			const max = 3;
 			const start = 0;
-			const step = .25;
+			const step = .0625;
 			const precision = 3;
 			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
@@ -119,10 +96,15 @@ class MainApp {
 		this.eles.playStopButton = makeEle(this.vp, "button", null, null, "PLAY",
 			() => {
 				this.running = !this.running;
-				this.eles.playStopButton.innerHTML = this.running ? "STOP" : "PLAY";
+				this.eles.playStopButton.innerHTML = this.running ? "PAUSE" : "PLAY";
 			}
 		);
-		// resetsimulation button
+		makeEle(this.vp, "button", null, null, "STEP",
+		() => {
+			this.#physicsStep(60, true);
+		}
+	);
+	// resetsimulation button
 		makeEle(this.vp, "button", null, null, "Start over",
 			() => {
 				this.#physicsReset();
@@ -153,11 +135,105 @@ class MainApp {
 		}
 	}
 
-	#updatePhysics(step) {
-		if (this.running && this.avgFps) {
+	#physicsReset() {
+		this.leftWall = 0;
+		this.rightWall = 6;
+		this.wallWidth = .01;
+		this.objRadius = .25;
+		this.collisionTypes = makeEnum([
+			"objWallLeft",
+			"objWallRight",
+			"objs"
+		]);
+
+		let massM1;
+		// keep mass M1 when reseting
+		if (this.phyObjs) massM1 = this.phyObjs[1].mass;
+		// 2 objects and 1 or 2 walls
+		this.phyObjs = [
+			{ // Obj0
+				mass: 1,
+				posX: 2,
+				velX: -1
+			}, { // Obj1
+				mass: 1,
+				posX: 5,
+				velX: 0
+			}
+		];
+		if (massM1) this.phyObjs[1].mass = massM1;
+		this.collisions = 0;
+		this.time = 0;
+	}
+
+	// step time at collision
+	#predictCollWallLeft(po) {
+		if (po.velX >= 0) return Number.MAX_VALUE;
+		const stepColl = (po.posX - this.leftWall - this.objRadius) / -po.velX;
+		return stepColl;
+	}
+
+	#predictCollWallRight(po) {
+
+	}
+
+	// how much to move in a frame
+	#physicsStep(step, force) {
+		if ((this.running || force) && this.avgFps) {
+			step /= this.avgFps;
+			// predict collisions
+			let stepColl = Number.MAX_VALUE;
+			let stepType = null;
+			let collObjWall = -1;
+			for (let i = 0; i < this.phyObjs.length; ++i) {
+				const phyObj = this.phyObjs[i];
+				const predStep = this.#predictCollWallLeft(phyObj);
+				if (predStep < stepColl) {
+					stepColl = predStep;
+					stepType = this.collisionTypes.objWallLeft;
+					collObjWall = i;
+				}
+				console.log("pred step = " + predStep);
+			}
 			for (const phyObj of this.phyObjs) {
 				// move
-				phyObj.posX += phyObj.velX * step / this.avgFps;
+				phyObj.posX += phyObj.velX * step;
+				// collide with walls
+				// left wall
+				if (phyObj.velX < 0) {
+					let penLeft = this.leftWall - phyObj.posX + this.objRadius;
+					if (penLeft > 0) {
+						phyObj.posX += 2 * penLeft;
+						phyObj.velX = -phyObj.velX;
+						this.#clickSound();
+						++this.collisions;
+					}
+				}
+				// right wall
+				if (phyObj.velX > 0) {
+					let penRight = phyObj.posX - this.rightWall + this.objRadius;
+					if (penRight > 0) {
+						phyObj.posX -= 2 * penRight;
+						phyObj.velX = -phyObj.velX;
+						this.#clickSound();
+						++this.collisions;
+					}
+				}
+				//for (const phyObj of this.phyObjs) {
+					// collide with phyObjs, assume only 2 phyObjs, and for now just a mass of 1 for both objects
+				//}
+			}
+			this.time += step;
+		}
+	}
+
+	// how much to move in a frame
+	#physicsStepOld(step) {
+		if (this.running && this.avgFps) {
+			step /= this.avgFps;
+			for (const phyObj of this.phyObjs) {
+				// move
+				phyObj.posX += phyObj.velX * step;
 			}
 			for (const phyObj of this.phyObjs) {
 				// collide with walls
@@ -168,7 +244,7 @@ class MainApp {
 						phyObj.posX += 2 * penLeft;
 						phyObj.velX = -phyObj.velX;
 						this.#clickSound();
-						++this.count;
+						++this.collisions;
 					}
 				}
 				// right wall
@@ -178,40 +254,20 @@ class MainApp {
 						phyObj.posX -= 2 * penRight;
 						phyObj.velX = -phyObj.velX;
 						this.#clickSound();
-						++this.count;
+						++this.collisions;
 					}
 				}
-				for (const phyObj of this.phyObjs) {
+				//for (const phyObj of this.phyObjs) {
 					// collide with phyObjs, assume only 2 phyObjs, and for now just a mass of 1 for both objects
-				}
+				//}
 			}
+			this.time += step;
 		}
-	} 
-
-	/*	#updatePhysics(step) {
-		if (this.running && this.avgFps) {
-			// move
-			this.posX += this.velX * step / this.avgFps;
-			// collide
-			let penLeft = this.leftWall - this.posX + this.objRadius;
-			let penRight = this.posX - this.rightWall + this.objRadius;
-			if (penLeft > 0) {
-				this.posX += 2 * penLeft;
-				this.velX = -this.velX;
-				this.#clickSound();
-				++this.count;
-			} else if (penRight > 0) {
-				this.posX -= 2 * penRight;
-				this.velX = -this.velX;
-				this.#clickSound();
-				++this.count;
-			}
-		}
-	} */
+	}
 
 	#userProc() {
 		// proc objects
-		this.#updatePhysics(this.playSpeed);
+		this.#physicsStep(this.playSpeed);
 		
 		// update FPS
 		if (this.oldTime === undefined) {
@@ -242,7 +298,8 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let countStr = "Collisions = " + this.count;
+		let countStr = "Collisions = " + this.collisions;
+		countStr += "\ntime = " + this.time.toFixed(3);
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
 		this.eles.textInfoLog.innerText = countStr;
 	}
