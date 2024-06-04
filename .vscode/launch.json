@@ -113,8 +113,15 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, PI Bounce",
+            "name": "Launch Chrome against localhost, Fourier series stuff",
             "url": "http://localhost:88/plotter2d/piBounce/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, Fourier stuff",
+            "url": "http://localhost:88/plotter2d/fourier/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {

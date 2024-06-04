@@ -103,13 +103,13 @@ class MainApp {
 			}
 		);
 		makeEle(this.vp, "button", null, null, "STEP",
-		() => {
-			this.#physicsStep(1, true);
-			this.doneFlag = false;
-			this.doneCount = 0;
-		}
-	);
-	// resetsimulation button
+			() => {
+				this.#physicsStep(1, true);
+				this.doneFlag = false;
+				this.doneCount = 0;
+			}
+		);
+		// reset simulation button
 		makeEle(this.vp, "button", null, null, "Start over",
 			() => {
 				this.#physicsReset();
@@ -316,7 +316,9 @@ class MainApp {
 
 	#userProc() {
 		// proc objects
-		if (this.avgFpsRound) this.#physicsStep(this.playSpeed / this.avgFpsRound);
+		if (this.avgFpsRound) {
+			this.#physicsStep(this.playSpeed / this.avgFpsRound);
+		}
 		
 		// update FPS
 		if (this.oldTime === undefined) {
