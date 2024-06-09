@@ -3,6 +3,7 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 class MainApp {
 
+	// assume times and freqs are equal size, <= maxFft, and powers of 2
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 
@@ -32,31 +33,163 @@ class MainApp {
 		this.#animate();
 	}
 
-	#fft(times, freqs, inverse = false) {
+	#initFt() {
+		this.maxFft = 1024;
+		this.fftTable = [];
+		// build a trig table
+		for (let i = 0; i < this.maxFft; ++i) {
+			const ang = 2 * Math.PI * i / this.maxFft;
+			this.fftTable.push([Math.cos(ang), Math.sin(ang)]);
+		}
+	}
+
+	#ft(times, freqs) {
+
+		const newTimes = Array(times.length);
+		newTimes[0] = times[0];
+		for (let i = 1; i < times.length; ++i) {
+			newTimes[i] = times[times.length - i];
+		}
+		times = newTimes;
+		this.#iFt(times, freqs);
+		return;
+
+		//this.#fft(times, freqs);
+		//return;
 		const numEle = times.length;
 		const scl = 1 / Math.sqrt(numEle);
-		let dir;
-		if (inverse) {
-			dir = 2;
-		} else {
-			dir = -2;
-			const tmp = freqs;
-			freqs = times;
-			times = tmp;
-		} 
+		//const scl = 1 / numEle;
+		for (let f = 0; f < numEle; ++f) {
+			freqs[f] = compf.create();
+			const tStep = f * this.maxFft / numEle;
+			let tIdx = 0;
+			for (let t = 0; t < numEle; ++t) {
+				const exp = this.fftTable[(tIdx) & (this.maxFft - 1)];
+				tIdx -= tStep;
+				const term = compf.create();
+				compf.mul(term, times[t], exp);
+				compf.add(freqs[f], freqs[f], term);
+			}
+			compf.scale(freqs[f], freqs[f], scl);
+		}
+	}
+
+	#iFt(freqs, times) {
+		this.#iFft(freqs, times);
+		return;
+		const numEle = freqs.length;
+		const scl = 1 / Math.sqrt(numEle);
 		for (let t = 0; t < numEle; ++t) {
 			times[t] = compf.create();
+			const fStep = t * this.maxFft / numEle;
+			let fIdx = 0;
 			for (let f = 0; f < numEle; ++f) {
-				const ang = dir * Math.PI * t * f / numEle;
-				const exp = [
-					Math.cos(ang),
-					Math.sin(ang)
-				];
+				const exp = this.fftTable[(fIdx) & (this.maxFft - 1)];
+				fIdx += fStep;
 				const term = compf.create();
-				compf.multiply(term, freqs[f], exp);
+				compf.mul(term, freqs[f], exp);
 				compf.add(times[t], times[t], term);
 			}
 			compf.scale(times[t], times[t], scl);
+		}
+	}
+
+	#fft(times, freqs) {
+		this.#fftRec(times, freqs);
+		const numEle = times.length;
+		const scl = 1 / Math.sqrt(numEle);
+		for (let i = 0; i < numEle; ++i) {
+			compf.scale(freqs[i], freqs[i], scl);
+		}
+	}
+
+	#iFft(freqs, times) {
+		this.#iFftRec(freqs, times);
+		const numEle = freqs.length;
+		const scl = 1 / Math.sqrt(numEle);
+		for (let i = 0; i < numEle; ++i) {
+			compf.scale(times[i], times[i], scl);
+		}
+	}
+
+	#fftRec(times, freqs) {
+		const numElements = freqs.length;
+		for (let i = 0; i < numElements; ++i) {
+			freqs[i] = compf.create();
+		}
+		// trivial case
+		if (numElements == 1) {
+			compf.copy(freqs[0], times[0]);
+			return;
+		}
+		// split into evens and odds
+		const half = numElements >> 1;
+		const timesEven = Array(half);
+		const timesOdd = Array(half);
+		for (let i = 0; i < half; ++i) {
+			const even = i << 1;
+			timesEven[i] = times[even];
+			timesOdd[i] = times[even + 1];
+		}
+		const freqsEven = Array(half);
+		const freqsOdd = Array(half);
+		// recurse at half size for both evens and odds
+		this.#iFftRec(timesEven, freqsEven);
+		this.#iFftRec(timesOdd, freqsOdd);
+		// adjust the odd elements
+		const fStep = this.maxFft / numElements;
+		let fIdx = 0;
+		for (let i = 0; i < half; ++i) {
+			const exp = this.fftTable[fIdx & (this.maxFft - 1)];
+			//console.log("fstep = " + fStep + ", fidx = " + fIdx);
+			fIdx += fStep;
+			compf.mul(freqsOdd[i], freqsOdd[i], exp);
+		}
+
+		// weave back to full size
+		for (let i = 0; i < half; ++i) {
+			compf.add(freqs[i], freqsEven[i], freqsOdd[i]);
+			compf.sub(freqs[i + half], freqsEven[i], freqsOdd[i]);
+		}
+	}
+
+	#iFftRec(freqs, times) {
+		const numElements = times.length;
+		for (let i = 0; i < numElements; ++i) {
+			times[i] = compf.create();
+		}
+		// trivial case
+		if (numElements == 1) {
+			compf.copy(times[0], freqs[0]);
+			return;
+		}
+		// split into evens and odds
+		const half = numElements >> 1;
+		const freqsEven = Array(half);
+		const freqsOdd = Array(half);
+		for (let i = 0; i < half; ++i) {
+			const even = i << 1;
+			freqsEven[i] = freqs[even];
+			freqsOdd[i] = freqs[even + 1];
+		}
+		const timesEven = Array(half);
+		const timesOdd = Array(half);
+		// recurse at half size for both evens and odds
+		this.#iFftRec(freqsEven, timesEven);
+		this.#iFftRec(freqsOdd, timesOdd);
+		// adjust the odd elements
+		const tStep = this.maxFft / numElements;
+		let tIdx = 0;
+		for (let i = 0; i < half; ++i) {
+			const exp = this.fftTable[tIdx];
+			tIdx += tStep;
+			compf.mul(timesOdd[i], timesOdd[i], exp);
+		}
+
+		// weave back to full size
+		for (let i = 0; i < half; ++i) {
+			compf.add(times[i], timesEven[i], timesOdd[i]);
+			compf.sub(times[i + half], timesEven[i], timesOdd[i]);
 		}
 	}
 
@@ -68,8 +201,8 @@ class MainApp {
 	}
 
 	#lerp(a, b, t) {
-		return a * (1 - t) + b * t;
-		//return a - (a - b) * t;
+		//return a * (1 - t) + b * t;
+		return a - (a - b) * t;
 	}
 
 	#editPoints(mouseY) {
@@ -153,7 +286,11 @@ class MainApp {
 		this.#editPoints(mousePos[1]);
 		// time step
 		const numEle = this.timeDom.length;
-		this.#fft(this.timeDom, this.freqDom, this.doInverse);
+		if (this.doInverse) {
+			this.#iFt(this.freqDom, this.timeDom);
+		} else {
+			this.#ft(this.timeDom, this.freqDom);
+		}
 		if ((this.running || forceRunning) && this.avgFpsRound) {
 			this.time += step;
 		}
@@ -172,12 +309,32 @@ class MainApp {
 		this.#timeReset();
 	}
 
+	#testFft() {
+		console.log("test fft");
+		const numElements = 16;
+		const freqs = Array(numElements);
+		for (let i = 0; i < numElements; ++i) {
+			freqs[i] = [Math.random(), Math.random()];
+		}
+		const times = Array(numElements);
+		this.#iFt(freqs, times); // ift freqs to times
+		const newFreqs = Array(numElements);
+		this.#ft(times, newFreqs); // ft times to freqs
+		for (let i = 0; i < numElements; ++i) {
+			const diff = compf.create();
+			compf.sub(diff, freqs[i], newFreqs[i]);
+			console.log("diff = " + compf.str(diff, 8));
+		}
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.#initFt();
+		this.#testFft();
 		// user init section
-		this.doInverse = false;
+		this.doInverse = true;
 		this.snapMode = false;
-		this.numElements = 1 << 3;
+		this.numElements = 1 << 1;
 		this.#timeReset();
 
 		// objects

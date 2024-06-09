@@ -270,7 +270,7 @@ compf.fixfloat = function(f,prec) {
 
 compf.str = function(a,prec) {
     //return '(' + a[0] + ', ' + a[1] + 'i)';
-	return '(' + compf.fixfloat(a[0],prec) + "," + compf.fixfloat(a[1],prec) + 'i) ';
+	return '(' + compf.fixfloat(a[0],prec) + "," + compf.fixfloat(a[1],prec) + ' i) ';
 	//return "compf.str";
 };
 
