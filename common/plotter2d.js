@@ -244,10 +244,15 @@ class Plotter2d {
 
         let temp = vec2.create();
 
+        const extra = 10; // for region of interest
         vec2.scale(temp, this.ndcMin, this.invZoom);
         vec2.add(this.camMin, temp, this.center);
+        this.camMin[0] -= extra;
+        this.camMin[1] -= extra;
         vec2.scale(temp, this.ndcMax, this.invZoom);
         vec2.add(this.camMax, temp, this.center);
+        this.camMax[0] += extra;
+        this.camMax[1] += extra;
 
         if (doCenter) {
             this.#newcenter(pnt, this.userMouse);

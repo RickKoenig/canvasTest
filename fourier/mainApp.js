@@ -33,122 +33,6 @@ class MainApp {
 		this.#animate();
 	}
 
-	#initFt() {
-		this.maxFft = 2048;
-		this.fftTable = [];
-		// build a trig table
-		for (let i = 0; i < this.maxFft; ++i) {
-			const ang = 2 * Math.PI * i / this.maxFft;
-			this.fftTable.push([Math.cos(ang), Math.sin(ang)]);
-		}
-	}
-
-	#ft(times, freqs) {
-		const numEle = times.length;
-		const scl = 1 / numEle;
-		for (let f = 0; f < numEle; ++f) {
-			freqs[f] = compf.create();
-			const tStep = f * this.maxFft / numEle;
-			let tIdx = 0;
-			for (let t = 0; t < numEle; ++t) {
-				const exp = this.fftTable[(tIdx) & (this.maxFft - 1)];
-				tIdx -= tStep; // MINUS
-				const term = compf.create();
-				compf.mul(term, times[t], exp);
-				compf.add(freqs[f], freqs[f], term);
-			}
-			compf.scale(freqs[f], freqs[f], scl);
-		}
-	}
-
-	#iFt(freqs, times) {
-		const numEle = freqs.length;
-		for (let t = 0; t < numEle; ++t) {
-			times[t] = compf.create();
-			const fStep = t * this.maxFft / numEle;
-			let fIdx = 0;
-			for (let f = 0; f < numEle; ++f) {
-				const exp = this.fftTable[(fIdx) & (this.maxFft - 1)];
-				fIdx += fStep; // PLUS
-				const term = compf.create();
-				compf.mul(term, freqs[f], exp);
-				compf.add(times[t], times[t], term);
-			}
-		}
-	}
-
-	#fft(times, freqs) {
-		// reverse elements to convert ifft to fft
-		const numEle = times.length;
-		const newTimes = Array(numEle);
-		newTimes[0] = times[0];
-		for (let i = 1; i < numEle; ++i) {
-			newTimes[i] = times[numEle - i];
-		}
-		times = newTimes;
-		this.#iFft(times, freqs);
-		const scl = 1 / numEle;
-		for (let i = 0; i < numEle; ++i) {
-			compf.scale(freqs[i], freqs[i], scl);
-		}
-	}
-
-	#iFft(times, freqs) {
-		const numElements = freqs.length;
-		for (let i = 0; i < numElements; ++i) {
-			freqs[i] = compf.create();
-		}
-		// trivial case
-		if (numElements == 1) {
-			compf.copy(freqs[0], times[0]);
-			return;
-		}
-		// split into evens and odds
-		const half = numElements >> 1;
-		const timesEven = Array(half);
-		const timesOdd = Array(half);
-		for (let i = 0; i < half; ++i) {
-			const even = i << 1;
-			timesEven[i] = times[even];
-			timesOdd[i] = times[even + 1];
-		}
-		const freqsEven = Array(half);
-		const freqsOdd = Array(half);
-		// recurse at half size for both evens and odds
-		this.#iFft(timesEven, freqsEven);
-		this.#iFft(timesOdd, freqsOdd);
-		// adjust the odd elements
-		const fStep = this.maxFft / numElements;
-		let fIdx = 0;
-		for (let i = 0; i < half; ++i) {
-			const exp = this.fftTable[fIdx & (this.maxFft - 1)];
-			//console.log("fstep = " + fStep + ", fidx = " + fIdx);
-			fIdx += fStep;
-			compf.mul(freqsOdd[i], freqsOdd[i], exp);
-		}
-		// weave back to full size elements
-		for (let i = 0; i < half; ++i) {
-			compf.add(freqs[i], freqsEven[i], freqsOdd[i]);
-			compf.sub(freqs[i + half], freqsEven[i], freqsOdd[i]);
-		}
-	}
-
-	#cFt(times, freqs, fast = true) {
-		if (fast) {
-			this.#fft(times, freqs);
-		} else {
-			this.#ft(times, freqs);
-		}
-	}
-
-	#iCft(freqs, times, fast = true) {
-		if (fast) {
-			this.#iFft(freqs, times);
-		} else {
-			this.#iFt(freqs, times);
-		}
-	}
-
 	#doSnap(v) {
 		if (this.snapMode) {
 			v = Math.round(v * 4) / 4;
@@ -203,9 +87,8 @@ class MainApp {
 		}
 	}
 
-	#timeReset() {
+	#zeroElements() {
 		this.sepDist = 5;
-		this.time = 0;
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
 		for (let i = 0; i < this.numElements; ++i) {
@@ -219,10 +102,8 @@ class MainApp {
 		}
 	}
 
-	// how much to move in a frame
 	// proc stuff here
-	#timeStep(fullStep, forceRunning) {
-		let step = fullStep;
+	#procElements() {
 		this.cursorObj.pos = this.plotter2d.userMouse.slice();
 		const mousePos = this.cursorObj.pos;
 		this.cursorObj.pressedLeft = this.input.mouse.mbut[Mouse.LEFT];
@@ -237,104 +118,44 @@ class MainApp {
 			this.eles.snapDomain.checked = this.snapMode;
 
 		}
-		// edit points		
+		// edit elements		
 		this.hilitX = Math.round(mousePos[0] * this.numElements / 8);
 		this.#editPoints(mousePos[1]);
 		// time step
 		const numEle = this.timeDom.length;
 		if (this.doInverse) {
-			this.#iFft(this.freqDom, this.timeDom);
+			this.fft.iFft(this.freqDom, this.timeDom);
 		} else {
-			this.#fft(this.timeDom, this.freqDom);
-		}
-		if ((this.running || forceRunning) && this.avgFpsRound) {
-			this.time += step;
+			this.fft.fft(this.timeDom, this.freqDom);
 		}
 	}
 
 	#lessElements() {
 		if (this.numElements <= 1) return;
 		this.numElements >>= 1;
-		this.#timeReset();
+		this.#zeroElements();
 	}
 
 	#moreElements() {
 		const maxElements = 64;
 		if (this.numElements >= maxElements) return;
 		this.numElements <<= 1;
-		this.#timeReset();
-	}
-
-	#testFastNoFast(fastIFt, fastFt) {
-		// different combinations of fast and slow ft and ift
-		console.log("\ntest fft with fastIft = " + fastIFt + ", fastFt = " + fastFt);
-		const numElements = 16;
-		const freqs = Array(numElements);
-		for (let i = 0; i < numElements; ++i) {
-			freqs[i] = [Math.random(), Math.random()];
-		}
-		const times = Array(numElements);
-		this.#iCft(freqs, times, fastIFt); // ift freqs to times
-		const newFreqs = Array(numElements);
-		this.#cFt(times, newFreqs, fastFt); // ft times to freqs
-		for (let i = 0; i < numElements; ++i) {
-			const diff = compf.create();
-			compf.sub(diff, freqs[i], newFreqs[i]);
-			const epsilon = .000005;
-			if (Math.abs(diff[0] > epsilon || Math.abs(diff[1] > epsilon))) {
-				console.log("diff[" + i.toString().padStart(3) + "] = " + compf.str(diff, 8));
-			}
-		}
-	}
-
-	#testFft() {
-		console.log("test fft");
-		this.#testFastNoFast(false, false);
-		this.#testFastNoFast(false, true);
-		this.#testFastNoFast(true, false);
-		this.#testFastNoFast(true, true);
-		console.log("test slow ift against fast ift")
-		const numElements = 1024;
-		const freqs = Array(numElements);
-		for (let i = 0; i < numElements; ++i) {
-			freqs[i] = [Math.random(), Math.random()];
-		}
-		const slowTimes = Array(numElements);
-		const fastTimes = Array(numElements);
-		const t0 = performance.now();
-		this.#iFt(freqs, slowTimes);
-		const t1= performance.now();
-		console.log("slow ms = " + (t1 - t0).toFixed(4));
-		this.#iFft(freqs, fastTimes);
-		const t2 = performance.now();
-		console.log("fast ms = " + (t2 - t1).toFixed(4));
-		for (let i = 0; i < numElements; ++i) {
-			const diff = compf.create();
-			compf.sub(diff, slowTimes[i], fastTimes[i]);
-			const epsilon = .0005;
-			if (Math.abs(diff[0] > epsilon || Math.abs(diff[1] > epsilon))) {
-				console.log("diff[" + i.toString().padStart(3) + "] = " + compf.str(diff, 8));
-			}
-		}
+		this.#zeroElements();
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		this.#initFt();
-		this.#testFft();
+		this.fft = new Fft();
+		this.fft.testFft();
 		// user init section
 		this.doInverse = true;
 		this.snapMode = false;
-		this.numElements = 1 << 1;
-		this.#timeReset();
-
-		// objects
-		this.running = false;
+		this.numElements = 1 << 3;
+		this.#zeroElements();
 
 		// measure frame rate
 		this.fps;
 		this.avgFps = 0;
-		this.oldmousePos; // for delta mousePos
 		this.avgFpsObj = new Runavg(500);
 
 		// before firing up Plotter2d
@@ -369,47 +190,9 @@ class MainApp {
 				this.#lessElements();
 			}
 		);
-		makeEle(this.vp, "button", null, null, "Reset",
+		makeEle(this.vp, "button", null, null, "'Zero' Elements",
 			() => {
-				this.#timeReset();
-			}
-		);
-		makeEle(this.vp, "hr");
-
-		// combo playback speed
-		{
-			const label = "Playback speed";
-			const min = -3;
-			const max = 3;
-			const start = 0;
-			const step = .0625;
-			const precision = 3;
-			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
-				, (outVal) => {
-					this.playSpeed = outVal;
-				}
-				// conversion from internal 'in' value to an external 'out' value
-				, (val) => Math.pow(10, val)
-			);
-		}
-		// stop / pause button
-		this.eles.playStopButton = makeEle(this.vp, "button", null, null, "PLAY",
-			() => {
-				this.running = !this.running;
-				this.eles.playStopButton.innerHTML = this.running ? "PAUSE" : "PLAY";
-			}
-		);
-		makeEle(this.vp, "button", null, null, "STEP",
-			() => {
-				this.#timeStep(1, true);
-			}
-		);
-		// reset simulation button
-		makeEle(this.vp, "button", null, null, "Start over",
-			() => {
-				this.#timeReset();
-				this.running = false;
-				this.eles.playStopButton.innerHTML = "PLAY";
+				this.#zeroElements();
 			}
 		);
 		makeEle(this.vp, "hr");
@@ -417,17 +200,17 @@ class MainApp {
 
 	#userProc() {
 		// proc objects
-		if (this.avgFpsRound) this.#timeStep(this.playSpeed / this.avgFpsRound);
+		this.#procElements();
 		
 		// update FPS
-		if (this.oldmousePos === undefined) {
-			this.oldmousePos = performance.now();
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
 			this.fps = 0;
 		} else {
-			const newmousePos = performance.now();
-			const delmousePos =  newmousePos - this.oldmousePos;
-			this.oldmousePos = newmousePos;
-			this.fps = 1000 / delmousePos;
+			const newTime = performance.now();
+			const deltaTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / deltaTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
 		this.avgFpsRound = Math.round(this.avgFps);
@@ -443,7 +226,6 @@ class MainApp {
 		const textSize = .5;
 		const textLeft = -1.5;
 		const rectOutlineSize = [1.5, .75];
-		//const rectOutlineLeft = -1.5;
 		// draw sep line
 		this.drawPrim.drawLine([0, this.sepDist], [sepAxis, this.sepDist], undefined, "blue");
 		// draw labels
@@ -489,8 +271,7 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "";
-		infoStr += "time = " + this.time.toFixed(3);
-		infoStr += "\nAvg fps = " + this.avgFpsRound.toFixed(2);
+		infoStr += "Avg fps = " + this.avgFpsRound.toFixed(2);
 		infoStr += this.doInverse ? "\nEdit Frequency Domain" : "\nEdit Time Domain";
 		infoStr += "\nNum Elements " + this.numElements;
 		this.eles.textInfoLog.innerText = infoStr;
