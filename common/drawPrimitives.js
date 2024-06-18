@@ -81,7 +81,7 @@ class DrawPrimitives {
 
     // an array of y values, x steps to the right
     // connected line and optional circles on vertices
-    drawLinesSimple(pntsY, lineWidth = .01, circleSize = .02
+    drawLinesSimple(pntsY, lineWidth = .01, circleSize = 0
         , startX = 0, stepX = 1
         , lineColor = "black", circleColor = "green", ndcScale = false) {
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);

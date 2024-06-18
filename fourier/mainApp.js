@@ -119,7 +119,7 @@ class MainApp {
 
 		}
 		// edit elements		
-		this.hilitX = Math.round(mousePos[0] * this.numElements / 8);
+		this.hilitX = Math.round(mousePos[0] * this.numElements / this.plotElements);
 		this.#editPoints(mousePos[1]);
 		// time step
 		const numEle = this.timeDom.length;
@@ -143,14 +143,33 @@ class MainApp {
 		this.#zeroElements();
 	}
 
+	#testFreq(nf) {
+		console.log("test freq " + nf);
+		for (let f = 0; f < nf; ++f) {
+			const odd = f & 1;
+			let uf = f >> 1;
+			let sf = (f + 1) >> 1;
+			if (odd) {
+				uf = nf - 1 - uf;
+				sf = -sf;
+			}
+			console.log("f = " + f + ", uf = " + uf + ", sf = " + sf);
+		}
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.#testFreq(1);
+		this.#testFreq(2);
+		this.#testFreq(4);
+		this.#testFreq(8);
 		this.fft = new Fft();
-		this.fft.testFft();
+		//this.fft.testFft();
 		// user init section
 		this.doInverse = true;
 		this.snapMode = false;
 		this.numElements = 1 << 3;
+		this.plotElements = 1 << 3;
 		this.#zeroElements();
 
 		// measure frame rate
@@ -218,11 +237,11 @@ class MainApp {
 
 	#userDraw() {
 		const sepAxis = 100;
-		const extra = 16 / Math.max(8,this.numElements);
+		const extra = 16 / Math.max(this.plotElements,this.numElements);
 		const realRad = .135 * extra;
 		const imagRad = .1 * extra;
-		const outlineRad = .175 * extra;
-		const outline = .05 * extra;
+		const outlineRad = .125 * extra;
+		const outline = .025 * extra;
 		const textSize = .5;
 		const textLeft = -1.5;
 		const rectOutlineSize = [1.5, .75];
@@ -237,30 +256,45 @@ class MainApp {
 		if (this.doInverse) {
 			this.drawPrim.drawRectangleCenterO([textLeft, this.sepDist], rectOutlineSize, .075);
 		}
-
 		// draw time domain points
 		for (let i = 0; i < this.timeDom.length; ++i) {
-			const x = i * 8 / this.numElements;
+			const x = i * this.plotElements / this.numElements;
 			const ampReal = this.timeDom[i][0];
 			const centerReal = [x, ampReal];
 			const ampImag = this.timeDom[i][1];
 			const centerImag = [x, ampImag];
-			this.drawPrim.drawCircle(centerReal, realRad,  "red");	
-			this.drawPrim.drawCircle(centerImag, imagRad,  "green");	
+			this.drawPrim.drawCircle(centerReal, realRad * .25,  "red");	
+			this.drawPrim.drawCircle(centerImag, imagRad * .25,  "green");	
 			if (this.hilitX == i && !this.doInverse) {
 				this.drawPrim.drawCircleO(centerReal, outlineRad,  outline, "black");	
 				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");	
 			}
 		}
+		// calc interpolation of time domain
+		const resolution = 1024;
+		const dataReal = [];
+		const dataImag = [];
+		for (let ti = 0; ti <= resolution; ++ti) {
+			const t = ti / resolution;
+			const timeVal = this.fft.calcT(this.freqDom, t);
+			dataReal.push(timeVal[0]);
+			dataImag.push(timeVal[1]);
+
+		}
+		// draw interpolation of time domain
+		const lineSize = .01;
+		const stepX = this.plotElements / resolution;
+		this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
+		this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
 		// draw frequency domain points
 		for (let i = 0; i < this.freqDom.length; ++i) {
-			const x = i * 8 / this.numElements;
+			const x = i * this.plotElements / this.numElements;
 			const ampReal = this.freqDom[i][0];
 			const centerReal = [x, ampReal + this.sepDist];
 			const ampImag = this.freqDom[i][1];
 			const centerImag = [x, ampImag + this.sepDist];
-			this.drawPrim.drawCircle(centerReal, realRad,  "red");	
-			this.drawPrim.drawCircle(centerImag, imagRad,  "green");	
+			this.drawPrim.drawCircle(centerReal, realRad * .5,  "red");	
+			this.drawPrim.drawCircle(centerImag, imagRad * .5,  "green");	
 			if (this.hilitX == i & this.doInverse) {
 				this.drawPrim.drawCircleO(centerReal, outlineRad,  outline, "black");	
 				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");	

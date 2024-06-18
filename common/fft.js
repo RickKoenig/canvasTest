@@ -134,6 +134,26 @@ class Fft {
             this.#iFt(freqs, times);
         }
     }
+    // calc a time domain value with freqs and a time value
+    calcT(freqs, t, maxDepth) {
+        if (maxDepth === undefined || maxDepth >= freqs.length) maxDepth = freqs.length - 1;
+        const ret = compf.create();
+        for (let f = 0; f <= maxDepth; ++f) {
+			const odd = f & 1;
+			let uf = f >> 1;
+			let sf = (f + 1) >> 1;
+			if (odd) {
+				uf = maxDepth - uf;
+				sf = -sf;
+			}
+            const ang = t * sf * Math.PI * 2;
+            const exp = compf.create(Math.cos(ang), Math.sin(ang));
+            const term = compf.create();
+            compf.mul(term, exp, freqs[uf]);
+            compf.add(ret, ret, term);
+        }
+        return ret;
+    }
     
     #testFastNoFast(fastIFt, fastFt) {
         // different combinations of fast and slow ft and ift
