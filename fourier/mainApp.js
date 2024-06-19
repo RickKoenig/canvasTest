@@ -133,6 +133,9 @@ class MainApp {
 	#lessElements() {
 		if (this.numElements <= 1) return;
 		this.numElements >>= 1;
+		const dc = this.eles.depthCombo;
+		dc.slider.max = this.numElements.toString();
+		dc.setValue(dc.getValue()); // clip if neccesary
 		this.#zeroElements();
 	}
 
@@ -140,36 +143,23 @@ class MainApp {
 		const maxElements = 64;
 		if (this.numElements >= maxElements) return;
 		this.numElements <<= 1;
+		const dc = this.eles.depthCombo;
+		dc.slider.max = this.numElements.toString();
 		this.#zeroElements();
-	}
-
-	#testFreq(nf) {
-		console.log("test freq " + nf);
-		for (let f = 0; f < nf; ++f) {
-			const odd = f & 1;
-			let uf = f >> 1;
-			let sf = (f + 1) >> 1;
-			if (odd) {
-				uf = nf - 1 - uf;
-				sf = -sf;
-			}
-			console.log("f = " + f + ", uf = " + uf + ", sf = " + sf);
-		}
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		this.#testFreq(1);
-		this.#testFreq(2);
-		this.#testFreq(4);
-		this.#testFreq(8);
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section
 		this.doInverse = true;
-		this.snapMode = false;
+		this.snapMode = true;
+		this.interp = true;
 		this.numElements = 1 << 3;
 		this.plotElements = 1 << 3;
+		this.noLastSine = false;
+		this.lastComponentOnly = false;
 		this.#zeroElements();
 
 		// measure frame rate
@@ -199,6 +189,44 @@ class MainApp {
 			this.snapMode = this.eles.snapDomain.checked;
 		}, "checkbox");
 		this.eles.snapDomain.checked = this.snapMode;
+		makeEle(this.vp, "hr");
+		// show interp
+		makeEle(this.vp, "span", null, "marg", "Interp");
+		this.eles.interp = makeEle(this.vp, "input", "interp", null, "ho", (val) => {
+			this.interp = this.eles.interp.checked;
+		}, "checkbox");
+		this.eles.interp.checked = this.interp;
+		// interp depth
+		{
+			const label = "Interp Depth";
+			const min = 0;
+			const max = this.numElements;
+			const start = this.numElements;
+			const step = 1;
+			const precision = 0;
+			this.eles.depthCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (outVal) => {
+					this.depth = outVal;
+				}
+			);
+		}
+		// no last sine
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "No Highest Freq Sine");
+		this.eles.noLastSine = makeEle(this.vp, "input", "noLastSine", null, "ho", (val) => {
+			this.noLastSine = this.eles.noLastSine.checked;
+		}, "checkbox");
+		this.eles.noLastSine.checked = this.noLastSine;
+		// last component only
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Last component only");
+		this.eles.lastComponentOnly = makeEle(this.vp, "input", "lastComponentOnly", null, "ho", (val) => {
+			this.lastComponentOnly = this.eles.lastComponentOnly.checked;
+		}, "checkbox");
+		this.eles.lastComponentOnly.checked = this.lastComponentOnly;
+
+		makeEle(this.vp, "hr");
+
 		makeEle(this.vp, "button", null, null, "More Elements",
 			() => {
 				this.#moreElements();
@@ -270,22 +298,6 @@ class MainApp {
 				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");	
 			}
 		}
-		// calc interpolation of time domain
-		const resolution = 1024;
-		const dataReal = [];
-		const dataImag = [];
-		for (let ti = 0; ti <= resolution; ++ti) {
-			const t = ti / resolution;
-			const timeVal = this.fft.calcT(this.freqDom, t);
-			dataReal.push(timeVal[0]);
-			dataImag.push(timeVal[1]);
-
-		}
-		// draw interpolation of time domain
-		const lineSize = .01;
-		const stepX = this.plotElements / resolution;
-		this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
-		this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
 		// draw frequency domain points
 		for (let i = 0; i < this.freqDom.length; ++i) {
 			const x = i * this.plotElements / this.numElements;
@@ -293,12 +305,29 @@ class MainApp {
 			const centerReal = [x, ampReal + this.sepDist];
 			const ampImag = this.freqDom[i][1];
 			const centerImag = [x, ampImag + this.sepDist];
-			this.drawPrim.drawCircle(centerReal, realRad * .5,  "red");	
-			this.drawPrim.drawCircle(centerImag, imagRad * .5,  "green");	
+			this.drawPrim.drawCircle(centerReal, realRad * .25,  "red");	
+			this.drawPrim.drawCircle(centerImag, imagRad * .25,  "green");	
 			if (this.hilitX == i & this.doInverse) {
 				this.drawPrim.drawCircleO(centerReal, outlineRad,  outline, "black");	
 				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");	
 			}
+		}
+		if (this.interp) {
+			// calc interpolation of time domain
+			const resolution = 256;
+			const dataReal = [];
+			const dataImag = [];
+			for (let ti = 0; ti <= resolution; ++ti) {
+				const t = ti / resolution;
+				const timeVal = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
+				dataReal.push(timeVal[0]);
+				dataImag.push(timeVal[1]);
+			}
+			// draw interpolation of time domain
+			const lineSize = .01;
+			const stepX = this.plotElements / resolution;
+			this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
+			this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
 		}
 	}
 

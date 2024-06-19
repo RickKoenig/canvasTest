@@ -135,19 +135,30 @@ class Fft {
         }
     }
     // calc a time domain value with freqs and a time value
-    calcT(freqs, t, maxDepth) {
-        if (maxDepth === undefined || maxDepth >= freqs.length) maxDepth = freqs.length - 1;
+    calcT(freqs, t, depth, noLastSine, lastComponentOnly) {
+        if (depth === undefined || depth >= freqs.length) depth = freqs.length;
         const ret = compf.create();
-        for (let f = 0; f <= maxDepth; ++f) {
+        for (let f = 0; f < depth; ++f) {
+            if (lastComponentOnly) {
+                if (f != depth - 1) {
+                    continue;
+                }
+            }
 			const odd = f & 1;
 			let uf = f >> 1;
 			let sf = (f + 1) >> 1;
 			if (odd) {
-				uf = maxDepth - uf;
+				uf = freqs.length - 1 - uf;
 				sf = -sf;
 			}
             const ang = t * sf * Math.PI * 2;
-            const exp = compf.create(Math.cos(ang), Math.sin(ang));
+            let exp;
+            if (noLastSine && f == freqs.length - 1) {
+                // don't do sine for f == depth
+                exp = compf.create(Math.cos(ang), 0);
+            } else {
+                exp = compf.create(Math.cos(ang), Math.sin(ang));
+            }
             const term = compf.create();
             compf.mul(term, exp, freqs[uf]);
             compf.add(ret, ret, term);
