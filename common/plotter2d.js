@@ -247,10 +247,12 @@ class Plotter2d {
         const extra = 10; // for region of interest
         vec2.scale(temp, this.ndcMin, this.invZoom);
         vec2.add(this.camMin, temp, this.center);
+        this.camMinNoExtra = vec2.clone(this.camMin);
         this.camMin[0] -= extra;
         this.camMin[1] -= extra;
         vec2.scale(temp, this.ndcMax, this.invZoom);
         vec2.add(this.camMax, temp, this.center);
+        this.camMaxNoExtra = vec2.clone(this.camMax);
         this.camMax[0] += extra;
         this.camMax[1] += extra;
 

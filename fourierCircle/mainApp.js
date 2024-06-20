@@ -208,7 +208,7 @@ class MainApp {
 			this.ctx.translate(-this.roi[0], -this.roi[1]);
 		}
 		// now in user/cam space
-		this.graphPaper.draw("R", "I");
+		this.graphPaper.draw();//"R", "I");
 		// USER: do USER stuff
 		this.#userDraw(); //draw
 		if (this.scrollLock) {

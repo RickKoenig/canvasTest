@@ -111,10 +111,10 @@ class GraphPaper {
     #drawAxisNames(hAxis, vAxis) {
         let size = .05;
         if (hAxis && hAxis.length) {
-            this.dp.drawText([this.plotter2d.camMax[0] - this.shrink * this.plotter2d.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
+            this.dp.drawText([this.plotter2d.camMaxNoExtra[0] - this.shrink * this.plotter2d.invZoom/ 2, 0], [size, size], hAxis, undefined, "white", true);
         }
         if (vAxis && vAxis.length) {
-            this.dp.drawText([0, this.plotter2d.camMax[1] - this.shrink * this.plotter2d.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
+            this.dp.drawText([0, this.plotter2d.camMaxNoExtra[1] - this.shrink * this.plotter2d.invZoom/ 2], [size, size], vAxis, undefined, "white", true);
         }
     }
 
