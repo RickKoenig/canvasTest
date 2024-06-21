@@ -89,6 +89,7 @@ class MainApp {
 
 	#zeroElements() {
 		this.sepDist = 5;
+		this.compPlaneDist = 12;
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
 		for (let i = 0; i < this.numElements; ++i) {
@@ -145,6 +146,7 @@ class MainApp {
 		this.numElements <<= 1;
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
+		dc.setValue(dc.slider.max); // clip if neccesary
 		this.#zeroElements();
 	}
 
@@ -153,13 +155,14 @@ class MainApp {
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section
-		this.doInverse = true;
+		this.doInverse = false;
 		this.snapMode = true;
 		this.interp = true;
 		this.numElements = 1 << 3;
 		this.plotElements = 1 << 3;
 		this.noLastSine = false;
 		this.lastComponentOnly = false;
+		this.complexPlane = true;
 		this.#zeroElements();
 
 		// measure frame rate
@@ -178,27 +181,32 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
 
-		makeEle(this.vp, "span", null, "marg", "Frequency Domain");
+		// frequency domain
+		makeEle(this.vp, "span", null, "marg", "Frequency domain");
 		this.eles.doInverse = makeEle(this.vp, "input", "doInverse", null, "ho", (val) => {
 			this.doInverse = this.eles.doInverse.checked;
 		}, "checkbox");
 		this.eles.doInverse.checked = this.doInverse;
+
+		// snap mode
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Snap Mode");
 		this.eles.snapDomain = makeEle(this.vp, "input", "snapMode", null, "ho", (val) => {
 			this.snapMode = this.eles.snapDomain.checked;
 		}, "checkbox");
 		this.eles.snapDomain.checked = this.snapMode;
-		makeEle(this.vp, "hr");
+
 		// show interp
+		makeEle(this.vp, "hr");
 		makeEle(this.vp, "span", null, "marg", "Interp");
 		this.eles.interp = makeEle(this.vp, "input", "interp", null, "ho", (val) => {
 			this.interp = this.eles.interp.checked;
 		}, "checkbox");
 		this.eles.interp.checked = this.interp;
+
 		// interp depth
 		{
-			const label = "Interp Depth";
+			const label = "Interp depth";
 			const min = 0;
 			const max = this.numElements;
 			const start = this.numElements;
@@ -210,13 +218,15 @@ class MainApp {
 				}
 			);
 		}
+
 		// no last sine
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "span", null, "marg", "No Highest Freq Sine");
+		makeEle(this.vp, "hr");
+		makeEle(this.vp, "span", null, "marg", "No highest freq sine");
 		this.eles.noLastSine = makeEle(this.vp, "input", "noLastSine", null, "ho", (val) => {
 			this.noLastSine = this.eles.noLastSine.checked;
 		}, "checkbox");
 		this.eles.noLastSine.checked = this.noLastSine;
+
 		// last component only
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "span", null, "marg", "Last component only");
@@ -225,8 +235,8 @@ class MainApp {
 		}, "checkbox");
 		this.eles.lastComponentOnly.checked = this.lastComponentOnly;
 
+		// change elements
 		makeEle(this.vp, "hr");
-
 		makeEle(this.vp, "button", null, null, "More Elements",
 			() => {
 				this.#moreElements();
@@ -243,6 +253,14 @@ class MainApp {
 			}
 		);
 		makeEle(this.vp, "hr");
+
+		// show complex plane
+		makeEle(this.vp, "span", null, "marg", "Show complex plane");
+		this.eles.complexPlane = makeEle(this.vp, "input", "complexPlane", null, "ho", (val) => {
+			this.complexPlane = this.eles.complexPlane.checked;
+		}, "checkbox");
+		this.eles.complexPlane.checked = this.complexPlane;
+
 	}
 
 	#userProc() {
@@ -308,10 +326,11 @@ class MainApp {
 			this.drawPrim.drawCircle(centerReal, realRad * .25,  "red");	
 			this.drawPrim.drawCircle(centerImag, imagRad * .25,  "green");	
 			if (this.hilitX == i & this.doInverse) {
-				this.drawPrim.drawCircleO(centerReal, outlineRad,  outline, "black");	
-				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");	
+				this.drawPrim.drawCircleO(centerReal, outlineRad,  outline, "black");
+				this.drawPrim.drawCircleO(centerImag, outlineRad,  outline, "black");
 			}
 		}
+		const dataComplex = [];
 		if (this.interp) {
 			// calc interpolation of time domain
 			const resolution = 256;
@@ -322,12 +341,32 @@ class MainApp {
 				const timeVal = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
 				dataReal.push(timeVal[0]);
 				dataImag.push(timeVal[1]);
+				dataComplex.push(timeVal);
 			}
 			// draw interpolation of time domain
 			const lineSize = .01;
 			const stepX = this.plotElements / resolution;
 			this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
 			this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
+		}
+		if (this.complexPlane) {
+			/*
+			const pnts = [
+				[1.5, 2],
+				[-1.5, 2],
+				[-2, -2],
+				[2, -2]
+			];*/
+			this.drawPrim.drawLine([this.compPlaneDist, -sepAxis], [this.compPlaneDist, sepAxis], undefined, "blue");
+			//this.drawPrim.drawLinesParametric(pnts, undefined, .1, true, undefined, "brown", [this.compPlaneDist, 0]);
+			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", [this.compPlaneDist, 0]);
+			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
+				const pnt = this.timeDom[this.hilitX];
+				this.drawPrim.drawCircleO([pnt[0] + this.compPlaneDist, pnt[1]], outlineRad,  outline, "black");
+			}
+			if (this.interp) {
+				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false, "#9550a3", undefined, [this.compPlaneDist, 0]);
+			}
 		}
 	}
 

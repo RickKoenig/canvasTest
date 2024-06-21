@@ -115,7 +115,7 @@ class DrawPrimitives {
 
     // an array of x,y values, if close is true, connect first point to last point
     drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
-        , lineColor = "black", circleColor = "green", ndcScale = false) {
+        , lineColor = "black", circleColor = "green", offset = [0, 0], ndcScale = false) {
         if (pnts.length < 2) {
             return;
         }
@@ -124,11 +124,11 @@ class DrawPrimitives {
             this.ctx.beginPath();
             this.ctx.lineJoin = "round";
             const pnt = pnts[0];
-            this.ctx.moveTo(pnt[0], pnt[1]);
+            this.ctx.moveTo(pnt[0] + offset[0], pnt[1] + offset[1]);
             let idx = 1;
             while(idx < pnts.length) {
                 const pnt = pnts[idx];
-                this.ctx.lineTo(pnt[0], pnt[1]);
+                this.ctx.lineTo(pnt[0] + offset[0], pnt[1] + offset[1]);
                 ++idx;
             }
             if (close) {
@@ -145,7 +145,7 @@ class DrawPrimitives {
             for (let idx = 0; idx < pnts.length; ++idx) {
                 const pnt = pnts[idx];
                 this.ctx.beginPath();
-                this.ctx.arc(pnt[0], pnt[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+                this.ctx.arc(pnt[0] + offset[0], pnt[1] + offset[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         }
