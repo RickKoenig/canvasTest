@@ -107,6 +107,7 @@ class MainApp {
 	#procElements() {
 		this.cursorObj.pos = this.plotter2d.userMouse.slice();
 		const mousePos = this.cursorObj.pos;
+		this.tInterp = range(0, mousePos[0] / this.elementsXScale, 1);
 		this.cursorObj.pressedLeft = this.input.mouse.mbut[Mouse.LEFT];
 		this.cursorObj.pressedRight = this.input.mouse.mbut[Mouse.RIGHT];
 		const key = this.input.keyboard.key;
@@ -120,7 +121,7 @@ class MainApp {
 
 		}
 		// edit elements		
-		this.hilitX = Math.round(mousePos[0] * this.numElements / this.plotElements);
+		this.hilitX = Math.round(mousePos[0] * this.numElements / this.elementsXScale);
 		this.#editPoints(mousePos[1]);
 		// time step
 		const numEle = this.timeDom.length;
@@ -158,8 +159,8 @@ class MainApp {
 		this.doInverse = false;
 		this.snapMode = true;
 		this.interp = true;
-		this.numElements = 1 << 3;
-		this.plotElements = 1 << 3;
+		this.numElements = 1 << 3; // a power of 2
+		this.elementsXScale = 8;
 		this.noLastSine = false;
 		this.lastComponentOnly = false;
 		this.complexPlane = true;
@@ -283,7 +284,7 @@ class MainApp {
 
 	#userDraw() {
 		const sepAxis = 100;
-		const extra = 16 / Math.max(this.plotElements,this.numElements);
+		const extra = 16 / Math.max(this.elementsXScale,this.numElements);
 		const realRad = .135 * extra;
 		const imagRad = .1 * extra;
 		const outlineRad = .125 * extra;
@@ -304,7 +305,7 @@ class MainApp {
 		}
 		// draw time domain points
 		for (let i = 0; i < this.timeDom.length; ++i) {
-			const x = i * this.plotElements / this.numElements;
+			const x = i * this.elementsXScale / this.numElements;
 			const ampReal = this.timeDom[i][0];
 			const centerReal = [x, ampReal];
 			const ampImag = this.timeDom[i][1];
@@ -318,7 +319,7 @@ class MainApp {
 		}
 		// draw frequency domain points
 		for (let i = 0; i < this.freqDom.length; ++i) {
-			const x = i * this.plotElements / this.numElements;
+			const x = i * this.elementsXScale / this.numElements;
 			const ampReal = this.freqDom[i][0];
 			const centerReal = [x, ampReal + this.sepDist];
 			const ampImag = this.freqDom[i][1];
@@ -345,7 +346,7 @@ class MainApp {
 			}
 			// draw interpolation of time domain
 			const lineSize = .01;
-			const stepX = this.plotElements / resolution;
+			const stepX = this.elementsXScale / resolution;
 			this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
 			this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
 		}
@@ -365,7 +366,9 @@ class MainApp {
 				this.drawPrim.drawCircleO([pnt[0] + this.compPlaneDist, pnt[1]], outlineRad,  outline, "black");
 			}
 			if (this.interp) {
+				const pnt = [this.tInterp * this.elementsXScale, 1.5];
 				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false, "#9550a3", undefined, [this.compPlaneDist, 0]);
+				this.drawPrim.drawCircleO(pnt, outlineRad,  outline, "black");
 			}
 		}
 	}
@@ -376,6 +379,7 @@ class MainApp {
 		infoStr += "Avg fps = " + this.avgFpsRound.toFixed(2);
 		infoStr += this.doInverse ? "\nEdit Frequency Domain" : "\nEdit Time Domain";
 		infoStr += "\nNum Elements " + this.numElements;
+		infoStr += "\ntInterp = " + this.tInterp.toFixed(3);
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 
