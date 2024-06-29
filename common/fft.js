@@ -135,15 +135,21 @@ class Fft {
         }
     }
     // calc a time domain value with freqs and a time value
+
+    // TODO: return array of convergent steps from depth 0 to depth freqs.length
+
     calcT(freqs, t, depth, noLastSine, lastComponentOnly) {
         if (depth === undefined || depth >= freqs.length) depth = freqs.length;
         const ret = compf.create();
-        for (let f = 0; f < depth; ++f) {
-            if (lastComponentOnly) {
+        const retArr = [];
+        retArr.push(vec2.clone(ret)); // no terms yet
+        for (let f = 0; f < freqs.length; ++f) {
+        //for (let f = 0; f < depth; ++f) {
+            /*if (lastComponentOnly) {
                 if (f != depth - 1) {
                     continue;
                 }
-            }
+            }*/
 			const odd = f & 1;
 			let uf = f >> 1;
 			let sf = (f + 1) >> 1;
@@ -162,8 +168,13 @@ class Fft {
             const term = compf.create();
             compf.mul(term, exp, freqs[uf]);
             compf.add(ret, ret, term);
+            if (lastComponentOnly) {
+                retArr.push(vec2.clone(term));
+            } else {
+                retArr.push(vec2.clone(ret));
+            }
         }
-        return ret;
+        return retArr;
     }
     
     #testFastNoFast(fastIFt, fastFt) {

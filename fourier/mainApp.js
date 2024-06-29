@@ -159,7 +159,7 @@ class MainApp {
 		this.doInverse = false;
 		this.snapMode = true;
 		this.interp = true;
-		this.numElements = 1 << 3; // a power of 2
+		this.numElements = 1 << 2; // a power of 2
 		this.elementsXScale = 8;
 		this.noLastSine = false;
 		this.lastComponentOnly = false;
@@ -332,43 +332,57 @@ class MainApp {
 			}
 		}
 		const dataComplex = [];
+		let pnt;
 		if (this.interp) {
+			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.depth, this.noLastSine, this.lastComponentOnly);
+			pnt = vec2.clone(pntArr[this.depth]); // last element
 			// calc interpolation of time domain
 			const resolution = 256;
 			const dataReal = [];
 			const dataImag = [];
 			for (let ti = 0; ti <= resolution; ++ti) {
 				const t = ti / resolution;
-				const timeVal = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
-				dataReal.push(timeVal[0]);
-				dataImag.push(timeVal[1]);
-				dataComplex.push(timeVal);
+				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
+				const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+				dataReal.push(timeValComplex[0]);
+				dataImag.push(timeValComplex[1]);
+				dataComplex.push(timeValComplex);
 			}
 			// draw interpolation of time domain
 			const lineSize = .01;
 			const stepX = this.elementsXScale / resolution;
 			this.drawPrim.drawLinesSimple(dataReal, lineSize, undefined, 0, stepX, "red");
 			this.drawPrim.drawLinesSimple(dataImag, lineSize, undefined, 0, stepX, "green");
+			this.drawPrim.drawCircle([this.tInterp * this.elementsXScale, pnt[0]], outlineRad / 3, "red");
+			this.drawPrim.drawCircle([this.tInterp * this.elementsXScale, pnt[1]], outlineRad / 3, "green");
 		}
 		if (this.complexPlane) {
-			/*
-			const pnts = [
-				[1.5, 2],
-				[-1.5, 2],
-				[-2, -2],
-				[2, -2]
-			];*/
 			this.drawPrim.drawLine([this.compPlaneDist, -sepAxis], [this.compPlaneDist, sepAxis], undefined, "blue");
-			//this.drawPrim.drawLinesParametric(pnts, undefined, .1, true, undefined, "brown", [this.compPlaneDist, 0]);
-			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", [this.compPlaneDist, 0]);
+			const compOffset = [this.compPlaneDist, 0];
+			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", compOffset);
 			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
 				const pnt = this.timeDom[this.hilitX];
 				this.drawPrim.drawCircleO([pnt[0] + this.compPlaneDist, pnt[1]], outlineRad,  outline, "black");
 			}
 			if (this.interp) {
-				const pnt = [this.tInterp * this.elementsXScale, 1.5];
-				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false, "#9550a3", undefined, [this.compPlaneDist, 0]);
-				this.drawPrim.drawCircleO(pnt, outlineRad,  outline, "black");
+				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false,
+					 "#9550a3", undefined, compOffset);
+				pnt[0] += this.compPlaneDist;
+				this.drawPrim.drawCircle(pnt, outlineRad / 4, "purple");
+				// now do a straight linear interpolation between the timeDom points
+				let idx = this.tInterp * this.timeDom.length;
+				let tweenTime = idx % 1;
+				idx = Math.floor(idx);
+				if (idx == this.timeDom.length) {
+					--idx;
+					tweenTime = 1;
+				}
+				const p0 = this.timeDom[idx];
+				const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
+				const pt = vec2.create();
+				vec2.lerp(pt, p0, p1, tweenTime);
+				vec2.add(pt, pt, compOffset);
+				this.drawPrim.drawCircle(pt, outlineRad / 4, "black");
 			}
 		}
 	}
