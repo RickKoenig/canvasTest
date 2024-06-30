@@ -402,16 +402,16 @@ class MainApp {
 		// proc
 		// update input system
 		this.input.proc();
+		this.#userProc(); // proc
 		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.MIDDLE);
 		// USER: do USER stuff
-		this.#userProc(); // proc
 
 		this.plotter2d.clearCanvas();
 		// interact with mouse, calc all spaces
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
-		this.graphPaper.draw();
+		this.graphPaper.draw("1", "2");
 		// USER: do USER stuff
 		this.#userDraw(); //draw
 		// update UI, text

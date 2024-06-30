@@ -182,7 +182,11 @@ class Plotter2d {
         return true;
     }
 
-    proc(vp, mouse, whichBut = Mouse.LEFT) {
+    proc(vp, mouse, whichBut = Mouse.LEFT, userOffset) {
+        if (!userOffset) {
+            userOffset = [0, 0];
+        }
+        this.userOffset = userOffset;
         let dirt = this.#calcCanvasSize();
         if (this.coordReset) {
             dirt = true;
@@ -236,29 +240,29 @@ class Plotter2d {
             if (mouse.mbut[whichBut]) {
                 const f = 1 / (this.zoom * this.WMin / 2);
                 // where is the mouse in float coords
-                this.center[0] -= mouse.dmxy[0]*f;
-                this.center[1] += mouse.dmxy[1]*f;
+                this.center[0] -= mouse.dmxy[0] * f;
+                this.center[1] += mouse.dmxy[1] * f;
                 dirt = true;
             }
         } 
 
         let temp = vec2.create();
 
-        const extra = 10; // for region of interest
-        vec2.scale(temp, this.ndcMin, this.invZoom);
-        vec2.add(this.camMin, temp, this.center);
-        this.camMinNoExtra = vec2.clone(this.camMin);
-        this.camMin[0] -= extra;
-        this.camMin[1] -= extra;
-        vec2.scale(temp, this.ndcMax, this.invZoom);
-        vec2.add(this.camMax, temp, this.center);
-        this.camMaxNoExtra = vec2.clone(this.camMax);
-        this.camMax[0] += extra;
-        this.camMax[1] += extra;
-
         if (doCenter) {
             this.#newcenter(pnt, this.userMouse);
         }
+        const extra = -1; // for region of interest
+        vec2.scale(temp, this.ndcMin, this.invZoom);
+        vec2.add(this.camMin, temp, this.center);
+        this.camMin = vec2.clone(this.camMin);
+        this.camMin[0] -= extra - this.userOffset[0];
+        this.camMin[1] -= extra - this.userOffset[1];
+        vec2.scale(temp, this.ndcMax, this.invZoom);
+        vec2.add(this.camMax, temp, this.center);
+        this.camMax = vec2.clone(this.camMax);
+        this.camMax[0] += extra + this.userOffset[0];
+        this.camMax[1] += extra + this.userOffset[1];
+
         this.#screen2userCam(pnt);
 
         if (this.vp) {
@@ -278,7 +282,7 @@ class Plotter2d {
         return dirt;
     }
 
-    setSpace(space) {
+    setSpace(space) { // extra offset in user space or null
         // canvas stack set to default every frame
         // back to canvas/screen space
         this.ctx.restore(); // stack now empty and ctx set back to defaults
@@ -298,10 +302,10 @@ class Plotter2d {
         case Plotter2d.spaces.USER:
             // to USER space
             this.ctx.scale(this.scl, -this.scl); // screen to NDC space
-            this.ctx.translate(this.trans[0], this.trans[1]);
+            this.ctx.translate(this.trans[0], this.trans[1] );
             // NDC to user/cam space
             this.ctx.scale(this.zoom, this.zoom);
-            this.ctx.translate(-this.center[0], -this.center[1]);
+            this.ctx.translate(-this.center[0] - this.userOffset[0], -this.center[1]- this.userOffset[1]);
             // ###### now in user/cam space
             break;
         }

@@ -59,7 +59,6 @@ class MainApp {
 		const r = 1 + .25 * (this.depth - 1);
 		const ang = 2 * Math.PI * this.time;
 		this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
-
 	}
 
 	// USER: add more members or classes to MainApp
@@ -195,25 +194,25 @@ class MainApp {
 		// proc
 		// update input system
 		this.input.proc();
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT);
-		// USER: do USER stuff
 		this.#userProc(); // proc
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT, this.scrollLock ? this.roi : null);
+		// USER: do USER stuff
 
 		this.plotter2d.clearCanvas();
 		// interact with mouse, calc all spaces
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		if (this.scrollLock) {
+		/*if (this.scrollLock) {
 			this.ctx.save();
 			this.ctx.translate(-this.roi[0], -this.roi[1]);
-		}
+		}*/
 		// now in user/cam space
-		this.graphPaper.draw();//"R", "I");
+		this.graphPaper.draw("1", "2");//"R", "I");
 		// USER: do USER stuff
 		this.#userDraw(); //draw
-		if (this.scrollLock) {
+		/*if (this.scrollLock) {
 			this.ctx.restore();
-		}
+		}*/
 		// update UI, text
 		this.#userUpdateInfo();
 

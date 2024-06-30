@@ -195,6 +195,13 @@ class MainApp {
 
 	// proc
 	#animate() {
+		if (!this.cnt) this.cnt = 0;
+		++this.cnt;
+		if (this.cnt < 1) {
+			requestAnimationFrame(() => this.#animate());
+			return;
+		}
+		this.cnt = 0;
 		// proc
 		// update input system
 		this.input.proc();
