@@ -54,6 +54,7 @@ class Plotter2d {
         this.camMax = vec2.create();
         this.center = vec2.clone(startCenter);
         this.startCenter = vec2.clone(startCenter);
+        this.userOffset = [0, 0];
 
         this.startZoom= startZoom;
         this.zoom= 1;
@@ -115,7 +116,7 @@ class Plotter2d {
         }
     }
 
-    #newcenter(i, pnt) {
+    #newcenter(i, pnt, roi) {
         let ndcC = vec2.create();
         ndcC[0] = (2 * i[0] - this.W[0]) / this.WMin;
         ndcC[1] = (2 * i[1] - this.W[1]) / this.WMin;
@@ -251,7 +252,7 @@ class Plotter2d {
         if (doCenter) {
             this.#newcenter(pnt, this.userMouse);
         }
-        const extra = -1; // for region of interest
+        const extra = -.01; // for region of interest
         vec2.scale(temp, this.ndcMin, this.invZoom);
         vec2.add(this.camMin, temp, this.center);
         this.camMin = vec2.clone(this.camMin);

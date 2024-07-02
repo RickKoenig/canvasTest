@@ -79,6 +79,11 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
+    drawCross(p, size = 1, lineWidth = .01, color = "black", ndcScale = false) {
+        this.drawLine([p[0] - size, p[1]], [p[0] + size, p[1]], lineWidth, color, ndcScale);
+        this.drawLine([p[0], p[1] - size], [p[0], p[1] + size], lineWidth, color, ndcScale);
+    }
+
     // an array of y values, x steps to the right
     // connected line and optional circles on vertices
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = 0

@@ -128,8 +128,11 @@ class GraphPaper {
         // names of axes
         this.#drawAxisNames(axisH, axisV);
         // test, draw range of camera
-        const size = vec2.create();
-        vec2.sub(size, this.plotter2d.camMax, this.plotter2d.camMin);
-        this.dp.drawRectangleO(this.plotter2d.camMin, size, .025, "green");
+        const camTest = false;
+        if (camTest) {
+            const size = vec2.create();
+            vec2.sub(size, this.plotter2d.camMax, this.plotter2d.camMin);
+            this.dp.drawRectangleO(this.plotter2d.camMin, size, .25, "green");
+        }
     }
 }

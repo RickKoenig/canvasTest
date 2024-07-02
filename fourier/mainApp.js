@@ -40,11 +40,6 @@ class MainApp {
 		return v;
 	}
 
-	#lerp(a, b, t) {
-		//return a * (1 - t) + b * t;
-		return a - (a - b) * t;
-	}
-
 	#editPoints(mouseY) {
 		if (this.hilitX >=0 && this.hilitX < this.numElements) {
 			if (!this.oldHilitX) {
@@ -60,16 +55,16 @@ class MainApp {
 			let cnt = Math.abs(deltaX);
 			const startCnt = cnt;
 			const dir = -Math.sign(deltaX);
-
+			// handle fast mouse edit movements with lerp
 			while(cnt--) {
-				curY =this.#lerp(this.oldMouseY,mouseY, cnt / startCnt);
+				curY = lerp(this.oldMouseY,mouseY, cnt / startCnt);
 				deltaX += dir;
 				if (this.doInverse) {
 					if (this.cursorObj.pressedLeft) {
-						this.freqDom[curX][0] = this.#doSnap(curY - this.sepDist);
+						this.freqDom[curX][0] = this.#doSnap(curY - this.freqOffsetY);
 					}
 					if (this.cursorObj.pressedRight) {
-						this.freqDom[curX][1] = this.#doSnap(curY - this.sepDist);
+						this.freqDom[curX][1] = this.#doSnap(curY - this.freqOffsetY);
 					}
 				} else {
 					if (this.cursorObj.pressedLeft) {
@@ -88,8 +83,8 @@ class MainApp {
 	}
 
 	#zeroElements() {
-		this.sepDist = 5;
-		this.compPlaneDist = 12;
+		this.freqOffsetY = 5;
+		this.complexPlaneOffset = [4, 7.5];
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
 		for (let i = 0; i < this.numElements; ++i) {
@@ -283,7 +278,7 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const sepAxis = 100;
+		const freqSepAxis = 100; // for freq domain
 		const extra = 16 / Math.max(this.elementsXScale,this.numElements);
 		const realRad = .135 * extra;
 		const imagRad = .1 * extra;
@@ -292,16 +287,16 @@ class MainApp {
 		const textSize = .5;
 		const textLeft = -1.5;
 		const rectOutlineSize = [1.5, .75];
-		// draw sep line
-		this.drawPrim.drawLine([0, this.sepDist], [sepAxis, this.sepDist], undefined, "blue");
+		// draw sep line for freq
+		this.drawPrim.drawLine([0, this.freqOffsetY], [freqSepAxis, this.freqOffsetY], undefined, "blue");
 		// draw labels
 		this.drawPrim.drawText([textLeft, 0], [textSize, textSize], "Time");
 		if (!this.doInverse) {
 			this.drawPrim.drawRectangleCenterO([textLeft, 0], rectOutlineSize, .075);
 		}
-		this.drawPrim.drawText([textLeft, this.sepDist], [textSize, textSize], "Freq");
+		this.drawPrim.drawText([textLeft, this.freqOffsetY], [textSize, textSize], "Freq");
 		if (this.doInverse) {
-			this.drawPrim.drawRectangleCenterO([textLeft, this.sepDist], rectOutlineSize, .075);
+			this.drawPrim.drawRectangleCenterO([textLeft, this.freqOffsetY], rectOutlineSize, .075);
 		}
 		// draw time domain points
 		for (let i = 0; i < this.timeDom.length; ++i) {
@@ -321,9 +316,9 @@ class MainApp {
 		for (let i = 0; i < this.freqDom.length; ++i) {
 			const x = i * this.elementsXScale / this.numElements;
 			const ampReal = this.freqDom[i][0];
-			const centerReal = [x, ampReal + this.sepDist];
+			const centerReal = [x, ampReal + this.freqOffsetY];
 			const ampImag = this.freqDom[i][1];
-			const centerImag = [x, ampImag + this.sepDist];
+			const centerImag = [x, ampImag + this.freqOffsetY];
 			this.drawPrim.drawCircle(centerReal, realRad * .25,  "red");	
 			this.drawPrim.drawCircle(centerImag, imagRad * .25,  "green");	
 			if (this.hilitX == i & this.doInverse) {
@@ -357,17 +352,19 @@ class MainApp {
 			this.drawPrim.drawCircle([this.tInterp * this.elementsXScale, pnt[1]], outlineRad / 3, "green");
 		}
 		if (this.complexPlane) {
-			this.drawPrim.drawLine([this.compPlaneDist, -sepAxis], [this.compPlaneDist, sepAxis], undefined, "blue");
-			const compOffset = [this.compPlaneDist, 0];
-			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", compOffset);
+			this.drawPrim.drawCross(this.complexPlaneOffset, .5, .001, undefined, "blue");
+			const compOffset = [this.complexPlaneOffset[0], 0];
+			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", this.complexPlaneOffset);
 			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
-				const pnt = this.timeDom[this.hilitX];
-				this.drawPrim.drawCircleO([pnt[0] + this.compPlaneDist, pnt[1]], outlineRad,  outline, "black");
+				const cpnt = vec2.clone(this.timeDom[this.hilitX]);
+				vec2.add(cpnt, cpnt, this.complexPlaneOffset);
+				this.drawPrim.drawCircleO(cpnt, outlineRad,  outline, "black");
 			}
 			if (this.interp) {
 				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false,
-					 "#9550a3", undefined, compOffset);
-				pnt[0] += this.compPlaneDist;
+					 "#9550a3", undefined, this.complexPlaneOffset);
+				//pnt[0] += this.complexPlaneOffset[0];
+				vec2.add(pnt, pnt, this.complexPlaneOffset);
 				this.drawPrim.drawCircle(pnt, outlineRad / 4, "purple");
 				// now do a straight linear interpolation between the timeDom points
 				let idx = this.tInterp * this.timeDom.length;
@@ -381,7 +378,7 @@ class MainApp {
 				const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
 				const pt = vec2.create();
 				vec2.lerp(pt, p0, p1, tweenTime);
-				vec2.add(pt, pt, compOffset);
+				vec2.add(pt, pt, this.complexPlaneOffset);
 				this.drawPrim.drawCircle(pt, outlineRad / 4, "black");
 			}
 		}
@@ -390,7 +387,7 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "";
-		infoStr += "Avg fps = " + this.avgFpsRound.toFixed(2);
+		infoStr += "Avg fps = " + this.avgFpsRound.toString();
 		infoStr += this.doInverse ? "\nEdit Frequency Domain" : "\nEdit Time Domain";
 		infoStr += "\nNum Elements " + this.numElements;
 		infoStr += "\ntInterp = " + this.tInterp.toFixed(3);
@@ -411,7 +408,7 @@ class MainApp {
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
-		this.graphPaper.draw("1", "2");
+		this.graphPaper.draw();
 		// USER: do USER stuff
 		this.#userDraw(); //draw
 		// update UI, text

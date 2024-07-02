@@ -197,7 +197,8 @@ class MainApp {
 	#animate() {
 		if (!this.cnt) this.cnt = 0;
 		++this.cnt;
-		if (this.cnt < 1) {
+		const slowDownFactor = 1; // testing for glitches, set higher like 60
+		if (this.cnt < slowDownFactor) {
 			requestAnimationFrame(() => this.#animate());
 			return;
 		}

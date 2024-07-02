@@ -60,12 +60,34 @@ class MainApp {
 		const ang = 2 * Math.PI * this.time;
 		this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
 	}
+	#initElements() {
+		this.numElements = 8; // a power of 2
+		this.timeDom = Array(this.numElements);
+		this.freqDom = Array(this.numElements);
+		for (let i = 0; i < this.numElements; ++i) {
+			this.timeDom[i] = [0, 0];
+			this.freqDom[i] = [0, 0];
+		}
+
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.avgFpsObj = new Runavg(500);
+
+		// before firing up Plotter2d
+		this.startCenter = [4.7, 2.5];
+		this.startZoom = .16;
+
+	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		this.fft = new Fft();
 		// user init section
+		this.#initElements();
 		this.#timeReset();
 		this.scrollLock = false;
+		this.noLastSine = true;
 
 		// objects
 		this.running = false;
@@ -81,12 +103,22 @@ class MainApp {
 	}
 
 	#userBuildUI() {
+		// scroll lock
+		makeEle(this.vp, "hr");
 		makeEle(this.vp, "span", null, "marg", "Scroll Lock");
 		this.eles.scrollLock = makeEle(this.vp, "input", "scrollLock", null, "ho", (val) => {
 			this.scrollLock = this.eles.scrollLock.checked;
 		}, "checkbox");
 		this.eles.scrollLock.checked = this.scrollLock;
-		makeEle(this.vp, "hr");
+		makeEle(this.vp, "br");
+
+		// no last sine
+		makeEle(this.vp, "span", null, "marg", "No highest freq sine");
+		this.eles.noLastSine = makeEle(this.vp, "input", "noLastSine", null, "ho", (val) => {
+			this.noLastSine = this.eles.noLastSine.checked;
+		}, "checkbox");
+		this.eles.noLastSine.checked = this.noLastSine;
+		
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		// combo playback speed
@@ -177,42 +209,36 @@ class MainApp {
 		for (let d = 0; d < this.depth; ++d) {
 			const r = 1 + .25 * d;
 			const center = [r * Math.cos(ang), r * Math.sin(ang)];
-			this.drawPrim.drawCircle(center, .04,  "red");
+			this.drawPrim.drawCircle(center, .04,  this.noLastSine ? "red" : "green");
 		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "";
-		infoStr += "Avg fps = " + this.avgFpsRound.toFixed(2);
+		infoStr += "Avg fps = " + this.avgFpsRound.toString();
 		infoStr += "\nTIME = " + this.time.toFixed(3);
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 
 	// proc
 	#animate() {
-		// proc
 		// update input system
 		this.input.proc();
-		this.#userProc(); // proc
+		// user proc
+		this.#userProc();
+		// plotter2d UI proc
 		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT, this.scrollLock ? this.roi : null);
-		// USER: do USER stuff
 
+		// start drawing
 		this.plotter2d.clearCanvas();
-		// interact with mouse, calc all spaces
+		// calc all coord spaces
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		/*if (this.scrollLock) {
-			this.ctx.save();
-			this.ctx.translate(-this.roi[0], -this.roi[1]);
-		}*/
 		// now in user/cam space
-		this.graphPaper.draw("1", "2");//"R", "I");
-		// USER: do USER stuff
+		this.graphPaper.draw();
+		// USER: do USER draw stuff
 		this.#userDraw(); //draw
-		/*if (this.scrollLock) {
-			this.ctx.restore();
-		}*/
 		// update UI, text
 		this.#userUpdateInfo();
 
