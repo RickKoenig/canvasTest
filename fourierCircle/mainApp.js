@@ -56,28 +56,30 @@ class MainApp {
 		}	
 
 		// region of interest
-		const r = 1 + .25 * (this.depth - 1);
-		const ang = 2 * Math.PI * this.time;
-		this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
-	}
-	#initElements() {
-		this.numElements = 8; // a power of 2
-		this.timeDom = Array(this.numElements);
-		this.freqDom = Array(this.numElements);
-		for (let i = 0; i < this.numElements; ++i) {
-			this.timeDom[i] = [0, 0];
-			this.freqDom[i] = [0, 0];
+		if (this.depth == 0) {
+			//this.roi = [3,2];
+		} else {
+			const r = 1 + .25 * (this.depth - 1);
+			const ang = 2 * Math.PI * this.time;
+			this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
 		}
+	}
+
+	#initElements() {
+		this.timeDom = [
+			[1, 0],
+			[.5, 1],
+			[-.75, .75],
+			[-.5, -.5]
+		];
+		this.numElements = this.timeDom.length; // a power of 2
+		this.freqDom = Array(this.numElements);
+		this.fft.fft(this.timeDom, this.freqDom);
 
 		// measure frame rate
 		this.fps;
 		this.avgFps = 0;
 		this.avgFpsObj = new Runavg(500);
-
-		// before firing up Plotter2d
-		this.startCenter = [4.7, 2.5];
-		this.startZoom = .16;
-
 	}
 
 	// USER: add more members or classes to MainApp
@@ -124,7 +126,7 @@ class MainApp {
 		// combo playback speed
 		{
 			const label = "Depth";
-			const min = 1;
+			const min = 0;
 			const max = 20;
 			const start = 1;
 			const step = 1;
@@ -203,14 +205,64 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const time = this.time % 1;
+		// draw big cirlce
 		this.drawPrim.drawCircleO([0, 0], 1,  .001, "black");
+		// move small circle around circumference of big circle
+		const time = this.time % 1;
 		const ang = 2 * Math.PI * time;
 		for (let d = 0; d < this.depth; ++d) {
 			const r = 1 + .25 * d;
 			const center = [r * Math.cos(ang), r * Math.sin(ang)];
 			this.drawPrim.drawCircle(center, .04,  this.noLastSine ? "red" : "green");
 		}
+
+		// draw time domain points and lines connecting them
+		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown");
+		const hilitX = Math.round(this.time * this.timeDom.length) % this.timeDom.length;
+		if (hilitX >= 0 && hilitX < this.timeDom.length) {
+			const cpnt = this.timeDom[hilitX];
+			this.drawPrim.drawCircleO(cpnt, .04,  .0025, "black");
+		}
+	// now do a straight linear interpolation between the timeDom points
+		let idx = this.time * this.timeDom.length;
+		let tweenTime = idx % 1;
+		idx = Math.floor(idx);
+		if (idx == this.timeDom.length) {
+			--idx;
+			tweenTime = 1;
+		}
+		const p0 = this.timeDom[idx];
+		const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
+		const pt = vec2.create();
+		if (this.depth == 0) this.roi = pt;
+		vec2.lerp(pt, p0, p1, tweenTime);
+		this.drawPrim.drawCircle(pt, .02, "black");
+		/*if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
+			const cpnt = vec2.clone(this.timeDom[this.hilitX]);
+			vec2.add(cpnt, cpnt, this.complexPlaneOffset);
+			this.drawPrim.drawCircleO(cpnt, outlineRad,  outline, "black");
+		}
+		if (this.interp) {
+			this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false,
+				 "#9550a3", undefined, this.complexPlaneOffset);
+			//pnt[0] += this.complexPlaneOffset[0];
+			vec2.add(pnt, pnt, this.complexPlaneOffset);
+			this.drawPrim.drawCircle(pnt, outlineRad / 4, "purple");
+			// now do a straight linear interpolation between the timeDom points
+			let idx = this.tInterp * this.timeDom.length;
+			let tweenTime = idx % 1;
+			idx = Math.floor(idx);
+			if (idx == this.timeDom.length) {
+				--idx;
+				tweenTime = 1;
+			}
+			const p0 = this.timeDom[idx];
+			const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
+			const pt = vec2.create();
+			vec2.lerp(pt, p0, p1, tweenTime);
+			vec2.add(pt, pt, this.complexPlaneOffset);
+			this.drawPrim.drawCircle(pt, outlineRad / 4, "black");
+		}*/
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

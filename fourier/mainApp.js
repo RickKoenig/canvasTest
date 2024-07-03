@@ -256,7 +256,6 @@ class MainApp {
 			this.complexPlane = this.eles.complexPlane.checked;
 		}, "checkbox");
 		this.eles.complexPlane.checked = this.complexPlane;
-
 	}
 
 	#userProc() {
@@ -353,7 +352,6 @@ class MainApp {
 		}
 		if (this.complexPlane) {
 			this.drawPrim.drawCross(this.complexPlaneOffset, .5, .001, undefined, "blue");
-			const compOffset = [this.complexPlaneOffset[0], 0];
 			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", this.complexPlaneOffset);
 			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
 				const cpnt = vec2.clone(this.timeDom[this.hilitX]);
