@@ -56,12 +56,40 @@ class MainApp {
 		}	
 
 		// region of interest
-		if (this.depth == 0) {
-			//this.roi = [3,2];
+
+		// now do a straight linear interpolation between the timeDom points
+		let idx = this.time * this.timeDom.length;
+		let tweenTime = idx % 1;
+		idx = Math.floor(idx);
+		if (idx == this.timeDom.length) {
+			--idx;
+			tweenTime = 1;
+		}
+		const p0 = this.timeDom[idx];
+		const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
+		this.lerpPnt = vec2.create();
+		vec2.lerp(this.lerpPnt, p0, p1, tweenTime);
+
+		/*if (this.depth == 0) {
+			this.roi = this.lerpPnt;
 		} else {
 			const r = 1 + .25 * (this.depth - 1);
 			const ang = 2 * Math.PI * this.time;
 			this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
+		}*/
+
+
+		const pntArr = this.fft.calcT(this.freqDom, this.time, this.depth, this.noLastSine, this.lastComponentOnly);
+		this.fftPnt = vec2.clone(pntArr[this.depth]); // last element
+		this.roi = this.fftPnt;
+		// calc interpolation of time domain
+		const resolution = 256;
+		this.dataComplex = [];
+		for (let ti = 0; ti <= resolution; ++ti) {
+			const t = ti / resolution;
+			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
+			const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+			this.dataComplex.push(timeValComplex);
 		}
 	}
 
@@ -80,6 +108,9 @@ class MainApp {
 		this.fps;
 		this.avgFps = 0;
 		this.avgFpsObj = new Runavg(500);
+		this.lerpPnt = vec2.create();
+		this.fftPnt = vec2.create();
+		this.depth = 1;
 	}
 
 	// USER: add more members or classes to MainApp
@@ -127,8 +158,8 @@ class MainApp {
 		{
 			const label = "Depth";
 			const min = 0;
-			const max = 20;
-			const start = 1;
+			const max = this.numElements;
+			const start = this.depth;
 			const step = 1;
 			const precision = 0;
 			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
@@ -218,51 +249,15 @@ class MainApp {
 
 		// draw time domain points and lines connecting them
 		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown");
+		if (this.dataComplex) this.drawPrim.drawLinesParametric(this.dataComplex
+			, .003, undefined, false, "#9550a3");
 		const hilitX = Math.round(this.time * this.timeDom.length) % this.timeDom.length;
 		if (hilitX >= 0 && hilitX < this.timeDom.length) {
 			const cpnt = this.timeDom[hilitX];
 			this.drawPrim.drawCircleO(cpnt, .04,  .0025, "black");
 		}
-	// now do a straight linear interpolation between the timeDom points
-		let idx = this.time * this.timeDom.length;
-		let tweenTime = idx % 1;
-		idx = Math.floor(idx);
-		if (idx == this.timeDom.length) {
-			--idx;
-			tweenTime = 1;
-		}
-		const p0 = this.timeDom[idx];
-		const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
-		const pt = vec2.create();
-		if (this.depth == 0) this.roi = pt;
-		vec2.lerp(pt, p0, p1, tweenTime);
-		this.drawPrim.drawCircle(pt, .02, "black");
-		/*if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
-			const cpnt = vec2.clone(this.timeDom[this.hilitX]);
-			vec2.add(cpnt, cpnt, this.complexPlaneOffset);
-			this.drawPrim.drawCircleO(cpnt, outlineRad,  outline, "black");
-		}
-		if (this.interp) {
-			this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false,
-				 "#9550a3", undefined, this.complexPlaneOffset);
-			//pnt[0] += this.complexPlaneOffset[0];
-			vec2.add(pnt, pnt, this.complexPlaneOffset);
-			this.drawPrim.drawCircle(pnt, outlineRad / 4, "purple");
-			// now do a straight linear interpolation between the timeDom points
-			let idx = this.tInterp * this.timeDom.length;
-			let tweenTime = idx % 1;
-			idx = Math.floor(idx);
-			if (idx == this.timeDom.length) {
-				--idx;
-				tweenTime = 1;
-			}
-			const p0 = this.timeDom[idx];
-			const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
-			const pt = vec2.create();
-			vec2.lerp(pt, p0, p1, tweenTime);
-			vec2.add(pt, pt, this.complexPlaneOffset);
-			this.drawPrim.drawCircle(pt, outlineRad / 4, "black");
-		}*/
+		this.drawPrim.drawCircle(this.lerpPnt, .02, "black");
+		this.drawPrim.drawCircle(this.fftPnt, .02, "black");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
