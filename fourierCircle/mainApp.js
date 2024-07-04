@@ -2,9 +2,24 @@
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 class MainApp {
+	// test alternating positive and negative frequencies
+	#test() {
+		const freqLen = 8;
+		for (let f = 0; f < freqLen; ++f) {
+			const odd = f & 1;
+			let uf = f >> 1;
+			let sf = (f + 1) >> 1;
+			if (odd) {
+				uf = freqLen - 1 - uf;
+				sf = -sf;
+			}
+			console.log("f = " + f + ", uf = " + uf + ", sf = " + sf);
+		}
+	}
 
 	// assume times and freqs are equal size, <= maxFft, and powers of 2
 	constructor() {
+		this.#test();
 		console.log("\n############# creating instance of MainApp");
 
 		// vertical panel UI
@@ -55,8 +70,6 @@ class MainApp {
 			this.eles.scrollLock.checked = this.scrollLock;
 		}	
 
-		// region of interest
-
 		// now do a straight linear interpolation between the timeDom points
 		let idx = this.time * this.timeDom.length;
 		let tweenTime = idx % 1;
@@ -70,25 +83,16 @@ class MainApp {
 		this.lerpPnt = vec2.create();
 		vec2.lerp(this.lerpPnt, p0, p1, tweenTime);
 
-		/*if (this.depth == 0) {
-			this.roi = this.lerpPnt;
-		} else {
-			const r = 1 + .25 * (this.depth - 1);
-			const ang = 2 * Math.PI * this.time;
-			this.roi = [r * Math.cos(ang), r * Math.sin(ang)];
-		}*/
-
-
-		const pntArr = this.fft.calcT(this.freqDom, this.time, this.depth, this.noLastSine, this.lastComponentOnly);
-		this.fftPnt = vec2.clone(pntArr[this.depth]); // last element
-		this.roi = this.fftPnt;
-		// calc interpolation of time domain
+		this.fftPntArr = this.fft.calcT(this.freqDom, this.time, this.noLastSine, this.lastComponentOnly);
+		this.roi = vec2.clone(this.fftPntArr[this.depth]);
+		// calc interpolation of time domain at highest depth
 		const resolution = 256;
 		this.dataComplex = [];
 		for (let ti = 0; ti <= resolution; ++ti) {
 			const t = ti / resolution;
-			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
-			const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.noLastSine, this.lastComponentOnly);
+			//const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+			const timeValComplex = vec2.clone(timeValComplexArr[this.numElements]);
 			this.dataComplex.push(timeValComplex);
 		}
 	}
@@ -120,7 +124,7 @@ class MainApp {
 		this.#initElements();
 		this.#timeReset();
 		this.scrollLock = false;
-		this.noLastSine = true;
+		this.noLastSine = false;
 
 		// objects
 		this.running = false;
@@ -159,7 +163,7 @@ class MainApp {
 			const label = "Depth";
 			const min = 0;
 			const max = this.numElements;
-			const start = this.depth;
+			const start = this.numElements;
 			const step = 1;
 			const precision = 0;
 			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
@@ -220,7 +224,6 @@ class MainApp {
 	#userProc() {
 		// proc objects
 		if (this.avgFpsRound) this.#timeStep(this.playSpeed / this.avgFpsRound);
-		
 		// update FPS
 		if (this.oldTime === undefined) {
 			this.oldTime = performance.now();
@@ -236,28 +239,28 @@ class MainApp {
 	}
 
 	#userDraw() {
-		// draw big cirlce
-		this.drawPrim.drawCircleO([0, 0], 1,  .001, "black");
-		// move small circle around circumference of big circle
-		const time = this.time % 1;
-		const ang = 2 * Math.PI * time;
-		for (let d = 0; d < this.depth; ++d) {
-			const r = 1 + .25 * d;
-			const center = [r * Math.cos(ang), r * Math.sin(ang)];
-			this.drawPrim.drawCircle(center, .04,  this.noLastSine ? "red" : "green");
-		}
-
 		// draw time domain points and lines connecting them
 		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown");
+		// draw fft interp
 		if (this.dataComplex) this.drawPrim.drawLinesParametric(this.dataComplex
 			, .003, undefined, false, "#9550a3");
+		// draw closest data point
 		const hilitX = Math.round(this.time * this.timeDom.length) % this.timeDom.length;
 		if (hilitX >= 0 && hilitX < this.timeDom.length) {
 			const cpnt = this.timeDom[hilitX];
 			this.drawPrim.drawCircleO(cpnt, .04,  .0025, "black");
 		}
+		// draw linear lerp point at time
 		this.drawPrim.drawCircle(this.lerpPnt, .02, "black");
-		this.drawPrim.drawCircle(this.fftPnt, .02, "black");
+		// draw fft point at time
+		if (this.fftPntArr) {
+			for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
+				const rad = vec2.dist(this.fftPntArr[i], this.fftPntArr[i + 1]);
+				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .01, "goldenrod");
+			}
+			this.drawPrim.drawLinesParametric(this.fftPntArr, .003, .03, false, "blue", "fuchsia");
+		}
+		if (this.roi) this.drawPrim.drawCircle(this.roi, .01, "yellow");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

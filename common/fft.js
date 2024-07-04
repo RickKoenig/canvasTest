@@ -134,22 +134,13 @@ class Fft {
             this.#iFt(freqs, times);
         }
     }
-    // calc a time domain value with freqs and a time value
-
-    // TODO: return array of convergent steps from depth 0 to depth freqs.length
-
-    calcT(freqs, t, depth, noLastSine, lastComponentOnly) {
-        if (depth === undefined || depth >= freqs.length) depth = freqs.length;
+    // calc a time domain value with freqs and a time value at all depths
+    calcT(freqs, t, noLastSine, lastComponentOnly) {
         const ret = compf.create();
         const retArr = [];
         retArr.push(vec2.clone(ret)); // no terms yet
         for (let f = 0; f < freqs.length; ++f) {
-        //for (let f = 0; f < depth; ++f) {
-            /*if (lastComponentOnly) {
-                if (f != depth - 1) {
-                    continue;
-                }
-            }*/
+            // alternate between positve and negative frequencies upto the highest in the middle
 			const odd = f & 1;
 			let uf = f >> 1;
 			let sf = (f + 1) >> 1;
@@ -160,7 +151,7 @@ class Fft {
             const ang = t * sf * Math.PI * 2;
             let exp;
             if (noLastSine && f == freqs.length - 1) {
-                // don't do sine for f == depth
+                // don't do sine for f == last element
                 exp = compf.create(Math.cos(ang), 0);
             } else {
                 exp = compf.create(Math.cos(ang), Math.sin(ang));

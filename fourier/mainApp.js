@@ -328,7 +328,7 @@ class MainApp {
 		const dataComplex = [];
 		let pnt;
 		if (this.interp) {
-			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.depth, this.noLastSine, this.lastComponentOnly);
+			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.noLastSine, this.lastComponentOnly);
 			pnt = vec2.clone(pntArr[this.depth]); // last element
 			// calc interpolation of time domain
 			const resolution = 256;
@@ -336,7 +336,7 @@ class MainApp {
 			const dataImag = [];
 			for (let ti = 0; ti <= resolution; ++ti) {
 				const t = ti / resolution;
-				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.depth, this.noLastSine, this.lastComponentOnly);
+				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.noLastSine, this.lastComponentOnly);
 				const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
 				dataReal.push(timeValComplex[0]);
 				dataImag.push(timeValComplex[1]);
