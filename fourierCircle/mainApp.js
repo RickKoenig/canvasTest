@@ -83,14 +83,14 @@ class MainApp {
 		this.lerpPnt = vec2.create();
 		vec2.lerp(this.lerpPnt, p0, p1, tweenTime);
 
-		this.fftPntArr = this.fft.calcT(this.freqDom, this.time, this.noLastSine, this.lastComponentOnly);
+		this.fftPntArr = this.fft.calcT(this.freqDom, this.time, this.revHighest, this.noLastSine, this.lastComponentOnly);
 		this.roi = vec2.clone(this.fftPntArr[this.depth]);
 		// calc interpolation of time domain at highest depth
 		const resolution = 256;
 		this.dataComplex = [];
 		for (let ti = 0; ti <= resolution; ++ti) {
 			const t = ti / resolution;
-			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.noLastSine, this.lastComponentOnly);
+			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.revHighest, this.noLastSine, this.lastComponentOnly);
 			//const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
 			const timeValComplex = vec2.clone(timeValComplexArr[this.numElements]);
 			this.dataComplex.push(timeValComplex);
@@ -125,6 +125,7 @@ class MainApp {
 		this.#timeReset();
 		this.scrollLock = false;
 		this.noLastSine = false;
+		this.revHighest = false;
 
 		// objects
 		this.running = false;
@@ -156,6 +157,14 @@ class MainApp {
 		}, "checkbox");
 		this.eles.noLastSine.checked = this.noLastSine;
 		
+		// reverse last freq
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Reverse highest freq");
+		this.eles.revHighest = makeEle(this.vp, "input", "revHighest", null, "ho", (val) => {
+			this.revHighest = this.eles.revHighest.checked;
+		}, "checkbox");
+		this.eles.revHighest.checked = this.revHighest;
+
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		// combo playback speed

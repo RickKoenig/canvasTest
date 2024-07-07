@@ -157,6 +157,7 @@ class MainApp {
 		this.numElements = 1 << 2; // a power of 2
 		this.elementsXScale = 8;
 		this.noLastSine = false;
+		this.revHighest = false;
 		this.lastComponentOnly = false;
 		this.complexPlane = true;
 		this.#zeroElements();
@@ -222,6 +223,14 @@ class MainApp {
 			this.noLastSine = this.eles.noLastSine.checked;
 		}, "checkbox");
 		this.eles.noLastSine.checked = this.noLastSine;
+
+		// reverse last freq
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "span", null, "marg", "Reverse highest freq");
+		this.eles.revHighest = makeEle(this.vp, "input", "revHighest", null, "ho", (val) => {
+			this.revHighest = this.eles.revHighest.checked;
+		}, "checkbox");
+		this.eles.revHighest.checked = this.revHighest;
 
 		// last component only
 		makeEle(this.vp, "br");
@@ -328,7 +337,7 @@ class MainApp {
 		const dataComplex = [];
 		let pnt;
 		if (this.interp) {
-			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.noLastSine, this.lastComponentOnly);
+			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.revHighest, this.noLastSine, this.lastComponentOnly);
 			pnt = vec2.clone(pntArr[this.depth]); // last element
 			// calc interpolation of time domain
 			const resolution = 256;
@@ -336,7 +345,7 @@ class MainApp {
 			const dataImag = [];
 			for (let ti = 0; ti <= resolution; ++ti) {
 				const t = ti / resolution;
-				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.noLastSine, this.lastComponentOnly);
+				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.revHighest, this.noLastSine, this.lastComponentOnly);
 				const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
 				dataReal.push(timeValComplex[0]);
 				dataImag.push(timeValComplex[1]);

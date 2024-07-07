@@ -135,7 +135,7 @@ class Fft {
         }
     }
     // calc a time domain value with freqs and a time value at all depths
-    calcT(freqs, t, noLastSine, lastComponentOnly) {
+    calcT(freqs, t, revLast, noLastSine, lastComponentOnly) {
         const ret = compf.create();
         const retArr = [];
         retArr.push(vec2.clone(ret)); // no terms yet
@@ -148,16 +148,23 @@ class Fft {
 				uf = freqs.length - 1 - uf;
 				sf = -sf;
 			}
-            const ang = t * sf * Math.PI * 2;
             let exp;
             if (noLastSine && f == freqs.length - 1) {
                 // don't do sine for f == last element
+                const ang = t * sf * Math.PI * 2;
                 exp = compf.create(Math.cos(ang), 0);
             } else {
+                let ang = t * sf * Math.PI * 2;
+                if (revLast && f == freqs.length - 1) {
+                    ang = -ang;
+                }
                 exp = compf.create(Math.cos(ang), Math.sin(ang));
             }
             const term = compf.create();
             compf.mul(term, exp, freqs[uf]);
+            //if (revLast) {
+            //    vec2.scale(term, term, .25);
+            //}
             compf.add(ret, ret, term);
             if (lastComponentOnly) {
                 retArr.push(vec2.clone(term));
