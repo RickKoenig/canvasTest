@@ -66,7 +66,8 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 
 // text, slider and a reset button
 class makeEleCombo {
-	constructor(parent, labelStr, min, max, start, step, precision, outerCallback, conversionCallback) {
+	constructor(parent, labelStr, min, max, start, step, precision
+		, outerCallback, conversionCallback, resetButton = true) {
 		// pre/span
 		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;
@@ -82,8 +83,10 @@ class makeEleCombo {
 		this.outerCallback = outerCallback;
 		this.conversionCallback = conversionCallback;
 		this.#callbackSlider(); // fire off one callback at init
-		// reset button
-		makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.callbackResetButton.bind(this));
+		if (resetButton) {
+			// reset button
+			makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.callbackResetButton.bind(this));
+		}
 	}
 
 	callbackResetButton() {

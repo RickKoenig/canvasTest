@@ -82,20 +82,60 @@ class MainApp {
 		}
 	}
 
-	#zeroElements() {
-		this.freqOffsetY = 5;
-		this.complexPlaneOffset = [4, 7.5];
+	#resetSlots() {
+		this.curSlot = 0;
+		this.slots = Array(this.maxSlots);
+		for (let i = 0; i < this.maxSlots; ++i) {
+			this.#resetElements(i);
+			this.slots[i] = {time: this.timeDom, freq: this.freqDom};
+		}
+		this.freqDom = this.slots[this.curSlot].freq;
+		this.timeDom = this.slots[this.curSlot].time;
+	}
+
+	#changSlot(newVal) {
+		console.log("change slot from " + this.curSlot + " to " + newVal);
+		this.curSlot = newVal;
+		this.freqDom = this.slots[this.curSlot].freq;
+		this.timeDom = this.slots[this.curSlot].time;
+	}
+
+	#resetElements(curSlot) {
+		++curSlot;
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
 		for (let i = 0; i < this.numElements; ++i) {
 			this.timeDom[i] = [0, 0];
 			this.freqDom[i] = [0, 0];
+			if (i == 0) {
+				this.freqDom[i] = [curSlot * .25, 0];
+			}
 		}
+		this.fft.fft(this.freqDom, this.timeDom);
 		this.hilitX = -1;
 		this.cursorObj = {
 			pos: [0, 0],
 			pressed: false
 		}
+	}
+
+	#lessElements() {
+		if (this.numElements <= 1) return;
+		this.numElements >>= 1;
+		const dc = this.eles.depthCombo;
+		dc.slider.max = this.numElements.toString();
+		dc.setValue(dc.getValue()); // clip if neccesary
+		this.#resetElements();
+	}
+
+	#moreElements() {
+		const maxElements = 64;
+		if (this.numElements >= maxElements) return;
+		this.numElements <<= 1;
+		const dc = this.eles.depthCombo;
+		dc.slider.max = this.numElements.toString();
+		dc.setValue(dc.slider.max); // clip if neccesary
+		this.#resetElements();
 	}
 
 	// proc stuff here
@@ -127,25 +167,6 @@ class MainApp {
 		}
 	}
 
-	#lessElements() {
-		if (this.numElements <= 1) return;
-		this.numElements >>= 1;
-		const dc = this.eles.depthCombo;
-		dc.slider.max = this.numElements.toString();
-		dc.setValue(dc.getValue()); // clip if neccesary
-		this.#zeroElements();
-	}
-
-	#moreElements() {
-		const maxElements = 64;
-		if (this.numElements >= maxElements) return;
-		this.numElements <<= 1;
-		const dc = this.eles.depthCombo;
-		dc.slider.max = this.numElements.toString();
-		dc.setValue(dc.slider.max); // clip if neccesary
-		this.#zeroElements();
-	}
-
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		this.fft = new Fft();
@@ -160,7 +181,11 @@ class MainApp {
 		this.revHighest = false;
 		this.lastComponentOnly = false;
 		this.complexPlane = true;
-		this.#zeroElements();
+		this.maxSlots = 4;
+		this.curSlot = 0;
+		this.freqOffsetY = 5;
+		this.complexPlaneOffset = [11, 2.5];
+		this.#resetSlots();
 
 		// measure frame rate
 		this.fps;
@@ -170,6 +195,11 @@ class MainApp {
 		// before firing up Plotter2d
 		this.startCenter = [4.7, 2.5];
 		this.startZoom = .16;
+
+		// call this when exiting page, save slots into localStorage
+		window.addEventListener('beforeunload', (outVal) => {
+			console.log("exit page with outVal = '" + outVal + "', numElements = " + this.numElements);
+		});
 	}
 
 	#userBuildUI() {
@@ -240,8 +270,22 @@ class MainApp {
 		}, "checkbox");
 		this.eles.lastComponentOnly.checked = this.lastComponentOnly;
 
-		// change elements
+		// change slots and elements
 		makeEle(this.vp, "hr");
+		// load save slot
+		{
+			const label = "Cur Slot";
+			const min = 0;
+			const max = this.maxSlots - 1;
+			const start = 0;
+			const step = 1;
+			const precision = 0;
+			this.eles.curSlot = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (outVal) => {
+					this.#changSlot(outVal);
+				}, null, false
+			);
+		}
 		makeEle(this.vp, "button", null, null, "More Elements",
 			() => {
 				this.#moreElements();
@@ -254,7 +298,7 @@ class MainApp {
 		);
 		makeEle(this.vp, "button", null, null, "'Zero' Elements",
 			() => {
-				this.#zeroElements();
+				this.#resetElements();
 			}
 		);
 		makeEle(this.vp, "hr");
@@ -372,7 +416,7 @@ class MainApp {
 					 "#9550a3", undefined, this.complexPlaneOffset);
 				//pnt[0] += this.complexPlaneOffset[0];
 				vec2.add(pnt, pnt, this.complexPlaneOffset);
-				this.drawPrim.drawCircle(pnt, outlineRad / 4, "purple");
+				this.drawPrim.drawCircle(pnt, outlineRad / 3, "purple");
 				// now do a straight linear interpolation between the timeDom points
 				let idx = this.tInterp * this.timeDom.length;
 				let tweenTime = idx % 1;
@@ -386,7 +430,7 @@ class MainApp {
 				const pt = vec2.create();
 				vec2.lerp(pt, p0, p1, tweenTime);
 				vec2.add(pt, pt, this.complexPlaneOffset);
-				this.drawPrim.drawCircle(pt, outlineRad / 4, "black");
+				this.drawPrim.drawCircle(pt, outlineRad / 3, "black");
 			}
 		}
 	}
