@@ -4,6 +4,7 @@
 class MainApp {
 	// test alternating positive and negative frequencies
 	#test() {
+		console.log("test alternating pos neg frequencies");
 		const freqLen = 8;
 		for (let f = 0; f < freqLen; ++f) {
 			const odd = f & 1;
@@ -98,12 +99,20 @@ class MainApp {
 	}
 
 	#initElements() {
-		this.timeDom = [
-			[1, 0],
-			[.5, 1],
-			[-.75, .75],
-			[-.5, -.5]
-		];
+		const curSlotStr = localStorage.getItem("fftCircleCurSlot");
+		if (curSlotStr !== null) {
+			const curSlot = parseInt(curSlotStr);
+			const slots = JSON.parse(localStorage.getItem("fftCircleSlots"));
+			const slot = slots[curSlot];
+			this.timeDom = slot.times;
+		} else {
+			this.timeDom = [
+				[1, 0],
+				[.5, 1],
+				[-.75, .75],
+				[-.5, -.5]
+			];
+		}
 		this.numElements = this.timeDom.length; // a power of 2
 		this.freqDom = Array(this.numElements);
 		this.fft.fft(this.timeDom, this.freqDom);
@@ -269,7 +278,10 @@ class MainApp {
 			}
 			this.drawPrim.drawLinesParametric(this.fftPntArr, .003, .03, false, "blue", "fuchsia");
 		}
-		if (this.roi) this.drawPrim.drawCircle(this.roi, .01, "yellow");
+		if (this.roi) {
+			this.drawPrim.drawCircle(this.roi, .01, "yellow");
+			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

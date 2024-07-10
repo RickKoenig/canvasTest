@@ -87,31 +87,42 @@ class MainApp {
 		this.slots = Array(this.maxSlots);
 		for (let i = 0; i < this.maxSlots; ++i) {
 			this.#resetElements(i);
-			this.slots[i] = {time: this.timeDom, freq: this.freqDom};
 		}
-		this.freqDom = this.slots[this.curSlot].freq;
-		this.timeDom = this.slots[this.curSlot].time;
+		const curSlotStr = localStorage.getItem("fftCircleCurSlot");
+		if (curSlotStr !== null) {
+			console.log("got some localStorage");
+			const slotStr = localStorage.getItem("fftCircleSlots");
+			this.slots = JSON.parse(slotStr);
+			this.curSlot = parseInt(curSlotStr);
+		}
+		this.freqDom = this.slots[this.curSlot].freqs;
+		this.timeDom = this.slots[this.curSlot].times;
 	}
 
 	#changSlot(newVal) {
 		console.log("change slot from " + this.curSlot + " to " + newVal);
 		this.curSlot = newVal;
-		this.freqDom = this.slots[this.curSlot].freq;
-		this.timeDom = this.slots[this.curSlot].time;
+		this.freqDom = this.slots[this.curSlot].freqs;
+		this.timeDom = this.slots[this.curSlot].times;
+		this.numElements = this.freqDom.length;
+		this.eles.depthCombo.slider.max = this.numElements;
+		this.eles.depthCombo.start = this.numElements;
+		this.depth = this.numElements;
+		this.eles.depthCombo.callbackResetButton();
 	}
 
-	#resetElements(curSlot) {
-		++curSlot;
+	#resetElements(slot) {
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
+		this.slots[slot] = {times: this.timeDom, freqs: this.freqDom};
 		for (let i = 0; i < this.numElements; ++i) {
 			this.timeDom[i] = [0, 0];
 			this.freqDom[i] = [0, 0];
 			if (i == 0) {
-				this.freqDom[i] = [curSlot * .25, 0];
+				this.freqDom[i] = [slot * .25 + .25, 0];
 			}
 		}
-		this.fft.fft(this.freqDom, this.timeDom);
+		this.fft.iFft(this.freqDom, this.timeDom);
 		this.hilitX = -1;
 		this.cursorObj = {
 			pos: [0, 0],
@@ -125,7 +136,7 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.getValue()); // clip if neccesary
-		this.#resetElements();
+		this.#resetElements(this.curSlot);
 	}
 
 	#moreElements() {
@@ -135,7 +146,7 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.slider.max); // clip if neccesary
-		this.#resetElements();
+		this.#resetElements(this.curSlot);
 	}
 
 	// proc stuff here
@@ -198,7 +209,7 @@ class MainApp {
 
 		// call this when exiting page, save slots into localStorage
 		window.addEventListener('beforeunload', (outVal) => {
-			console.log("exit page with outVal = '" + outVal + "', numElements = " + this.numElements);
+			this.#userExit();
 		});
 	}
 
@@ -277,7 +288,7 @@ class MainApp {
 			const label = "Cur Slot";
 			const min = 0;
 			const max = this.maxSlots - 1;
-			const start = 0;
+			const start = this.curSlot;
 			const step = 1;
 			const precision = 0;
 			this.eles.curSlot = new makeEleCombo(this.vp, label, min, max, start, step, precision
@@ -298,7 +309,7 @@ class MainApp {
 		);
 		makeEle(this.vp, "button", null, null, "'Zero' Elements",
 			() => {
-				this.#resetElements();
+				this.#resetElements(this.curSlot);
 			}
 		);
 		makeEle(this.vp, "hr");
@@ -443,6 +454,11 @@ class MainApp {
 		infoStr += "\nNum Elements " + this.numElements;
 		infoStr += "\ntInterp = " + this.tInterp.toFixed(3);
 		this.eles.textInfoLog.innerText = infoStr;
+	}
+
+	#userExit() {
+		localStorage.setItem("fftCircleCurSlot", this.curSlot);
+		localStorage.setItem("fftCircleSlots", JSON.stringify(this.slots));
 	}
 
 	// proc
