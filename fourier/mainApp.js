@@ -111,15 +111,15 @@ class MainApp {
 		this.eles.depthCombo.callbackResetButton();
 	}
 
-	#resetElements(slot) {
+	#resetElements(slotnum) {
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
-		this.slots[slot] = {times: this.timeDom, freqs: this.freqDom};
+		this.slots[slotnum] = {times: this.timeDom, freqs: this.freqDom};
 		for (let i = 0; i < this.numElements; ++i) {
 			this.timeDom[i] = [0, 0];
 			this.freqDom[i] = [0, 0];
 			if (i == 0) {
-				this.freqDom[i] = [slot * .25 + .25, 0];
+				this.freqDom[i] = [slotnum * .25 + .25, 0];
 			}
 		}
 		this.fft.iFft(this.freqDom, this.timeDom);
@@ -177,9 +177,14 @@ class MainApp {
 			this.fft.fft(this.timeDom, this.freqDom);
 		}
 	}
-
+	
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		// test output to debug console for copy paste
+		const someData = [[3, 4], "hello", {hi:"ho"}];
+		const str = JSON.stringify(someData, null, '   ');
+		console.log("info =\n " + str);
+
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section

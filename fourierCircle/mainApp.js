@@ -92,8 +92,8 @@ class MainApp {
 		for (let ti = 0; ti <= resolution; ++ti) {
 			const t = ti / resolution;
 			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.revHighest, this.noLastSine, this.lastComponentOnly);
-			//const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
-			const timeValComplex = vec2.clone(timeValComplexArr[this.numElements]);
+			const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+			//const timeValComplex = vec2.clone(timeValComplexArr[this.numElements]);
 			this.dataComplex.push(timeValComplex);
 		}
 	}
@@ -272,15 +272,17 @@ class MainApp {
 		this.drawPrim.drawCircle(this.lerpPnt, .02, "black");
 		// draw fft point at time
 		if (this.fftPntArr) {
-			for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
+			//for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
+			for (let i = 0; i < this.depth; ++i) {
 				const rad = vec2.dist(this.fftPntArr[i], this.fftPntArr[i + 1]);
 				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .01, "goldenrod");
 			}
-			this.drawPrim.drawLinesParametric(this.fftPntArr, .003, .03, false, "blue", "fuchsia");
+			const some = this.fftPntArr.slice(0, this.depth + 1);
+			this.drawPrim.drawLinesParametric(some, .003, .03, false, "blue", "fuchsia");
 		}
 		if (this.roi) {
-			this.drawPrim.drawCircle(this.roi, .01, "yellow");
-			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
+			this.drawPrim.drawCircle(this.roi, .02, "brown");
+			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
 		}
 	}
 
