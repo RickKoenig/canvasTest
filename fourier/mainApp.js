@@ -86,7 +86,7 @@ class MainApp {
 		this.curSlot = 0;
 		this.slots = Array(this.maxSlots);
 		for (let i = 0; i < this.maxSlots; ++i) {
-			this.#resetElements(i);
+			this.#defaultElements(i);
 		}
 		const curSlotStr = localStorage.getItem("fftCircleCurSlot");
 		if (curSlotStr !== null) {
@@ -100,7 +100,7 @@ class MainApp {
 	}
 
 	#changSlot(newVal) {
-		console.log("change slot from " + this.curSlot + " to " + newVal);
+		//console.log("change slot from " + this.curSlot + " to " + newVal);
 		this.curSlot = newVal;
 		this.freqDom = this.slots[this.curSlot].freqs;
 		this.timeDom = this.slots[this.curSlot].times;
@@ -111,18 +111,80 @@ class MainApp {
 		this.eles.depthCombo.callbackResetButton();
 	}
 
-	#resetElements(slotnum) {
+	#defaultTimeData = [
+		[
+			[1.5, 1.5]
+		],
+		[
+			[1.5, 1.5],
+			[3, 2]
+		],
+		[
+			[1, 0],
+			[.5, 1],
+			[-.75, .75],
+			[-.5, -.5]
+		],
+		[
+			[
+				1, 0
+			],
+			[
+				1.5, 1.5
+			],
+			[
+				0,
+				1
+			],
+			[
+				-1.5,
+				1.5
+			],
+			[
+				-1,
+				0
+			],
+			[
+				-1.5,
+				-1.5
+			],
+			[
+				0,
+				-1
+			],
+			[
+				3,
+				-1.5
+			]
+			],
+	];
+
+	#clearElements(slotNum) {
+		this.depth = this.numElements;
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
-		this.slots[slotnum] = {times: this.timeDom, freqs: this.freqDom};
+		this.slots[slotNum] = {times: this.timeDom, freqs: this.freqDom};
 		for (let i = 0; i < this.numElements; ++i) {
 			this.timeDom[i] = [0, 0];
-			this.freqDom[i] = [0, 0];
-			if (i == 0) {
-				this.freqDom[i] = [slotnum * .25 + .25, 0];
-			}
 		}
-		this.fft.iFft(this.freqDom, this.timeDom);
+		this.fft.fft(this.timeDom, this.freqDom);
+		this.hilitX = -1;
+		this.cursorObj = {
+			pos: [0, 0],
+			pressed: false
+		}
+	}
+
+	#defaultElements(slotNum) {
+		this.numElements = this.#defaultTimeData[slotNum].length;
+		this.depth = this.numElements;
+		this.timeDom = Array(this.numElements);
+		this.freqDom = Array(this.numElements);
+		this.slots[slotNum] = {times: this.timeDom, freqs: this.freqDom};
+		for (let i = 0; i < this.numElements; ++i) {
+			this.timeDom[i] = this.#defaultTimeData[slotNum][i].slice();
+		}
+		this.fft.fft(this.timeDom, this.freqDom);
 		this.hilitX = -1;
 		this.cursorObj = {
 			pos: [0, 0],
@@ -136,7 +198,7 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.getValue()); // clip if neccesary
-		this.#resetElements(this.curSlot);
+		this.#clearElements(this.curSlot);
 	}
 
 	#moreElements() {
@@ -146,7 +208,7 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.slider.max); // clip if neccesary
-		this.#resetElements(this.curSlot);
+		this.#clearElements(this.curSlot);
 	}
 
 	// proc stuff here
@@ -180,11 +242,12 @@ class MainApp {
 	
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		/*
 		// test output to debug console for copy paste
 		const someData = [[3, 4], "hello", {hi:"ho"}];
 		const str = JSON.stringify(someData, null, '   ');
 		console.log("info =\n " + str);
-
+		*/
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section
@@ -312,9 +375,14 @@ class MainApp {
 				this.#lessElements();
 			}
 		);
-		makeEle(this.vp, "button", null, null, "'Zero' Elements",
+		makeEle(this.vp, "button", null, null, "Clear Elements",
 			() => {
-				this.#resetElements(this.curSlot);
+				this.#clearElements(this.curSlot);
+			}
+		);
+		makeEle(this.vp, "button", null, null, "Default Elements",
+			() => {
+				this.#defaultElements(this.curSlot);
 			}
 		);
 		makeEle(this.vp, "hr");
@@ -398,7 +466,7 @@ class MainApp {
 		let pnt;
 		if (this.interp) {
 			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.revHighest, this.noLastSine, this.lastComponentOnly);
-			pnt = vec2.clone(pntArr[this.depth]); // last element
+			pnt = pntArr[this.depth].slice(); // last element
 			// calc interpolation of time domain
 			const resolution = 256;
 			const dataReal = [];
@@ -406,7 +474,7 @@ class MainApp {
 			for (let ti = 0; ti <= resolution; ++ti) {
 				const t = ti / resolution;
 				const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.revHighest, this.noLastSine, this.lastComponentOnly);
-				const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
+				const timeValComplex = timeValComplexArr[this.depth].slice();
 				dataReal.push(timeValComplex[0]);
 				dataImag.push(timeValComplex[1]);
 				dataComplex.push(timeValComplex);
@@ -423,7 +491,7 @@ class MainApp {
 			this.drawPrim.drawCross(this.complexPlaneOffset, .5, .001, undefined, "blue");
 			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", this.complexPlaneOffset);
 			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
-				const cpnt = vec2.clone(this.timeDom[this.hilitX]);
+				const cpnt = this.timeDom[this.hilitX].slice();
 				vec2.add(cpnt, cpnt, this.complexPlaneOffset);
 				this.drawPrim.drawCircleO(cpnt, outlineRad,  outline, "black");
 			}
@@ -443,7 +511,7 @@ class MainApp {
 				}
 				const p0 = this.timeDom[idx];
 				const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
-				const pt = vec2.create();
+				const pt = [0, 0];
 				vec2.lerp(pt, p0, p1, tweenTime);
 				vec2.add(pt, pt, this.complexPlaneOffset);
 				this.drawPrim.drawCircle(pt, outlineRad / 3, "black");

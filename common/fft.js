@@ -138,7 +138,7 @@ class Fft {
     calcT(freqs, t, revLast, noLastSine, lastComponentOnly) {
         const ret = compf.create();
         const retArr = [];
-        retArr.push(vec2.clone(ret)); // no terms yet
+        retArr.push(ret.slice()); // no terms yet
         for (let f = 0; f < freqs.length; ++f) {
             // alternate between positve and negative frequencies upto the highest in the middle
 			const odd = f & 1;
@@ -162,14 +162,11 @@ class Fft {
             }
             const term = compf.create();
             compf.mul(term, exp, freqs[uf]);
-            //if (revLast) {
-            //    vec2.scale(term, term, .25);
-            //}
             compf.add(ret, ret, term);
             if (lastComponentOnly) {
-                retArr.push(vec2.clone(term));
+                retArr.push(term.slice());
             } else {
-                retArr.push(vec2.clone(ret));
+                retArr.push(ret.slice());
             }
         }
         return retArr;
