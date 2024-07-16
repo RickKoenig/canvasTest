@@ -198,7 +198,20 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.getValue()); // clip if neccesary
-		this.#clearElements(this.curSlot);
+		const oldTimes = this.timeDom;
+		this.depth = this.numElements;
+		this.timeDom = Array(this.numElements);
+		this.freqDom = Array(this.numElements);
+		this.slots[this.curSlot] = {times: this.timeDom, freqs: this.freqDom};
+		for (let i = 0; i < this.numElements; ++i) {
+			this.timeDom[i] = oldTimes[2 * i];
+		}
+		this.fft.fft(this.timeDom, this.freqDom);
+		this.hilitX = -1;
+		this.cursorObj = {
+			pos: [0, 0],
+			pressed: false
+		}
 	}
 
 	#moreElements() {
@@ -208,7 +221,27 @@ class MainApp {
 		const dc = this.eles.depthCombo;
 		dc.slider.max = this.numElements.toString();
 		dc.setValue(dc.slider.max); // clip if neccesary
-		this.#clearElements(this.curSlot);
+		const oldTimes = this.timeDom;
+		this.depth = this.numElements;
+		this.timeDom = Array(this.numElements);
+		this.freqDom = Array(this.numElements);
+		this.slots[this.curSlot] = {times: this.timeDom, freqs: this.freqDom};
+		for (let i = 0; i < oldTimes.length; ++i) {
+			this.timeDom[2 * i] = oldTimes[i];
+		}
+		for (let i = 0; i < oldTimes.length; ++i) {
+			const avg = Array(2);
+			const j = (i + 1) % oldTimes.length;
+			const out = [0, 0];
+			this.timeDom[2 * i + 1]  = out;
+			vec2.lerp(out, oldTimes[i], oldTimes[(i + 1) % oldTimes.length], .5);
+		};
+		this.fft.fft(this.timeDom, this.freqDom);
+		this.hilitX = -1;
+		this.cursorObj = {
+			pos: [0, 0],
+			pressed: false
+		}
 	}
 
 	// proc stuff here

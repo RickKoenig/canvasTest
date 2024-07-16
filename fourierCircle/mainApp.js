@@ -85,7 +85,8 @@ class MainApp {
 		vec2.lerp(this.lerpPnt, p0, p1, tweenTime);
 
 		this.fftPntArr = this.fft.calcT(this.freqDom, this.time, this.revHighest, this.noLastSine, this.lastComponentOnly);
-		this.roi = vec2.clone(this.fftPntArr[this.depth]);
+		this.roi = vec2.clone(this.fftPntArr[this.roiLevel]);
+		this.maxRoi = vec2.clone(this.fftPntArr[this.depth]);
 		// calc interpolation of time domain at highest depth
 		const resolution = 256;
 		this.dataComplex = [];
@@ -124,6 +125,7 @@ class MainApp {
 		this.lerpPnt = vec2.create();
 		this.fftPnt = vec2.create();
 		this.depth = 1;
+		this.roiLevel = 1;
 	}
 
 	// USER: add more members or classes to MainApp
@@ -176,7 +178,23 @@ class MainApp {
 
 		// info
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		// combo playback speed
+
+		// roi
+		{
+			const label = "roi";
+			const min = 0;
+			const max = this.numElements;
+			const start = this.numElements;
+			const step = 1;
+			const precision = 0;
+			this.roiCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+				, (outVal) => {
+					this.roiLevel = outVal;
+				}
+			);
+		}
+		
+		// depth
 		{
 			const label = "Depth";
 			const min = 0;
@@ -184,12 +202,20 @@ class MainApp {
 			const start = this.numElements;
 			const step = 1;
 			const precision = 0;
-			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.depthCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.depth = outVal;
+					this.roiCombo.slider.max = this.depth;
+					if (this.roiLevel > this.depth) {
+						this.roiCombo.start = this.depth;
+						this.roiLevel = this.depth;
+						this.roiCombo.callbackResetButton();
+					}
+					this.roiCombo.start = this.depth;
 				}
 			);
 		}
+
 
 		makeEle(this.vp, "hr");
 
@@ -268,8 +294,9 @@ class MainApp {
 			const cpnt = this.timeDom[hilitX];
 			this.drawPrim.drawCircleO(cpnt, .04,  .0025, "black");
 		}
+		const interpRad = .03;
 		// draw linear lerp point at time
-		this.drawPrim.drawCircle(this.lerpPnt, .02, "black");
+		this.drawPrim.drawCircle(this.lerpPnt, interpRad, "black");
 		// draw fft point at time
 		if (this.fftPntArr) {
 			//for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
@@ -280,8 +307,12 @@ class MainApp {
 			const some = this.fftPntArr.slice(0, this.depth + 1);
 			this.drawPrim.drawLinesParametric(some, .003, .03, false, "blue", "fuchsia");
 		}
+		if (this.maxRoi) {
+			this.drawPrim.drawCircle(this.maxRoi, interpRad, "green");
+			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
+		}
 		if (this.roi) {
-			this.drawPrim.drawCircle(this.roi, .02, "brown");
+			this.drawPrim.drawCircle(this.roi, interpRad, "brown");
 			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
 		}
 	}
