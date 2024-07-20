@@ -161,7 +161,13 @@ class MainApp {
 		this.editTiles = new EditTiles(this.tiles);
 
 		// pnts 3, test inside outside stuff, first start with a line
-		this.pnts3 = [[-1.75, 1.5], [-1.5, -1.25]];
+		// try some Bezier
+		this.pnts3 = [
+			[-2.25, 2.9],
+			[-1.07, 2.2],
+			[-2.6, 1.9],
+			[-1.75, 1.1]
+		];
 		const numPnts3 = this.pnts3.length;
 		this.pntRad3 = .05; // size of point
 		this.editPnts3 = new EditPnts(this.pnts3, this.pntRad3); // defaults, no add remove points
@@ -187,8 +193,8 @@ class MainApp {
 		}
 
 		// before firing up Plotter2d
-		this.startCenter = [0, 0];
-		this.startZoom = .9;
+		this.startCenter = [.21, 1.52];
+		this.startZoom = .37;
 	}
 
 	#userBuildUI() {
@@ -262,8 +268,11 @@ class MainApp {
 		// tiles
 		this.editTiles.draw(this.drawPrim);
 
-		// pnts 2
+		// pnts 3
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
+		const p0 = this.pnts3[0];
+		const p1 = this.pnts3[1];
+		this.drawPrim.drawLine(p0, p1, .03, "midnightblue");
 
 		if (this.testPntsGrid) {
 			// test point grid with last tile
