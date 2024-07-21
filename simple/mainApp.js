@@ -161,12 +161,12 @@ class MainApp {
 		this.editTiles = new EditTiles(this.tiles);
 
 		// pnts 3, test inside outside stuff, first start with a line
-		// try some Bezier
+		// try some Bezier curves
 		this.pnts3 = [
-			[-2.25, 2.9],
-			[-1.07, 2.2],
-			[-2.6, 1.9],
-			[-1.75, 1.1]
+			[-2, 1.9],
+			[-3, 2.2],
+			[-2, 1.5],
+			[-3, 1.8]
 		];
 		const numPnts3 = this.pnts3.length;
 		this.pntRad3 = .05; // size of point
@@ -245,7 +245,39 @@ class MainApp {
 		this.dirty = this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.dirty = this.editTiles.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.dirty = this.editPnts3.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		// constrain 4 points
+		const constrain = [-2, -3, -2, -3]; // c0, p0, p1, c1
+		for (let i = 0; i < this.pnts3.length; ++i) {
+			this.pnts3[i][0] = constrain[i];
+		}
 		++this.count;
+	}
+
+	// data has 4 elements c0, p0, p1, c1
+	// slope of p0 = c0 - p0
+	// slope of p1 = c1 - p1
+	// return p(t)
+	#bezier(data, t) {
+		const bMat = [
+			[0, 1, 0, 0],
+			[0, -1, 1, 0],
+			[0, 0, 0, 0],
+			[0, 0, 0, 0]
+		];
+		const powers = [1, t, t * t, t * t * t];
+		const timeRow = [];
+		for (let j = 0; j < powers.length; ++j) { // powers
+			let sum = 0;
+			for (let i = 0; i < powers.length; ++i) { // pnts
+				sum += powers[i] * bMat[i][j];
+			}
+			timeRow.push(sum);
+		}
+		let sum2 = 0;
+		for (let i = 0; i < powers.length; ++i) {
+			sum2 += timeRow[i] * data[i];
+		}
+		return sum2;
 	}
 
 	#userDraw() {
@@ -262,17 +294,28 @@ class MainApp {
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
 
-		// pnts 2
+		// pnts 2, test add remove points
 		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);
 
-		// tiles
+		// tiles, manipulate polygons, drag and rotate
 		this.editTiles.draw(this.drawPrim);
 
-		// pnts 3
+		// pnts 3, test Bezier curves, 4 points, c0, p0, p1, c1
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
-		const p0 = this.pnts3[0];
-		const p1 = this.pnts3[1];
-		this.drawPrim.drawLine(p0, p1, .03, "midnightblue");
+		const numInterpPoints = 10;
+		const pntsY = [];
+		const data = [];
+		for (let i = 0; i < this.pnts3.length; ++i) {
+			data.push(this.pnts3[i][1]);
+		}
+		for (let i = 0; i <= numInterpPoints; ++i) {
+			const t = i / numInterpPoints;
+			const pntY = this.#bezier(data, t);
+			pntsY.push(pntY);
+		}
+		this.drawPrim.drawLinesSimple(pntsY, .025, .05
+			, -3, 1 / numInterpPoints
+			, undefined, "darkred");
 
 		if (this.testPntsGrid) {
 			// test point grid with last tile
