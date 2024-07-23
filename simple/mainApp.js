@@ -162,6 +162,7 @@ class MainApp {
 
 		// pnts 3, test inside outside stuff, first start with a line
 		// try some Bezier curves
+		// 1d points
 		this.pnts3 = [
 			[-2, 1.9],
 			[-3, 2.2],
@@ -171,6 +172,17 @@ class MainApp {
 		const numPnts3 = this.pnts3.length;
 		this.pntRad3 = .05; // size of point
 		this.editPnts3 = new EditPnts(this.pnts3, this.pntRad3); // defaults, no add remove points
+
+		// 2d points
+		this.pnts4 = [
+			[-2, 2.9],
+			[-3, 3.2],
+			[-2, 2.5],
+			[-3, 2.8]
+		];
+		const numPnts4 = this.pnts4.length;
+		this.pntRad4 = .05; // size of point
+		this.editPnts4 = new EditPnts(this.pnts4, this.pntRad4); // defaults, no add remove points
 
 		const testGrid = false;
 		if (testGrid) {
@@ -245,8 +257,9 @@ class MainApp {
 		this.dirty = this.editPnts2.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.dirty = this.editTiles.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
 		this.dirty = this.editPnts3.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
-		// constrain 4 points
-		const constrain = [-2, -3, -2, -3]; // c0, p0, p1, c1
+		this.dirty = this.editPnts4.proc(this.input.mouse, this.plotter2d.userMouse) || this.dirty;
+		// constrain 4 points for 1D Bezier to fixed X positions
+		const constrain = [-2, -3, -2, -3]; // C0, P0, P1, C1
 		for (let i = 0; i < this.pnts3.length; ++i) {
 			this.pnts3[i][0] = constrain[i];
 		}
@@ -255,29 +268,50 @@ class MainApp {
 
 	// data has 4 elements c0, p0, p1, c1
 	// slope of p0 = c0 - p0
-	// slope of p1 = c1 - p1
+	// slope of p1 = p1 - c1
 	// return p(t)
-	#bezier(data, t) {
-		const bMat = [
-			[0, 1, 0, 0],
-			[0, -1, 1, 0],
-			[0, 0, 0, 0],
-			[0, 0, 0, 0]
-		];
+	static #bMat = [
+		[0, 1, 0, 0],
+		[1, -1, 0, 0],
+		[-2, -1, 2, 1],
+		[1, 1, -1, -1]
+	];
+
+	#bezier1d(pntsY, t) {
 		const powers = [1, t, t * t, t * t * t];
 		const timeRow = [];
 		for (let j = 0; j < powers.length; ++j) { // powers
 			let sum = 0;
 			for (let i = 0; i < powers.length; ++i) { // pnts
-				sum += powers[i] * bMat[i][j];
+				sum += powers[i] * MainApp.#bMat[i][j];
 			}
 			timeRow.push(sum);
 		}
-		let sum2 = 0;
+		let sumY = 0;
 		for (let i = 0; i < powers.length; ++i) {
-			sum2 += timeRow[i] * data[i];
+			sumY += timeRow[i] * pntsY[i];
 		}
-		return sum2;
+		return sumY;
+	}
+
+	#bezier2d(pnts, t) {
+		const powers = [1, t, t * t, t * t * t];
+		const timeRow = [];
+		for (let j = 0; j < powers.length; ++j) { // powers
+			let sum = 0;
+			for (let i = 0; i < powers.length; ++i) { // pnts
+				sum += powers[i] * MainApp.#bMat[i][j];
+			}
+			timeRow.push(sum);
+		}
+		let sumP = [0, 0];
+		for (let i = 0; i < powers.length; ++i) {
+			const pnt = pnts[i];
+			for (let d = 0; d < 2; ++d) {
+				sumP[d] += timeRow[i] * pnt[d];
+			}
+		}
+		return sumP;
 	}
 
 	#userDraw() {
@@ -300,22 +334,42 @@ class MainApp {
 		// tiles, manipulate polygons, drag and rotate
 		this.editTiles.draw(this.drawPrim);
 
-		// pnts 3, test Bezier curves, 4 points, c0, p0, p1, c1
+		// pnts 3, test 1D Bezier curves, 4 y values, c0, p0, p1, c1
 		this.editPnts3.draw(this.drawPrim, this.plotter2d.userMouse);
-		const numInterpPoints = 10;
-		const pntsY = [];
-		const data = [];
+		const numInterpPoints = 20;
+		const stepSizeX = 1 / numInterpPoints;
+		let pntsY = [];
+		// just the Y component
+		const dataY = [];
 		for (let i = 0; i < this.pnts3.length; ++i) {
-			data.push(this.pnts3[i][1]);
+			dataY.push(this.pnts3[i][1]);
 		}
+		// interpolate and draw all the Y data points
 		for (let i = 0; i <= numInterpPoints; ++i) {
 			const t = i / numInterpPoints;
-			const pntY = this.#bezier(data, t);
+			const pntY = this.#bezier1d(dataY, t);
 			pntsY.push(pntY);
 		}
-		this.drawPrim.drawLinesSimple(pntsY, .025, .05
+		this.drawPrim.drawLinesSimple(pntsY, .025, .04
+			, -3, stepSizeX
+			, undefined, "darkred");
+
+		// pnts 4, test 2D Bezier curves, 4 2D points, c0, p0, p1, c1
+		this.editPnts4.draw(this.drawPrim, this.plotter2d.userMouse);
+		const pnts = [];
+		for (let i = 0; i <= numInterpPoints; ++i) {
+			const t = i / numInterpPoints;
+			const pnt = this.#bezier2d(this.pnts4, t);
+			pnts.push(pnt);
+		}
+		/*
+		this.drawPrim.drawLinesSimple(pnts, .025, .04
 			, -3, 1 / numInterpPoints
 			, undefined, "darkred");
+		*/
+		this.drawPrim.drawLinesParametric(pnts, .025, .04, undefined
+			, undefined, "darkred");
+		
 
 		if (this.testPntsGrid) {
 			// test point grid with last tile

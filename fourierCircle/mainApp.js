@@ -75,10 +75,10 @@ class MainApp {
 		let idx = this.time * this.timeDom.length;
 		let tweenTime = idx % 1;
 		idx = Math.floor(idx);
-		if (idx == this.timeDom.length) {
+		/*if (idx == this.timeDom.length) {
 			--idx;
 			tweenTime = 1;
-		}
+		}*/
 		const p0 = this.timeDom[idx];
 		const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
 		this.lerpPnt = vec2.create();
