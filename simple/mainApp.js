@@ -200,7 +200,7 @@ class MainApp {
 		return pnt;
 	}
 
-	#svgPathToPoints(pathStr, offset, scale, tweenSegments) {
+	#svgPathToPoints(pathStr, offset = [], scale, tweenSegments) {
 		//console.log("The path string is:\n'" + pathStr + "'");
 		const splitStr = pathStr.trim().split(/\s+/);
 		/*
@@ -225,7 +225,7 @@ class MainApp {
 				startPoint = this.#strToPoint(splitStr[i + 1], offset, scale);
 				oldPnt = startPoint.slice();
 				i += 1;
-				points.push(startPoint);
+				//points.push(startPoint);
 				break;
 			case 'C': // cubic
 				console.log("C at " + i);
@@ -249,6 +249,17 @@ class MainApp {
 		}
 		console.log("num points = " + points.length);
 		return points;
+	}
+
+	#centerPoints(pnts) {
+		const sum = vec2.create();
+		for (let i = 0; i < pnts.length; ++i) {
+			vec2.add(sum, sum, pnts[i]);
+		}
+		vec2.scale(sum, sum, 1 / pnts.length);
+		for (let i = 0; i < pnts.length; ++i) {
+			vec2.sub(pnts[i], pnts[i], sum);
+		}
 	}
 
 	// USER: add more members or classes to MainApp
@@ -326,9 +337,10 @@ class MainApp {
 		// svg path string
 		const pathStr = svgPath_8thNote;
 		const offset = [0, 0];
-		const scale = .1;
-		const tweenSegments = 32;
+		const scale = .025;
+		const tweenSegments = 4;
 		this.pnts5 = this.#svgPathToPoints(pathStr, offset, scale, tweenSegments);
+		this.#centerPoints(this.pnts5);
 		const testGrid = false;
 		if (testGrid) {
 			// an array of points to test against Tiles
