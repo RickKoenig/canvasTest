@@ -227,6 +227,7 @@ class MainApp {
 	
 	// USER: add more members or classes to MainApp
 	#userInit() {
+		console.log("8thNote = '" + svgPath_8thNote	+ "'");
 		/*
 		// test output to debug console for copy paste
 		const someData = [[3, 4], "hello", {hi:"ho"}];

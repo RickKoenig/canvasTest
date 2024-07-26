@@ -118,6 +118,139 @@ class MainApp {
 		this.#animate();
 	}
 
+	// data has 4 elements c0, p0, p1, c1
+	// slope of p0 = c0 - p0
+	// slope of p1 = p1 - c1
+	// return p(t)
+	static #bMat = [
+		[0, 1, 0, 0],
+		[1, -1, 0, 0],
+		[-2, -1, 2, 1],
+		[1, 1, -1, -1]
+	];
+
+	#bezier1d(pntsY, t) {
+		const powers = [1, t, t * t, t * t * t];
+		const timeRow = [];
+		for (let j = 0; j < powers.length; ++j) { // powers
+			let sum = 0;
+			for (let i = 0; i < powers.length; ++i) { // pnts
+				sum += powers[i] * MainApp.#bMat[i][j];
+			}
+			timeRow.push(sum);
+		}
+		let sumY = 0;
+		for (let i = 0; i < powers.length; ++i) {
+			sumY += timeRow[i] * pntsY[i];
+		}
+		return sumY;
+	}
+
+	#bezier2d(origPnts, t) {
+		const moreControl = true;
+		let pnts;
+		if (moreControl) {
+			// increase control points by a factor of 2
+			pnts = Array(origPnts.length);
+			pnts[0] = [ // C0
+				2 * origPnts[0][0] - origPnts[1][0],
+				2 * origPnts[0][1] - origPnts[1][1]
+			];
+			pnts[1] = [ // P0
+				origPnts[1][0],
+				origPnts[1][1]
+			];
+			pnts[2] = [ // P1
+				origPnts[2][0],
+				origPnts[2][1]
+			];
+			pnts[3] = [ // C1
+				2 * origPnts[3][0] - origPnts[2][0],
+				2 * origPnts[3][1] - origPnts[2][1]
+			];
+		} else {
+			pnts = origPnts;
+		}
+		const powers = [1, t, t * t, t * t * t];
+		const timeRow = [];
+		for (let j = 0; j < powers.length; ++j) { // powers
+			let sum = 0;
+			for (let i = 0; i < powers.length; ++i) { // pnts
+				sum += powers[i] * MainApp.#bMat[i][j];
+			}
+			timeRow.push(sum);
+		}
+		let sumP = [0, 0];
+		for (let i = 0; i < powers.length; ++i) {
+			const pnt = pnts[i];
+			for (let d = 0; d < 2; ++d) {
+				sumP[d] += timeRow[i] * pnt[d];
+			}
+		}
+		return sumP;
+	}
+
+	#strToPoint(str, offset, scale) {
+		const splitStr = str.split(",");
+		const pnt = [parseFloat(splitStr[0]), parseFloat(splitStr[1])];
+		pnt[0] *= scale;
+		pnt[0] += offset[0];
+		pnt[1] *= -scale;
+		pnt[1] += offset[1];
+		return pnt;
+	}
+
+	#svgPathToPoints(pathStr, offset, scale, tweenSegments) {
+		//console.log("The path string is:\n'" + pathStr + "'");
+		const splitStr = pathStr.trim().split(/\s+/);
+		/*
+		// show splitStr
+		console.log("split len = " + splitStr.length);
+		for (let i = 0; i < splitStr.length; ++i) {
+			const s = splitStr[i];
+			console.log(" Idx " + i + " '" + s + "' len "+ s.length);
+		}*/
+		let startPoint;
+		const points = [];
+		let oldPnt, newPnt;
+		let C0;
+		let C1;
+		let bezPnts;
+		for (let i = 0; i < splitStr.length; ++i) {
+			const tok = splitStr[i];
+			console.log("read idx " + i + " value " + tok);
+			switch(tok) {
+			case 'M': // mark
+				console.log("M at " + i);
+				startPoint = this.#strToPoint(splitStr[i + 1], offset, scale);
+				oldPnt = startPoint.slice();
+				i += 1;
+				points.push(startPoint);
+				break;
+			case 'C': // cubic
+				console.log("C at " + i);
+				C0 = this.#strToPoint(splitStr[i + 1], offset, scale);
+				C1 = this.#strToPoint(splitStr[i + 2], offset, scale);
+				newPnt = this.#strToPoint(splitStr[i + 3], offset, scale);
+				bezPnts = [C0, oldPnt, newPnt, C1];
+				i += 3;
+				for (let j = 0; j < tweenSegments; ++j) {
+					const bp = this.#bezier2d(bezPnts, j / tweenSegments);
+					points.push(bp);
+				}
+				oldPnt = newPnt;
+				break;
+			case 'z': // close
+			case 'Z':
+				console.log("z at " + i);
+				//points.push(startPoint.slice());
+				break;
+			}
+		}
+		console.log("num points = " + points.length);
+		return points;
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -175,6 +308,12 @@ class MainApp {
 
 		// 2d points
 		this.pnts4 = [
+			[2, -3],
+			[1, -2],
+			[5, -2],
+			[4, -3]
+		];
+		this.pnts4b = [
 			[-2, 2.9],
 			[-3, 3.2],
 			[-2, 2.5],
@@ -184,6 +323,12 @@ class MainApp {
 		this.pntRad4 = .05; // size of point
 		this.editPnts4 = new EditPnts(this.pnts4, this.pntRad4); // defaults, no add remove points
 
+		// svg path string
+		const pathStr = svgPath_8thNote;
+		const offset = [0, 0];
+		const scale = .1;
+		const tweenSegments = 32;
+		this.pnts5 = this.#svgPathToPoints(pathStr, offset, scale, tweenSegments);
 		const testGrid = false;
 		if (testGrid) {
 			// an array of points to test against Tiles
@@ -266,54 +411,6 @@ class MainApp {
 		++this.count;
 	}
 
-	// data has 4 elements c0, p0, p1, c1
-	// slope of p0 = c0 - p0
-	// slope of p1 = p1 - c1
-	// return p(t)
-	static #bMat = [
-		[0, 1, 0, 0],
-		[1, -1, 0, 0],
-		[-2, -1, 2, 1],
-		[1, 1, -1, -1]
-	];
-
-	#bezier1d(pntsY, t) {
-		const powers = [1, t, t * t, t * t * t];
-		const timeRow = [];
-		for (let j = 0; j < powers.length; ++j) { // powers
-			let sum = 0;
-			for (let i = 0; i < powers.length; ++i) { // pnts
-				sum += powers[i] * MainApp.#bMat[i][j];
-			}
-			timeRow.push(sum);
-		}
-		let sumY = 0;
-		for (let i = 0; i < powers.length; ++i) {
-			sumY += timeRow[i] * pntsY[i];
-		}
-		return sumY;
-	}
-
-	#bezier2d(pnts, t) {
-		const powers = [1, t, t * t, t * t * t];
-		const timeRow = [];
-		for (let j = 0; j < powers.length; ++j) { // powers
-			let sum = 0;
-			for (let i = 0; i < powers.length; ++i) { // pnts
-				sum += powers[i] * MainApp.#bMat[i][j];
-			}
-			timeRow.push(sum);
-		}
-		let sumP = [0, 0];
-		for (let i = 0; i < powers.length; ++i) {
-			const pnt = pnts[i];
-			for (let d = 0; d < 2; ++d) {
-				sumP[d] += timeRow[i] * pnt[d];
-			}
-		}
-		return sumP;
-	}
-
 	#userDraw() {
 		// pnts
 		this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
@@ -362,14 +459,16 @@ class MainApp {
 			const pnt = this.#bezier2d(this.pnts4, t);
 			pnts.push(pnt);
 		}
-		/*
-		this.drawPrim.drawLinesSimple(pnts, .025, .04
-			, -3, 1 / numInterpPoints
-			, undefined, "darkred");
-		*/
 		this.drawPrim.drawLinesParametric(pnts, .025, .04, undefined
 			, undefined, "darkred");
-		
+
+		this.drawPrim.drawLinesParametric(this.pnts5, .0125, .02
+			//,undefined, undefined, undefined, undefined, true); // ndcscale = true
+		);
+		//);
+/*		drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
+			, lineColor = "black", circleColor = "green", offset = [0, 0], ndcScale = false) {*/
+			
 
 		if (this.testPntsGrid) {
 			// test point grid with last tile
