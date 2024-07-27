@@ -122,20 +122,22 @@ class MainApp {
 	// slope of p0 = c0 - p0
 	// slope of p1 = p1 - c1
 	// return p(t)
-	static #bMat = [
+	// double controls
+
+	#bezier1d(pntsY, t) {
+	// normal controls
+	const bMat = [
 		[0, 1, 0, 0],
 		[1, -1, 0, 0],
 		[-2, -1, 2, 1],
 		[1, 1, -1, -1]
 	];
-
-	#bezier1d(pntsY, t) {
 		const powers = [1, t, t * t, t * t * t];
 		const timeRow = [];
 		for (let j = 0; j < powers.length; ++j) { // powers
 			let sum = 0;
 			for (let i = 0; i < powers.length; ++i) { // pnts
-				sum += powers[i] * MainApp.#bMat[i][j];
+				sum += powers[i] * bMat[i][j];
 			}
 			timeRow.push(sum);
 		}
@@ -147,7 +149,23 @@ class MainApp {
 	}
 
 	#bezier2d(origPnts, t) {
+		const doBoost = false;
 		const moreControl = true;
+		// boost controls
+		const bMatBoost = [
+			[0, 1, 0, 0],
+			[2, -2, 0, 0],
+			[-4, 1, 1, 2],
+			[2, 0, 0, -2]
+		];
+		// normal controls
+		const bMatNormal = [
+			[0, 1, 0, 0],
+			[1, -1, 0, 0],
+			[-2, -1, 2, 1],
+			[1, 1, -1, -1]
+		];
+		const bMat = doBoost ? bMatBoost : bMatNormal;
 		let pnts;
 		if (moreControl) {
 			// increase control points by a factor of 2
@@ -176,7 +194,7 @@ class MainApp {
 		for (let j = 0; j < powers.length; ++j) { // powers
 			let sum = 0;
 			for (let i = 0; i < powers.length; ++i) { // pnts
-				sum += powers[i] * MainApp.#bMat[i][j];
+				sum += powers[i] * bMat[i][j];
 			}
 			timeRow.push(sum);
 		}
