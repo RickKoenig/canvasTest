@@ -224,7 +224,7 @@ class MainApp {
 			const label = "Playback speed";
 			const min = -4;
 			const max = 0;
-			const start = -1;
+			const start = -2;
 			const step = .0625;
 			const precision = 4;
 			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
@@ -284,36 +284,37 @@ class MainApp {
 
 	#userDraw() {
 		// draw time domain points and lines connecting them
-		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown");
+		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown", undefined, true);
 		// draw fft interp
 		if (this.dataComplex) this.drawPrim.drawLinesParametric(this.dataComplex
-			, .003, undefined, false, "#9550a3");
+			, .003, undefined, false, "#9550a3", undefined, undefined, true);
 		// draw closest data point
 		const hilitX = Math.round(this.time * this.timeDom.length) % this.timeDom.length;
 		if (hilitX >= 0 && hilitX < this.timeDom.length) {
 			const cpnt = this.timeDom[hilitX];
-			this.drawPrim.drawCircleO(cpnt, .04,  .0025, "black");
+			this.drawPrim.drawCircleO(cpnt, .06,  .0025, "black", true);
 		}
 		const interpRad = .03;
 		// draw linear lerp point at time
-		this.drawPrim.drawCircle(this.lerpPnt, interpRad, "black");
+		this.drawPrim.drawCircle(this.lerpPnt, interpRad, "black", true);
 		// draw fft point at time
 		if (this.fftPntArr) {
 			//for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
-			for (let i = 0; i < this.depth; ++i) {
+				const lineWidth = this.plotter2d.getNdcZoom(true);
+				for (let i = 0; i < this.depth; ++i) {
 				const rad = vec2.dist(this.fftPntArr[i], this.fftPntArr[i + 1]);
-				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .01, "goldenrod");
+				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .01 * lineWidth, "goldenrod");
 			}
 			const some = this.fftPntArr.slice(0, this.depth + 1);
-			this.drawPrim.drawLinesParametric(some, .003, .03, false, "blue", "fuchsia");
+			this.drawPrim.drawLinesParametric(some, .01, .03, false, "blue", "fuchsia", undefined, true);
 		}
 		if (this.maxRoi) {
-			this.drawPrim.drawCircle(this.maxRoi, interpRad, "green");
-			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
+			this.drawPrim.drawCircle(this.maxRoi, interpRad, "green", true);
+			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
 		}
 		if (this.roi) {
-			this.drawPrim.drawCircle(this.roi, interpRad, "brown");
-			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen");
+			this.drawPrim.drawCircle(this.roi, interpRad, "brown", true);
+			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
 		}
 	}
 

@@ -236,17 +236,17 @@ class MainApp {
 		let bezPnts;
 		for (let i = 0; i < splitStr.length; ++i) {
 			const tok = splitStr[i];
-			console.log("read idx " + i + " value " + tok);
+			//console.log("read idx " + i + " value " + tok);
 			switch(tok) {
 			case 'M': // mark
-				console.log("M at " + i);
+				//console.log("M at " + i);
 				startPoint = this.#strToPoint(splitStr[i + 1], offset, scale);
 				oldPnt = startPoint.slice();
 				i += 1;
 				//points.push(startPoint);
 				break;
 			case 'C': // cubic
-				console.log("C at " + i);
+				//console.log("C at " + i);
 				C0 = this.#strToPoint(splitStr[i + 1], offset, scale);
 				C1 = this.#strToPoint(splitStr[i + 2], offset, scale);
 				newPnt = this.#strToPoint(splitStr[i + 3], offset, scale);
@@ -260,7 +260,7 @@ class MainApp {
 				break;
 			case 'z': // close
 			case 'Z':
-				console.log("z at " + i);
+				//console.log("z at " + i);
 				//points.push(startPoint.slice());
 				break;
 			}
