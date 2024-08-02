@@ -70,15 +70,10 @@ class MainApp {
 			this.scrollLock = !this.scrollLock;
 			this.eles.scrollLock.checked = this.scrollLock;
 		}	
-
 		// now do a straight linear interpolation between the timeDom points
 		let idx = this.time * this.timeDom.length;
 		let tweenTime = idx % 1;
 		idx = Math.floor(idx);
-		/*if (idx == this.timeDom.length) {
-			--idx;
-			tweenTime = 1;
-		}*/
 		const p0 = this.timeDom[idx];
 		const p1 = this.timeDom[(idx + 1) % this.timeDom.length];
 		this.lerpPnt = vec2.create();
@@ -88,13 +83,19 @@ class MainApp {
 		this.roi = vec2.clone(this.fftPntArr[this.roiLevel]);
 		this.maxRoi = vec2.clone(this.fftPntArr[this.depth]);
 		// calc interpolation of time domain at highest depth
-		const resolution = 256;
+		if (this.doUpdateDataComplex) {
+			this.#updateDataComplex();
+			this.doUpdateDataComplex = false;
+		}
+	}
+
+	#updateDataComplex() {
+		const resolution = 2048;
 		this.dataComplex = [];
 		for (let ti = 0; ti <= resolution; ++ti) {
 			const t = ti / resolution;
 			const timeValComplexArr = this.fft.calcT(this.freqDom, t, this.revHighest, this.noLastSine, this.lastComponentOnly);
 			const timeValComplex = vec2.clone(timeValComplexArr[this.depth]);
-			//const timeValComplex = vec2.clone(timeValComplexArr[this.numElements]);
 			this.dataComplex.push(timeValComplex);
 		}
 	}
@@ -134,6 +135,7 @@ class MainApp {
 		// user init section
 		this.#initElements();
 		this.#timeReset();
+		this.doUpdateDataComplex = true;
 		this.scrollLock = false;
 		this.noLastSine = false;
 		this.revHighest = false;
@@ -165,6 +167,7 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "No highest freq sine");
 		this.eles.noLastSine = makeEle(this.vp, "input", "noLastSine", null, "ho", (val) => {
 			this.noLastSine = this.eles.noLastSine.checked;
+			this.doUpdateDataComplex = true;
 		}, "checkbox");
 		this.eles.noLastSine.checked = this.noLastSine;
 		
@@ -173,6 +176,7 @@ class MainApp {
 		makeEle(this.vp, "span", null, "marg", "Reverse highest freq");
 		this.eles.revHighest = makeEle(this.vp, "input", "revHighest", null, "ho", (val) => {
 			this.revHighest = this.eles.revHighest.checked;
+			this.doUpdateDataComplex = true;
 		}, "checkbox");
 		this.eles.revHighest.checked = this.revHighest;
 
@@ -205,6 +209,7 @@ class MainApp {
 			this.depthCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.depth = outVal;
+					this.doUpdateDataComplex = true;
 					this.roiCombo.slider.max = this.depth;
 					if (this.roiLevel > this.depth) {
 						this.roiCombo.start = this.depth;
@@ -310,11 +315,11 @@ class MainApp {
 		}
 		if (this.maxRoi) {
 			this.drawPrim.drawCircle(this.maxRoi, interpRad, "green", true);
-			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
+			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
 		}
 		if (this.roi) {
 			this.drawPrim.drawCircle(this.roi, interpRad, "brown", true);
-			this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
+			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
 		}
 	}
 

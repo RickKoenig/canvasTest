@@ -2,6 +2,7 @@
     "version": "0.2.0",
     "configurations": [
 
+
         
         {
             "name": "Launch Program",
@@ -113,7 +114,7 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, Fourier series stuff",
+            "name": "Launch Chrome against localhost, PI bounce",
             "url": "http://localhost:88/plotter2d/piBounce/index.html",
             "webRoot": "${workspaceFolder}"
         },
