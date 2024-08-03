@@ -150,7 +150,7 @@ class DrawPrimitives {
             for (let idx = 0; idx < pnts.length; ++idx) {
                 const pnt = pnts[idx];
                 this.ctx.beginPath();
-                this.ctx.arc(pnt[0] + offset[0], pnt[1] + offset[1], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+                this.ctx.arc(pnt[0] + offset[0], pnt[1] + offset[1], circleSize * ndcZoom, 0, Math.PI * 2);
                 this.ctx.fill();
             }
         }

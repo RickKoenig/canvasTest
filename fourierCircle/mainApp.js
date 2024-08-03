@@ -289,37 +289,37 @@ class MainApp {
 
 	#userDraw() {
 		// draw time domain points and lines connecting them
-		this.drawPrim.drawLinesParametric(this.timeDom, .003, .03, true, undefined, "brown", undefined, true);
-		// draw fft interp
+		this.drawPrim.drawLinesParametric(this.timeDom, .003, .0075, true, undefined, "gray", undefined, true);
+		// draw ift interp at current depth
 		if (this.dataComplex) this.drawPrim.drawLinesParametric(this.dataComplex
-			, .003, undefined, false, "#9550a3", undefined, undefined, true);
-		// draw closest data point
+			, .003, undefined, false, "darkgreen", undefined, undefined, true);
+		// draw closest time domain point at time
 		const hilitX = Math.round(this.time * this.timeDom.length) % this.timeDom.length;
 		if (hilitX >= 0 && hilitX < this.timeDom.length) {
 			const cpnt = this.timeDom[hilitX];
-			this.drawPrim.drawCircleO(cpnt, .06,  .0025, "black", true);
+			this.drawPrim.drawCircleO(cpnt, .02,  .005, "black", true);
 		}
-		const interpRad = .03;
-		// draw linear lerp point at time
+		const interpRad = .0075;
+		// draw linear lerp point of time domain points at time
 		this.drawPrim.drawCircle(this.lerpPnt, interpRad, "black", true);
-		// draw fft point at time
 		if (this.fftPntArr) {
-			//for (let i = 0; i < this.fftPntArr.length - 1; ++i) {
-				const lineWidth = this.plotter2d.getNdcZoom(true);
-				for (let i = 0; i < this.depth; ++i) {
+			// draw circles up to depth
+			const lineWidth = this.plotter2d.getNdcZoom(true);
+			for (let i = 0; i < this.depth; ++i) {
 				const rad = vec2.dist(this.fftPntArr[i], this.fftPntArr[i + 1]);
-				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .01 * lineWidth, "goldenrod");
+				this.drawPrim.drawCircleO(this.fftPntArr[i], rad, .00075 * lineWidth, "blue");
 			}
+			// draw line connections between centers of circles up to depth
 			const some = this.fftPntArr.slice(0, this.depth + 1);
-			this.drawPrim.drawLinesParametric(some, .01, .03, false, "blue", "fuchsia", undefined, true);
+			this.drawPrim.drawLinesParametric(some, .002, .006, false, "darkmagenta", "magenta", undefined, true);
 		}
+		// draw interp at max roi
 		if (this.maxRoi) {
-			this.drawPrim.drawCircle(this.maxRoi, interpRad, "green", true);
-			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
+			this.drawPrim.drawCircle(this.maxRoi, interpRad * 2, "green", true);
 		}
+		// draw interp at current roi
 		if (this.roi) {
-			this.drawPrim.drawCircle(this.roi, interpRad, "brown", true);
-			//this.drawPrim.drawCircle(this.fftPntArr[this.fftPntArr.length - 1], .01, "lightgreen", true);
+			this.drawPrim.drawCircle(this.roi, interpRad * 1.5, "brown", true);
 		}
 	}
 

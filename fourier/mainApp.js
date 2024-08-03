@@ -237,6 +237,7 @@ class MainApp {
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section
+		this.hilitX = -1;
 		this.doInverse = false;
 		this.snapMode = true;
 		this.interp = true;
