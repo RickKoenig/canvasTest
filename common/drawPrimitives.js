@@ -122,7 +122,7 @@ class DrawPrimitives {
     drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
         , lineColor = "black", circleColor = "green", offset = [0, 0], ndcScale = false) {
         if (pnts.length < 2) {
-            return;
+            //return;
         }
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         if (lineWidth > 0) {

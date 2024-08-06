@@ -22,6 +22,7 @@ class MainApp {
 	constructor() {
 		this.#test();
 		console.log("\n############# creating instance of MainApp");
+		glMatrix.setMatrixArrayType(Array);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");

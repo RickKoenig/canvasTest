@@ -6,7 +6,7 @@ class MainApp {
 	// assume times and freqs are equal size, <= maxFft, and powers of 2
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
-
+		glMatrix.setMatrixArrayType(Array);
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
 		this.eles = {}; // keep track of eles in vertical panel
@@ -130,6 +130,11 @@ class MainApp {
 	#defaultElements(slotNum) {
 		this.numElements = defaultFourierTimeData[slotNum].length;
 		this.depth = this.numElements;
+		const dc = this.eles.depthCombo;
+		if (dc) {
+			dc.slider.max = this.numElements.toString();
+			dc.setValue(dc.getValue()); // clip if neccesary
+		}
 		this.timeDom = Array(this.numElements);
 		this.freqDom = Array(this.numElements);
 		this.slots[slotNum] = {times: this.timeDom, freqs: this.freqDom};
@@ -225,15 +230,9 @@ class MainApp {
 		}
 	}
 	
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		console.log("8thNote = '" + svgPath_8thNote	+ "'");
-		/*
-		// test output to debug console for copy paste
-		const someData = [[3, 4], "hello", {hi:"ho"}];
-		const str = JSON.stringify(someData, null, '   ');
-		console.log("info =\n " + str);
-		*/
 		this.fft = new Fft();
 		//this.fft.testFft();
 		// user init section
@@ -250,7 +249,7 @@ class MainApp {
 		this.maxSlots = 4;
 		this.curSlot = 0;
 		this.freqOffsetY = 5;
-		this.complexPlaneOffset = [11, 2.5];
+		this.complexPlaneOffset = [8.5, 2.5];
 		this.#resetSlots();
 
 		// measure frame rate
@@ -402,7 +401,7 @@ class MainApp {
 
 	#userDraw() {
 		const freqSepAxis = 100; // for freq domain
-		const extra = 16 / Math.max(this.elementsXScale,this.numElements);
+		const extra = 1;// / Math.max(this.elementsXScale,this.numElements);
 		const realRad = .135 * extra;
 		const imagRad = .1 * extra;
 		const outlineRad = .125 * extra;
@@ -455,7 +454,7 @@ class MainApp {
 			const pntArr = this.fft.calcT(this.freqDom, this.tInterp, this.revHighest, this.noLastSine, this.lastComponentOnly);
 			pnt = pntArr[this.depth].slice(); // last element
 			// calc interpolation of time domain
-			const resolution = 256;
+			const resolution = 512;
 			const dataReal = [];
 			const dataImag = [];
 			for (let ti = 0; ti <= resolution; ++ti) {
@@ -464,7 +463,9 @@ class MainApp {
 				const timeValComplex = timeValComplexArr[this.depth].slice();
 				dataReal.push(timeValComplex[0]);
 				dataImag.push(timeValComplex[1]);
-				dataComplex.push(timeValComplex);
+				if (this.complexPlane) {
+					dataComplex.push(timeValComplex);
+				}
 			}
 			// draw interpolation of time domain
 			const lineSize = .01;
@@ -475,8 +476,8 @@ class MainApp {
 			this.drawPrim.drawCircle([this.tInterp * this.elementsXScale, pnt[1]], outlineRad / 3, "green");
 		}
 		if (this.complexPlane) {
-			this.drawPrim.drawCross(this.complexPlaneOffset, .5, .001, undefined, "blue");
-			this.drawPrim.drawLinesParametric(this.timeDom, undefined, .1, true, undefined, "brown", this.complexPlaneOffset);
+			this.drawPrim.drawCross(this.complexPlaneOffset, .15, .001, undefined, "blue");
+			this.drawPrim.drawLinesParametric(this.timeDom, .002, .035, true, undefined, "brown", this.complexPlaneOffset);
 			if (this.hilitX >= 0 && this.hilitX < this.timeDom.length) {
 				const cpnt = this.timeDom[this.hilitX].slice();
 				vec2.add(cpnt, cpnt, this.complexPlaneOffset);
@@ -485,9 +486,8 @@ class MainApp {
 			if (this.interp) {
 				this.drawPrim.drawLinesParametric(dataComplex, undefined, undefined, false,
 					 "#9550a3", undefined, this.complexPlaneOffset);
-				//pnt[0] += this.complexPlaneOffset[0];
 				vec2.add(pnt, pnt, this.complexPlaneOffset);
-				this.drawPrim.drawCircle(pnt, outlineRad / 3, "purple");
+				this.drawPrim.drawCircle(pnt, outlineRad / 1.5, "green");
 				// now do a straight linear interpolation between the timeDom points
 				let idx = this.tInterp * this.timeDom.length;
 				let tweenTime = idx % 1;
@@ -501,7 +501,7 @@ class MainApp {
 				const pt = [0, 0];
 				vec2.lerp(pt, p0, p1, tweenTime);
 				vec2.add(pt, pt, this.complexPlaneOffset);
-				this.drawPrim.drawCircle(pt, outlineRad / 3, "black");
+				this.drawPrim.drawCircle(pt, outlineRad / 2, "yellow");
 			}
 		}
 	}
