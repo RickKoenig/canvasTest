@@ -401,11 +401,10 @@ class MainApp {
 
 	#userDraw() {
 		const freqSepAxis = 100; // for freq domain
-		const extra = 1;// / Math.max(this.elementsXScale,this.numElements);
-		const realRad = .135 * extra;
-		const imagRad = .1 * extra;
-		const outlineRad = .125 * extra;
-		const outline = .025 * extra;
+		const realRad = .135;
+		const imagRad = .1;
+		const outlineRad = .125;
+		const outline = .025;
 		const textSize = .5;
 		const textLeft = -1.5;
 		const rectOutlineSize = [1.5, .75];
