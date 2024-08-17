@@ -186,7 +186,7 @@ class MainApp {
 
 		// roi
 		{
-			const label = "roi";
+			const label = "ROI";
 			const min = 0;
 			const max = this.numElements;
 			const start = this.numElements;
