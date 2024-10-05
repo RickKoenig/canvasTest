@@ -52,7 +52,12 @@ function repDecimalTests() {
     }
 }
 
+function hailTests() {
+    console.log("hail tests");
+}
+
 function runScratch() {
     console.log("DOING SCRATCH!");
-    repDecimalTests();
+    //repDecimalTests();
+    hailTests();
 }

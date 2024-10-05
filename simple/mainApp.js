@@ -5,7 +5,7 @@ function javaScriptTests() {
 	console.log("START javascript tests!");
 	//inheritanceTests();
 	//const codeWord = rudolphSim();
-	//runScratch();
+	runScratch();
 	//console.log("codeword = '" + codeWord + "'");
 	console.log("DONE javascript tests!");
 }
@@ -265,7 +265,7 @@ class MainApp {
 				break;
 			}
 		}
-		console.log("num points = " + points.length);
+		console.log("num svg points = " + points.length);
 		return points;
 	}
 
