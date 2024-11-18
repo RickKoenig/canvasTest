@@ -84,7 +84,7 @@ class FunGen {
 		try {
 			fun = Function('"use strict"; let t = arguments[0]; return ' + funStr + ';');
 		} catch (err) {
-			console.error("Error creating function: <<< " + err + " >>>");
+			console.log("Error creating function: <<< " + err + " >>>");
 		}
 		return fun;
 	}

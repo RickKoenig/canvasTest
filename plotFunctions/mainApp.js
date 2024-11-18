@@ -51,6 +51,7 @@ class MainApp {
 		// some SWITCHES
 		this.doDebug = false; // show a lot of messages, input, dimensions etc.
 		this.doParametric = false; // normal or parametric function(s)
+		this.doLoadSave = false; // hide or show load save dialogs
 		this.runFunGenTests = true; // unit test: function generator
 		// end some SWITCHES
 
@@ -99,6 +100,30 @@ class MainApp {
 		this.minLineStep = 1;
 	}
 
+	#loadCBF(data, filename) {
+		this.eles.editFunctionF.value = data;
+		console.log("loadF with name: '" + filename + "', data: '" + data + "'");
+		this.#submitFunctions();
+	}
+
+	#saveCBF(filename) {
+		const data = this.eles.editFunctionF.value;
+		console.log("saveF with name: '" + filename + "', data: '" + data + "'");
+		return data;
+	}
+
+	#loadCBG(data, filename) {
+		this.eles.editFunctionG.value = data;
+		console.log("loadG with name: '" + filename + "', data: '" + data + "'");
+		this.#submitFunctions();
+	}
+
+	#saveCBG(filename) {
+		const data = this.eles.editFunctionG.value;
+		console.log("saveG with name: '" + filename + "', data: '" + data + "'");
+		return data;
+	}
+
 	#userBuildUI() {
 		if (!this.vp) {
 			return;
@@ -113,9 +138,13 @@ class MainApp {
 		this.eles.checkboxParametric = makeEle(ele, "input", "checkboxParametric", null, "checkboxParametric", null, "checkbox");
 		this.eles.checkboxParametric.checked = this.doParametric; // UI checkbox toggle init
 
+		ele = makeEle(this.vp, "span", null, "marg", "Load Save");
+		this.eles.checkboxLoadSave = makeEle(ele, "input", "checkboxLoadSave", null, "checkboxLoadSave", null, "checkbox");
+		this.eles.checkboxLoadSave.checked = this.doLoadSave; // UI checkbox toggle init
+
 		ele = makeEle(this.vp, "span", null, "marg", "Debug");
 		this.eles.checkboxDebug = makeEle(ele, "input", "checkboxDebug", null, "checkboxDebug", null, "checkbox");
-		this.eles.checkboxDebug.checked = this.doParametric; // UI checkbox toggle init
+		this.eles.checkboxDebug.checked = this.doDebug; // UI checkbox toggle init
 		
 
 		// text info log
@@ -170,8 +199,15 @@ class MainApp {
 		// input: edit functions
 		makeEle(this.vp, "hr");
 		{
+			// function F
+			this.eles.loadSaveFunctionF = makeEle(this.vp, "div", "fileLoadSaveF");
+			new fileLoadSave(this.eles.loadSaveFunctionF, this.#loadCBF.bind(this), this.#saveCBF.bind(this), "fun");
 			this.eles.labelEditFunctionF = makeEle(this.vp, "pre", "labelEditFunctionF", null, "Enter F(t)");
 			this.eles.editFunctionF = makeEle(this.vp, "textarea", "editFunctionF", "editbox");
+
+			//function G
+			this.eles.loadSaveFunctionG = makeEle(this.vp, "div", "fileLoadSaveG");
+			new fileLoadSave(this.eles.loadSaveFunctionG, this.#loadCBG.bind(this), this.#saveCBG.bind(this), "fun");
 			makeEle(this.vp, "pre", null, null, "Enter G(t)");
 			this.eles.editFunctionG = makeEle(this.vp, "textarea", "editFunctionG", "editbox");
 		}
@@ -196,8 +232,9 @@ class MainApp {
 	// slower rate of speed, skip sometimes, depends on num and den
 	#userProc() {
 		if (this.vp) {
-			this.doParametric = this.eles.checkboxParametric.checked; // UI checkbox toggle init
-			this.doDebug = this.eles.checkboxDebug.checked; // UI checkbox toggle init
+			this.doParametric = this.eles.checkboxParametric.checked; // UI checkbox toggle
+			this.doDebug = this.eles.checkboxDebug.checked; // UI checkbox toggle
+			this.doLoadSave = this.eles.checkboxLoadSave.checked; // UI load save toggle
 		}
 
 		// update FPS
@@ -356,11 +393,22 @@ class MainApp {
 		}
 
 		// hide/show function 'F' when parametric is turned on or off
-		const vis = this.doParametric ? "" : "none";
-		this.eles.labelEditFunctionF.style.display = vis;
-		this.eles.editFunctionF.style.display = vis;
-		this.eles.labelParsedFunctionF.style.display = vis;
-		this.eles.textParsedFunctionF.style.display = vis;
+		// hide/show file load save also
+		// do F
+		{
+			const vis = this.doParametric ? "" : "none";
+			this.eles.labelEditFunctionF.style.display = vis;
+			this.eles.editFunctionF.style.display = vis;
+			this.eles.labelParsedFunctionF.style.display = vis;
+			this.eles.textParsedFunctionF.style.display = vis;
+		}
+		// do file load save
+		{
+			const visF = this.doLoadSave && this.doParametric ? "" : "none";
+			const visG = this.doLoadSave ? "" : "none";
+			this.eles.loadSaveFunctionF.style.display = visF;
+			this.eles.loadSaveFunctionG.style.display = visG;
+		}
 	}
 
 	#animate() {

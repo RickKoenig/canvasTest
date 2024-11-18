@@ -57,9 +57,12 @@ canvas{
 }
 
 #verticalPanel{
+	height: 822px;
 	text-align: center;
 	margin-left: 10px;
 	margin-top: 5px;
+	overflow-x: visible;
+	overflow-y: auto;
 }
 
 button{
@@ -105,3 +108,15 @@ button:hover{
 .marg{
 	margin-right: 10px;
 }
+
+#fileLoadSaveF {
+	border: solid;
+	background-color: #cde;
+}
+
+#fileLoadSaveG {
+	border: solid;
+	background-color: #bcd;
+}
+
+
