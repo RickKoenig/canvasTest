@@ -64,6 +64,31 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 	return ele;
 }
 
+function makeSelect(parent, options, clickfunc) {
+	var ele = document.createElement('select');
+	//const typ = ele.type;
+	//console.log("type = " + typ);
+	//ele.type = 'foo select-one';
+	ele.onchange = (ele) => {
+		clickfunc(ele.target.value);
+	}
+	clickfunc(0); // fire callback once on init
+	if (parent) {
+		parent.appendChild(ele);
+	}
+	//ele.name = "hi";//curname;
+	//ele.onclicknotthis = clickfunc;
+	if (options) {
+		for (let i=0; i < options.length; ++i) {
+			var op = document.createElement('option');
+			op.text = options[i];
+			op.value = i;
+			ele.add(op, null);
+		}
+	}
+	return ele;
+}
+
 // text, slider and a reset button
 class makeEleCombo {
 	constructor(parent, labelStr, min, max, start, step, precision
@@ -115,4 +140,5 @@ class makeEleCombo {
 	resetValue() {
 		this.setValue(this.start);
 	}
+	
 }
