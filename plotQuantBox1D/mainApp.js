@@ -42,24 +42,24 @@ class MainApp {
 
 ////////// USER SECTION /////////
 	#initEnergies() {
-		this.maxQnum = 8;
+		this.maxQnum = 16;
 		this.curQnum = 1; // 1 to maxQnum inclusive
 		this.amps = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.amps[1] = 10;
+		this.amps[14] = 100;
 		this.amps[2] = 12;
 		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.phases[1] = 45;
+		this.phases[14] = -145;
 		this.phases[2] = -30;
 		this.#updateEnergies();
 	}
 
 	#updateEnergies() {
-		this.energiesText = "    Qnum Energy  Amp   Phase\n";
+		this.energiesText = "    Qnum Energy   Amp   Phase\n";
 		for (let q = 1; q <= this.maxQnum; ++q) {
-			const eng = q * q;
-			const engStr = String(eng).padStart(2);
+			const energy = q * q;
+			const energyStr = String(energy).padStart(3);
 			this.energiesText += (q == this.curQnum ? ">>> " : "    ")
-				+ "   " + q + "    " + engStr 
+				+ " " + q.toString().padStart(3) + "    " + energyStr 
 				+ " " + this.amps[q].toFixed(1).padStart(5) 
 				+ "  " + this.phases[q].toFixed(1).padStart(6) + "\n";
 		}
@@ -67,7 +67,15 @@ class MainApp {
 		this.#updatePhaseSlider(this.phases[this.curQnum]);
 	}
 
-	#addQState(accAmp, accPhase, amp, phase) {
+	// convert to complex numbers, add and convert back to amp phase
+	// for 1 energy level
+	#updateQState(accAmp, accPhase, amp, phase, doAdd) { // if doAdd == false then replace
+		if (!doAdd) {
+			return {
+				amp: amp,
+				phase: phase
+			};
+		}
 		accPhase *= Math.PI / 180;
 		phase *= Math.PI / 180;
 		const yt1 = accAmp * Math.sin(accPhase);
@@ -76,22 +84,89 @@ class MainApp {
 		const xt2 = amp * Math.cos(phase);
 		const xtacc = xt1 + xt2;
 		const ytacc = yt1 + yt2;
-		const resAmp = sqrt(xtacc * xtacc + ytacc * ytacc);
-		const resPhase = S32(atan2(ytacc, xtacc) * TIMESIZE / TWOPI);
+		const resAmp = Math.sqrt(xtacc * xtacc + ytacc * ytacc);
+		const resPhase = Math.atan2(ytacc, xtacc) * 180 / Math.PI;
 		const ampPhase = {
-			/*
-
-			//logger("atan value = %f", atan2(ytacc, xtacc));
-			accPhase = S32(atan2(ytacc, xtacc) * TIMESIZE / TWOPI);
-		
-			//accAmp = amp;
-			//accPhase = 2048;// phase;
-			//logger("addQState amp acc = %f, ph acc = %f\n", ampacc, phacc);
-*/
 			amp: resAmp,
 			phase: resPhase
 		}
 		return ampPhase
+	}
+
+	// make (-180 to 180]
+	#normalAngDeg(a) {
+		a %= 360;
+		if (a <= -180) {
+			a += 360;
+		} else if (a > 180) {
+			a -= 360;
+		}
+		return a;
+	}
+
+	// update total quantum state (array of amps and phases from 5 parameters)
+	// amp, phase, qnum, spread, add/replace
+	#addReplaceEnergy(doAdd) {
+		/*
+		const ampPhase = this.#addQState(
+			this.amps[this.curQnum]
+		  , this.phases[this.curQnum]
+		  , parseFloat(this.eles.ampSliderDOM.getValue())		
+		  , parseFloat(this.eles.phaseSliderDOM.getValue())
+		  , doAdd
+	  );
+	  this.amps[this.curQnum] = ampPhase.amp;
+	  this.phases[this.curQnum] = ampPhase.phase;
+
+	  this.#updateEnergyList();
+	  this.#updateAmpSlider(this.amps[this.curQnum]);
+	  this.#updatePhaseSlider(this.phases[this.curQnum]);
+	}*/
+
+		let middleAmp = parseFloat(this.eles.ampSliderDOM.getValue());	
+		let phaseDelta = parseFloat(this.eles.phaseSliderDOM.getValue());
+		let width = parseFloat(this.eles.spreadSliderDOM.getValue());
+		console.log("add/replace engergy with: amp = ", middleAmp 
+			+ ", phase = " + phaseDelta 
+			+ ", width = " + width
+			+ ", doAdd = " + doAdd);
+		if (width == 0) { // just 1 energy updated
+			const ampPhase = this.#updateQState(
+				this.amps[this.curQnum]
+			  , this.phases[this.curQnum]
+			  , parseFloat(this.eles.ampSliderDOM.getValue())		
+			  , parseFloat(this.eles.phaseSliderDOM.getValue())
+			  , doAdd
+			);
+			this.amps[this.curQnum] = ampPhase.amp;
+			this.phases[this.curQnum] = ampPhase.phase;
+		} else {
+
+			/*
+			this.amps[this.curQnum] = parseFloat(this.eles.ampSliderDOM.getValue());
+			this.phases[this.curQnum] = parseFloat(this.eles.phaseSliderDOM.getValue());
+			this.#addGaussian();
+			this.#updateEnergyList();*/
+			for (let q = 1; q <= this.maxQnum; ++q) {
+				const shift = (q - this.curQnum);
+				const shiftWidth = shift / width;
+				let a = middleAmp * Math.exp(-shiftWidth * shiftWidth);
+				if (a >= .125) {
+					const p = this.#normalAngDeg(shift * phaseDelta);
+					const ampPhase = this.#updateQState(
+						this.amps[q]
+					  , this.phases[q]
+					  , parseFloat(a)		
+					  , parseFloat(p)
+					  , doAdd
+					);
+					this.amps[q] = ampPhase.amp;
+					this.phases[q] = ampPhase.phase;
+					console.log("q = " + q + ", a = " + a + ", p = " + p);
+				}
+			}
+		}
+		this.#updateEnergyList();
 	}
 
 	#updateAmpSlider(val) {
@@ -125,11 +200,12 @@ class MainApp {
 		this.minFreq = -2;
 		this.maxFreq = 2;
 		this.stepFreq = .01;
-
+/*
 		// linestep
 		this.minLineStep = 0;
 		this.maxLineStep = 200;
 		this.startLineStep = 8;
+*/
 		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
 
 		// for sine wave like functions, add a phase to the input of the function(s)
@@ -138,6 +214,7 @@ class MainApp {
 		this.minPhase = 0;
 		this.maxPhase = Math.PI * 2;
 		this.stepPhase = .0005;
+		this.numSteps = 250;
 
 		// quantum state
 		this.#initEnergies();
@@ -150,6 +227,7 @@ class MainApp {
 		// elements
 		this.eles = {};
 		// line step slider combo
+		/*
 		{
 			makeEle(this.vp, "hr");
 			// start lineStep UI
@@ -162,6 +240,7 @@ class MainApp {
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.numSteps = v});
 			// end lineStep UI
 		}
+			*/
 
 		// phase slider combo
 		makeEle(this.vp, "hr");
@@ -179,7 +258,6 @@ class MainApp {
 	
 		// frequency slider combo
 		{
-			// start freq UI
 			const label = "Frequency";
 			const min = this.minFreq;
 			const max = this.maxFreq;
@@ -187,7 +265,6 @@ class MainApp {
 			const step = this.stepFreq;
 			const precision = 2;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
-			// end freq UI
 		}
 
 		makeEle(this.vp, "hr");
@@ -197,11 +274,15 @@ class MainApp {
 	
 		makeEle(this.vp, "hr");
 
-		//makeEle(this.vp, "pre", null, "energyList", "values");
-		this.eles.energyListDom = makeEle(this.vp, "pre", null, null, "ENERGIES");
+		makeEle(this.vp, "pre", null, null, "ENERGIES");
 		this.eles.energyListDom = makeEle(this.vp, "pre", null, "energyList", "energy list text");
+		this.eles.energyListDom.addEventListener("click", (e) => {
+			console.log("energy click = " + e);
+		});
+		//this.eles.energyListDom.onClick = () => console.log("eng list clicked")
+		
 		this.#updateEnergyList(); // UI
-		// Quantum Number slider combo  1 to maxQnum inclusive, (0 not used)
+		// Quantum Number slider combo  [1 to maxQnum], (0 not used)
 		{
 			const label = "Q Number";
 			const min = 1;
@@ -211,7 +292,6 @@ class MainApp {
 			const precision = 0;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
 				this.curQnum = v;
-				this.#updateAmpSlider(this.amps[this.curQnum]);
 				this.#updateEnergyList(); // UI
 			}, null, false);
 		}
@@ -223,8 +303,7 @@ class MainApp {
 			const start = 0;
 			const step = .1;
 			const precision = 1;
-			this.eles.ampSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => null, null, false);
-			this.#updateAmpSlider(this.amps[this.curQnum]);
+			this.eles.ampSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
 		// phase slider combo
 		{
@@ -234,55 +313,38 @@ class MainApp {
 			const start = 0;
 			const step = .1;
 			const precision = 1;
-			this.eles.phaseSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => null, null, false);
-			this.#updatePhaseSlider(this.phases[this.curQnum]);
+			this.eles.phaseSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
 		// spread slider combo
 		{
-			const label = "Guass Energy Spread";
+			const label = "Energy Spread";
 			const min = 0;
 			const max = 100;
 			const start = 0;
-			const step = .1;
+			const step = 1;
 			const precision = 0;
-			this.eles.spreadSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => null, null, false);
+			this.eles.spreadSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
-		makeEle(this.vp, "button", null, "lessWidth", "replace", () => {
-			this.amps[this.curQnum] = parseFloat(this.eles.ampSliderDOM.getValue());
-			this.phases[this.curQnum] = parseFloat(this.eles.phaseSliderDOM.getValue());
-			this.#updateEnergyList();
+		makeEle(this.vp, "button", null, "lessWidth", "Replace", () => {
+			this.#addReplaceEnergy(false);
 		});
-		makeEle(this.vp, "button", null, "lessWidth", "add", () => {
-			const ampPhase = this.#addQState(
-				  this.amps[this.curQnum]
-				, this.phases[this.curQnum]
-				, parseFloat(this.eles.ampSliderDOM.getValue())		
-				, parseFloat(this.eles.phaseSliderDOM.getValue())		
-			);
-			this.amps[this.curQnum] = ampPhase.amp;
-			this.phases[this.curQnum] = ampPhase.phase;
-
-			this.#updateEnergyList();
-			this.#updateAmpSlider(this.amps[this.curQnum]);
-			this.#updatePhaseSlider(this.phases[this.curQnum]);
+		makeEle(this.vp, "button", null, "lessWidth", "Add", () => {
+			this.#addReplaceEnergy(true);
 		});
-		makeEle(this.vp, "br");
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "button", null, null, "Reset Energies", () => {
 			this.amps.fill(0);
 			this.phases.fill(0);
-			this.#updateEnergyList(); // UI
-			this.#updateAmpSlider(this.amps[this.curQnum]);
-			this.#updatePhaseSlider(this.phases[this.curQnum]);
+			this.#updateEnergyList();
 		});
 		makeEle(this.vp, "button", null, null, "Calculate", () => null);
 
 		makeEle(this.vp, "hr");
-		makeEle(this.vp, "br");
 		
 		makeEle(this.vp, "button", null, null, "Quit Program", () => {
 			window.location.href = "../../index.html#plotter2d";
 		});
+		this.#updateEnergyList();
 	}
 
 	#userProc() {
@@ -317,7 +379,7 @@ class MainApp {
 	}
 
 	#drawFunData() {
-		this.drawPrim.drawLinesSimple(this.funData, undefined, undefined, -1, 2 / this.numSteps);
+		this.drawPrim.drawLinesSimple(this.funData, .005, undefined, -1, 2 / this.numSteps);
 	}
 
 

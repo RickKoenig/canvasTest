@@ -22,7 +22,8 @@ p{
 
 hr{
 	background-color: rgb(107, 146, 129);
-	height: 3px;
+	height: 5px;
+	width: 290px;
 	margin: 0;
 }
 
@@ -47,16 +48,21 @@ canvas{
 }
 
 button{
-	width: 150px;
+	width: 200px;
 	border: none;
 	border-radius: 10px;
-	margin: 4px 4px 5px 4px;
+	margin: 3px 4px 3px 4px;
 	cursor: pointer;
 	font-size: 85%;
 }
+.bigger{
+	font-size: 165%;
+	font-weight: bold;
+	color: darkgreen;
+}
 
 .lessWidth{
-	width: 75px;
+	width: 100px;
 }
 
 button:hover{
