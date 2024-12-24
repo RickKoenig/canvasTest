@@ -96,9 +96,9 @@ class makeEleCombo {
 		// pre/span
 		const pre = makeEle(parent, "pre");
 		this.labelStr = labelStr;
-		this.label = makeEle(pre, "span", "aSpanId", null, "label");
+		this.label = makeEle(pre, "span", null, null, "label");
 		// slider
-		this.slider = makeEle(parent, "input", "aSliderId", "slider", null, this.#callbackSlider.bind(this), "range");
+		this.slider = makeEle(parent, "input", null, "slider", null, this.#callbackSlider.bind(this), "range");
 		this.slider.min = min;
 		this.slider.max = max;
 		this.start = start;
@@ -110,7 +110,7 @@ class makeEleCombo {
 		this.#callbackSlider(); // fire off one callback at init
 		if (resetButton) {
 			// reset button
-			makeEle(parent, "button", "aButtonId", null, this.labelStr + " Reset", this.callbackResetButton.bind(this));
+			makeEle(parent, "button", null, null, this.labelStr + " Reset", this.callbackResetButton.bind(this));
 		}
 	}
 

@@ -42,29 +42,19 @@ class MainApp {
 
 ////////// USER SECTION /////////
 	#initEnergies() {
-		this.maxQnum = 16;
+		this.maxQnum = 16;//32;
+		this.maxShowQnum = 8;//16; // scroll window size
+		this.scrollQOffset = 0; // scroll amount
 		this.curQnum = 1; // 1 to maxQnum inclusive
-		this.amps = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.amps[14] = 100;
-		this.amps[2] = 12;
-		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.phases[14] = -145;
-		this.phases[2] = -30;
-		this.#updateEnergies();
-	}
 
-	#updateEnergies() {
-		this.energiesText = "    Qnum Energy   Amp   Phase\n";
-		for (let q = 1; q <= this.maxQnum; ++q) {
-			const energy = q * q;
-			const energyStr = String(energy).padStart(3);
-			this.energiesText += (q == this.curQnum ? ">>> " : "    ")
-				+ " " + q.toString().padStart(3) + "    " + energyStr 
-				+ " " + this.amps[q].toFixed(1).padStart(5) 
-				+ "  " + this.phases[q].toFixed(1).padStart(6) + "\n";
-		}
-		this.#updateAmpSlider(this.amps[this.curQnum]);
-		this.#updatePhaseSlider(this.phases[this.curQnum]);
+		this.amps = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
+		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
+		this.amps[1] = 12;
+		this.phases[1] = -30;
+		this.amps[14] = 100;
+		this.phases[14] = -145;
+
+		this.#updateEnergyList();
 	}
 
 	// convert to complex numbers, add and convert back to amp phase
@@ -107,29 +97,9 @@ class MainApp {
 	// update total quantum state (array of amps and phases from 5 parameters)
 	// amp, phase, qnum, spread, add/replace
 	#addReplaceEnergy(doAdd) {
-		/*
-		const ampPhase = this.#addQState(
-			this.amps[this.curQnum]
-		  , this.phases[this.curQnum]
-		  , parseFloat(this.eles.ampSliderDOM.getValue())		
-		  , parseFloat(this.eles.phaseSliderDOM.getValue())
-		  , doAdd
-	  );
-	  this.amps[this.curQnum] = ampPhase.amp;
-	  this.phases[this.curQnum] = ampPhase.phase;
-
-	  this.#updateEnergyList();
-	  this.#updateAmpSlider(this.amps[this.curQnum]);
-	  this.#updatePhaseSlider(this.phases[this.curQnum]);
-	}*/
-
 		let middleAmp = parseFloat(this.eles.ampSliderDOM.getValue());	
 		let phaseDelta = parseFloat(this.eles.phaseSliderDOM.getValue());
 		let width = parseFloat(this.eles.spreadSliderDOM.getValue());
-		console.log("add/replace engergy with: amp = ", middleAmp 
-			+ ", phase = " + phaseDelta 
-			+ ", width = " + width
-			+ ", doAdd = " + doAdd);
 		if (width == 0) { // just 1 energy updated
 			const ampPhase = this.#updateQState(
 				this.amps[this.curQnum]
@@ -141,12 +111,6 @@ class MainApp {
 			this.amps[this.curQnum] = ampPhase.amp;
 			this.phases[this.curQnum] = ampPhase.phase;
 		} else {
-
-			/*
-			this.amps[this.curQnum] = parseFloat(this.eles.ampSliderDOM.getValue());
-			this.phases[this.curQnum] = parseFloat(this.eles.phaseSliderDOM.getValue());
-			this.#addGaussian();
-			this.#updateEnergyList();*/
 			for (let q = 1; q <= this.maxQnum; ++q) {
 				const shift = (q - this.curQnum);
 				const shiftWidth = shift / width;
@@ -162,7 +126,6 @@ class MainApp {
 					);
 					this.amps[q] = ampPhase.amp;
 					this.phases[q] = ampPhase.phase;
-					console.log("q = " + q + ", a = " + a + ", p = " + p);
 				}
 			}
 		}
@@ -182,10 +145,44 @@ class MainApp {
 	}
 
 	#updateEnergyList() {
-		if (this.eles.energyListDom) {
-			this.#updateEnergies();
-			this.eles.energyListDom.innerText = this.energiesText;
+		this.energiesText = "    Qnum Energy   Amp   Phase\n";
+		//this.maxQnum;
+		//this.maxShowQnum = 8; // scroll window size
+		//this.scrollQOffset = 0; // scroll amount
+		for (let q = 1 + this.scrollQOffset; q <= this.maxShowQnum + this.scrollQOffset; ++q) {
+			if (q >= 1 && q <= this.maxQnum) {
+				const energy = q * q;
+				const hilight = q == this.curQnum;
+				if (hilight) {
+					this.energiesText += "<span id='hilight'>" + ">>> ";
+				} else {
+					this.energiesText += "    ";
+				}
+				this.energiesText += " " + q.toString().padStart(3) 
+					+ "   " + String(energy).padStart(4)
+					+ " " + this.amps[q].toFixed(1).padStart(5) 
+					+ "  " + this.phases[q].toFixed(1).padStart(6);
+				if (hilight) {
+					this.energiesText +="</span>"
+				}
+				this.energiesText += "\n";
+			} else {
+				this.energiesText += "OUT OF RANGE: qval = " + q + "\n";
+			}
 		}
+		if (this.eles.energyListDom) {
+			this.eles.energyListDom.innerHTML = this.energiesText;
+		}
+		this.#updateAmpSlider(this.amps[this.curQnum]);
+		this.#updatePhaseSlider(this.phases[this.curQnum]);
+	}
+
+	#updateQnumScroll(v) {
+		v = range(1, v, this.maxQnum);
+		this.curQnum = v;
+		this.scrollQOffset = v - Math.floor(this.maxShowQnum / 2);
+		//if (this.scrollQOffset < 0) this.scrollQOffset = 0;
+		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
 	}
 
 	// USER: add more members or classes to MainApp
@@ -200,12 +197,7 @@ class MainApp {
 		this.minFreq = -2;
 		this.maxFreq = 2;
 		this.stepFreq = .01;
-/*
-		// linestep
-		this.minLineStep = 0;
-		this.maxLineStep = 200;
-		this.startLineStep = 8;
-*/
+
 		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
 
 		// for sine wave like functions, add a phase to the input of the function(s)
@@ -218,6 +210,8 @@ class MainApp {
 
 		// quantum state
 		this.#initEnergies();
+		this.mouseX = 0;
+		this.mouseY = 0;
 	}
 
 	#userBuildUI() {
@@ -226,22 +220,6 @@ class MainApp {
 		}
 		// elements
 		this.eles = {};
-		// line step slider combo
-		/*
-		{
-			makeEle(this.vp, "hr");
-			// start lineStep UI
-			const label = "Line step";
-			const min = this.minLineStep;
-			const max = this.maxLineStep;
-			const start = this.startLineStep;
-			const step = 1;
-			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.numSteps = v});
-			// end lineStep UI
-		}
-			*/
-
 		// phase slider combo
 		makeEle(this.vp, "hr");
 		{
@@ -275,11 +253,19 @@ class MainApp {
 		makeEle(this.vp, "hr");
 
 		makeEle(this.vp, "pre", null, null, "ENERGIES");
-		this.eles.energyListDom = makeEle(this.vp, "pre", null, "energyList", "energy list text");
-		this.eles.energyListDom.addEventListener("click", (e) => {
-			console.log("energy click = " + e);
+		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
+		this.eles.energyListDom = energyDOM;
+		energyDOM.addEventListener("click", (e) => {
+			this.mouseX = e.offsetX;
+			this.mouseY = e.offsetY;
+			const rowSize = 20; // tweak
+			const mul = 1 / rowSize;
+			const add = 0;
+			const v = Math.floor(range(1, this.mouseY * mul + add, this.maxQnum));
+			this.#updateQnumScroll(v + this.scrollQOffset);
+			this.#updateEnergyList();
+			this.eles.qNumSliderDOM.setValue(this.curQnum);
 		});
-		//this.eles.energyListDom.onClick = () => console.log("eng list clicked")
 		
 		this.#updateEnergyList(); // UI
 		// Quantum Number slider combo  [1 to maxQnum], (0 not used)
@@ -290,8 +276,8 @@ class MainApp {
 			const start = 1;
 			const step = 1;
 			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
-				this.curQnum = v;
+			this.eles.qNumSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
+				this.#updateQnumScroll(v);
 				this.#updateEnergyList(); // UI
 			}, null, false);
 		}
@@ -366,7 +352,8 @@ class MainApp {
 		if (!this.vp) {
 			return;
 		}
-		this.eles.quantInfo.innerText = "Quant INFO\nDisplay mode = " + this.displayMode;
+		this.eles.quantInfo.innerText = "Q: coord = (" + this.mouseX + ", " + this.mouseY 
+			+ ")\nDisplay mode = " + this.displayMode;
 	}
 
 	#buildFunData() {

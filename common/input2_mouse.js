@@ -60,12 +60,10 @@ class Mouse {
     }
 
 	getxcode(e) {
-		//return e.clientX - e.currentTarget.offsetLeft;
 		return e.offsetX;
 	}
 	
 	getycode(e) {
-		//return e.clientY - e.currentTarget.offsetTop;
 		return e.offsetY;
 	}
 	
@@ -124,15 +122,6 @@ class Mouse {
 	bmousem(e) {
 		this.mxy[0] = this.getxcode(e);
 		this.mxy[1] = this.getycode(e);
-		/*
-		if (e.layerX == null) {
-			this.mxy[0] = this.getxcode(e); // doesn't work with scrollbars
-			this.mxy[1] = this.getycode(e);
-		} else {
-			this.mxy[0] = e.layerX; // works with scrollbars
-			this.mxy[1] = e.layerY;
-		}
-		*/
 		if (this.mxy[0] < 0) {
 			this.mxy[0] = 0;
 		}
