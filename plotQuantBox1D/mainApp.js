@@ -49,10 +49,10 @@ class MainApp {
 
 		this.amps = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
 		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.amps[1] = 12;
-		this.phases[1] = -30;
-		this.amps[14] = 100;
-		this.phases[14] = -145;
+		this.amps[1] = 50;
+		this.phases[1] = 0;
+		this.amps[2] = 50;
+		this.phases[2] = 0;
 
 		this.#updateEnergyList();
 	}
@@ -132,6 +132,169 @@ class MainApp {
 		this.#updateEnergyList();
 	}
 
+	#compute() {
+/*
+	case T_RI_X: 
+		{
+			static C32 rgbcolsy[3]={C32RED,C32WHITE,C32GREEN};
+			fplot afplot(VIEWXSTART,VIEWYSTART,VIEWXSIZE,VIEWYSIZE,0.0f,-1.0f,1.0f,1.0f,B32,"X","R,I",rgbcolsy);
+			afplot.drawaxis();
+			afplot.drawlabels();
+			afplot.startlinev();
+			for (i=0;i<SPACESIZE;++i) {
+				float x=i*(1.0f/SPACESIZE);
+				float y=reals[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
+				afplot.flinev(x,y,C32RED);
+			}
+			afplot.flinev(1.0f,0.0f,C32RED);
+			afplot.startlinev();
+			for (i=0;i<SPACESIZE;++i) {
+				float x=i*(1.0f/SPACESIZE);
+				float y=imags[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
+				afplot.flinev(x,y,C32GREEN);
+			}
+			afplot.flinev(1.0f,0.0f,C32GREEN);
+			break;
+		}
+// p against x, animate t
+	case T_P_X: 
+		{
+			fplot afplot(VIEWXSTART,VIEWYSTART,VIEWXSIZE,VIEWYSIZE,0.0f,0.0f,1.0f,1.0f,B32,"X","P",0);
+			afplot.drawaxis();
+			afplot.drawlabels();
+			afplot.startlinev();
+			for (i=0;i<SPACESIZE;++i) {
+				float x=i*(1.0f/SPACESIZE);
+				float re=reals[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
+				float im=imags[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
+				float y=re*re+im*im;//probs[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
+				afplot.flinev(x,y,C32CYAN);
+			}
+			afplot.flinev(1.0f,0.0f,C32CYAN);
+			break;
+		}
+// r,i, animate t
+
+float sintb[TRIGSIZE]; // trig table
+float ak[ENERGYARRSIZE]; // 0 to 31 // 0 not used
+S32 phk[ENERGYARRSIZE]; // quantum states table (energy squareds/momentum, will change for non zero potential function)
+//float probs[TIMESIZE][SPACESIZE]; // [t][x];
+float reals[TIMESIZE][SPACESIZE]; // [t][x];
+float imags[TIMESIZE][SPACESIZE]; // [t][x];
+float angstreal[TIMESIZE][ENERGYARRSIZE]; // [t][n]
+float angstimag[TIMESIZE][ENERGYARRSIZE]; // [t][n]
+float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
+
+	void computeproc()
+{
+	S32 x,t,n,rt,rx;
+	static S32 exlate[ENERGYARRSIZE];
+	static S32 nexlate; // build a list of non zero energies
+	static float normk;
+	if (comptime==0) {
+		sumk=0;
+		float sumk2=0;
+		for (n=1;n<ENERGYARRSIZE;n++) {
+			sumk+=ak[n];
+			sumk2+=ak[n]*ak[n];
+		}
+		if (sumk==0) {
+			comptime=TIMESIZE;
+			return;
+		}
+// minor differences for normalization
+#define LOOK_BETTER
+#ifdef LOOK_BETTER
+		normk = 1.0f / sumk; // this scales/looks better
+#elif
+		normk = sqrtf(2.0f / sumk2); // this one is the correct normalizer
+#endif
+		nexlate=0;
+		for (n=1;n<ENERGYARRSIZE;n++) {
+			if (ak[n]) {
+				exlate[nexlate++]=n;
+			}
+		}
+		perf_start(TEST1);
+		for (x=0;x<SPACESIZE;x++)
+			for (n=1;n<ENERGYARRSIZE;n++) {
+				rx=lshift(n*x,LTRIGSIZE-LSPACESIZE-1);
+				angsx[x][n]=sint(rx)*ak[n];
+			}
+		for (t = 0; t <TIMESIZE; ++t) {
+			for (n = 1; n < ENERGYARRSIZE; ++n) {
+				rt = lshift(n * n * t + phk[n], LTRIGSIZE - LTIMESIZE);
+				angstreal[t][n] = cost(rt);
+				angstimag[t][n] = sint(rt);
+			}
+		}
+		perf_end(TEST1);
+	}
+	if (comptime==TIMESIZE)
+		return;
+	perf_start(TEST2);
+	if (wininfo.fpsavg2>wininfo.fpswanted+2.0f)
+		++comprate;
+	else if (wininfo.fpscurrent2<wininfo.fpswanted-2.0f) {
+		if (comprate<=0)
+			comprate=1;
+		else if (comprate<10)
+			--comprate;
+		else
+			comprate=comprate*9/10;
+	}
+	if (comprate<=0)
+		comprate=1;
+	S32 endtime=comptime+comprate;
+	if (endtime>TIMESIZE)
+		endtime=TIMESIZE;
+	for (t=comptime;t<endtime;++t) {
+#ifdef USEVECTOR
+		vector<float> & realst=reals[t]; // try and speed this up
+		vector<float> & imagst=imags[t];
+//		vector<float> & probst=probs[t];
+		vector<float> & angstrealt=angstreal[t];
+		vector<float> & angstimagt=angstimag[t];
+#else
+		float* realst=reals[t]; // try and speed this up
+		float* imagst=imags[t];
+//		float* probst=probs[t];
+		float* angstrealt=angstreal[t];
+		float* angstimagt=angstimag[t];
+#endif
+		for (x=0;x<SPACESIZE;++x) {
+			float ampr=0,ampi=0;
+#ifdef USEVECTOR
+			vector<float> & angsxx=angsx[x];
+#else
+			float* angsxx=angsx[x];
+#endif
+			perf_start(TEST3);
+			S32 np;
+			for (np=0;np<nexlate;++np) {
+				n=exlate[np];
+				float xp=angsxx[n];
+				ampr+=xp*angstrealt[n];
+				ampi+=xp*angstimagt[n];
+			}
+			perf_end(TEST3);
+			perf_start(TEST4);
+			ampr*=normk; // go with graphical normals, better scaling
+			ampi*=normk;
+			realst[x]=ampr;
+			imagst[x]=ampi;
+//			probst[x]=ampr*ampr+ampi*ampi;
+			perf_end(TEST4);
+		}
+	}
+	comptime=endtime;
+	perf_end(TEST2);
+}
+
+*/		
+	}
+
+
 	#updateAmpSlider(val) {
 		if (this.eles.ampSliderDOM) {
 			this.eles.ampSliderDOM.setValue(val);
@@ -146,9 +309,6 @@ class MainApp {
 
 	#updateEnergyList() {
 		this.energiesText = "    Qnum Energy   Amp   Phase\n";
-		//this.maxQnum;
-		//this.maxShowQnum = 8; // scroll window size
-		//this.scrollQOffset = 0; // scroll amount
 		for (let q = 1 + this.scrollQOffset; q <= this.maxShowQnum + this.scrollQOffset; ++q) {
 			if (q >= 1 && q <= this.maxQnum) {
 				const energy = q * q;
@@ -181,7 +341,6 @@ class MainApp {
 		v = range(1, v, this.maxQnum);
 		this.curQnum = v;
 		this.scrollQOffset = v - Math.floor(this.maxShowQnum / 2);
-		//if (this.scrollQOffset < 0) this.scrollQOffset = 0;
 		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
 	}
 
