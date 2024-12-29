@@ -51,10 +51,19 @@ class MainApp {
 		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
 		this.amps[1] = 50;
 		this.phases[1] = 0;
-		this.amps[2] = 50;
-		this.phases[2] = 0;
+		//this.amps[2] = 50;
+		//this.phases[2] = 0;
 
+		this.maxT = 8;
+		this.maxX = 16;
+/*
+		this.reals = createArray(this.maxT, this.maxX);
+		fillArray(this.reals, 0);
+		this.imags = createArray(this.maxT, this.maxX);
+		fillArray(this.imags, 0);
+*/
 		this.#updateEnergyList();
+		this.#compute();
 	}
 
 	// convert to complex numbers, add and convert back to amp phase
@@ -132,7 +141,9 @@ class MainApp {
 		this.#updateEnergyList();
 	}
 
+	// reads amps and phases, writes imags and reals
 	#compute() {
+	}
 /*
 	case T_RI_X: 
 		{
@@ -291,9 +302,9 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 	perf_end(TEST2);
 }
 
-*/		
-	}
 
+	}
+*/		
 
 	#updateAmpSlider(val) {
 		if (this.eles.ampSliderDOM) {
@@ -344,28 +355,37 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
 	}
 
+	#setZoomCenterFromMode(mode) {
+		if (mode) { // prob
+			this.startCenter = [.5, .5];
+			this.startZoom = 1.9;
+		} else { // real, imag
+			this.startCenter = [1, 0];
+			this.startZoom = .95;
+		}
+	}
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// before firing up Plotter2d
-		this.startCenter = [0, 0];
-		this.startZoom = .98;
+		const centerProb = true;
+		this.#setZoomCenterFromMode();
 
 		// animate
 		this.fpsScreen = 60;
 		this.freq = 0;
 		this.minFreq = -2;
 		this.maxFreq = 2;
-		this.stepFreq = .01;
+		this.stepFreq = .001;
 
 		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
 
 		// for sine wave like functions, add a phase to the input of the function(s)
 		// placeholder
-		this.phase = 0; // [0 to 2 * PI)
-		this.minPhase = 0;
-		this.maxPhase = Math.PI * 2;
-		this.stepPhase = .0005;
-		this.numSteps = 250;
+		this.time = 0; // [0 to 2 * PI)
+		this.minTime = 0;
+		this.maxTime = 1;
+		this.stepSliderTime = .0005;
+		this.numXSteps = 250;
 
 		// quantum state
 		this.#initEnergies();
@@ -382,14 +402,14 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 		// phase slider combo
 		makeEle(this.vp, "hr");
 		{
-			// start phase UI
-			const label = "Phase (p)";
-			const min = this.minPhase;
-			const max = this.maxPhase;
+			// start time UI
+			const label = "Time (t)";
+			const min = this.minTime;
+			const max = this.maxTime;
 			const start = 0;
-			const step = this.stepPhase;
-			const precision = 2;
-			this.eles.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.phase = v});
+			const step = this.stepSliderTime;
+			const precision = 5;
+			this.eles.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.time = v});
 			// end phase UI
 		}
 	
@@ -406,8 +426,12 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 
 		makeEle(this.vp, "hr");
 		this.eles.quantInfo = makeEle(this.vp, "pre", null, null, "quantInfo");
-		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => this.displayMode = (this.displayMode - 1) & 7);
-		makeEle(this.vp, "button", null, "lessWidth", "Next", () => this.displayMode = (this.displayMode + 1) & 7);
+		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => {
+			this.displayMode = (this.displayMode - 1) & 1
+		});
+		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
+			this.displayMode = (this.displayMode + 1) & 1
+		});
 	
 		makeEle(this.vp, "hr");
 
@@ -496,15 +520,58 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 		// proc
 		// update phase given freq
 		if (this.freq !== 0) {
-			this.phase += this.freq * (this.maxPhase - this.minPhase) / this.fpsScreen;
-			this.phase = normAngRadUnsigned(this.phase);
-			this.eles.phaseCombo.setValue(this.phase);
+			this.time += this.freq * (this.maxTime - this.minTime) / this.fpsScreen;
+			if (this.time < 0) {
+				this.time += 1;
+			} else if (this.time >= 1) {
+				this.time -= 1;
+			}
+			this.eles.phaseCombo.setValue(this.time);
 		}
 		this.#buildFunData();
 	}
 
+	// draw at (0, -1) to (2, 1)
+	#buildFunData() {
+		let sumk = 0;
+		for (let q = 1; q <= this.maxQnum; ++q) {
+			sumk += this.amps[q];
+		}
+		if (!sumk) return;
+		const norm = 1 / sumk;
+		this.realData = [];
+		this.imagData = [];
+		this.probData = [];
+		for (let x = 0; x <= this.numXSteps; ++x) {
+			let real = 0;
+			let imag = 0;
+			for (let q = 1; q <= this.maxQnum; ++q) {
+				const amp = this.amps[q];
+				if (!amp) continue;
+				const phase = this.phases[q];
+				const xAng = x * q * Math.PI / this.numXSteps;
+				let xSinAng = Math.sin(xAng);
+				const t = this.time;
+				const tAng = t * q * q * 2 * Math.PI;
+				const tAngReal = Math.cos(tAng);
+				const tangimag = Math.sin(tAng);
+				xSinAng *= amp;
+				real += xSinAng * tAngReal;
+				imag += xSinAng * tangimag;
+			}
+			real *= norm;
+			imag *= norm;
+			this.realData.push(real);
+			this.imagData.push(imag);
+			this.probData.push(2 * (real * real + imag * imag) - 1);
+		}
+	}
+
 	#userDraw() {
-		this.#drawFunData();
+		const step = 2 / this.numXSteps;
+		this.drawPrim.drawLinesSimple(this.realData, .005, undefined, 0, step, "red");
+		this.drawPrim.drawLinesSimple(this.imagData, .005, undefined, 0, step, "green");
+		this.drawPrim.drawLinesSimple(this.probData, .005, undefined, 0, step, "blue");
 	}
 
 	#userUpdateInfo() {
@@ -513,19 +580,6 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 		}
 		this.eles.quantInfo.innerText = "Q: coord = (" + this.mouseX + ", " + this.mouseY 
 			+ ")\nDisplay mode = " + this.displayMode;
-	}
-
-	#buildFunData() {
-		this.funData = [];
-		for (let i = 0; i <= this.numSteps; ++i) {
-			const a = i * Math.PI / this.numSteps;
-			const v = Math.sin(a) * Math.cos(this.phase);
-			this.funData.push(v);
-		}
-	}
-
-	#drawFunData() {
-		this.drawPrim.drawLinesSimple(this.funData, .005, undefined, -1, 2 / this.numSteps);
 	}
 
 
