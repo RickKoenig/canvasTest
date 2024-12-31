@@ -42,8 +42,6 @@ class MainApp {
 
 ////////// USER SECTION /////////
 	#initEnergies() {
-		this.maxQnum = 16;//32;
-		this.maxShowQnum = 8;//16; // scroll window size
 		this.scrollQOffset = 0; // scroll amount
 		this.curQnum = 1; // 1 to maxQnum inclusive
 
@@ -144,6 +142,346 @@ class MainApp {
 	// reads amps and phases, writes imags and reals
 	#compute() {
 	}
+
+	#updateAmpSlider(val) {
+		if (this.eles.ampSliderDOM) {
+			this.eles.ampSliderDOM.setValue(val);
+		}
+	}
+
+	#updatePhaseSlider(val) {
+		if (this.eles.phaseSliderDOM) {
+			this.eles.phaseSliderDOM.setValue(val);
+		}
+	}
+
+	#updateEnergyList() {
+		this.energiesText = "    Qnum Energy   Amp   Phase\n";
+		for (let q = 1 + this.scrollQOffset; q <= this.maxShowQnum + this.scrollQOffset; ++q) {
+			if (q >= 1 && q <= this.maxQnum) {
+				const energy = q * q;
+				const hilight = q == this.curQnum;
+				if (hilight) {
+					this.energiesText += "<span id='hilight'>" + ">>> ";
+				} else {
+					this.energiesText += "    ";
+				}
+				this.energiesText += " " + q.toString().padStart(3) 
+					+ "   " + String(energy).padStart(4)
+					+ " " + this.amps[q].toFixed(1).padStart(5) 
+					+ "  " + this.phases[q].toFixed(1).padStart(6);
+				if (hilight) {
+					this.energiesText +="</span>"
+				}
+				this.energiesText += "\n";
+			} else {
+				this.energiesText += "OUT OF RANGE: qval = " + q + "\n";
+			}
+		}
+		if (this.eles.energyListDom) {
+			this.eles.energyListDom.innerHTML = this.energiesText;
+		}
+		this.#updateAmpSlider(this.amps[this.curQnum]);
+		this.#updatePhaseSlider(this.phases[this.curQnum]);
+	}
+
+	#updateQnumScroll(v) {
+		v = range(1, v, this.maxQnum);
+		this.curQnum = v;
+		this.scrollQOffset = v - Math.floor(this.maxShowQnum / 2);
+		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
+	}
+
+	#setZoomCenterFromMode(mode) {
+		if (mode) { // prob
+			this.startCenter = [.5, .5];
+			this.startZoom = 1.9;
+		} else { // real, imag
+			this.startCenter = [1, 0];
+			this.startZoom = .95;
+		}
+	}
+	// USER: add more members or classes to MainApp
+	#userInit() {
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.avgFpsObj = new Runavg(500);
+		// before firing up Plotter2d
+		const centerProb = true;
+		this.#setZoomCenterFromMode();
+
+		// animate
+		this.fpsScreen = 60;
+		this.numXSteps = 256; // for drawing
+		this.numTSteps = 16;
+		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
+
+		this.maxQnum = 16;//32;
+		this.maxShowQnum = 8;//16; // scroll window size
+		// for sine wave like functions, add a phase to the input of the function(s)
+		this.time = 0; // [0 to 1]
+		this.minTime = 0;
+		this.maxTime = 1;
+		this.extraTime = 64;
+		this.stepTime = 1 / (this.maxQnum * this.maxQnum * this.extraTime);
+		this.stepTimePrecision = 5;
+
+		this.freq = 0;
+		this.minFreq = -.125;
+		this.maxFreq = .125;
+		this.stepFreq = .005;
+		this.stepFreqPrecision = 5;
+
+		// quantum state
+		this.#initEnergies();
+		this.mouseX = 0;
+		this.mouseY = 0;
+	}
+
+	#userBuildUI() {
+		if (!this.vp) {
+			return;
+		}
+		// elements
+		this.eles = {};
+		// phase slider combo
+		makeEle(this.vp, "hr");
+		{
+			// start time UI
+			const label = "Time";
+			const min = this.minTime;
+			const max = this.maxTime;
+			const start = 0;
+			const step = this.stepTime;
+			const precision = this.stepTimePrecision;
+			this.eles.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.time = v});
+			// end phase UI
+		}
+	
+		// frequency slider combo
+		{
+			const label = "Frequency";
+			const min = this.minFreq;
+			const max = this.maxFreq;
+			const start = 0;
+			const step = this.stepFreq;
+			const precision = this.stepFreqPrecision;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
+		}
+
+		makeEle(this.vp, "hr");
+		this.eles.quantInfo = makeEle(this.vp, "pre", null, null, "quantInfo");
+		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => {
+			this.displayMode = (this.displayMode - 1) & 1
+		});
+		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
+			this.displayMode = (this.displayMode + 1) & 1
+		});
+	
+		makeEle(this.vp, "hr");
+
+		makeEle(this.vp, "pre", null, null, "ENERGIES");
+		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
+		this.eles.energyListDom = energyDOM;
+		energyDOM.addEventListener("click", (e) => {
+			this.mouseX = e.offsetX;
+			this.mouseY = e.offsetY;
+			const rowSize = 20; // tweak
+			const mul = 1 / rowSize;
+			const add = 0;
+			const v = Math.floor(range(1, this.mouseY * mul + add, this.maxQnum));
+			this.#updateQnumScroll(v + this.scrollQOffset);
+			this.#updateEnergyList();
+			this.eles.qNumSliderDOM.setValue(this.curQnum);
+		});
+		
+		this.#updateEnergyList(); // UI
+		// Quantum Number slider combo  [1 to maxQnum], (0 not used)
+		{
+			const label = "Q Number";
+			const min = 1;
+			const max = this.maxQnum;
+			const start = 1;
+			const step = 1;
+			const precision = 0;
+			this.eles.qNumSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
+				this.#updateQnumScroll(v);
+				this.#updateEnergyList(); // UI
+			}, null, false);
+		}
+		// amplitude slider combo
+		{
+			const label = "Amplitude";
+			const min = 0;
+			const max = 100;
+			const start = 0;
+			const step = .5;
+			const precision = 1;
+			this.eles.ampSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+		}
+		// phase slider combo
+		{
+			const label = "Phase";
+			const min = -180;
+			const max = 180;
+			const start = 0;
+			const step = .5;
+			const precision = 1;
+			this.eles.phaseSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+		}
+		// spread slider combo
+		{
+			const label = "Energy Spread";
+			const min = 0;
+			const max = 100;
+			const start = 0;
+			const step = 1;
+			const precision = 0;
+			this.eles.spreadSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+		}
+		makeEle(this.vp, "button", null, "lessWidth", "Replace", () => {
+			this.#addReplaceEnergy(false);
+		});
+		makeEle(this.vp, "button", null, "lessWidth", "Add", () => {
+			this.#addReplaceEnergy(true);
+		});
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "button", null, null, "Reset Energies", () => {
+			this.amps.fill(0);
+			this.phases.fill(0);
+			this.#updateEnergyList();
+		});
+		makeEle(this.vp, "button", null, null, "Calculate", () => null);
+
+		makeEle(this.vp, "hr");
+		
+		makeEle(this.vp, "button", null, null, "Quit Program", () => {
+			window.location.href = "../../index.html#plotter2d";
+		});
+		this.#updateEnergyList();
+	}
+
+	#userProc() {
+		// proc
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+		// update phase given freq
+		if (this.freq !== 0) {
+			const diffTime = this.maxTime - this.minTime;
+			this.time += this.freq * diffTime / this.fpsScreen;
+			if (this.time < this.minTime) {
+				this.time += diffTime;
+			} else if (this.time >= this.maxTime) {
+				this.time -= diffTime;
+			}
+			this.eles.phaseCombo.setValue(this.time);
+		}
+		this.#buildFunData();
+	}
+
+	// draw at (0, -1) to (2, 1)
+	#buildFunData() {
+		let sumk = 0;
+		for (let q = 1; q <= this.maxQnum; ++q) {
+			sumk += this.amps[q];
+		}
+		if (!sumk) return;
+		const norm = 1 / sumk;
+		this.realData = [];
+		this.imagData = [];
+		this.probData = [];
+		for (let x = 0; x <= this.numXSteps; ++x) {
+			let real = 0;
+			let imag = 0;
+			for (let q = 1; q <= this.maxQnum; ++q) {
+				const amp = this.amps[q];
+				if (!amp) continue;
+				const phase = this.phases[q] / 360;
+				const xAng = x * q * Math.PI / this.numXSteps;
+				let xSinAng = Math.sin(xAng);
+				const t = this.time;
+				const tAng = (t * q * q + phase) * 2 * Math.PI;
+				const tAngReal = Math.cos(tAng);
+				const tangimag = Math.sin(tAng);
+				xSinAng *= amp;
+				real += xSinAng * tAngReal;
+				imag += xSinAng * tangimag;
+			}
+			real *= norm;
+			imag *= norm;
+			this.realData.push(real);
+			this.imagData.push(imag);
+			this.probData.push(2 * (real * real + imag * imag) - 1);
+		}
+	}
+
+	#userDraw() {
+		const step = 2 / this.numXSteps;
+		this.drawPrim.drawLinesSimple(this.realData, .005, undefined, 0, step, "red");
+		this.drawPrim.drawLinesSimple(this.imagData, .005, undefined, 0, step, "green");
+		this.drawPrim.drawLinesSimple(this.probData, .005, undefined, 0, step, "blue");
+	}
+
+	#userUpdateInfo() {
+		if (!this.vp) {
+			return;
+		}
+		//this.avgFps = 47;
+		this.eles.quantInfo.innerText = 
+			/*"Q: coord = (" + this.mouseX + ", " + this.mouseY */
+			/*+ ")\n*/"Display mode = " + this.displayMode
+			+ "\nAvg fps = " + this.avgFps.toFixed(2);
+		}
+
+
+//// END USER SECTION ///////
+
+	// process every frame
+	#animate() {
+		//  proc
+		// update input system
+		this.input.proc();
+		// interact with mouse, calc all spaces
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
+		this.#userProc();
+
+		// draw
+		this.plotter2d.clearCanvas();
+		// goto user/cam space
+		this.plotter2d.setSpace(Plotter2d.spaces.USER);
+		// now in user/cam space
+		this.graphPaper.draw("X", "Y");
+		// USER: do USER stuff
+		this.#userDraw(); // draw
+
+		// update UI, text
+		this.#userUpdateInfo();
+
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
+	}
+}
+
+const mainApp = new MainApp();
+
+
+
+
+
+
+
+
 /*
 	case T_RI_X: 
 		{
@@ -306,309 +644,3 @@ float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
 	}
 */		
 
-	#updateAmpSlider(val) {
-		if (this.eles.ampSliderDOM) {
-			this.eles.ampSliderDOM.setValue(val);
-		}
-	}
-
-	#updatePhaseSlider(val) {
-		if (this.eles.phaseSliderDOM) {
-			this.eles.phaseSliderDOM.setValue(val);
-		}
-	}
-
-	#updateEnergyList() {
-		this.energiesText = "    Qnum Energy   Amp   Phase\n";
-		for (let q = 1 + this.scrollQOffset; q <= this.maxShowQnum + this.scrollQOffset; ++q) {
-			if (q >= 1 && q <= this.maxQnum) {
-				const energy = q * q;
-				const hilight = q == this.curQnum;
-				if (hilight) {
-					this.energiesText += "<span id='hilight'>" + ">>> ";
-				} else {
-					this.energiesText += "    ";
-				}
-				this.energiesText += " " + q.toString().padStart(3) 
-					+ "   " + String(energy).padStart(4)
-					+ " " + this.amps[q].toFixed(1).padStart(5) 
-					+ "  " + this.phases[q].toFixed(1).padStart(6);
-				if (hilight) {
-					this.energiesText +="</span>"
-				}
-				this.energiesText += "\n";
-			} else {
-				this.energiesText += "OUT OF RANGE: qval = " + q + "\n";
-			}
-		}
-		if (this.eles.energyListDom) {
-			this.eles.energyListDom.innerHTML = this.energiesText;
-		}
-		this.#updateAmpSlider(this.amps[this.curQnum]);
-		this.#updatePhaseSlider(this.phases[this.curQnum]);
-	}
-
-	#updateQnumScroll(v) {
-		v = range(1, v, this.maxQnum);
-		this.curQnum = v;
-		this.scrollQOffset = v - Math.floor(this.maxShowQnum / 2);
-		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
-	}
-
-	#setZoomCenterFromMode(mode) {
-		if (mode) { // prob
-			this.startCenter = [.5, .5];
-			this.startZoom = 1.9;
-		} else { // real, imag
-			this.startCenter = [1, 0];
-			this.startZoom = .95;
-		}
-	}
-	// USER: add more members or classes to MainApp
-	#userInit() {
-		// before firing up Plotter2d
-		const centerProb = true;
-		this.#setZoomCenterFromMode();
-
-		// animate
-		this.fpsScreen = 60;
-		this.freq = 0;
-		this.minFreq = -2;
-		this.maxFreq = 2;
-		this.stepFreq = .001;
-
-		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
-
-		// for sine wave like functions, add a phase to the input of the function(s)
-		// placeholder
-		this.time = 0; // [0 to 2 * PI)
-		this.minTime = 0;
-		this.maxTime = 1;
-		this.stepSliderTime = .0005;
-		this.numXSteps = 250;
-
-		// quantum state
-		this.#initEnergies();
-		this.mouseX = 0;
-		this.mouseY = 0;
-	}
-
-	#userBuildUI() {
-		if (!this.vp) {
-			return;
-		}
-		// elements
-		this.eles = {};
-		// phase slider combo
-		makeEle(this.vp, "hr");
-		{
-			// start time UI
-			const label = "Time (t)";
-			const min = this.minTime;
-			const max = this.maxTime;
-			const start = 0;
-			const step = this.stepSliderTime;
-			const precision = 5;
-			this.eles.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.time = v});
-			// end phase UI
-		}
-	
-		// frequency slider combo
-		{
-			const label = "Frequency";
-			const min = this.minFreq;
-			const max = this.maxFreq;
-			const start = 0;
-			const step = this.stepFreq;
-			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
-		}
-
-		makeEle(this.vp, "hr");
-		this.eles.quantInfo = makeEle(this.vp, "pre", null, null, "quantInfo");
-		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => {
-			this.displayMode = (this.displayMode - 1) & 1
-		});
-		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
-			this.displayMode = (this.displayMode + 1) & 1
-		});
-	
-		makeEle(this.vp, "hr");
-
-		makeEle(this.vp, "pre", null, null, "ENERGIES");
-		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
-		this.eles.energyListDom = energyDOM;
-		energyDOM.addEventListener("click", (e) => {
-			this.mouseX = e.offsetX;
-			this.mouseY = e.offsetY;
-			const rowSize = 20; // tweak
-			const mul = 1 / rowSize;
-			const add = 0;
-			const v = Math.floor(range(1, this.mouseY * mul + add, this.maxQnum));
-			this.#updateQnumScroll(v + this.scrollQOffset);
-			this.#updateEnergyList();
-			this.eles.qNumSliderDOM.setValue(this.curQnum);
-		});
-		
-		this.#updateEnergyList(); // UI
-		// Quantum Number slider combo  [1 to maxQnum], (0 not used)
-		{
-			const label = "Q Number";
-			const min = 1;
-			const max = this.maxQnum;
-			const start = 1;
-			const step = 1;
-			const precision = 0;
-			this.eles.qNumSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
-				this.#updateQnumScroll(v);
-				this.#updateEnergyList(); // UI
-			}, null, false);
-		}
-		// amplitude slider combo
-		{
-			const label = "Amplitude";
-			const min = 0;
-			const max = 100;
-			const start = 0;
-			const step = .1;
-			const precision = 1;
-			this.eles.ampSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
-		}
-		// phase slider combo
-		{
-			const label = "Phase";
-			const min = -180;
-			const max = 180;
-			const start = 0;
-			const step = .1;
-			const precision = 1;
-			this.eles.phaseSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
-		}
-		// spread slider combo
-		{
-			const label = "Energy Spread";
-			const min = 0;
-			const max = 100;
-			const start = 0;
-			const step = 1;
-			const precision = 0;
-			this.eles.spreadSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
-		}
-		makeEle(this.vp, "button", null, "lessWidth", "Replace", () => {
-			this.#addReplaceEnergy(false);
-		});
-		makeEle(this.vp, "button", null, "lessWidth", "Add", () => {
-			this.#addReplaceEnergy(true);
-		});
-		makeEle(this.vp, "br");
-		makeEle(this.vp, "button", null, null, "Reset Energies", () => {
-			this.amps.fill(0);
-			this.phases.fill(0);
-			this.#updateEnergyList();
-		});
-		makeEle(this.vp, "button", null, null, "Calculate", () => null);
-
-		makeEle(this.vp, "hr");
-		
-		makeEle(this.vp, "button", null, null, "Quit Program", () => {
-			window.location.href = "../../index.html#plotter2d";
-		});
-		this.#updateEnergyList();
-	}
-
-	#userProc() {
-		// proc
-		// update phase given freq
-		if (this.freq !== 0) {
-			this.time += this.freq * (this.maxTime - this.minTime) / this.fpsScreen;
-			if (this.time < 0) {
-				this.time += 1;
-			} else if (this.time >= 1) {
-				this.time -= 1;
-			}
-			this.eles.phaseCombo.setValue(this.time);
-		}
-		this.#buildFunData();
-	}
-
-	// draw at (0, -1) to (2, 1)
-	#buildFunData() {
-		let sumk = 0;
-		for (let q = 1; q <= this.maxQnum; ++q) {
-			sumk += this.amps[q];
-		}
-		if (!sumk) return;
-		const norm = 1 / sumk;
-		this.realData = [];
-		this.imagData = [];
-		this.probData = [];
-		for (let x = 0; x <= this.numXSteps; ++x) {
-			let real = 0;
-			let imag = 0;
-			for (let q = 1; q <= this.maxQnum; ++q) {
-				const amp = this.amps[q];
-				if (!amp) continue;
-				const phase = this.phases[q];
-				const xAng = x * q * Math.PI / this.numXSteps;
-				let xSinAng = Math.sin(xAng);
-				const t = this.time;
-				const tAng = t * q * q * 2 * Math.PI;
-				const tAngReal = Math.cos(tAng);
-				const tangimag = Math.sin(tAng);
-				xSinAng *= amp;
-				real += xSinAng * tAngReal;
-				imag += xSinAng * tangimag;
-			}
-			real *= norm;
-			imag *= norm;
-			this.realData.push(real);
-			this.imagData.push(imag);
-			this.probData.push(2 * (real * real + imag * imag) - 1);
-		}
-	}
-
-	#userDraw() {
-		const step = 2 / this.numXSteps;
-		this.drawPrim.drawLinesSimple(this.realData, .005, undefined, 0, step, "red");
-		this.drawPrim.drawLinesSimple(this.imagData, .005, undefined, 0, step, "green");
-		this.drawPrim.drawLinesSimple(this.probData, .005, undefined, 0, step, "blue");
-	}
-
-	#userUpdateInfo() {
-		if (!this.vp) {
-			return;
-		}
-		this.eles.quantInfo.innerText = "Q: coord = (" + this.mouseX + ", " + this.mouseY 
-			+ ")\nDisplay mode = " + this.displayMode;
-	}
-
-
-//// END USER SECTION ///////
-
-	// process every frame
-	#animate() {
-		//  proc
-		// update input system
-		this.input.proc();
-		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
-		this.#userProc();
-
-		// draw
-		this.plotter2d.clearCanvas();
-		// goto user/cam space
-		this.plotter2d.setSpace(Plotter2d.spaces.USER);
-		// now in user/cam space
-		this.graphPaper.draw("X", "Y");
-		// USER: do USER stuff
-		this.#userDraw(); // draw
-
-		// update UI, text
-		this.#userUpdateInfo();
-
-		// keep animation going
-		requestAnimationFrame(() => this.#animate());
-	}
-}
-
-const mainApp = new MainApp();
