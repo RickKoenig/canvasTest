@@ -3,6 +3,12 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
+	// enum of display modes object
+    static displayModesEnum = makeEnum([
+		"X_RI_T", "X_P_T", "R_I_T","X_RI_T_FREE",
+		//"T_RI_X", "T_P_X", "R_I_X","T_RI_X_FREE",
+		"NUM"
+	]);
 	constructor() {
 		console.log("creating instance of MainApp");
 		// vertical panel UI
@@ -49,8 +55,8 @@ class MainApp {
 		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
 		this.amps[1] = 50;
 		this.phases[1] = 0;
-		//this.amps[2] = 50;
-		//this.phases[2] = 0;
+		this.amps[2] = 50;
+		this.phases[2] = 0;
 
 		this.maxT = 8;
 		this.maxX = 16;
@@ -192,14 +198,83 @@ class MainApp {
 		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
 	}
 
-	#setZoomCenterFromMode(mode) {
-		if (mode) { // prob
-			this.startCenter = [.5, .5];
-			this.startZoom = 1.9;
-		} else { // real, imag
-			this.startCenter = [1, 0];
-			this.startZoom = .95;
-		}
+	#setZoomCenterFromMode() {
+		const modeSettings = [
+			{ 
+				desc: "0: RI on X anim T",
+				center: [1, 0],
+				zoom: .95,
+				hAxis: 'X',
+				vAxis: 'RI',
+				showAxisNumbers: false,
+			},
+			{ 
+				desc: "1: P on X anim T",
+				center: [1, .75],
+				zoom: .95,
+				hAxis: 'X',
+				vAxis: 'P',
+				showAxisNumbers: false,
+			},
+			{ 
+				desc: "2: I on R anim T",
+				center: [0, 0],
+				zoom: .95,
+				hAxis: 'R',
+				vAxis: 'I',
+				showAxisNumbers: false,
+			},
+			{ 
+				desc: "3: RI on X anim T free",
+				center: [0, 0],
+				zoom: .95,
+				hAxis: 'X',
+				vAxis: 'RI',
+				showAxis: false,
+				showGrid: false
+			},
+			/*
+			{ 
+				desc: "4: RI on T anim X",
+				center: [1, 0],
+				zoom: .95,
+				hAxis: 'T',
+				vAxis: 'RI'
+			},
+			{ 
+				desc: "5: P on T anim X",
+				center: [1, 0],
+				zoom: .95,
+				hAxis: 'T',
+				vAxis: 'P'
+			},
+			{ 
+				desc: "6: I on R anim X",
+				center: [0, 0],
+				zoom: .95,
+				hAxis: 'R',
+				vAxis: 'I'
+			},
+			{ 
+				desc: "7: RI on T anim X free",
+				center: [1, 0],
+				zoom: .95,
+				hAxis: 'X',
+				vAxis: 'P'
+			},*/
+		];
+		const mode = this.displayMode;
+		const setting = modeSettings[mode];
+		this.startCenter = setting.center;
+		this.startZoom = setting.zoom;
+		this.plotter2d.setTrans(this.startCenter);
+		this.plotter2d.setZoom(this.startZoom);
+		this.hAxis = setting.hAxis;
+		this.vAxis = setting.vAxis;
+		this.axis = setting.showAxis;
+		this.axisNumbers = setting.showAxisNumbers;
+		this.grid = setting.showGrid;
+		this.desc = setting.desc;
 	}
 	// USER: add more members or classes to MainApp
 	#userInit() {
@@ -209,14 +284,13 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 		// before firing up Plotter2d
-		const centerProb = true;
-		this.#setZoomCenterFromMode();
+		//const centerProb = true;
 
 		// animate
 		this.fpsScreen = 60;
 		this.numXSteps = 256; // for drawing
 		this.numTSteps = 16;
-		this.displayMode = 0; // 8 different display modes, TODO: maybe an enum
+		this.displayMode = MainApp.displayModesEnum.X_RI_T; // 8 different display modes
 
 		this.maxQnum = 16;//32;
 		this.maxShowQnum = 8;//16; // scroll window size
@@ -250,7 +324,7 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		{
 			// start time UI
-			const label = "Time";
+			const label = "anim";
 			const min = this.minTime;
 			const max = this.maxTime;
 			const start = 0;
@@ -270,14 +344,22 @@ class MainApp {
 			const precision = this.stepFreqPrecision;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 		}
-
+		
 		makeEle(this.vp, "hr");
 		this.eles.quantInfo = makeEle(this.vp, "pre", null, null, "quantInfo");
 		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => {
-			this.displayMode = (this.displayMode - 1) & 1
+			--this.displayMode;
+			if (this.displayMode < 0) {
+				this.displayMode += MainApp.displayModesEnum.NUM;
+			}
+			this.#setZoomCenterFromMode();
 		});
 		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
-			this.displayMode = (this.displayMode + 1) & 1
+			this.displayMode++;
+			if (this.displayMode >= MainApp.displayModesEnum.NUM) {
+				this.displayMode -= MainApp.displayModesEnum.NUM;
+			}
+			this.#setZoomCenterFromMode();
 		});
 	
 		makeEle(this.vp, "hr");
@@ -361,6 +443,7 @@ class MainApp {
 			window.location.href = "../../index.html#plotter2d";
 		});
 		this.#updateEnergyList();
+		this.#setZoomCenterFromMode();
 	}
 
 	#userProc() {
@@ -422,15 +505,56 @@ class MainApp {
 			imag *= norm;
 			this.realData.push(real);
 			this.imagData.push(imag);
-			this.probData.push(2 * (real * real + imag * imag) - 1);
+			this.probData.push(2 * (real * real + imag * imag));
 		}
 	}
 
-	#userDraw() {
+	#userDraw() { 									//axis, axisNumbers, grid
+		this.graphPaper.draw(this.hAxis, this.vAxis, this.axis, this.axisNumbers, this.grid);
+		const lineWidth = .005;
 		const step = 2 / this.numXSteps;
-		this.drawPrim.drawLinesSimple(this.realData, .005, undefined, 0, step, "red");
-		this.drawPrim.drawLinesSimple(this.imagData, .005, undefined, 0, step, "green");
-		this.drawPrim.drawLinesSimple(this.probData, .005, undefined, 0, step, "blue");
+		switch(this.displayMode) {
+			case MainApp.displayModesEnum.X_RI_T:
+				this.drawPrim.drawLinesSimple(this.realData, lineWidth, undefined, 0, step, "red");
+				this.drawPrim.drawLinesSimple(this.imagData, lineWidth, undefined, 0, step, "green");
+				break;
+			case MainApp.displayModesEnum.X_P_T:
+				this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
+				break;
+			case MainApp.displayModesEnum.R_I_T:
+				const pnts = [];
+				const bigger = 1.125;
+				for (let i = 0; i < this.realData.length; ++i) {
+					const pnt = [bigger * this.realData[i], bigger * this.imagData[i]];
+					pnts.push(pnt);
+				}
+			    this.drawPrim.drawLinesParametric(pnts, lineWidth, 0, false, "blue");
+				break;
+			case MainApp.displayModesEnum.X_RI_T_FREE:
+				const pnts2 = [];
+				const bigger2 = 1.125;
+				for (let i = 0; i < this.realData.length; ++i) {
+					const pnt2 = [bigger2 * this.realData[i], bigger2 * this.imagData[i]];
+					pnts2.push(pnt2);
+				}
+			    this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, "blue");
+				break;
+
+				/*
+				const slope = .25;
+				const skewRealData = [];
+				const skewImagData = [];
+				for (let i = 0; i < this.realData.length; ++i) {
+					skewRealData.push(this.realData[i] + i * 2 * slope / this.realData.length);
+					skewImagData.push(this.imagData[i] + i * 2 * slope / this.realData.length);
+				}
+				this.drawPrim.drawLinesSimple(skewRealData, lineWidth, undefined, 0, step, "red");
+				this.drawPrim.drawLinesSimple(skewImagData, lineWidth, undefined, 0, step, "green");
+				//this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
+				const maxXslope = 20;
+				this.drawPrim.drawLine([0,0], [maxXslope,slope * maxXslope], lineWidth, "black");
+				break; */
+		}
 	}
 
 	#userUpdateInfo() {
@@ -440,7 +564,7 @@ class MainApp {
 		//this.avgFps = 47;
 		this.eles.quantInfo.innerText = 
 			/*"Q: coord = (" + this.mouseX + ", " + this.mouseY */
-			/*+ ")\n*/"Display mode = " + this.displayMode
+			/*+ ")\n*/this.desc
 			+ "\nAvg fps = " + this.avgFps.toFixed(2);
 		}
 
@@ -461,7 +585,6 @@ class MainApp {
 		// goto user/cam space
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
-		this.graphPaper.draw("X", "Y");
 		// USER: do USER stuff
 		this.#userDraw(); // draw
 

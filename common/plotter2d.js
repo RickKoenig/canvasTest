@@ -26,7 +26,6 @@ class Plotter2d {
         this.center[0] = this.startCenter[0];
         this.center[1] = this.startCenter[1];
         this.coordReset = true;
-
     }
 
     constructor(canvas, ctx, vp, startCenter = [0,0], startZoom = 1, fixedSize) {
@@ -132,6 +131,12 @@ class Plotter2d {
         this.userMouse[1] = this.center[1] - this.ndcMouse[1] / this.zoom;
     }
 
+    setTrans(newCenter) {
+        this.center[0] = newCenter[0];
+        this.center[1] = newCenter[1];
+        this.coordReset = true;
+    }
+
     // return correct zoom for a given space
     // most of the time returns 1
     getNdcZoom(ndcScale) {
@@ -147,6 +152,7 @@ class Plotter2d {
         this.zoom = newZoom;
         this.logZoom = Math.log(newZoom);
         this.invZoom = 1 / newZoom;
+        this.coordReset = true;
     }
 
     getZoom() {

@@ -52,7 +52,7 @@ class GraphPaper {
         }
     }
 
-    #drawAxis() {
+    #drawAxis(axisNumbers) {
         // axis
         this.ctx.beginPath();
         this.ctx.moveTo(this.minGrid[0] * 2, 0);
@@ -62,6 +62,7 @@ class GraphPaper {
         this.ctx.strokeStyle = "rgb(68, 109, 126)";
         this.ctx.lineWidth = .0125;
         this.ctx.stroke();
+        if (!axisNumbers) return;
 
         // axis text numbers
         let textSize = .05;
@@ -120,13 +121,13 @@ class GraphPaper {
         }
     }
 
-    draw(axisH, axisV) {
+    draw(axisH, axisV, axis = true, axisNumbers = true, grid = true) {
         // grid lines
-        this.#drawGrid();
+        if (grid) this.#drawGrid();
         // axis lines and text numbers
-        this.#drawAxis();
+        if (axis) this.#drawAxis(axisNumbers);
         // names of axes
-        this.#drawAxisNames(axisH, axisV);
+        if (axis) this.#drawAxisNames(axisH, axisV);
         // test, draw range of camera
         const camTest = false;
         if (camTest) {
