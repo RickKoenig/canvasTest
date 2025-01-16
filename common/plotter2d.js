@@ -35,6 +35,8 @@ class Plotter2d {
         this.fixedSize = fixedSize;
         // mouse in user/cam space
         this.userMouse = vec2.create(); // current mouse coords in user/cam space
+        this.lastUserMouse = vec2.create();
+        this.deltaUserMouse = vec2.create();
         this.coordReset = false;
     
         // screen space dimensions of <canvas> / <div>
@@ -127,8 +129,10 @@ class Plotter2d {
         let r = vec2.create();
         this.ndcMouse[0] = (2 * i[0] - this.W[0]) / this.WMin;
         this.ndcMouse[1] = (2 * i[1] - this.W[1]) / this.WMin;
+        vec2.copy(this.lastUserMouse, this.userMouse);
         this.userMouse[0] = this.center[0] + this.ndcMouse[0] / this.zoom;
         this.userMouse[1] = this.center[1] - this.ndcMouse[1] / this.zoom;
+        vec2.sub(this.deltaUserMouse, this.userMouse, this.lastUserMouse);
     }
 
     setTrans(newCenter) {

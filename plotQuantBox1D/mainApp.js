@@ -5,8 +5,8 @@
 class MainApp {
 	// enum of display modes object
     static displayModesEnum = makeEnum([
-		"X_RI_T", "X_P_T", "R_I_T","X_RI_T_FREE",
-		//"T_RI_X", "T_P_X", "R_I_X","T_RI_X_FREE",
+		"X_P_T", "X_RI_T", "R_I_T","RIX_T_FREE",
+		//"T_RI_X", "T_P_X", "R_I_X","RIT_X_FREE",
 		"NUM"
 	]);
 	constructor() {
@@ -201,15 +201,7 @@ class MainApp {
 	#setZoomCenterFromMode() {
 		const modeSettings = [
 			{ 
-				desc: "0: RI on X anim T",
-				center: [1, 0],
-				zoom: .95,
-				hAxis: 'X',
-				vAxis: 'RI',
-				showAxisNumbers: false,
-			},
-			{ 
-				desc: "1: P on X anim T",
+				desc: "P on X anim T",
 				center: [1, .75],
 				zoom: .95,
 				hAxis: 'X',
@@ -217,7 +209,15 @@ class MainApp {
 				showAxisNumbers: false,
 			},
 			{ 
-				desc: "2: I on R anim T",
+				desc: "RI on X anim T",
+				center: [1, 0],
+				zoom: .95,
+				hAxis: 'X',
+				vAxis: 'RI',
+				showAxisNumbers: false,
+			},
+			{ 
+				desc: "I on R anim T",
 				center: [0, 0],
 				zoom: .95,
 				hAxis: 'R',
@@ -225,38 +225,38 @@ class MainApp {
 				showAxisNumbers: false,
 			},
 			{ 
-				desc: "3: RI on X anim T free",
+				desc: "RIX anim T free",
 				center: [0, 0],
 				zoom: .95,
 				hAxis: 'X',
 				vAxis: 'RI',
 				showAxis: false,
-				showGrid: false
+				showGrid: true
 			},
 			/*
 			{ 
-				desc: "4: RI on T anim X",
+				desc: "RI on T anim X",
 				center: [1, 0],
 				zoom: .95,
 				hAxis: 'T',
 				vAxis: 'RI'
 			},
 			{ 
-				desc: "5: P on T anim X",
+				desc: "P on T anim X",
 				center: [1, 0],
 				zoom: .95,
 				hAxis: 'T',
 				vAxis: 'P'
 			},
 			{ 
-				desc: "6: I on R anim X",
+				desc: "I on R anim X",
 				center: [0, 0],
 				zoom: .95,
 				hAxis: 'R',
 				vAxis: 'I'
 			},
 			{ 
-				desc: "7: RI on T anim X free",
+				desc: "RI on T anim X free",
 				center: [1, 0],
 				zoom: .95,
 				hAxis: 'X',
@@ -290,7 +290,8 @@ class MainApp {
 		this.fpsScreen = 60;
 		this.numXSteps = 256; // for drawing
 		this.numTSteps = 16;
-		this.displayMode = MainApp.displayModesEnum.X_RI_T; // 8 different display modes
+		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
+		this.rotateAxis = vec2.create(); // for RIX free
 
 		this.maxQnum = 16;//32;
 		this.maxShowQnum = 8;//16; // scroll window size
@@ -310,8 +311,8 @@ class MainApp {
 
 		// quantum state
 		this.#initEnergies();
-		this.mouseX = 0;
-		this.mouseY = 0;
+		this.energiesMouseX = 0;
+		this.energiesMouseY = 0;
 	}
 
 	#userBuildUI() {
@@ -368,12 +369,12 @@ class MainApp {
 		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
 		this.eles.energyListDom = energyDOM;
 		energyDOM.addEventListener("click", (e) => {
-			this.mouseX = e.offsetX;
-			this.mouseY = e.offsetY;
+			this.energiesMouseX = e.offsetX;
+			this.energiesMouseY = e.offsetY;
 			const rowSize = 20; // tweak
 			const mul = 1 / rowSize;
 			const add = 0;
-			const v = Math.floor(range(1, this.mouseY * mul + add, this.maxQnum));
+			const v = Math.floor(range(1, this.energiesMouseY * mul + add, this.maxQnum));
 			this.#updateQnumScroll(v + this.scrollQOffset);
 			this.#updateEnergyList();
 			this.eles.qNumSliderDOM.setValue(this.curQnum);
@@ -459,6 +460,19 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.avgFps = this.avgFpsObj.add(this.fps);
+		// update mouse if in RIX free
+		if (this.displayMode == MainApp.displayModesEnum.RIX_T_FREE) {
+			if (this.input.mouse.mbut[Mouse.LEFT]) {
+				this.rotateAxis[0] += this.plotter2d.deltaUserMouse[0];
+				this.rotateAxis[1] -= this.plotter2d.deltaUserMouse[1]; // invert y
+				// wrap
+				if (this.rotateAxis[0] < 0) this.rotateAxis[0] += 1;
+				else if (this.rotateAxis[0] >= 1) this.rotateAxis[0] -= 1;
+				if (this.rotateAxis[1] < 0) this.rotateAxis[1] += 1;
+				else if (this.rotateAxis[1] >= 1) this.rotateAxis[1] -= 1;
+			}
+
+		}
 		// update phase given freq
 		if (this.freq !== 0) {
 			const diffTime = this.maxTime - this.minTime;
@@ -530,7 +544,31 @@ class MainApp {
 				}
 			    this.drawPrim.drawLinesParametric(pnts, lineWidth, 0, false, "blue");
 				break;
-			case MainApp.displayModesEnum.X_RI_T_FREE:
+			case MainApp.displayModesEnum.RIX_T_FREE:
+				const pitch = this.rotateAxis[1] * 2 * Math.PI;
+				const yaw = this.rotateAxis[0] * 2 * Math.PI;
+				const pitchS = Math.sin(pitch);
+				const pitchC = Math.cos(pitch);
+				const yawS = Math.sin(yaw);
+				const yawC = Math.cos(yaw);
+				// rix to xy matrix
+				const r2x = 0;
+				const r2y = pitchC;
+				const i2x = 0;
+				const i2y = pitchC;
+				const x2x = 0;
+				const x2y = -pitchS;
+				
+					// draw custom axis
+				let size = .05;
+				this.drawPrim.drawText([x2x, x2y]
+					, [size, size], "X", undefined, "white", true);
+				this.drawPrim.drawText([r2x, r2y]
+					, [size, size], "R", undefined, "white", true);
+				this.drawPrim.drawText([i2x, i2y]
+					, [size, size], "I", undefined, "white", true);
+				
+				// build and draw line
 				const pnts2 = [];
 				const bigger2 = 1.125;
 				for (let i = 0; i < this.realData.length; ++i) {
@@ -561,12 +599,20 @@ class MainApp {
 		if (!this.vp) {
 			return;
 		}
-		//this.avgFps = 47;
-		this.eles.quantInfo.innerText = 
-			/*"Q: coord = (" + this.mouseX + ", " + this.mouseY */
-			/*+ ")\n*/this.desc
-			+ "\nAvg fps = " + this.avgFps.toFixed(2);
+		let info = this.desc;
+		if (this.displayMode == MainApp.displayModesEnum.RIX_T_FREE) {
+			const pitch = this.rotateAxis[1] * 360;
+			const yaw = this.rotateAxis[0] * 360;
+			const pitchStr = pitch.toFixed(0);
+			const yawStr = yaw.toFixed(0);
+			info += "\n pitch = " + pitchStr + ", yaw = " + yawStr;
+		} else {
+			info += "\n---, ---";
 		}
+		info += "\nAvg fps = " + this.avgFps.toFixed(2);
+		this.eles.quantInfo.innerText = info;
+
+	}
 
 
 //// END USER SECTION ///////
