@@ -6,7 +6,7 @@ class MainApp {
 	// enum of display modes object
     static displayModesEnum = makeEnum([
 		"X_P_T", "X_RI_T", "R_I_T","RIX_T_FREE",
-		//"T_RI_X", "T_P_X", "R_I_X","RIT_X_FREE",
+		"T_P_X", "T_RI_X",//  "R_I_X","RIT_X_FREE",
 		"NUM"
 	]);
 	constructor() {
@@ -207,6 +207,7 @@ class MainApp {
 				hAxis: 'X',
 				vAxis: 'P',
 				showAxisNumbers: false,
+				animX: false,
 			},
 			{ 
 				desc: "RI on X anim T",
@@ -215,6 +216,7 @@ class MainApp {
 				hAxis: 'X',
 				vAxis: 'RI',
 				showAxisNumbers: false,
+				animX: false,
 			},
 			{ 
 				desc: "I on R anim T",
@@ -223,6 +225,7 @@ class MainApp {
 				hAxis: 'R',
 				vAxis: 'I',
 				showAxisNumbers: false,
+				animX: false,
 			},
 			{ 
 				desc: "RIX anim T free",
@@ -230,24 +233,29 @@ class MainApp {
 				zoom: .95,
 				hAxis: 'X',
 				vAxis: 'RI',
+				showGrid: false,
 				showAxis: false,
-				showGrid: true
+				animX: false,
 			},
-			/*
 			{ 
 				desc: "RI on T anim X",
 				center: [1, 0],
 				zoom: .95,
 				hAxis: 'T',
-				vAxis: 'RI'
+				vAxis: 'RI',
+				showAxisNumbers: false,
+				animX: true,
 			},
 			{ 
 				desc: "P on T anim X",
-				center: [1, 0],
+				center: [1, .75],
 				zoom: .95,
 				hAxis: 'T',
-				vAxis: 'P'
+				vAxis: 'P',
+				showAxisNumbers: false,
+				animX: true,
 			},
+			/*
 			{ 
 				desc: "I on R anim X",
 				center: [0, 0],
@@ -265,6 +273,7 @@ class MainApp {
 		];
 		const mode = this.displayMode;
 		const setting = modeSettings[mode];
+		this.animX = setting.animX; // otherwise, animT
 		this.startCenter = setting.center;
 		this.startZoom = setting.zoom;
 		this.plotter2d.setTrans(this.startCenter);
@@ -274,7 +283,9 @@ class MainApp {
 		this.axis = setting.showAxis;
 		this.axisNumbers = setting.showAxisNumbers;
 		this.grid = setting.showGrid;
-		this.desc = setting.desc;
+		this.desc = "[" + mode + "] " + setting.desc;
+		this.animX = setting.animX;
+		this.eles.animCombo.setValue(this.animX ? this.animPos : this.animTime);
 	}
 	// USER: add more members or classes to MainApp
 	#userInit() {
@@ -288,25 +299,25 @@ class MainApp {
 
 		// animate
 		this.fpsScreen = 60;
-		this.numXSteps = 256; // for drawing
+		this.numXSteps = 4; // for drawing
 		this.numTSteps = 16;
-		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
+		this.displayMode = MainApp.displayModesEnum.RIX_T_FREE; // 8 different display modes
 		this.rotateAxis = vec2.create(); // for RIX free
 
 		this.maxQnum = 16;//32;
 		this.maxShowQnum = 8;//16; // scroll window size
 		// for sine wave like functions, add a phase to the input of the function(s)
-		this.time = 0; // [0 to 1]
-		this.minTime = 0;
-		this.maxTime = 1;
-		this.extraTime = 64;
-		this.stepTime = 1 / (this.maxQnum * this.maxQnum * this.extraTime);
-		this.stepTimePrecision = 5;
+		this.animTime = 0; // [0 to 1]
+		this.animPos = 0; // [0 to 1]
+		this.animMin = 0;
+		this.animMax = 1;
+		this.animSteps = 1 / 10000;
+		this.stepPrecision = 5;
 
 		this.freq = 0;
-		this.minFreq = -.125;
-		this.maxFreq = .125;
-		this.stepFreq = .005;
+		this.minFreq = -1 / 8;
+		this.maxFreq = 1 / 8;
+		this.stepFreq = 1 / 200;
 		this.stepFreqPrecision = 5;
 
 		// quantum state
@@ -324,14 +335,20 @@ class MainApp {
 		// phase slider combo
 		makeEle(this.vp, "hr");
 		{
-			// start time UI
+			// start anim UI
 			const label = "anim";
-			const min = this.minTime;
-			const max = this.maxTime;
+			const min = this.animMin;
+			const max = this.animMax;
 			const start = 0;
-			const step = this.stepTime;
-			const precision = this.stepTimePrecision;
-			this.eles.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.time = v});
+			const step = this.animSteps;
+			const precision = this.stepPrecision;
+			this.eles.animCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
+				if (this.animX) {
+					this.animPos = v;
+				} else {
+					this.animTime = v;
+				}
+			});
 			// end phase UI
 		}
 	
@@ -471,18 +488,27 @@ class MainApp {
 				if (this.rotateAxis[1] < 0) this.rotateAxis[1] += 1;
 				else if (this.rotateAxis[1] >= 1) this.rotateAxis[1] -= 1;
 			}
-
 		}
 		// update phase given freq
 		if (this.freq !== 0) {
-			const diffTime = this.maxTime - this.minTime;
-			this.time += this.freq * diffTime / this.fpsScreen;
-			if (this.time < this.minTime) {
-				this.time += diffTime;
-			} else if (this.time >= this.maxTime) {
-				this.time -= diffTime;
+			const diffAnim = this.animMax - this.animMin;
+			if (this.animX) {
+				this.animPos += this.freq * diffAnim / this.fpsScreen;
+				if (this.animPos < this.animMin) {
+					this.animPos += diffAnim;
+				} else if (this.animPos >= this.animMax) {
+					this.animPos -= diffAnim;
+				}
+				this.eles.animCombo.setValue(this.animPos);
+			} else {
+				this.animTime += this.freq * diffAnim / this.fpsScreen;
+				if (this.animTime < this.animMin) {
+					this.animTime += diffAnim;
+				} else if (this.animTime >= this.animMax) {
+					this.animTime -= diffAnim;
+				}
+				this.eles.animCombo.setValue(this.animTime);
 			}
-			this.eles.phaseCombo.setValue(this.time);
 		}
 		this.#buildFunData();
 	}
@@ -507,7 +533,7 @@ class MainApp {
 				const phase = this.phases[q] / 360;
 				const xAng = x * q * Math.PI / this.numXSteps;
 				let xSinAng = Math.sin(xAng);
-				const t = this.time;
+				const t = this.animTime;
 				const tAng = (t * q * q + phase) * 2 * Math.PI;
 				const tAngReal = Math.cos(tAng);
 				const tangimag = Math.sin(tAng);
@@ -528,18 +554,17 @@ class MainApp {
 		const lineWidth = .005;
 		const step = 2 / this.numXSteps;
 		switch(this.displayMode) {
+			case MainApp.displayModesEnum.X_P_T:
+				this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
+				break;
 			case MainApp.displayModesEnum.X_RI_T:
 				this.drawPrim.drawLinesSimple(this.realData, lineWidth, undefined, 0, step, "red");
 				this.drawPrim.drawLinesSimple(this.imagData, lineWidth, undefined, 0, step, "green");
 				break;
-			case MainApp.displayModesEnum.X_P_T:
-				this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
-				break;
 			case MainApp.displayModesEnum.R_I_T:
 				const pnts = [];
-				const bigger = 1.125;
-				for (let i = 0; i < this.realData.length; ++i) {
-					const pnt = [bigger * this.realData[i], bigger * this.imagData[i]];
+				for (let i = 0; i <= this.numXSteps; ++i) {
+					const pnt = [this.realData[i], this.imagData[i]];
 					pnts.push(pnt);
 				}
 			    this.drawPrim.drawLinesParametric(pnts, lineWidth, 0, false, "blue");
@@ -552,46 +577,44 @@ class MainApp {
 				const yawS = Math.sin(yaw);
 				const yawC = Math.cos(yaw);
 				// rix to xy matrix
-				const r2x = 0;
-				const r2y = pitchC;
+				// I
 				const i2x = 0;
 				const i2y = pitchC;
-				const x2x = 0;
-				const x2y = -pitchS;
-				
-					// draw custom axis
+				const i2p = [i2x, i2y];
+				// R
+				const r2x = yawC;
+				const r2y = pitchS * yawS;
+				const r2p = [r2x, r2y];
+				// X
+				const x2x = yawS;
+				const x2y = -pitchS * yawC;
+				const x2p = [x2x, x2y];
+				// draw custom axis
+				const zerop = [0, 0];
+				const axisLineWidth = .0025;
+				const r2pInverse = [-r2p[0], -r2p[1]];
+				const i2pInverse = [-i2p[0], -i2p[1]];
+				this.drawPrim.drawLine(zerop, x2p, axisLineWidth);
+				this.drawPrim.drawLine(r2pInverse, r2p, axisLineWidth, "red");
+				this.drawPrim.drawLine(i2pInverse, i2p, axisLineWidth, "green");
 				let size = .05;
-				this.drawPrim.drawText([x2x, x2y]
-					, [size, size], "X", undefined, "white", true);
-				this.drawPrim.drawText([r2x, r2y]
-					, [size, size], "R", undefined, "white", true);
-				this.drawPrim.drawText([i2x, i2y]
-					, [size, size], "I", undefined, "white", true);
+				this.drawPrim.drawText(x2p, [size, size], "X", undefined, "white", true);
+				this.drawPrim.drawText(r2p, [size, size], "R", undefined, "white", true);
+				this.drawPrim.drawText(i2p, [size, size], "I", undefined, "white", true);
 				
 				// build and draw line
 				const pnts2 = [];
-				const bigger2 = 1.125;
-				for (let i = 0; i < this.realData.length; ++i) {
-					const pnt2 = [bigger2 * this.realData[i], bigger2 * this.imagData[i]];
+				for (let i = 0; i <= this.numXSteps; ++i) {
+					const qx = i / this.numXSteps;
+					const qr = this.realData[i];
+					const qi = this.imagData[i];
+					const px = x2x * qx + r2x * qr + i2x * qi;
+					const py = x2y * qx + r2y * qr + i2y * qi;
+					let pnt2 = [px, py];
 					pnts2.push(pnt2);
 				}
 			    this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, "blue");
 				break;
-
-				/*
-				const slope = .25;
-				const skewRealData = [];
-				const skewImagData = [];
-				for (let i = 0; i < this.realData.length; ++i) {
-					skewRealData.push(this.realData[i] + i * 2 * slope / this.realData.length);
-					skewImagData.push(this.imagData[i] + i * 2 * slope / this.realData.length);
-				}
-				this.drawPrim.drawLinesSimple(skewRealData, lineWidth, undefined, 0, step, "red");
-				this.drawPrim.drawLinesSimple(skewImagData, lineWidth, undefined, 0, step, "green");
-				//this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
-				const maxXslope = 20;
-				this.drawPrim.drawLine([0,0], [maxXslope,slope * maxXslope], lineWidth, "black");
-				break; */
 		}
 	}
 
