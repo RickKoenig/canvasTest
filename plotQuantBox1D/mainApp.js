@@ -300,7 +300,7 @@ class MainApp {
 		this.fpsScreen = 60;
 		this.numXSteps = 1024; // for drawing
 		this.numTSteps = 1024;
-		this.displayMode = MainApp.displayModesEnum.RIX_T_FREE; // 8 different display modes
+		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
 		this.rotateAxis = vec2.create(); // for RIX free
 
 		this.maxQnum = 64;
@@ -310,14 +310,14 @@ class MainApp {
 		this.animPos = 0; // [0 to 1]
 		this.animMin = 0;
 		this.animMax = 1;
-		this.animSteps = 1 / 1000000;
-		this.stepPrecision = 5;
+		this.animStep = 1 / 1000000;
+		this.animPrecision = 5;
 
 		this.freq = 0;
-		this.minFreq = -1 / 8;
-		this.maxFreq = 1 / 8;
-		this.stepFreq = 1 / 20000;
-		this.stepFreqPrecision = 5;
+		this.freqMin = -1 / 8;
+		this.freqMax = 1 / 8;
+		this.freqStep = 1 / 20000;
+		this.freqPrecision = 5;
 
 		// quantum state
 		this.#initEnergies();
@@ -339,8 +339,8 @@ class MainApp {
 			const min = this.animMin;
 			const max = this.animMax;
 			const start = 0;
-			const step = this.animSteps;
-			const precision = this.stepPrecision;
+			const step = this.animStep;
+			const precision = this.animPrecision;
 			this.eles.animCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
 				if (this.animX) {
 					this.animPos = v;
@@ -354,11 +354,11 @@ class MainApp {
 		// frequency slider combo
 		{
 			const label = "Anim rate";
-			const min = this.minFreq;
-			const max = this.maxFreq;
+			const min = this.freqMin;
+			const max = this.freqMax;
 			const start = 0;
-			const step = this.stepFreq;
-			const precision = this.stepFreqPrecision;
+			const step = this.freqStep;
+			const precision = this.freqPrecision;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 		}
 		
@@ -488,7 +488,7 @@ class MainApp {
 				else if (this.rotateAxis[1] >= 1) this.rotateAxis[1] -= 1;
 			}
 		}
-		// update phase given freq
+		// update anim given freq
 		if (this.freq !== 0) {
 			const diffAnim = this.animMax - this.animMin;
 			if (this.animX) {
@@ -512,6 +512,31 @@ class MainApp {
 		this.#buildFunData();
 	}
 
+	#calcQ(x, t, norm) {
+		let real = 0;
+		let imag = 0;
+		for (let q = 1; q <= this.maxQnum; ++q) {
+			const amp = this.amps[q];
+			if (!amp) continue;
+			const phase = this.phases[q] / 360;
+			const xAng = x * q * Math.PI;
+			let xSinAng = Math.sin(xAng);
+			const tAng = (t * q * q + phase) * 2 * Math.PI;
+			const tAngReal = Math.cos(tAng);
+			const tangimag = Math.sin(tAng);
+			xSinAng *= amp;
+			real += xSinAng * tAngReal;
+			imag += xSinAng * tangimag;
+		}
+		real *= norm;
+		imag *= norm;
+		const prob = (real * real + imag * imag) * 2;
+		this.realData.push(real);
+		this.imagData.push(imag);
+		this.probData.push(prob);
+		return [real, imag];
+	}
+
 	// draw at (0, -1) to (2, 1)
 	#buildFunData() {
 		let sumk = 0;
@@ -524,52 +549,16 @@ class MainApp {
 		this.imagData = [];
 		this.probData = [];
 		if (this.animX) {
-			for (let t = 0; t <= this.numTSteps; ++t) {
-				let real = 0;
-				let imag = 0;
-				for (let q = 1; q <= this.maxQnum; ++q) {
-					const amp = this.amps[q];
-					if (!amp) continue;
-					const phase = this.phases[q] / 360;
-					const x = this.animPos;
-					const xAng = x * q * Math.PI;
-					let xSinAng = Math.sin(xAng);
-					const tAng = (t * q * q + phase) * 2 * Math.PI / this.numTSteps;
-					const tAngReal = Math.cos(tAng);
-					const tangimag = Math.sin(tAng);
-					xSinAng *= amp;
-					real += xSinAng * tAngReal;
-					imag += xSinAng * tangimag;
-				}
-				real *= norm;
-				imag *= norm;
-				this.realData.push(real);
-				this.imagData.push(imag);
-				this.probData.push(2 * (real * real + imag * imag));
+			for (let ti = 0; ti <= this.numTSteps; ++ti) {
+				const x = this.animPos;
+				const t = ti / this.numTSteps;
+				this.#calcQ(x, t, norm);
 			}
 		} else {
-			for (let x = 0; x <= this.numXSteps; ++x) {
-				let real = 0;
-				let imag = 0;
-				for (let q = 1; q <= this.maxQnum; ++q) {
-					const amp = this.amps[q];
-					if (!amp) continue;
-					const phase = this.phases[q] / 360;
-					const xAng = x * q * Math.PI / this.numXSteps;
-					let xSinAng = Math.sin(xAng);
-					const t = this.animTime;
-					const tAng = (t * q * q + phase) * 2 * Math.PI;
-					const tAngReal = Math.cos(tAng);
-					const tangimag = Math.sin(tAng);
-					xSinAng *= amp;
-					real += xSinAng * tAngReal;
-					imag += xSinAng * tangimag;
-				}
-				real *= norm;
-				imag *= norm;
-				this.realData.push(real);
-				this.imagData.push(imag);
-				this.probData.push(2 * (real * real + imag * imag));
+			for (let xi = 0; xi <= this.numXSteps; ++xi) {
+				const x = xi / this.numXSteps;
+				const t = this.animTime;
+				this.#calcQ(x, t, norm);
 			}
 		}
 	}
@@ -645,6 +634,13 @@ class MainApp {
 			this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, "black");
 			break;
 		}
+		const testData = [.3, .2, .7, .5];
+		const testColors = ["red", "green", "blue","yellow"];
+		//const testColors = "brown";
+		this.drawPrim.drawLinesSimple(testData, .05, 0
+			, 0, .25
+			, testColors, "violet", false);
+
 	}
 
 	#userUpdateInfo() {

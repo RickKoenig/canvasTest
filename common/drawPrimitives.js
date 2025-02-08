@@ -11,13 +11,13 @@ class DrawPrimitives {
     drawCircle(pnt, rad, color = "magenta", ndcScale = false) {
         this.ctx.beginPath();
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
-        this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, Math.PI * 2);
+        this.ctx.arc(pnt[0], pnt[1], rad * ndcZoom, 0, 2 * Math.PI);
         this.ctx.fillStyle = color;
         this.ctx.fill();
     }
 
     drawCircleO(pnt, rad, lineWidth = .01, color = "magenta", ndcScale = false) {
-        this.drawArcO(pnt, rad, lineWidth, 0, Math.PI * 2, color, ndcScale);
+        this.drawArcO(pnt, rad, lineWidth, 0, 2 * Math.PI, color, ndcScale);
     }
 
     drawArcO(pnt, rad, lineWidth = .01, arcStart, arcEnd, color = "magenta", ndcScale = false) {
@@ -87,22 +87,37 @@ class DrawPrimitives {
     // an array of y values, x steps to the right
     // connected line and optional circles on vertices
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = 0
-        , startX = 0, stepX = 1
-        , lineColor = "black", circleColor = "green", ndcScale = false) {
+            , startX = 0, stepX = 1
+            , lineColor = "black", circleColor = "green", ndcScale = false) {
+        this.ctx.lineJoin = "round";
+        const lineColorIsArray = lineColor instanceof Array;
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
+        this.ctx.lineWidth = lineWidth * ndcZoom;
         if (lineWidth > 0 && pntsY.length >= 2) {
-            this.ctx.beginPath();
-            this.ctx.lineJoin = "round";
-            this.ctx.moveTo(startX, pntsY[0]);
-            let idx = 1;
-            let X = startX;
-            while(idx < pntsY.length) {
-                X += stepX;
-                this.ctx.lineTo(X, pntsY[idx++]);
+            if (lineColorIsArray) {
+                // colors per line segment
+                this.ctx.lineCap = "round";
+                let X = startX;
+                for (let idx = 0; idx < pntsY.length - 1; ++idx) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(X, pntsY[idx]);
+                    X += stepX;
+                    this.ctx.lineTo(X, pntsY[idx + 1]);
+                    this.ctx.strokeStyle = lineColor[idx];
+                    this.ctx.stroke();
+                }
+            } else {
+                // same color for all line segments
+                this.ctx.strokeStyle = lineColor;
+                this.ctx.beginPath();
+                this.ctx.moveTo(startX, pntsY[0]);
+                let X = startX;
+                for(let idx = 1; idx < pntsY.length; ++idx) {
+                    X += stepX;
+                    this.ctx.lineTo(X, pntsY[idx]);
+                }
+                this.ctx.stroke();
             }
-            this.ctx.lineWidth = lineWidth * ndcZoom;
-            this.ctx.strokeStyle = lineColor;
-            this.ctx.stroke();
         }
 
         // optional draw circles on vertices
@@ -111,7 +126,7 @@ class DrawPrimitives {
             this.ctx.fillStyle = circleColor;
             for (let idx = 0; idx < pntsY.length; ++idx) {
                 this.ctx.beginPath();
-                this.ctx.arc(X, pntsY[idx], circleSize * ndcZoom * .5, 0, Math.PI * 2);
+                this.ctx.arc(X, pntsY[idx], circleSize * ndcZoom * .5, 0, 2 * Math.PI);
                 this.ctx.fill();
                 X += stepX;
             }
@@ -150,7 +165,7 @@ class DrawPrimitives {
             for (let idx = 0; idx < pnts.length; ++idx) {
                 const pnt = pnts[idx];
                 this.ctx.beginPath();
-                this.ctx.arc(pnt[0] + offset[0], pnt[1] + offset[1], circleSize * ndcZoom, 0, Math.PI * 2);
+                this.ctx.arc(pnt[0] + offset[0], pnt[1] + offset[1], circleSize * ndcZoom, 0, 2 * Math.PI);
                 this.ctx.fill();
             }
         }
@@ -185,7 +200,6 @@ class DrawPrimitives {
             const scl = 1 - outlineRatio;
             this.ctx.scale(scl, scl);
             this.ctx.beginPath();
-            this.ctx.lineJoin = "round";
             const pnt = pnts[0];
             this.ctx.moveTo(pnt[0], pnt[1]);
             let idx = 1;
