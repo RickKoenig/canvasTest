@@ -89,14 +89,14 @@ class DrawPrimitives {
     drawLinesSimple(pntsY, lineWidth = .01, circleSize = 0
             , startX = 0, stepX = 1
             , lineColor = "black", circleColor = "green", ndcScale = false) {
-        this.ctx.lineJoin = "round";
-        const lineColorIsArray = lineColor instanceof Array;
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         if (lineWidth > 0 && pntsY.length >= 2) {
+            this.ctx.lineJoin = "round";
+            this.ctx.lineCap = "round";
+            const lineColorIsArray = lineColor instanceof Array;
             if (lineColorIsArray) {
                 // colors per line segment
-                this.ctx.lineCap = "round";
                 let X = startX;
                 for (let idx = 0; idx < pntsY.length - 1; ++idx) {
                     this.ctx.beginPath();
@@ -136,27 +136,48 @@ class DrawPrimitives {
     // an array of x,y values, if close is true, connect first point to last point
     drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
         , lineColor = "black", circleColor = "green", offset = [0, 0], ndcScale = false) {
-        if (pnts.length < 2) {
-            //return;
-        }
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
-        if (lineWidth > 0) {
-            this.ctx.beginPath();
+        this.ctx.lineWidth = lineWidth * ndcZoom;
+        if (lineWidth > 0 && pnts.length >= 2) {
             this.ctx.lineJoin = "round";
-            const pnt = pnts[0];
-            this.ctx.moveTo(pnt[0] + offset[0], pnt[1] + offset[1]);
-            let idx = 1;
-            while(idx < pnts.length) {
-                const pnt = pnts[idx];
-                this.ctx.lineTo(pnt[0] + offset[0], pnt[1] + offset[1]);
-                ++idx;
+            this.ctx.lineCap = "round";
+            const lineColorIsArray = lineColor instanceof Array;
+            if (lineColorIsArray) {
+                // colors per line segment
+                for (let idx = 0; idx < pnts.length - 1; ++idx) {
+                    let pnt = pnts[idx];
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(pnt[0], pnt[1]);
+                    pnt = pnts[idx + 1];
+                    this.ctx.lineTo(pnt[0], pnt[1]);
+                    this.ctx.strokeStyle = lineColor[idx];
+                    this.ctx.stroke();
+                }
+                if (close) {
+                    const idx = pnts.length - 1;
+                    let pnt = pnts[idx];
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(pnt[0], pnt[1]);
+                    pnt = pnts[0];
+                    this.ctx.lineTo(pnt[0], pnt[1]);
+                    this.ctx.strokeStyle = lineColor[idx];
+                    this.ctx.stroke();
+                }
+            } else {
+                // same color for all line segments
+                this.ctx.strokeStyle = lineColor;
+                this.ctx.beginPath();
+                const pnt = pnts[0];
+                this.ctx.moveTo(pnt[0] + offset[0], pnt[1] + offset[1]);
+                for(let idx = 1; idx < pnts.length; ++idx) {
+                    const pnt = pnts[idx];
+                    this.ctx.lineTo(pnt[0] + offset[0], pnt[1] + offset[1]);
+                }
+                if (close) {
+                    this.ctx.closePath();
+                }
+                this.ctx.stroke();
             }
-            if (close) {
-                this.ctx.closePath();
-            }
-            this.ctx.lineWidth = lineWidth * ndcZoom;
-            this.ctx.strokeStyle = lineColor;
-            this.ctx.stroke();
         }
 
         // optional draw circles on vertices

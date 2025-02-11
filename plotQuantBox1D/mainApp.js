@@ -303,8 +303,8 @@ class MainApp {
 		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
 		this.rotateAxis = vec2.create(); // for RIX free
 
-		this.maxQnum = 64;
-		this.maxShowQnum = 8;//16; // scroll window size
+		this.maxQnum = 128;
+		this.maxShowQnum = 16; // scroll window size
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.animTime = 0; // [0 to 1]
 		this.animPos = 0; // [0 to 1]
@@ -512,7 +512,7 @@ class MainApp {
 		this.#buildFunData();
 	}
 
-	#calcQ(x, t, norm) {
+	#calcAddQ(x, t, norm) {
 		let real = 0;
 		let imag = 0;
 		for (let q = 1; q <= this.maxQnum; ++q) {
@@ -534,7 +534,8 @@ class MainApp {
 		this.realData.push(real);
 		this.imagData.push(imag);
 		this.probData.push(prob);
-		return [real, imag];
+		const col = this.#getCssColorFromComplex(real, imag);
+		this.colorData.push(col);
 	}
 
 	// draw at (0, -1) to (2, 1)
@@ -548,21 +549,30 @@ class MainApp {
 		this.realData = [];
 		this.imagData = [];
 		this.probData = [];
+		this.colorData = [];
 		if (this.animX) {
 			for (let ti = 0; ti <= this.numTSteps; ++ti) {
 				const x = this.animPos;
 				const t = ti / this.numTSteps;
-				this.#calcQ(x, t, norm);
+				this.#calcAddQ(x, t, norm);
 			}
 		} else {
 			for (let xi = 0; xi <= this.numXSteps; ++xi) {
 				const x = xi / this.numXSteps;
 				const t = this.animTime;
-				this.#calcQ(x, t, norm);
+				this.#calcAddQ(x, t, norm);
 			}
 		}
 	}
 
+	#getCssColorFromComplex = function(real, imag) {
+		const mag = Math.sqrt(real * real + imag * imag);
+		let ang = Math.atan2(imag, real);
+		ang *= 180 / Math.PI;
+		const brt = 55 * mag;
+		return "hsl(" + ang + ",100%," + brt + "%)";
+	}
+	
 	#userDraw() { 									//axis, axisNumbers, grid
 		this.graphPaper.draw(this.hAxis, this.vAxis, this.axis, this.axisNumbers, this.grid);
 		const lineWidth = .005;
@@ -631,16 +641,36 @@ class MainApp {
 				let pnt2 = [px, py];
 				pnts2.push(pnt2);
 			}
-			this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, "black");
+			this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, this.colorData);
 			break;
 		}
-		const testData = [.3, .2, .7, .5];
-		const testColors = ["red", "green", "blue","yellow"];
-		//const testColors = "brown";
-		this.drawPrim.drawLinesSimple(testData, .05, 0
-			, 0, .25
-			, testColors, "violet", false);
-
+		const doTestColors = false;
+		if (doTestColors) {
+			const testData = [.3, .2, .7, .5, .25];
+			const testDataP = [
+				[2, 1],
+				[1, 2],
+				[0, 1],
+				[1, 0],
+				[2, .6]
+			];
+	
+			// last color not used if not 'close'
+			//const testColors = ["red", "green", "blue", "yellow", "brown"]; 
+			//const testColors = "green";
+			const testColors = [
+				this.#getCssColorFromComplex(1, 0),
+				this.#getCssColorFromComplex(0, 1),
+				this.#getCssColorFromComplex(-1, 0),
+				this.#getCssColorFromComplex(0, -1),
+				this.#getCssColorFromComplex(1, 0)
+			];
+	
+			/*this.drawPrim.drawLinesSimple(testData, .05, .07
+				, 0, .25
+				, testColors, "red", false);*/
+			this.drawPrim.drawLinesParametric(testDataP, .05, .07, false, testColors, "red");
+		}
 	}
 
 	#userUpdateInfo() {
@@ -659,7 +689,6 @@ class MainApp {
 		}
 		info += "\nAvg fps = " + this.avgFps.toFixed(2);
 		this.eles.quantInfo.innerText = info;
-
 	}
 
 
