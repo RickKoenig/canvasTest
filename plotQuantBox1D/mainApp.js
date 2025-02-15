@@ -165,7 +165,7 @@ class MainApp {
 					this.energiesText += "    ";
 				}
 				this.energiesText += " " + q.toString().padStart(3) 
-					+ "   " + String(energy).padStart(4)
+					+ " " + String(energy).padStart(6)
 					+ " " + this.amps[q].toFixed(1).padStart(5) 
 					+ "  " + this.phases[q].toFixed(1).padStart(6);
 				if (hilight) {
@@ -303,7 +303,7 @@ class MainApp {
 		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
 		this.rotateAxis = vec2.create(); // for RIX free
 
-		this.maxQnum = 128;
+		this.maxQnum = 512;
 		this.maxShowQnum = 16; // scroll window size
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.animTime = 0; // [0 to 1]
