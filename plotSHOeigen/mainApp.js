@@ -1,0 +1,197 @@
+'use strict';
+
+// handle the html elements, do the UI on verticalPanel, and init and proc the other classes
+// TODO: for now assume 60hz refresh rate
+class MainApp {
+	static numInstances = 0; // test static members
+	static getNumInstances() { // test static methods
+		return MainApp.numInstances;
+	}
+
+	constructor() {
+		console.log("\n############# creating instance of MainApp");
+		++MainApp.numInstances;
+
+		// vertical panel UI
+		this.vp = document.getElementById("verticalPanel");
+		//this.vp = null; // OR, no vertical panel UI
+		this.eles = {}; // keep track of eles in vertical panel
+
+		// add all elements from vp to ele if needed
+		// uncomment if you need elements from vp html
+		//populateElementIds(this.vp, this.eles);
+
+		// setup 2D drawing environment
+		this.plotter2dDiv = document.getElementById("plotter2dDiv");
+		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
+		this.ctx = this.plotter2dCanvas.getContext("2d");
+
+		// USER before UI built
+		this.#userInit();
+
+		// fire up all instances of the classes that are needed
+		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
+		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
+		this.drawPrim = new DrawPrimitives(this.plotter2d);
+		this.graphPaper = new GraphPaper(this.drawPrim);
+
+		// USER build UI
+		this.#userBuildUI();
+
+		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
+		this.#animate();
+	}
+
+	// USER: add more members or classes to MainApp
+
+	#eigen_n(x) {
+		return Math.pow(x, this.curQnum);
+	}
+
+	#eigen_n2(x) {
+		const a = this.#eigen_n(x, this.curQnum);
+		return a * a;
+
+	}
+
+	#funToArray(f, minX, maxX, numSteps) {
+		const arr = [];
+		for (let i = 0; i <= numSteps; ++i) {
+			const x = minX + i * (maxX - minX) / numSteps;
+			const fx = f.bind(this, x);
+			arr.push(fx(x));
+		}
+		return arr;
+	}
+
+	#resetCounter() {
+		this.count = 0;
+	}
+
+	#userInit() {
+		// user init section
+		this.count = 0; // frame counter
+		// measure frame rate
+		this.fps;
+		this.avgFps = 0;
+		this.oldTime; // for delta time
+		this.avgFpsObj = new Runavg(500);
+
+		// before firing up Plotter2d
+		this.startCenter = [0, 0];
+		this.startZoom = .95;
+
+		this.minQNum = 1;
+		this.maxQNum = 10;
+		this.startQNum = 1;
+		//this.curQnum;
+		this.numSteps = 40; // 'numSteps + 1' points
+		this.minX = -1;
+		this.maxX = 1;
+	}
+
+	#userBuildUI() {
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
+		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset Counter 10000", 
+			() => {
+				this.count = 10000;
+			}
+		);
+		makeEle(this.vp, "hr");
+		{
+			const label = "QNum";
+			const min = this.minQNum;
+			const max = this.maxQNum;
+			const start = this.startQNum;
+			const step = 1;
+			const precision = 0;
+			const callback = null;
+			new makeEleCombo(this.vp, label, min, max, start, step, precision,
+				(v) => {
+					this.curQnum = v;
+					this.count = v * 10000;
+					this.dirty = true;
+				}
+			);
+		}
+	}		
+	
+	#userProc() {
+		// proc
+		//this.dirty = true;
+		// update FPS
+		if (this.oldTime === undefined) {
+			this.oldTime = performance.now();
+			this.fps = 0;
+		} else {
+			const newTime = performance.now();
+			const delTime =  newTime - this.oldTime;
+			this.oldTime = newTime;
+			this.fps = 1000 / delTime;
+		}
+		this.avgFps = this.avgFpsObj.add(this.fps);
+		++this.count;
+	}
+
+	#userDraw() {
+		const funArr = this.#funToArray(this.#eigen_n, this.minX, this.maxX, this.numSteps);
+		const funArr2 = this.#funToArray(this.#eigen_n2, this.minX, this.maxX, this.numSteps);
+		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "red");
+		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "blue");
+	}
+
+	// USER: update some of the UI in vertical panel if there is some in the HTML
+	#userUpdateInfo() {
+		let countStr = "Frame Count = " + this.count;
+		countStr += "\nDirty Count = " + this.dirtyCount;
+		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		this.eles.textInfoLog.innerText = countStr;
+	}
+
+	// proc
+	#animate() {
+		// proc
+		// update input system
+		this.input.proc();
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT) || this.dirty;
+		// USER: do USER stuff
+		this.#userProc(); // proc
+
+		//this.dirty = true; // test, always draw every frame
+		// draw when dirty
+		if (this.dirty) {
+			this.plotter2d.clearCanvas();
+			// interact with mouse, calc all spaces
+			// goto user/cam space
+			this.plotter2d.setSpace(Plotter2d.spaces.USER);
+			// now in user/cam space
+			this.graphPaper.draw("X", "Y");
+			// USER: do USER stuff
+			this.#userDraw(); //draw
+		}
+		// update UI, text
+		this.#userUpdateInfo();
+
+		if (this.dirty) {
+			this.dirtyCount = 100;
+		} else {
+			--this.dirtyCount;
+			if (this.dirtyCount < 0) {
+				this.dirtyCount = 0;
+			}
+		}
+		this.dirty = false; // turn off drawing unless something changes
+
+		// keep animation going
+		requestAnimationFrame(() => this.#animate());
+	}
+
+}
+
+const mainApp = new MainApp();
+console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods
