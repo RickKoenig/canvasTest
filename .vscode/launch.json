@@ -133,6 +133,13 @@
             "webRoot": "${workspaceFolder}"
         },
         {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, show SHO eigen",
+            "url": "http://localhost:88/plotter2d/plotSHOeigen/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "node-terminal",
             "name": "JavaScript Debug Terminal",
             "request": "launch",
