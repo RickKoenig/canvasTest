@@ -137,17 +137,54 @@ class MainApp {
 	// quantum SHO, n = 1
 	#fun7(x) {
 		const w = Math.sqrt(2) / 2;
-		return 17 * Math.exp(-w * x * x / 2);
+		return 17 * 2 * x * Math.exp(-w * x * x / 2);
 	}
 	#diffEq7(x) {
-		//const E = 2 * a;
-		const E = Math.sqrt(2) / 2;
+		const w = Math.sqrt(2) / 2;
+		const n = 1;
+		const E = 2 * w * (n + 1 / 2);
 		return this.#diff2(this.#fun7, x) + (E - .5 * x * x) * this.#fun7(x);
+	}
+
+	// quantum SHO, n = 2
+	#fun8(x) {
+		const w = Math.sqrt(2) / 2;
+		return 3 * (4 * x * x - 2) * Math.exp(-w * x * x / 2);
+	}
+	#diffEq8(x) {
+		const w = Math.sqrt(2) / 2;
+		const n = 2;
+		const E = 2 * w * (n + 1 / 2);
+		return this.#diff2(this.#fun8, x) + (E - .5 * x * x) * this.#fun8(x);
+	}
+
+	// quantum SHO, n = 3
+	#fun9(x) {
+		const w = Math.sqrt(2) / 2;
+		return 17 * 2 * x * Math.exp(-w * x * x / 2);
+	}
+	#diffEq9(x) {
+		const w = Math.sqrt(2) / 2;
+		const n = 3;
+		const E = 2 * w * (n + 1 / 2);
+		return this.#diff2(this.#fun9, x) + (E - .5 * x * x) * this.#fun9(x);
+	}
+
+	// quantum SHO, n = 4
+	#fun10(x) {
+		const w = Math.sqrt(2) / 2;
+		return 17 * 2 * x * Math.exp(-w * x * x / 2);
+	}
+	#diffEq10(x) {
+		const w = Math.sqrt(2) / 2;
+		const n = 4;
+		const E = 2 * w * (n + 1 / 2);
+		return this.#diff2(this.#fun10, x) + (E - .5 * x * x) * this.#fun10(x);
 	}
 
 	// check validity of differential equations
 	#testDiffEq() {
-		this.epsilon = .01;
+		this.epsilon = .001;
 		console.log("test diffeq");
 		const equations = [
 			/*
@@ -179,8 +216,20 @@ class MainApp {
 				diff: this.#diffEq7,
 				fun: this.#fun7,
 				name: "quantum sho, n = 1"
+			}, {
+				diff: this.#diffEq8,
+				fun: this.#fun8,
+				name: "quantum sho, n = 2"
+			}, {
+				diff: this.#diffEq9,
+				fun: this.#fun9,
+				name: "quantum sho, n = 3"
+			}, {
+				diff: this.#diffEq10,
+				fun: this.#fun10,
+				name: "quantum sho, n = 4"
 			}
-		];
+	];
 		for (let j = 0; j < equations.length; ++j) {
 			const equation = equations[j];
 			console.log("name = " + equation.name);
