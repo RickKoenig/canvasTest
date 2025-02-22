@@ -71,16 +71,6 @@ class MainApp {
 		this.count = 0;
 	}
 
-	// 1st derivative
-	#diff(f, x) {
-		return((f(x + this.epsilon / 2) - f(x - this.epsilon / 2)) / this.epsilon);
-	}
-
-	// 2nd derivative
-	#diff2(f, x) {
-		return((f(x + this.epsilon) - 2 * f(x) + f(x - this.epsilon)) / (this.epsilon * this.epsilon));
-	}
-
 	// dy/dx = y,    y = c * e^x
 	#fun1(x) {
 		return 9 * Math.exp(x);
@@ -99,7 +89,7 @@ class MainApp {
 
 	// d2y/dx2 = -y,    y = c1 * sin(x) + c2 * cos(x)
 	#fun3(x) {
-		return 3 * Math.sin(x) + 4 * Math.cos(x);
+		return Math.cos(x);
 	}
 	#diffEq3(x) {
 		return this.#diff2(this.#fun3, x) + this.#fun3(x);
@@ -107,87 +97,110 @@ class MainApp {
 
 	// d2y/dx2 = y,    y = c1 * e^x + c2 * e^-x
 	#fun4(x) {
-		return 3 * Math.sinh(x) + 4 * Math.cosh(x);
+		return Math.cosh(x);
 		//return 5 * Math.exp(x) + 6 * Math.exp(-x);
 	}
 	#diffEq4(x) {
 		return this.#diff2(this.#fun4, x) - this.#fun4(x);
 	}
 
-	// d2y/dx2 = 5,    y = 5 / 2 * x^2 + c1 * x + c2
+	// d2y/dx2 = 6,    y = 3 * x^2 + c1 * x + c2
 	#fun5(x) {
-		return 2.5 * x * x + 44 * x + 69;
+		return 3 * x * x + 4 * x + 5;
 	}
 	#diffEq5(x) {
-		return this.#diff2(this.#fun5, x) - 5;
+		return this.#diff2(this.#fun5, x) - 6;
 	}
 	
 	// quantum SHO, n = 0
 	#fun6(x) {
 		const w = Math.sqrt(2) / 2;
-		return 37 * Math.exp(-w * x * x / 2);
+		return 37 * Math.exp(-x * x / 2);
 	}
 	#diffEq6(x) {
-		const w = Math.sqrt(2) / 2;
 		const n = 0;
-		const E = 2 * w * (n + 1 / 2);
-		return this.#diff2(this.#fun6, x) + (E - .5 * x * x) * this.#fun6(x);
+		const E = n + 1 / 2;
+		return .5 * this.#diff2(this.#fun6, x) + (E - .5 * x * x) * this.#fun6(x);
 	}
 
 	// quantum SHO, n = 1
 	#fun7(x) {
-		const w = Math.sqrt(2) / 2;
-		return 17 * 2 * x * Math.exp(-w * x * x / 2);
+		return 17 * 2 * x * Math.exp(-x * x / 2);
 	}
 	#diffEq7(x) {
-		const w = Math.sqrt(2) / 2;
 		const n = 1;
-		const E = 2 * w * (n + 1 / 2);
-		return this.#diff2(this.#fun7, x) + (E - .5 * x * x) * this.#fun7(x);
+		const E = n + 1 / 2;
+		return .5 * this.#diff2(this.#fun7, x) + (E - .5 * x * x) * this.#fun7(x);
 	}
 
 	// quantum SHO, n = 2
 	#fun8(x) {
-		const w = Math.sqrt(2) / 2;
-		return 3 * (4 * x * x - 2) * Math.exp(-w * x * x / 2);
+		return 3 * (4 * x * x - 2) * Math.exp(-x * x / 2);
 	}
 	#diffEq8(x) {
-		const w = Math.sqrt(2) / 2;
 		const n = 2;
-		const E = 2 * w * (n + 1 / 2);
-		return this.#diff2(this.#fun8, x) + (E - .5 * x * x) * this.#fun8(x);
+		const E = n + 1 / 2;
+		return .5 * this.#diff2(this.#fun8, x) + (E - .5 * x * x) * this.#fun8(x);
 	}
 
 	// quantum SHO, n = 3
 	#fun9(x) {
-		const w = Math.sqrt(2) / 2;
-		return 17 * 2 * x * Math.exp(-w * x * x / 2);
+		return 77 * (8 * x * x * x - 12 * x) * Math.exp(-x * x / 2);
 	}
 	#diffEq9(x) {
-		const w = Math.sqrt(2) / 2;
 		const n = 3;
-		const E = 2 * w * (n + 1 / 2);
-		return this.#diff2(this.#fun9, x) + (E - .5 * x * x) * this.#fun9(x);
+		const E = n + 1 / 2;
+		return .5 * this.#diff2(this.#fun9, x) + (E - .5 * x * x) * this.#fun9(x);
 	}
 
 	// quantum SHO, n = 4
 	#fun10(x) {
-		const w = Math.sqrt(2) / 2;
-		return 17 * 2 * x * Math.exp(-w * x * x / 2);
+		return 17 * (16 * x * x * x * x - 48 * x * x + 12) * Math.exp(-x * x / 2);
 	}
 	#diffEq10(x) {
-		const w = Math.sqrt(2) / 2;
 		const n = 4;
-		const E = 2 * w * (n + 1 / 2);
-		return this.#diff2(this.#fun10, x) + (E - .5 * x * x) * this.#fun10(x);
+		const E = n + 1 / 2;
+		return .5 * this.#diff2(this.#fun10, x) + (E - .5 * x * x) * this.#fun10(x);
+	}
+
+	// 1st derivative
+	#diff(f, x) {
+		return((f(x + this.epsilon / 2) - f(x - this.epsilon / 2)) / this.epsilon);
+	}
+
+	// 2nd derivative
+	#diff2(f, x) {
+		return((f(x + this.epsilon) - 2 * f(x) + f(x - this.epsilon)) / (this.epsilon * this.epsilon));
+	}
+
+	// integration
+	#calcArea(fun, square, start, end, numSteps) {
+		// Trapezoidal Rule
+		let sum = (fun(start) + fun(end)) / 2;
+		if (square) {
+			sum *= sum;
+		}
+		const span = end - start;
+		for (let i = 1; i <= numSteps - 1; ++i) {
+			const x = start + span * i / numSteps;
+			let val = fun(x);
+			if (square) {
+				val *= val;
+			}
+			sum += val;
+		}
+		return sum * span / numSteps;
 	}
 
 	// check validity of differential equations
 	#testDiffEq() {
-		this.epsilon = .001;
+		this.epsilon = .0001;
+		const errorThresh = .001;
+		const xStart = -1;
+		const xEnd = 1;
+		const numSteps = 1000;
 		console.log("test diffeq");
 		const equations = [
-			/*
 			{
 				diff: this.#diffEq1,
 				fun: this.#fun1,
@@ -199,16 +212,16 @@ class MainApp {
 			}, {
 				diff: this.#diffEq3,
 				fun: this.#fun3,
-				name: "sin"
+				name: "cos"
 			}, {
 				diff: this.#diffEq4,
 				fun: this.#fun4,
-				name: "sinh"
+				name: "cosh"
 			}, {
 				diff: this.#diffEq5,
 				fun: this.#fun5,
 				name: "newton"
-			},*/ {
+			}, {
 				diff: this.#diffEq6,
 				fun: this.#fun6,
 				name: "quantum sho, n = 0"
@@ -229,31 +242,28 @@ class MainApp {
 				fun: this.#fun10,
 				name: "quantum sho, n = 4"
 			}
-	];
+		];
 		for (let j = 0; j < equations.length; ++j) {
 			const equation = equations[j];
-			console.log("name = " + equation.name);
-			const xStart = -1;
-			const xEnd = 1;
-			const numSteps = 20;
 			let maxErr = 0;
+			let errorStr = "";
 			for (let i = 0; i <= numSteps; ++i) {
 				const x = xStart + i * (xEnd - xStart) / numSteps;
 				const fx = equation.fun(x);
-				const solveFun = equation.diff.bind(this);
-				const solve = solveFun(x);
-				const absErr = Math.abs(solve);
+				const errorFun = equation.diff.bind(this);
+				const error = errorFun(x);
+				const absErr = Math.abs(error);
 				if (absErr > maxErr) {
 					maxErr = absErr;
 				}
-				const showThresh = .001;
-				if (Math.abs(solve) >= showThresh) {
-					console.log("x = " + x.toFixed(3).padStart(6) 
-						+ ", fx = " + fx.toFixed(4).padStart(6)
-						+ ", solve = " + solve.toFixed(6).padStart(8));
+				if (Math.abs(error) >= errorThresh) {
+					errorStr += "\n\tx = " + x.toFixed(3).padStart(6) 
+						+ ", fx = " + fx.toFixed(4).padStart(9)
+						+ ", error = " + error.toFixed(6).padStart(9);
 				}
 			}
-			console.log("\tMax Error = " + maxErr.toFixed(6).padStart(8));
+			const area = this.#calcArea(equation.fun, true, xStart, xEnd, numSteps);
+			console.log(equation.name.padEnd(20) + " Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
 		}
 	}
 
@@ -380,4 +390,4 @@ class MainApp {
 }
 
 const mainApp = new MainApp();
-console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods
+console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // end test static methods
