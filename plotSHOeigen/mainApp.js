@@ -112,10 +112,13 @@ class MainApp {
 		return this.#diff2(this.#fun5, x) - 6;
 	}
 	
+
+
+
 	// quantum SHO, n = 0
 	#fun6(x) {
-		const w = Math.sqrt(2) / 2;
-		return 37 * Math.exp(-x * x / 2);
+		const n = 0;
+		return  MainApp.normals[n] * Math.exp(-x * x / 2);
 	}
 	#diffEq6(x) {
 		const n = 0;
@@ -125,7 +128,8 @@ class MainApp {
 
 	// quantum SHO, n = 1
 	#fun7(x) {
-		return 17 * 2 * x * Math.exp(-x * x / 2);
+		const n = 1;
+		return MainApp.normals[n] * 2 * x * Math.exp(-x * x / 2);
 	}
 	#diffEq7(x) {
 		const n = 1;
@@ -135,7 +139,8 @@ class MainApp {
 
 	// quantum SHO, n = 2
 	#fun8(x) {
-		return 3 * (4 * x * x - 2) * Math.exp(-x * x / 2);
+		const n = 2;
+		return MainApp.normals[n] * (4 * x * x - 2) * Math.exp(-x * x / 2);
 	}
 	#diffEq8(x) {
 		const n = 2;
@@ -145,7 +150,8 @@ class MainApp {
 
 	// quantum SHO, n = 3
 	#fun9(x) {
-		return 77 * (8 * x * x * x - 12 * x) * Math.exp(-x * x / 2);
+		const n = 3;
+		return MainApp.normals[n] * (8 * x * x * x - 12 * x) * Math.exp(-x * x / 2);
 	}
 	#diffEq9(x) {
 		const n = 3;
@@ -155,7 +161,8 @@ class MainApp {
 
 	// quantum SHO, n = 4
 	#fun10(x) {
-		return 17 * (16 * x * x * x * x - 48 * x * x + 12) * Math.exp(-x * x / 2);
+		const n = 4;
+		return MainApp.normals[n] * (16 * x * x * x * x - 48 * x * x + 12) * Math.exp(-x * x / 2);
 	}
 	#diffEq10(x) {
 		const n = 4;
@@ -192,65 +199,93 @@ class MainApp {
 		return sum * span / numSteps;
 	}
 
+	static #factorial(n) {
+		const oldN = n;
+		let r = 1;
+		while(n) {
+			r *= n--;
+		}
+		console.log("fact of " + oldN + " = " + r);
+		return r;
+	}
+
+	static calcNormal(n) {
+		const ret = MainApp.piVal / (Math.sqrt(Math.pow(2, n) * MainApp.#factorial(n)));
+		return ret;
+	}
+
+	#calcNormals(start, end) {
+		const ret = [];
+		for (let n = start; n <= end; ++n) {
+			const norm = MainApp.calcNormal(n);
+			console.log("normal for n = " + n + " is " + norm);
+			ret.push(norm);
+		}
+		return ret;
+	}
+
 	// check validity of differential equations
 	#testDiffEq() {
-		this.epsilon = .0001;
-		const errorThresh = .001;
-		const xStart = -1;
-		const xEnd = 1;
-		const numSteps = 1000;
-		console.log("test diffeq");
 		const equations = [
-			{
-				diff: this.#diffEq1,
+			/*{
+				diffEq: this.#diffEq1,
 				fun: this.#fun1,
 				name: "exp"
 			}, {
-				diff: this.#diffEq2,
+				diffEq: this.#diffEq2,
 				fun: this.#fun2,
 				name: "-exp"
 			}, {
-				diff: this.#diffEq3,
+				diffEq: this.#diffEq3,
 				fun: this.#fun3,
 				name: "cos"
 			}, {
-				diff: this.#diffEq4,
+				diffEq: this.#diffEq4,
 				fun: this.#fun4,
 				name: "cosh"
 			}, {
-				diff: this.#diffEq5,
+				diffEq: this.#diffEq5,
 				fun: this.#fun5,
 				name: "newton"
-			}, {
-				diff: this.#diffEq6,
+			}, */{
+				diffEq: this.#diffEq6,
 				fun: this.#fun6,
-				name: "quantum sho, n = 0"
+				name: "quantum sho, n = 0",
 			}, {
-				diff: this.#diffEq7,
+				diffEq: this.#diffEq7,
 				fun: this.#fun7,
-				name: "quantum sho, n = 1"
+				name: "quantum sho, n = 1",
 			}, {
-				diff: this.#diffEq8,
+				diffEq: this.#diffEq8,
 				fun: this.#fun8,
-				name: "quantum sho, n = 2"
+				name: "quantum sho, n = 2",
 			}, {
-				diff: this.#diffEq9,
+				diffEq: this.#diffEq9,
 				fun: this.#fun9,
-				name: "quantum sho, n = 3"
+				name: "quantum sho, n = 3",
 			}, {
-				diff: this.#diffEq10,
+				diffEq: this.#diffEq10,
 				fun: this.#fun10,
-				name: "quantum sho, n = 4"
+				name: "quantum sho, n = 4",
 			}
 		];
+		MainApp.piVal = Math.pow(Math.PI, -.25);
+		MainApp.normals = this.#calcNormals(0,4);
+		this.epsilon = .0001;
+		const errorThresh = .001;
+		const xStart = -10;
+		const xEnd = 10;
+		const numSteps = 1000;
+		console.log("test diffeq");
 		for (let j = 0; j < equations.length; ++j) {
 			const equation = equations[j];
 			let maxErr = 0;
 			let errorStr = "";
 			for (let i = 0; i <= numSteps; ++i) {
 				const x = xStart + i * (xEnd - xStart) / numSteps;
-				const fx = equation.fun(x);
-				const errorFun = equation.diff.bind(this);
+				const fxFun = equation.fun.bind(this);
+				const fx = fxFun(x);
+				const errorFun = equation.diffEq.bind(this);
 				const error = errorFun(x);
 				const absErr = Math.abs(error);
 				if (absErr > maxErr) {
