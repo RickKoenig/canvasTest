@@ -45,152 +45,58 @@ class MainApp {
 		this.#animate();
 	}
 
-	// USER: add more members or classes to MainApp
-
-	#eigen_n(x) {
-		return Math.pow(x, this.curQnum);
-	}
-
-	#eigen_n2(x) {
-		const a = this.#eigen_n(x, this.curQnum);
-		return a * a;
-
-	}
-
-	#funToArray(f, minX, maxX, numSteps) {
-		const arr = [];
-		for (let i = 0; i <= numSteps; ++i) {
-			const x = minX + i * (maxX - minX) / numSteps;
-			const fx = f.bind(this, x);
-			arr.push(fx(x));
-		}
-		return arr;
-	}
-
 	#resetCounter() {
 		this.count = 0;
 	}
 
-	// dy/dx = y,    y = c * e^x
-	#fun1(x) {
-		return 9 * Math.exp(x);
-	}
-	#diffEq1(x) {
-		return this.#diff(this.#fun1, x) - this.#fun1(x);
+	// USER: add more members or classes to MainApp
+
+	#funToArray(f, q, minX, maxX, numSteps) { // inclusive
+		const arr = [];
+		for (let i = 0; i <= numSteps; ++i) {
+			const x = minX + i * (maxX - minX) / numSteps;
+			const fx = f(x, q);
+			arr.push(fx);
+		}
+		return arr;
 	}
 
-	// dy/dx = -y,    y = c * e^-x
-	#fun2(x) {
-		return 7 * Math.exp(-x);
-	}
-	#diffEq2(x) {
-		return this.#diff(this.#fun2, x) + this.#fun2(x);
+	static funSHO(x, q) {
+		return MainApp.normals[q] * Math.exp(-x * x / 2) * MainApp.calcPoly(x, q);
 	}
 
-	// d2y/dx2 = -y,    y = c1 * sin(x) + c2 * cos(x)
-	#fun3(x) {
-		return Math.cos(x);
-	}
-	#diffEq3(x) {
-		return this.#diff2(this.#fun3, x) + this.#fun3(x);
+	static funSHO2(x, q) {
+		const a = MainApp.funSHO(x, q);
+		return a * a;
 	}
 
-	// d2y/dx2 = y,    y = c1 * e^x + c2 * e^-x
-	#fun4(x) {
-		return Math.cosh(x);
-		//return 5 * Math.exp(x) + 6 * Math.exp(-x);
-	}
-	#diffEq4(x) {
-		return this.#diff2(this.#fun4, x) - this.#fun4(x);
-	}
-
-	// d2y/dx2 = 6,    y = 3 * x^2 + c1 * x + c2
-	#fun5(x) {
-		return 3 * x * x + 4 * x + 5;
-	}
-	#diffEq5(x) {
-		return this.#diff2(this.#fun5, x) - 6;
-	}
-	
-
-
-
-	// quantum SHO, n = 0
-	#fun6(x) {
-		const n = 0;
-		return  MainApp.normals[n] * Math.exp(-x * x / 2);
-	}
-	#diffEq6(x) {
-		const n = 0;
-		const E = n + 1 / 2;
-		return .5 * this.#diff2(this.#fun6, x) + (E - .5 * x * x) * this.#fun6(x);
-	}
-
-	// quantum SHO, n = 1
-	#fun7(x) {
-		const n = 1;
-		return MainApp.normals[n] * 2 * x * Math.exp(-x * x / 2);
-	}
-	#diffEq7(x) {
-		const n = 1;
-		const E = n + 1 / 2;
-		return .5 * this.#diff2(this.#fun7, x) + (E - .5 * x * x) * this.#fun7(x);
-	}
-
-	// quantum SHO, n = 2
-	#fun8(x) {
-		const n = 2;
-		return MainApp.normals[n] * (4 * x * x - 2) * Math.exp(-x * x / 2);
-	}
-	#diffEq8(x) {
-		const n = 2;
-		const E = n + 1 / 2;
-		return .5 * this.#diff2(this.#fun8, x) + (E - .5 * x * x) * this.#fun8(x);
-	}
-
-	// quantum SHO, n = 3
-	#fun9(x) {
-		const n = 3;
-		return MainApp.normals[n] * (8 * x * x * x - 12 * x) * Math.exp(-x * x / 2);
-	}
-	#diffEq9(x) {
-		const n = 3;
-		const E = n + 1 / 2;
-		return .5 * this.#diff2(this.#fun9, x) + (E - .5 * x * x) * this.#fun9(x);
-	}
-
-	// quantum SHO, n = 4
-	#fun10(x) {
-		const n = 4;
-		return MainApp.normals[n] * (16 * x * x * x * x - 48 * x * x + 12) * Math.exp(-x * x / 2);
-	}
-	#diffEq10(x) {
-		const n = 4;
-		const E = n + 1 / 2;
-		return .5 * this.#diff2(this.#fun10, x) + (E - .5 * x * x) * this.#fun10(x);
+	static diffEqSHO(x, f, q) {
+		const E = q + 1 / 2;
+		return .5 * MainApp.diff2(f, x, q) + (E - .5 * x * x) * f(x, q);
 	}
 
 	// 1st derivative
-	#diff(f, x) {
-		return((f(x + this.epsilon / 2) - f(x - this.epsilon / 2)) / this.epsilon);
+	static diff(f, x, q) {
+		return((f(x + MainApp.epsilon / 2, q) - f(x - MainApp.epsilon / 2, q)) / MainApp.epsilon);
 	}
 
 	// 2nd derivative
-	#diff2(f, x) {
-		return((f(x + this.epsilon) - 2 * f(x) + f(x - this.epsilon)) / (this.epsilon * this.epsilon));
+	static diff2(f, x, q) {
+		return((f(x + MainApp.epsilon, q) - 2 * f(x, q) + f(x - MainApp.epsilon, q)) / (MainApp.epsilon * MainApp.epsilon));
 	}
 
 	// integration
-	#calcArea(fun, square, start, end, numSteps) {
+	#calcArea(fun, square, q, start, end, numSteps) {
+		//console.log("calcArea with q = " + q);
 		// Trapezoidal Rule
-		let sum = (fun(start) + fun(end)) / 2;
+		let sum = (fun(start, q) + fun(end, q)) / 2;
 		if (square) {
 			sum *= sum;
 		}
 		const span = end - start;
 		for (let i = 1; i <= numSteps - 1; ++i) {
 			const x = start + span * i / numSteps;
-			let val = fun(x);
+			let val = fun(x, q);
 			if (square) {
 				val *= val;
 			}
@@ -199,112 +105,126 @@ class MainApp {
 		return sum * span / numSteps;
 	}
 
-	static #factorial(n) {
-		const oldN = n;
+	static factorial(n) {
 		let r = 1;
-		while(n) {
+		while(n > 0) {
 			r *= n--;
 		}
-		console.log("fact of " + oldN + " = " + r);
 		return r;
 	}
 
-	static calcNormal(n) {
-		const ret = MainApp.piVal / (Math.sqrt(Math.pow(2, n) * MainApp.#factorial(n)));
+	static calcNormal(q) {
+		const ret = MainApp.piVal / (Math.sqrt(Math.pow(2, q) * MainApp.factorial(q)));
 		return ret;
 	}
 
-	#calcNormals(start, end) {
+	static calcNormals(start, end) {
 		const ret = [];
-		for (let n = start; n <= end; ++n) {
-			const norm = MainApp.calcNormal(n);
-			console.log("normal for n = " + n + " is " + norm);
+		for (let q = start; q <= end; ++q) {
+			const norm = MainApp.calcNormal(q);
 			ret.push(norm);
 		}
 		return ret;
 	}
 
+	static constPolys = [
+		[ 1],
+		[ 0,   2],
+		[-2,   0,   4],
+		[ 0, -12,   0, 8],
+		[12,   0, -48, 0, 16]
+	];
+
+	static calcPolyCoefs(q) {
+		return MainApp.constPolys[q];
+	}
+
+	static calcPoly(x, q) {
+		//console.log("calcPoly " + q + " " + x);
+		const coefs = MainApp.polys[q];
+		let r = 0;
+		for (let i = coefs.length - 1; i >= 0; --i) {
+			r = r * x + coefs[i];
+		}
+		return r;
+	}
+
+	static calcPolysCoefs(start, end) {
+
+		console.log("const coefs");
+		console.log(MainApp.constPolys);
+
+		console.log("gen coefs");
+		const genCoefs = [[1], [0, 2], [], [], []];
+
+
+
+		//return MainApp.constPolys;
+		return genCoefs;
+/*		
+		const ret = [];
+		for (let q = start; q <= end; ++q) {
+			const poly = MainApp.calcPolyCoefs(q);
+			ret.push(poly);
+		}
+		return ret;*/
+	}
+/*
+	static calcPolysCoefs(start, end) {
+		const ret = [];
+		for (let q = start; q <= end; ++q) {
+			const poly = MainApp.calcPolyCoefs(q);
+			ret.push(poly);
+		}
+		return ret;
+	}
+*/
 	// check validity of differential equations
 	#testDiffEq() {
-		const equations = [
-			/*{
-				diffEq: this.#diffEq1,
-				fun: this.#fun1,
-				name: "exp"
-			}, {
-				diffEq: this.#diffEq2,
-				fun: this.#fun2,
-				name: "-exp"
-			}, {
-				diffEq: this.#diffEq3,
-				fun: this.#fun3,
-				name: "cos"
-			}, {
-				diffEq: this.#diffEq4,
-				fun: this.#fun4,
-				name: "cosh"
-			}, {
-				diffEq: this.#diffEq5,
-				fun: this.#fun5,
-				name: "newton"
-			}, */{
-				diffEq: this.#diffEq6,
-				fun: this.#fun6,
-				name: "quantum sho, n = 0",
-			}, {
-				diffEq: this.#diffEq7,
-				fun: this.#fun7,
-				name: "quantum sho, n = 1",
-			}, {
-				diffEq: this.#diffEq8,
-				fun: this.#fun8,
-				name: "quantum sho, n = 2",
-			}, {
-				diffEq: this.#diffEq9,
-				fun: this.#fun9,
-				name: "quantum sho, n = 3",
-			}, {
-				diffEq: this.#diffEq10,
-				fun: this.#fun10,
-				name: "quantum sho, n = 4",
-			}
-		];
 		MainApp.piVal = Math.pow(Math.PI, -.25);
-		MainApp.normals = this.#calcNormals(0,4);
-		this.epsilon = .0001;
-		const errorThresh = .001;
+		MainApp.normals = MainApp.calcNormals(0, 4); // inclusive
+		MainApp.polys = MainApp.calcPolysCoefs(0, 4);
+		MainApp.epsilon = .0001;
 		const xStart = -10;
 		const xEnd = 10;
-		const numSteps = 1000;
+		const numSteps = 100;
+
 		console.log("test diffeq");
-		for (let j = 0; j < equations.length; ++j) {
-			const equation = equations[j];
+		for (let q = 0; q <= this.maxQNum; ++q) {
 			let maxErr = 0;
 			let errorStr = "";
 			for (let i = 0; i <= numSteps; ++i) {
 				const x = xStart + i * (xEnd - xStart) / numSteps;
-				const fxFun = equation.fun.bind(this);
-				const fx = fxFun(x);
-				const errorFun = equation.diffEq.bind(this);
-				const error = errorFun(x);
+				const error = MainApp.diffEqSHO(x, MainApp.funSHO, q);
 				const absErr = Math.abs(error);
 				if (absErr > maxErr) {
 					maxErr = absErr;
 				}
-				if (Math.abs(error) >= errorThresh) {
-					errorStr += "\n\tx = " + x.toFixed(3).padStart(6) 
+				//if (true) {
+				if (Math.abs(error) >= MainApp.epsilon) {
+					const fx = MainApp.funSHO(x, q);
+					errorStr += "\n\tx = " + x.toFixed(3).padStart(8) 
 						+ ", fx = " + fx.toFixed(4).padStart(9)
-						+ ", error = " + error.toFixed(6).padStart(9);
+						+ ", error = " + error.toFixed(8).padStart(11);
 				}
 			}
-			const area = this.#calcArea(equation.fun, true, xStart, xEnd, numSteps);
-			console.log(equation.name.padEnd(20) + " Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
+
+			const area = this.#calcArea(MainApp.funSHO, true, q, xStart, xEnd, numSteps);
+			console.log("Qnum = " + q + ", Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
 		}
 	}
 
 	#userInit() {
-		this.#testDiffEq();
 		// user init section
+		this.minQNum = 0;
+		this.maxQNum = 4;
+		this.startQNum = 4;
+		//this.curQnum;
+		this.numDrawSteps = 400; // 'numSteps + 1' points
+		this.minX = -5;
+		this.maxX = 5;
+		this.#testDiffEq();
+
 		this.count = 0; // frame counter
 		// measure frame rate
 		this.fps;
@@ -314,15 +234,8 @@ class MainApp {
 
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
-		this.startZoom = .95;
+		this.startZoom = .25;
 
-		this.minQNum = 1;
-		this.maxQNum = 10;
-		this.startQNum = 1;
-		//this.curQnum;
-		this.numSteps = 40; // 'numSteps + 1' points
-		this.minX = -1;
-		this.maxX = 1;
 	}
 
 	#userBuildUI() {
@@ -342,7 +255,6 @@ class MainApp {
 			const start = this.startQNum;
 			const step = 1;
 			const precision = 0;
-			const callback = null;
 			new makeEleCombo(this.vp, label, min, max, start, step, precision,
 				(v) => {
 					this.curQnum = v;
@@ -371,8 +283,8 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const funArr = this.#funToArray(this.#eigen_n, this.minX, this.maxX, this.numSteps);
-		const funArr2 = this.#funToArray(this.#eigen_n2, this.minX, this.maxX, this.numSteps);
+		const funArr2 = this.#funToArray(MainApp.funSHO2, this.curQnum, this.minX, this.maxX, this.numDrawSteps);
+		const funArr = this.#funToArray(MainApp.funSHO, this.curQnum, this.minX, this.maxX, this.numDrawSteps);
 		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "red");
 		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "blue");
 	}

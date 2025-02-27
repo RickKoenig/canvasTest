@@ -700,7 +700,7 @@ class MainApp {
 		// update input system
 		this.input.proc();
 		// interact with mouse, calc all spaces
-		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT);
+		this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT);
 		this.#userProc();
 
 		// draw
