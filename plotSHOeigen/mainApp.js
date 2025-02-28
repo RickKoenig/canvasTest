@@ -118,30 +118,18 @@ class MainApp {
 		return ret;
 	}
 
-	static calcNormals(start, end) {
+	static calcNormals(maxQ) {
 		const ret = [];
-		for (let q = start; q <= end; ++q) {
+		for (let q = 0; q <= maxQ; ++q) {
 			const norm = MainApp.calcNormal(q);
 			ret.push(norm);
 		}
 		return ret;
 	}
 
-	static constPolys = [
-		[ 1],
-		[ 0,   2],
-		[-2,   0,   4],
-		[ 0, -12,   0, 8],
-		[12,   0, -48, 0, 16]
-	];
-
-	static calcPolyCoefs(q) {
-		return MainApp.constPolys[q];
-	}
-
 	static calcPoly(x, q) {
 		//console.log("calcPoly " + q + " " + x);
-		const coefs = MainApp.polys[q];
+		const coefs = MainApp.polysCoefs[q];
 		let r = 0;
 		for (let i = coefs.length - 1; i >= 0; --i) {
 			r = r * x + coefs[i];
@@ -149,42 +137,52 @@ class MainApp {
 		return r;
 	}
 
-	static calcPolysCoefs(start, end) {
-
+	static calcPolysCoefs(maxQ) {
 		console.log("const coefs");
 		console.log(MainApp.constPolys);
-
 		console.log("gen coefs");
-		const genCoefs = [[1], [0, 2], [], [], []];
-
-
-
-		//return MainApp.constPolys;
+		/*
+		const constCoefs = [
+			[ 1],					// Q0: 1
+			[ 0,   2],				// Q1: 2x
+			[-2,   0,   4],			// Q2: 4x^2 - 2
+			[ 0, -12,   0, 8],		// Q3:  8x^3 - 12x
+			[12,   0, -48, 0, 16]	// Q4: 16x^4 =48x^2 + 12
+		];
+		*/
+		// build up from last poly
+		const genCoefs = [[1], [0, 2]];
+		for (let q = 2; q <= maxQ; ++q) {
+			const lastCoefs = genCoefs[q - 1];
+			const coefs = [];
+			for (let k = 0; k <= q; ++k) {
+				let left, right;
+				if (k == 0) {
+					left = 0;
+				} else {
+					left = 2 * lastCoefs[k - 1];
+				}
+				if (k >= q - 1) {
+					right = 0;
+				} else {
+					right = -(k + 1) * lastCoefs[k + 1];
+				}
+				coefs.push(left + right);
+			}
+			genCoefs.push(coefs);
+		}
+		//return constCoefs;
 		return genCoefs;
-/*		
-		const ret = [];
-		for (let q = start; q <= end; ++q) {
-			const poly = MainApp.calcPolyCoefs(q);
-			ret.push(poly);
-		}
-		return ret;*/
 	}
-/*
-	static calcPolysCoefs(start, end) {
-		const ret = [];
-		for (let q = start; q <= end; ++q) {
-			const poly = MainApp.calcPolyCoefs(q);
-			ret.push(poly);
-		}
-		return ret;
-	}
-*/
+
 	// check validity of differential equations
 	#testDiffEq() {
 		MainApp.piVal = Math.pow(Math.PI, -.25);
-		MainApp.normals = MainApp.calcNormals(0, 4); // inclusive
-		MainApp.polys = MainApp.calcPolysCoefs(0, 4);
-		MainApp.epsilon = .0001;
+		MainApp.normals = MainApp.calcNormals(this.maxQNum); // inclusive
+		MainApp.polysCoefs = MainApp.calcPolysCoefs(this.maxQNum);
+		console.log("polysCoefs");
+		console.log(MainApp.polysCoefs);
+		MainApp.epsilon = .005;
 		const xStart = -10;
 		const xEnd = 10;
 		const numSteps = 100;
@@ -200,8 +198,9 @@ class MainApp {
 				if (absErr > maxErr) {
 					maxErr = absErr;
 				}
+				const errThresh = 10;
 				//if (true) {
-				if (Math.abs(error) >= MainApp.epsilon) {
+				if (Math.abs(error) >= errThresh) {
 					const fx = MainApp.funSHO(x, q);
 					errorStr += "\n\tx = " + x.toFixed(3).padStart(8) 
 						+ ", fx = " + fx.toFixed(4).padStart(9)
@@ -217,12 +216,12 @@ class MainApp {
 	#userInit() {
 		// user init section
 		this.minQNum = 0;
-		this.maxQNum = 4;
-		this.startQNum = 4;
+		this.maxQNum = 57;
+		this.startQNum = 0;
 		//this.curQnum;
 		this.numDrawSteps = 400; // 'numSteps + 1' points
-		this.minX = -5;
-		this.maxX = 5;
+		this.minXDraw = -14;
+		this.maxXDraw = 14;
 		this.#testDiffEq();
 
 		this.count = 0; // frame counter
@@ -235,7 +234,6 @@ class MainApp {
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
 		this.startZoom = .25;
-
 	}
 
 	#userBuildUI() {
@@ -250,7 +248,7 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		{
 			const label = "QNum";
-			const min = this.minQNum;
+			const min = 0;
 			const max = this.maxQNum;
 			const start = this.startQNum;
 			const step = 1;
@@ -283,10 +281,10 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const funArr2 = this.#funToArray(MainApp.funSHO2, this.curQnum, this.minX, this.maxX, this.numDrawSteps);
-		const funArr = this.#funToArray(MainApp.funSHO, this.curQnum, this.minX, this.maxX, this.numDrawSteps);
-		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "red");
-		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minX, (this.maxX - this.minX) / (funArr.length - 1), "blue");
+		const funArr2 = this.#funToArray(MainApp.funSHO2, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
+		const funArr = this.#funToArray(MainApp.funSHO, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
+		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "red");
+		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "blue");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
