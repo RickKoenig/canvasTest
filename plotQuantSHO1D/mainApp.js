@@ -478,7 +478,7 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 		// update mouse if in RIX free
 		if (this.freeMouse) {
-			if (this.input.mouse.mbut[Mouse.LEFT]) {
+			if (this.input.mouse.mbut[Mouse.RIGHT]) {
 				this.rotateAxis[0] += this.plotter2d.deltaUserMouse[0];
 				this.rotateAxis[1] -= this.plotter2d.deltaUserMouse[1]; // invert y
 				// wrap

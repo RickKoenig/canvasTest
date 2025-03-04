@@ -3,6 +3,7 @@
     "configurations": [
 
 
+
         
         {
             "name": "Launch Program",
@@ -128,8 +129,22 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, Quant box",
+            "name": "Launch Chrome against localhost, Quant Box 1D",
             "url": "http://localhost:88/plotter2d/plotQuantBox1D/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, Quant SHO 1D",
+            "url": "http://localhost:88/plotter2d/plotQuantSHO1D/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, show Box eigen",
+            "url": "http://localhost:88/plotter2d/plotBoxEigen/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
