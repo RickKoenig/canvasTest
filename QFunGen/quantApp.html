@@ -11,7 +11,7 @@
 <body>
 	<!-- UI is added to verticalPanel -->
 	<div id="verticalPanel">
-		<pre class="bigger">Particle in a 1D box</pre>
+		<pre class="bigger">Test derived class of quantum simulation</pre>
 	</div>
 
 	<!-- graphics -->
@@ -38,7 +38,17 @@
 	<script src='../common/plotter2d.js'></script>
 	<script src='../common/graphPaper.js'></script>
 
-	<script src='mainApp.js'></script>
+	<script src='../QFunGen/funSHOGen.js'></script>
+	<script src='../QFunGen/funBoxGen.js'></script>
+	<script src='../QBox1D/mainApp.js'></script>
+	<script src='quantApp.js'></script>
+
+    <script>
+        window.onload = function () {
+            new QuantApp();
+        };
+    </script>
+
 </body>
 
 </html>

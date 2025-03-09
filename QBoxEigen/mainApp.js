@@ -47,88 +47,21 @@ class MainApp {
 
 	// USER: add more members or classes to MainApp
 
-	#funToArray(f, q, minX, maxX, numSteps, square) { // inclusive
-		const arr = [];
-		for (let i = 0; i <= numSteps; ++i) {
-			const x = minX + i * (maxX - minX) / numSteps;
-			const fx = f(x, q);
-			if (square) {
-				arr.push(fx * fx);
-			} else {
-				arr.push(fx);
-			}
-		}
-		return arr;
-	}
-
-	static diffEqSHO(f, x, q) {
-		const E = q + 1 / 2;
-		return .5 * MainApp.diff2(f, x, q) + (E - .5 * x * x) * f(x, q);
-	}
-
-	// 1st derivative
-	static diff(f, x, q) {
-		return((f(x + MainApp.epsilon / 2, q) - f(x - MainApp.epsilon / 2, q)) / MainApp.epsilon);
-	}
-
-	// 2nd derivative
-	static diff2(f, x, q) {
-		return((f(x + MainApp.epsilon, q) - 2 * f(x, q) + f(x - MainApp.epsilon, q)) / (MainApp.epsilon * MainApp.epsilon));
-	}
-
-	// integration
-	#calcArea(fun, square, q, start, end, numSteps) {
-		//console.log("calcArea with q = " + q);
-		// Trapezoidal Rule
-		let sum = (fun(start, q) + fun(end, q)) / 2;
-		if (square) {
-			sum *= sum;
-		}
-		const span = end - start;
-		for (let i = 1; i <= numSteps - 1; ++i) {
-			const x = start + span * i / numSteps;
-			let val = fun(x, q);
-			if (square) {
-				val *= val;
-			}
-			sum += val;
-		}
-		return sum * span / numSteps;
-	}
-
 	// check validity of differential equations
 	#setupEigen() {
-		MainApp.genSHO = new makeFunSHO(this.maxQNum);
-		MainApp.funSHO = MainApp.genSHO.getFun();
+		MainApp.genBox = new makeFunBox(this.maxQNum);
+		MainApp.funBox = MainApp.genBox.getFun();
 
-		MainApp.epsilon = .005;
-		const xStart = -10;
-		const xEnd = 10;
+		const xStart = 0;
+		const xEnd = 2;
 		const numSteps = 1000;
 
 		console.log("test diffeq");
 		for (let q = 0; q <= this.maxQNum; ++q) {
-			let maxErr = 0;
-			let errorStr = "";
-			for (let i = 0; i <= numSteps; ++i) {
-				const x = xStart + i * (xEnd - xStart) / numSteps;
-				const error = MainApp.diffEqSHO(MainApp.funSHO, x,  q);
-				const absErr = Math.abs(error);
-				if (absErr > maxErr) {
-					maxErr = absErr;
-				}
-				const errThresh = 10;
-				if (false) {
-				//if (Math.abs(error) >= errThresh) {
-					const fx = MainApp.funSHO(x, q);
-					errorStr += "\n\tx = " + x.toFixed(3).padStart(8) 
-						+ ", fx = " + fx.toFixed(4).padStart(9)
-						+ ", error = " + error.toFixed(8).padStart(11);
-				}
-			}
-
-			const area = this.#calcArea(MainApp.funSHO, true, q, xStart, xEnd, numSteps);
-			console.log("Qnum = " + q.toString().padStart(3) + ", Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
+			
+			// calc area
+			const area = calculus.calcArea(MainApp.funBox, true, q, xStart, xEnd, numSteps);
+			console.log("Qnum = " + q.toString().padStart(3) + ", Area = " + area.toFixed(6).padStart(8));
 		}
 	}
 
@@ -138,8 +71,8 @@ class MainApp {
 		this.startQNum = 0;
 		this.curQnum = 0; // internal Q starts at 0
 		this.numDrawSteps = 400; // 'numSteps + 1' points
-		this.minXDraw = -14;
-		this.maxXDraw = 14;
+		this.minXDraw = 0;
+		this.maxXDraw = 2;
 		this.#setupEigen();
 
 		// measure frame rate
@@ -149,8 +82,8 @@ class MainApp {
 		this.avgFpsObj = new Runavg(500);
 
 		// before firing up Plotter2d
-		this.startCenter = [0, 0];
-		this.startZoom = .25;
+		this.startCenter = [1, 0];
+		this.startZoom = .95;
 	}
 
 	#userBuildUI() {
@@ -190,9 +123,9 @@ class MainApp {
 	}
 
 	#userDraw() {
-		this.energy = MainApp.genSHO.getEnergy(this.curQnum);
-		const funArr2 = this.#funToArray(MainApp.funSHO, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps, true);
-		const funArr = this.#funToArray(MainApp.funSHO, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
+		this.energy = MainApp.genBox.getEnergy(this.curQnum);
+		const funArr2 = calculus.funToArray(MainApp.funBox, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps, true);
+		const funArr = calculus.funToArray(MainApp.funBox, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
 		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "red");
 		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "blue");
 	}
@@ -245,3 +178,5 @@ class MainApp {
 
 const mainApp = new MainApp();
 console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // end test static methods
+
+//runHeyawake(); // test some heyawake configurations

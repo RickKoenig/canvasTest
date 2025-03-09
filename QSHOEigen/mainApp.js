@@ -46,77 +46,56 @@ class MainApp {
 	}
 
 	// USER: add more members or classes to MainApp
-
-	#funToArray(f, q, minX, maxX, numSteps, square) { // inclusive
-		const arr = [];
-		for (let i = 0; i <= numSteps; ++i) {
-			const x = minX + i * (maxX - minX) / numSteps;
-			const fx = f(x, q);
-			if (square) {
-				arr.push(fx * fx);
-			} else {
-				arr.push(fx);
-			}
-		}
-		return arr;
-	}
-
-	// integration
-	#calcArea(fun, square, q, start, end, numSteps) {
-		//console.log("calcArea with q = " + q);
-		// Trapezoidal Rule
-		let sum = (fun(start, q) + fun(end, q)) / 2;
-		if (square) {
-			sum *= sum;
-		}
-		const span = end - start;
-		for (let i = 1; i <= numSteps - 1; ++i) {
-			const x = start + span * i / numSteps;
-			let val = fun(x, q);
-			if (square) {
-				val *= val;
-			}
-			sum += val;
-		}
-		return sum * span / numSteps;
+	static diffEqSHO(f, x, q) {
+		const E = q + 1 / 2;
+		return .5 * calculus.diff2(f, x, q) + (E - .5 * x * x) * f(x, q);
 	}
 
 	// check validity of differential equations
 	#setupEigen() {
-		MainApp.genBox = new makeFunBox(this.maxQNum);
-		MainApp.funBox = MainApp.genBox.getFun();
+		MainApp.genSHO = new makeFunSHO(this.maxQNum);
+		MainApp.funSHO = MainApp.genSHO.getFun();
 
-		// test area
-		{
-			const area = this.#calcArea((x) => Math.sin(x), true, 0, 0, Math.PI, 1000);
-			console.log("test area1 = " + area);
-		}
-		{
-			const area = this.#calcArea((x) => Math.sin(x * Math.PI / 2), true, 0, 0, 2, 1000);
-			console.log("test area2 = " + area);
-		}
-		// done test area
-
-		MainApp.epsilon = .005;
-		const xStart = 0;
-		const xEnd = 2;
+		const xStart = -10;
+		const xEnd = 10;
 		const numSteps = 1000;
 
-		console.log("test diffeq");
 		for (let q = 0; q <= this.maxQNum; ++q) {
-			const area = this.#calcArea(MainApp.funBox, true, q, xStart, xEnd, numSteps);
-			console.log("Qnum = " + q.toString().padStart(3) + ", Area = " + area.toFixed(6).padStart(8));
+
+			console.log("test diffeq");
+			let maxErr = 0;
+			let errorStr = "";
+			for (let i = 0; i <= numSteps; ++i) {
+				const x = xStart + i * (xEnd - xStart) / numSteps;
+				const error = MainApp.diffEqSHO(MainApp.funSHO, x,  q);
+				const absErr = Math.abs(error);
+				if (absErr > maxErr) {
+					maxErr = absErr;
+				}
+				const errThresh = 10;
+				if (false) {
+				//if (Math.abs(error) >= errThresh) {
+					const fx = MainApp.funSHO(x, q);
+					errorStr += "\n\tx = " + x.toFixed(3).padStart(8) 
+						+ ", fx = " + fx.toFixed(4).padStart(9)
+						+ ", error = " + error.toFixed(8).padStart(11);
+				}
+			}
+			
+			// calc area
+			const area = calculus.calcArea(MainApp.funSHO, true, q, xStart, xEnd, numSteps);
+			console.log("Qnum = " + q.toString().padStart(3) + ", Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
 		}
 	}
 
 	#userInit() {
 		// user init section
-		this.maxQNum = 10;
+		this.maxQNum = 57;
 		this.startQNum = 0;
 		this.curQnum = 0; // internal Q starts at 0
 		this.numDrawSteps = 400; // 'numSteps + 1' points
-		this.minXDraw = 0;
-		this.maxXDraw = 2;
+		this.minXDraw = -14;
+		this.maxXDraw = 14;
 		this.#setupEigen();
 
 		// measure frame rate
@@ -126,8 +105,8 @@ class MainApp {
 		this.avgFpsObj = new Runavg(500);
 
 		// before firing up Plotter2d
-		this.startCenter = [1, 0];
-		this.startZoom = .95;
+		this.startCenter = [0, 0];
+		this.startZoom = .25;
 	}
 
 	#userBuildUI() {
@@ -167,9 +146,9 @@ class MainApp {
 	}
 
 	#userDraw() {
-		this.energy = MainApp.genBox.getEnergy(this.curQnum);
-		const funArr2 = this.#funToArray(MainApp.funBox, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps, true);
-		const funArr = this.#funToArray(MainApp.funBox, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
+		this.energy = MainApp.genSHO.getEnergy(this.curQnum);
+		const funArr2 = calculus.funToArray(MainApp.funSHO, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps, true);
+		const funArr = calculus.funToArray(MainApp.funSHO, this.curQnum, this.minXDraw, this.maxXDraw, this.numDrawSteps);
 		this.drawPrim.drawLinesSimple(funArr, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "red");
 		this.drawPrim.drawLinesSimple(funArr2, undefined, undefined, this.minXDraw, (this.maxXDraw - this.minXDraw) / (funArr.length - 1), "blue");
 	}

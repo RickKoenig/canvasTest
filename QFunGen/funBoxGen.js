@@ -2,9 +2,6 @@
 
 class makeFunBox {
 	// internal, Q starts at 0
-    constructor(maxQ) {
-	}
-
     getFun() {
         return (x, q) => Math.sin((q + 1) * x * Math.PI / 2);
     }

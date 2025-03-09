@@ -130,28 +130,35 @@
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost, Quant Box 1D",
-            "url": "http://localhost:88/plotter2d/plotQuantBox1D/index.html",
+            "url": "http://localhost:88/plotter2d/QBox1D/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost, Quant SHO 1D",
-            "url": "http://localhost:88/plotter2d/plotQuantSHO1D/index.html",
+            "url": "http://localhost:88/plotter2d/QSHO1D/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, show Box eigen",
-            "url": "http://localhost:88/plotter2d/plotBoxEigen/index.html",
+            "name": "Launch Chrome against localhost, Box eigen",
+            "url": "http://localhost:88/plotter2d/QBoxEigen/index.html",
             "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, show SHO eigen",
-            "url": "http://localhost:88/plotter2d/plotSHOeigen/index.html",
+            "name": "Launch Chrome against localhost, SHO eigen",
+            "url": "http://localhost:88/plotter2d/QSHOeigen/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, Test derived Quantum classes",
+            "url": "http://localhost:88/plotter2d/QFunGen/quantApp.html",
             "webRoot": "${workspaceFolder}"
         },
         {

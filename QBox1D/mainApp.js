@@ -2,7 +2,7 @@
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
-class MainApp {
+class QBox1D {
 	// enum of display modes object
     static displayModesEnum = makeEnum([
 		"X_P_T", "X_RI_T", "R_I_T", "RIX_T_FREE",
@@ -10,7 +10,7 @@ class MainApp {
 		"NUM"
 	]);
 	constructor() {
-		console.log("creating instance of MainApp");
+		console.log("creating instance of QBox1D");
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
 		//this.vp = null; // OR, no vertical panel UI
@@ -21,7 +21,7 @@ class MainApp {
 		//populateElementIds(this.vp, this.eles);
 
 		// USER before UI built
-		this.#userInit();
+		this.userInit();
 
 		// setup 2D drawing environment
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
@@ -47,18 +47,21 @@ class MainApp {
 
 
 ////////// USER SECTION /////////
-	#initEnergies() {
+	initEnergies() {
+		QBox1D.genBox = new makeFunBox(this.maxQNum);
+		QBox1D.funBox = QBox1D.genBox.getFun();
 		this.scrollQOffset = 0; // scroll amount
-		this.curQnum = 1; // 1 to maxQnum inclusive
+		this.curQnum = 1; // 1 to maxQNum inclusive
 
-		this.amps = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
-		this.phases = new Array(this.maxQnum + 1).fill(0); // amps[0] is never used
+		// Qnum internal starts at 0
+		this.amps = new Array(this.maxQNum).fill(0); // amps[0] is NOW used
+		this.phases = new Array(this.maxQNum).fill(0); // amps[0] is NOW used
+		this.amps[0] = 50;
+		this.phases[0] = 0;
 		this.amps[1] = 50;
 		this.phases[1] = 0;
-		this.amps[2] = 50;
-		this.phases[2] = 0;
 
-		this.#updateEnergyList();
+		this.updateEnergyList();
 		//this.#compute();
 	}
 
@@ -85,7 +88,7 @@ class MainApp {
 			amp: resAmp,
 			phase: resPhase
 		}
-		return ampPhase
+		return ampPhase;
 	}
 
 	// make (-180 to 180]
@@ -116,7 +119,7 @@ class MainApp {
 			this.amps[this.curQnum] = ampPhase.amp;
 			this.phases[this.curQnum] = ampPhase.phase;
 		} else {
-			for (let q = 1; q <= this.maxQnum; ++q) {
+			for (let q = 0; q < this.maxQNum; ++q) {
 				const shift = (q - this.curQnum);
 				const shiftWidth = shift / width;
 				let a = middleAmp * Math.exp(-shiftWidth * shiftWidth);
@@ -134,7 +137,7 @@ class MainApp {
 				}
 			}
 		}
-		this.#updateEnergyList();
+		this.updateEnergyList();
 	}
 
 	/* // reads amps and phases, writes imags and reals
@@ -153,18 +156,20 @@ class MainApp {
 		}
 	}
 
-	#updateEnergyList() {
+	updateEnergyList() {
 		this.energiesText = "    Qnum Energy   Amp   Phase\n";
-		for (let q = 1 + this.scrollQOffset; q <= this.maxShowQnum + this.scrollQOffset; ++q) {
-			if (q >= 1 && q <= this.maxQnum) {
-				const energy = q * q;
+		for (let q = this.scrollQOffset; q < this.maxShowQnum + this.scrollQOffset; ++q) {
+			if (q >= 0 && q < this.maxQNum) {
+				//const energy = (q + 1) * (q + 1);
+				const energy = QBox1D.genBox.getEnergy(q);
 				const hilight = q == this.curQnum;
 				if (hilight) {
 					this.energiesText += "<span id='hilight'>" + ">>> ";
 				} else {
 					this.energiesText += "    ";
 				}
-				this.energiesText += " " + q.toString().padStart(3) 
+				// internal Q to external Q
+				this.energiesText += " " + (q + 1).toString().padStart(3) 
 					+ " " + String(energy).padStart(6)
 					+ " " + this.amps[q].toFixed(1).padStart(5) 
 					+ "  " + this.phases[q].toFixed(1).padStart(6);
@@ -184,10 +189,10 @@ class MainApp {
 	}
 
 	#updateQnumScroll(v) {
-		v = range(1, v, this.maxQnum);
+		v = range(0, v, this.maxQNum - 1);
 		this.curQnum = v;
 		this.scrollQOffset = v - Math.floor(this.maxShowQnum / 2);
-		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQnum - this.maxShowQnum);
+		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQNum - this.maxShowQnum);
 	}
 
 	#setZoomCenterFromMode() {
@@ -286,8 +291,9 @@ class MainApp {
 		this.freeMouse = setting.freeMouse;
 		this.eles.animCombo.setValue(this.animX ? this.animPos : this.animTime);
 	}
-	// USER: add more members or classes to MainApp
-	#userInit() {
+	
+	// USER: add more members or classes to QBox1D
+	userInit() {
 		// measure frame rate
 		this.fps;
 		this.avgFps = 0;
@@ -300,10 +306,10 @@ class MainApp {
 		this.fpsScreen = 60;
 		this.numXSteps = 1024; // for drawing
 		this.numTSteps = 1024;
-		this.displayMode = MainApp.displayModesEnum.X_P_T; // 8 different display modes
+		this.displayMode = QBox1D.displayModesEnum.X_P_T; // 8 different display modes
 		this.rotateAxis = vec2.create(); // for RIX free
 
-		this.maxQnum = 512;
+		this.maxQNum = 512;
 		this.maxShowQnum = 16; // scroll window size
 		// for sine wave like functions, add a phase to the input of the function(s)
 		this.animTime = 0; // [0 to 1]
@@ -320,7 +326,7 @@ class MainApp {
 		this.freqPrecision = 5;
 
 		// quantum state
-		this.#initEnergies();
+		this.initEnergies();
 		this.energiesMouseX = 0;
 		this.energiesMouseY = 0;
 	}
@@ -367,14 +373,14 @@ class MainApp {
 		makeEle(this.vp, "button", null, "lessWidth", "Prev", () => {
 			--this.displayMode;
 			if (this.displayMode < 0) {
-				this.displayMode += MainApp.displayModesEnum.NUM;
+				this.displayMode += QBox1D.displayModesEnum.NUM;
 			}
 			this.#setZoomCenterFromMode();
 		});
 		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
 			this.displayMode++;
-			if (this.displayMode >= MainApp.displayModesEnum.NUM) {
-				this.displayMode -= MainApp.displayModesEnum.NUM;
+			if (this.displayMode >= QBox1D.displayModesEnum.NUM) {
+				this.displayMode -= QBox1D.displayModesEnum.NUM;
 			}
 			this.#setZoomCenterFromMode();
 		});
@@ -385,29 +391,28 @@ class MainApp {
 		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
 		this.eles.energyListDom = energyDOM;
 		energyDOM.addEventListener("click", (e) => {
-			this.energiesMouseX = e.offsetX;
-			this.energiesMouseY = e.offsetY;
 			const rowSize = 20; // tweak
+			this.energiesMouseY = e.offsetY - rowSize;
 			const mul = 1 / rowSize;
 			const add = 0;
-			const v = Math.floor(range(1, this.energiesMouseY * mul + add, this.maxQnum));
+			const v = Math.floor(range(0, this.energiesMouseY * mul + add, this.maxQNum - 1));
 			this.#updateQnumScroll(v + this.scrollQOffset);
-			this.#updateEnergyList();
-			this.eles.qNumSliderDOM.setValue(this.curQnum);
+			this.updateEnergyList();
+			this.eles.qNumSliderDOM.setValue(this.curQnum + 1);
 		});
 		
-		this.#updateEnergyList(); // UI
-		// Quantum Number slider combo  [1 to maxQnum], (0 not used)
+		this.updateEnergyList(); // UI
+		// Quantum Number slider combo  [1 to maxQNum], (0 not used), external
 		{
 			const label = "Q Number";
 			const min = 1;
-			const max = this.maxQnum;
+			const max = this.maxQNum;
 			const start = 1;
 			const step = 1;
 			const precision = 0;
 			this.eles.qNumSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
-				this.#updateQnumScroll(v);
-				this.#updateEnergyList(); // UI
+				this.#updateQnumScroll(v - 1);
+				this.updateEnergyList(); // UI
 			}, null, false);
 		}
 		// amplitude slider combo
@@ -434,7 +439,7 @@ class MainApp {
 		{
 			const label = "Energy Spread";
 			const min = 0;
-			const max = 100;
+			const max = 25;
 			const start = 0;
 			const step = 1;
 			const precision = 0;
@@ -450,7 +455,7 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Reset Energies", () => {
 			this.amps.fill(0);
 			this.phases.fill(0);
-			this.#updateEnergyList();
+			this.updateEnergyList();
 		});
 		//makeEle(this.vp, "button", null, null, "Calculate", () => null);
 
@@ -459,7 +464,7 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Quit Program", () => {
 			window.location.href = "../../index.html#plotter2d";
 		});
-		this.#updateEnergyList();
+		this.updateEnergyList();
 		this.#setZoomCenterFromMode();
 	}
 
@@ -515,18 +520,39 @@ class MainApp {
 	#calcAddQ(x, t, norm) {
 		let real = 0;
 		let imag = 0;
-		for (let q = 1; q <= this.maxQnum; ++q) {
-			const amp = this.amps[q];
-			if (!amp) continue;
-			const phase = this.phases[q] / 360;
-			const xAng = x * q * Math.PI;
-			let xSinAng = Math.sin(xAng);
-			const tAng = (t * q * q + phase) * 2 * Math.PI;
-			const tAngReal = Math.cos(tAng);
-			const tangimag = Math.sin(tAng);
-			xSinAng *= amp;
-			real += xSinAng * tAngReal;
-			imag += xSinAng * tangimag;
+		const tryNew = true;
+		if (tryNew) {
+			for (let q = 0; q < this.maxQNum; ++q) {
+				const amp = this.amps[q];
+				if (!amp) continue;
+				const phase = this.phases[q] / 360;
+
+				let xSinAng = QBox1D.funBox(x * 2, q);
+
+				const energy = QBox1D.genBox.getEnergy(q);
+				const tAng = (t * energy + phase) * 2 * Math.PI;
+				const tAngReal = Math.cos(tAng);
+				const tangimag = Math.sin(tAng);
+				xSinAng *= amp;
+				real += xSinAng * tAngReal;
+				imag += xSinAng * tangimag;
+			}
+	
+		} else {
+			for (let q = 0; q < this.maxQNum; ++q) {
+				const amp = this.amps[q];
+				if (!amp) continue;
+				const phase = this.phases[q] / 360;
+				const qp1 = q + 1;
+				const xAng = x * qp1 * Math.PI;
+				let xSinAng = Math.sin(xAng);
+				const tAng = (t * qp1 * qp1 + phase) * 2 * Math.PI;
+				const tAngReal = Math.cos(tAng);
+				const tangimag = Math.sin(tAng);
+				xSinAng *= amp;
+				real += xSinAng * tAngReal;
+				imag += xSinAng * tangimag;
+			}
 		}
 		real *= norm;
 		imag *= norm;
@@ -541,7 +567,7 @@ class MainApp {
 	// draw at (0, -1) to (2, 1)
 	#buildFunData() {
 		let sumk = 0;
-		for (let q = 1; q <= this.maxQnum; ++q) {
+		for (let q = 0; q < this.maxQNum; ++q) {
 			sumk += this.amps[q];
 		}
 		if (!sumk) return;
@@ -573,31 +599,31 @@ class MainApp {
 		return "hsl(" + ang + ",100%," + brt + "%)";
 	}
 	
-	#userDraw() { 									//axis, axisNumbers, grid
+	userDraw() { 									//axis, axisNumbers, grid
 		this.graphPaper.draw(this.hAxis, this.vAxis, this.axis, this.axisNumbers, this.grid);
 		const lineWidth = .005;
 		const step = 2 / (this.animX ? this.numTSteps : this.numXSteps);
 		const pnts = [];
 		switch(this.displayMode) {
-		case MainApp.displayModesEnum.X_P_T:
-		case MainApp.displayModesEnum.T_P_X:
+		case QBox1D.displayModesEnum.X_P_T:
+		case QBox1D.displayModesEnum.T_P_X:
 			this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
 			break;
-		case MainApp.displayModesEnum.X_RI_T:
-		case MainApp.displayModesEnum.T_RI_X:
+		case QBox1D.displayModesEnum.X_RI_T:
+		case QBox1D.displayModesEnum.T_RI_X:
 			this.drawPrim.drawLinesSimple(this.realData, lineWidth, undefined, 0, step, "red");
 			this.drawPrim.drawLinesSimple(this.imagData, lineWidth, undefined, 0, step, "green");
 			break;
-		case MainApp.displayModesEnum.R_I_T:
-		case MainApp.displayModesEnum.R_I_X:
+		case QBox1D.displayModesEnum.R_I_T:
+		case QBox1D.displayModesEnum.R_I_X:
 			for (let i = 0; i <= this.realData.length; ++i) {
 				const pnt = [this.realData[i], this.imagData[i]];
 				pnts.push(pnt);
 			}
 			this.drawPrim.drawLinesParametric(pnts, lineWidth, 0, false, "blue");
 			break;
-		case MainApp.displayModesEnum.RIX_T_FREE:
-		case MainApp.displayModesEnum.RIT_X_FREE:
+		case QBox1D.displayModesEnum.RIX_T_FREE:
+		case QBox1D.displayModesEnum.RIT_X_FREE:
 			const pitch = this.rotateAxis[1] * 2 * Math.PI;
 			const yaw = this.rotateAxis[0] * 2 * Math.PI;
 			const pitchS = Math.sin(pitch);
@@ -644,33 +670,6 @@ class MainApp {
 			this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, this.colorData);
 			break;
 		}
-		const doTestColors = false;
-		if (doTestColors) {
-			const testData = [.3, .2, .7, .5, .25];
-			const testDataP = [
-				[2, 1],
-				[1, 2],
-				[0, 1],
-				[1, 0],
-				[2, .6]
-			];
-	
-			// last color not used if not 'close'
-			//const testColors = ["red", "green", "blue", "yellow", "brown"]; 
-			//const testColors = "green";
-			const testColors = [
-				this.#getCssColorFromComplex(1, 0),
-				this.#getCssColorFromComplex(0, 1),
-				this.#getCssColorFromComplex(-1, 0),
-				this.#getCssColorFromComplex(0, -1),
-				this.#getCssColorFromComplex(1, 0)
-			];
-	
-			/*this.drawPrim.drawLinesSimple(testData, .05, .07
-				, 0, .25
-				, testColors, "red", false);*/
-			this.drawPrim.drawLinesParametric(testDataP, .05, .07, false, testColors, "red");
-		}
 	}
 
 	#userUpdateInfo() {
@@ -709,7 +708,7 @@ class MainApp {
 		this.plotter2d.setSpace(Plotter2d.spaces.USER);
 		// now in user/cam space
 		// USER: do USER stuff
-		this.#userDraw(); // draw
+		this.userDraw(); // draw
 
 		// update UI, text
 		this.#userUpdateInfo();
@@ -719,174 +718,4 @@ class MainApp {
 	}
 }
 
-const mainApp = new MainApp();
-
-
-
-
-
-
-
-
-/*
-	case T_RI_X: 
-		{
-			static C32 rgbcolsy[3]={C32RED,C32WHITE,C32GREEN};
-			fplot afplot(VIEWXSTART,VIEWYSTART,VIEWXSIZE,VIEWYSIZE,0.0f,-1.0f,1.0f,1.0f,B32,"X","R,I",rgbcolsy);
-			afplot.drawaxis();
-			afplot.drawlabels();
-			afplot.startlinev();
-			for (i=0;i<SPACESIZE;++i) {
-				float x=i*(1.0f/SPACESIZE);
-				float y=reals[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
-				afplot.flinev(x,y,C32RED);
-			}
-			afplot.flinev(1.0f,0.0f,C32RED);
-			afplot.startlinev();
-			for (i=0;i<SPACESIZE;++i) {
-				float x=i*(1.0f/SPACESIZE);
-				float y=imags[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
-				afplot.flinev(x,y,C32GREEN);
-			}
-			afplot.flinev(1.0f,0.0f,C32GREEN);
-			break;
-		}
-// p against x, animate t
-	case T_P_X: 
-		{
-			fplot afplot(VIEWXSTART,VIEWYSTART,VIEWXSIZE,VIEWYSIZE,0.0f,0.0f,1.0f,1.0f,B32,"X","P",0);
-			afplot.drawaxis();
-			afplot.drawlabels();
-			afplot.startlinev();
-			for (i=0;i<SPACESIZE;++i) {
-				float x=i*(1.0f/SPACESIZE);
-				float re=reals[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
-				float im=imags[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
-				float y=re*re+im*im;//probs[lshift(countr,LTIMESIZE-LANIMSIZE)][i];
-				afplot.flinev(x,y,C32CYAN);
-			}
-			afplot.flinev(1.0f,0.0f,C32CYAN);
-			break;
-		}
-// r,i, animate t
-
-float sintb[TRIGSIZE]; // trig table
-float ak[ENERGYARRSIZE]; // 0 to 31 // 0 not used
-S32 phk[ENERGYARRSIZE]; // quantum states table (energy squareds/momentum, will change for non zero potential function)
-//float probs[TIMESIZE][SPACESIZE]; // [t][x];
-float reals[TIMESIZE][SPACESIZE]; // [t][x];
-float imags[TIMESIZE][SPACESIZE]; // [t][x];
-float angstreal[TIMESIZE][ENERGYARRSIZE]; // [t][n]
-float angstimag[TIMESIZE][ENERGYARRSIZE]; // [t][n]
-float angsx[SPACESIZE][ENERGYARRSIZE]; // [x][n]
-
-	void computeproc()
-{
-	S32 x,t,n,rt,rx;
-	static S32 exlate[ENERGYARRSIZE];
-	static S32 nexlate; // build a list of non zero energies
-	static float normk;
-	if (comptime==0) {
-		sumk=0;
-		float sumk2=0;
-		for (n=1;n<ENERGYARRSIZE;n++) {
-			sumk+=ak[n];
-			sumk2+=ak[n]*ak[n];
-		}
-		if (sumk==0) {
-			comptime=TIMESIZE;
-			return;
-		}
-// minor differences for normalization
-#define LOOK_BETTER
-#ifdef LOOK_BETTER
-		normk = 1.0f / sumk; // this scales/looks better
-#elif
-		normk = sqrtf(2.0f / sumk2); // this one is the correct normalizer
-#endif
-		nexlate=0;
-		for (n=1;n<ENERGYARRSIZE;n++) {
-			if (ak[n]) {
-				exlate[nexlate++]=n;
-			}
-		}
-		perf_start(TEST1);
-		for (x=0;x<SPACESIZE;x++)
-			for (n=1;n<ENERGYARRSIZE;n++) {
-				rx=lshift(n*x,LTRIGSIZE-LSPACESIZE-1);
-				angsx[x][n]=sint(rx)*ak[n];
-			}
-		for (t = 0; t <TIMESIZE; ++t) {
-			for (n = 1; n < ENERGYARRSIZE; ++n) {
-				rt = lshift(n * n * t + phk[n], LTRIGSIZE - LTIMESIZE);
-				angstreal[t][n] = cost(rt);
-				angstimag[t][n] = sint(rt);
-			}
-		}
-		perf_end(TEST1);
-	}
-	if (comptime==TIMESIZE)
-		return;
-	perf_start(TEST2);
-	if (wininfo.fpsavg2>wininfo.fpswanted+2.0f)
-		++comprate;
-	else if (wininfo.fpscurrent2<wininfo.fpswanted-2.0f) {
-		if (comprate<=0)
-			comprate=1;
-		else if (comprate<10)
-			--comprate;
-		else
-			comprate=comprate*9/10;
-	}
-	if (comprate<=0)
-		comprate=1;
-	S32 endtime=comptime+comprate;
-	if (endtime>TIMESIZE)
-		endtime=TIMESIZE;
-	for (t=comptime;t<endtime;++t) {
-#ifdef USEVECTOR
-		vector<float> & realst=reals[t]; // try and speed this up
-		vector<float> & imagst=imags[t];
-//		vector<float> & probst=probs[t];
-		vector<float> & angstrealt=angstreal[t];
-		vector<float> & angstimagt=angstimag[t];
-#else
-		float* realst=reals[t]; // try and speed this up
-		float* imagst=imags[t];
-//		float* probst=probs[t];
-		float* angstrealt=angstreal[t];
-		float* angstimagt=angstimag[t];
-#endif
-		for (x=0;x<SPACESIZE;++x) {
-			float ampr=0,ampi=0;
-#ifdef USEVECTOR
-			vector<float> & angsxx=angsx[x];
-#else
-			float* angsxx=angsx[x];
-#endif
-			perf_start(TEST3);
-			S32 np;
-			for (np=0;np<nexlate;++np) {
-				n=exlate[np];
-				float xp=angsxx[n];
-				ampr+=xp*angstrealt[n];
-				ampi+=xp*angstimagt[n];
-			}
-			perf_end(TEST3);
-			perf_start(TEST4);
-			ampr*=normk; // go with graphical normals, better scaling
-			ampi*=normk;
-			realst[x]=ampr;
-			imagst[x]=ampi;
-//			probst[x]=ampr*ampr+ampi*ampi;
-			perf_end(TEST4);
-		}
-	}
-	comptime=endtime;
-	perf_end(TEST2);
-}
-
-
-	}
-*/		
-
+//const mainApp = new QBox1D();
