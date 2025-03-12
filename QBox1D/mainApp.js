@@ -32,7 +32,10 @@ class QBox1D {
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		//this.fixedSize = [800, 600];
 		this.fixedSize = null;
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, /*this.vp*/null, this.startCenter, this.startZoom, this.fixedSize);
+		// show camera zoom and pos
+		//this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom, this.fixedSize);
+		// hide camera and pos
+		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, null, this.startCenter, this.startZoom, this.fixedSize);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -51,7 +54,7 @@ class QBox1D {
 		QBox1D.genBox = new makeFunBox(this.maxQNum);
 		QBox1D.funBox = QBox1D.genBox.getFun();
 		this.scrollQOffset = 0; // scroll amount
-		this.curQnum = 1; // 1 to maxQNum inclusive
+		this.curQnum = 1; // 1 to maxQNum inclusive, external
 
 		// Qnum internal starts at 0
 		this.amps = new Array(this.maxQNum).fill(0); // amps[0] is NOW used
@@ -195,7 +198,26 @@ class QBox1D {
 		this.scrollQOffset = range(0, this.scrollQOffset, this.maxQNum - this.maxShowQnum);
 	}
 
-	#setZoomCenterFromMode() {
+	setGraphicsParms(modeSettings) {
+		const mode = this.displayMode;
+		const setting = modeSettings[mode];
+		this.animX = setting.animX; // otherwise, animT
+		this.startCenter = setting.center;
+		this.startZoom = setting.zoom;
+		this.plotter2d.setTrans(this.startCenter);
+		this.plotter2d.setZoom(this.startZoom);
+		this.hAxis = setting.hAxis;
+		this.vAxis = setting.vAxis;
+		this.axis = setting.showAxis;
+		this.axisNumbers = setting.showAxisNumbers;
+		this.grid = setting.showGrid;
+		this.desc = "[" + mode + "] " + setting.desc;
+		this.animX = setting.animX;
+		this.freeMouse = setting.freeMouse;
+		this.eles.animCombo.setValue(this.animX ? this.animPos : this.animTime);
+	}
+
+	setZoomCenterFromMode() {
 		const modeSettings = [
 			{ 
 				desc: "P on X anim T",
@@ -274,22 +296,7 @@ class QBox1D {
 				freeMouse: true
 			},
 		];
-		const mode = this.displayMode;
-		const setting = modeSettings[mode];
-		this.animX = setting.animX; // otherwise, animT
-		this.startCenter = setting.center;
-		this.startZoom = setting.zoom;
-		this.plotter2d.setTrans(this.startCenter);
-		this.plotter2d.setZoom(this.startZoom);
-		this.hAxis = setting.hAxis;
-		this.vAxis = setting.vAxis;
-		this.axis = setting.showAxis;
-		this.axisNumbers = setting.showAxisNumbers;
-		this.grid = setting.showGrid;
-		this.desc = "[" + mode + "] " + setting.desc;
-		this.animX = setting.animX;
-		this.freeMouse = setting.freeMouse;
-		this.eles.animCombo.setValue(this.animX ? this.animPos : this.animTime);
+		this.setGraphicsParms(modeSettings);
 	}
 	
 	// USER: add more members or classes to QBox1D
@@ -304,21 +311,24 @@ class QBox1D {
 
 		// animate
 		this.fpsScreen = 60;
-		this.numXSteps = 1024; // for drawing
+		 // for drawing
+		this.numXSteps = 1024;
 		this.numTSteps = 1024;
+		this.minDataX = 0;
+		this.maxDataX = 2;
 		this.displayMode = QBox1D.displayModesEnum.X_P_T; // 8 different display modes
-		this.rotateAxis = vec2.create(); // for RIX free
+		this.rotateAxis = vec2.create(); // for RIX and RIT free
 
 		this.maxQNum = 512;
 		this.maxShowQnum = 16; // scroll window size
-		// for sine wave like functions, add a phase to the input of the function(s)
+		this.probScale = 2;
+		// animation
 		this.animTime = 0; // [0 to 1]
 		this.animPos = 0; // [0 to 1]
 		this.animMin = 0;
 		this.animMax = 1;
 		this.animStep = 1 / 1000000;
 		this.animPrecision = 5;
-
 		this.freq = 0;
 		this.freqMin = -1 / 8;
 		this.freqMax = 1 / 8;
@@ -375,14 +385,14 @@ class QBox1D {
 			if (this.displayMode < 0) {
 				this.displayMode += QBox1D.displayModesEnum.NUM;
 			}
-			this.#setZoomCenterFromMode();
+			this.setZoomCenterFromMode();
 		});
 		makeEle(this.vp, "button", null, "lessWidth", "Next", () => {
 			this.displayMode++;
 			if (this.displayMode >= QBox1D.displayModesEnum.NUM) {
 				this.displayMode -= QBox1D.displayModesEnum.NUM;
 			}
-			this.#setZoomCenterFromMode();
+			this.setZoomCenterFromMode();
 		});
 	
 		makeEle(this.vp, "hr");
@@ -465,7 +475,7 @@ class QBox1D {
 			window.location.href = "../../index.html#plotter2d";
 		});
 		this.updateEnergyList();
-		this.#setZoomCenterFromMode();
+		this.setZoomCenterFromMode();
 	}
 
 	#userProc() {
@@ -520,43 +530,22 @@ class QBox1D {
 	#calcAddQ(x, t, norm) {
 		let real = 0;
 		let imag = 0;
-		const tryNew = true;
-		if (tryNew) {
-			for (let q = 0; q < this.maxQNum; ++q) {
-				const amp = this.amps[q];
-				if (!amp) continue;
-				const phase = this.phases[q] / 360;
-
-				let xSinAng = QBox1D.funBox(x * 2, q);
-
-				const energy = QBox1D.genBox.getEnergy(q);
-				const tAng = (t * energy + phase) * 2 * Math.PI;
-				const tAngReal = Math.cos(tAng);
-				const tangimag = Math.sin(tAng);
-				xSinAng *= amp;
-				real += xSinAng * tAngReal;
-				imag += xSinAng * tangimag;
-			}
-	
-		} else {
-			for (let q = 0; q < this.maxQNum; ++q) {
-				const amp = this.amps[q];
-				if (!amp) continue;
-				const phase = this.phases[q] / 360;
-				const qp1 = q + 1;
-				const xAng = x * qp1 * Math.PI;
-				let xSinAng = Math.sin(xAng);
-				const tAng = (t * qp1 * qp1 + phase) * 2 * Math.PI;
-				const tAngReal = Math.cos(tAng);
-				const tangimag = Math.sin(tAng);
-				xSinAng *= amp;
-				real += xSinAng * tAngReal;
-				imag += xSinAng * tangimag;
-			}
+		for (let q = 0; q < this.maxQNum; ++q) {
+			const amp = this.amps[q];
+			if (!amp) continue;
+			const phase = this.phases[q] / 360;
+			let xSinAng = QBox1D.funBox(x, q);
+			const energy = QBox1D.genBox.getEnergy(q);
+			const tAng = (t * energy + phase) * 2 * Math.PI;
+			const tAngReal = Math.cos(tAng);
+			const tangimag = Math.sin(tAng);
+			xSinAng *= amp;
+			real += xSinAng * tAngReal;
+			imag += xSinAng * tangimag;
 		}
 		real *= norm;
 		imag *= norm;
-		const prob = (real * real + imag * imag) * 2;
+		const prob = (real * real + imag * imag) * this.probScale;
 		this.realData.push(real);
 		this.imagData.push(imag);
 		this.probData.push(prob);
@@ -567,24 +556,32 @@ class QBox1D {
 	// draw at (0, -1) to (2, 1)
 	#buildFunData() {
 		let sumk = 0;
+		let sumk2 = 0;
 		for (let q = 0; q < this.maxQNum; ++q) {
-			sumk += this.amps[q];
+			const v = this.amps[q];
+			sumk += v;
+			sumk2 += v * v;
 		}
 		if (!sumk) return;
-		const norm = 1 / sumk;
+		const norm1 = 1 / sumk; // this scales/looks better
+		const norm2 = Math.sqrt(2 / sumk2); // this one is the correct normalizer
+		const useNorm1 = true;
+		const norm = useNorm1 ? norm1 : norm2;
 		this.realData = [];
 		this.imagData = [];
 		this.probData = [];
 		this.colorData = [];
 		if (this.animX) {
 			for (let ti = 0; ti <= this.numTSteps; ++ti) {
-				const x = this.animPos;
+				let x = this.animPos;
+				x = this.minDataX + (this.maxDataX - this.minDataX) * x;
 				const t = ti / this.numTSteps;
 				this.#calcAddQ(x, t, norm);
 			}
-		} else {
+		} else { // animT
 			for (let xi = 0; xi <= this.numXSteps; ++xi) {
-				const x = xi / this.numXSteps;
+				let x = xi / this.numXSteps;
+				x = this.minDataX + (this.maxDataX - this.minDataX) * x;
 				const t = this.animTime;
 				this.#calcAddQ(x, t, norm);
 			}
@@ -598,25 +595,39 @@ class QBox1D {
 		const brt = 55 * mag;
 		return "hsl(" + ang + ",100%," + brt + "%)";
 	}
-	
-	userDraw() { 									//axis, axisNumbers, grid
+
+	userDrawCommon() {
 		this.graphPaper.draw(this.hAxis, this.vAxis, this.axis, this.axisNumbers, this.grid);
 		const lineWidth = .005;
-		const step = 2 / (this.animX ? this.numTSteps : this.numXSteps);
+		let step;
+		let minVal;
+		let maxVal;
+		let numSteps;
+		if (this.animX) {
+			numSteps = this.numTSteps;
+			step = 2 / this.numTSteps; // draw from 0 to 2 for // non FREE
+			minVal = 0;
+			maxVal = 2; // for FREE
+		} else {
+			numSteps = this.numXSteps;
+			step = (this.maxDataX - this.minDataX) / this.numXSteps; // draw from minDataX to maxDataX
+			minVal = this.minDataX;
+			maxVal = this.maxDataX; //for FREE
+		}
 		const pnts = [];
 		switch(this.displayMode) {
 		case QBox1D.displayModesEnum.X_P_T:
 		case QBox1D.displayModesEnum.T_P_X:
-			this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, 0, step, "blue");
+			this.drawPrim.drawLinesSimple(this.probData, lineWidth, undefined, minVal, step, "blue");
 			break;
 		case QBox1D.displayModesEnum.X_RI_T:
 		case QBox1D.displayModesEnum.T_RI_X:
-			this.drawPrim.drawLinesSimple(this.realData, lineWidth, undefined, 0, step, "red");
-			this.drawPrim.drawLinesSimple(this.imagData, lineWidth, undefined, 0, step, "green");
+			this.drawPrim.drawLinesSimple(this.realData, lineWidth, undefined, minVal, step, "red");
+			this.drawPrim.drawLinesSimple(this.imagData, lineWidth, undefined, minVal, step, "green");
 			break;
 		case QBox1D.displayModesEnum.R_I_T:
 		case QBox1D.displayModesEnum.R_I_X:
-			for (let i = 0; i <= this.realData.length; ++i) {
+			for (let i = 0; i <= numSteps; ++i) {
 				const pnt = [this.realData[i], this.imagData[i]];
 				pnts.push(pnt);
 			}
@@ -658,8 +669,9 @@ class QBox1D {
 			
 			// build and draw line
 			const pnts2 = [];
-			for (let i = 0; i <= this.realData.length; ++i) {
-				const qx = i / this.realData.length;
+			for (let i = 0; i <= numSteps; ++i) {
+				let qx = minVal + i * (maxVal - minVal) / numSteps; // minDataX to maxDataX
+				qx /= 2;
 				const qr = this.realData[i];
 				const qi = this.imagData[i];
 				const px = x2x * qx + r2x * qr + i2x * qi;
@@ -669,6 +681,15 @@ class QBox1D {
 			}
 			this.drawPrim.drawLinesParametric(pnts2, lineWidth, 0, false, this.colorData);
 			break;
+		}
+	}
+
+	userDraw() {
+		this.userDrawCommon();
+		if (this.displayMode == QBox1D.displayModesEnum.X_P_T
+			 || this.displayMode == QBox1D.displayModesEnum.X_RI_T) {
+			this.drawPrim.drawLine([0, -.25], [0, .25], .02, "black");
+			this.drawPrim.drawLine([2, -.25], [2, .25], .02, "black");
 		}
 	}
 
@@ -718,4 +739,5 @@ class QBox1D {
 	}
 }
 
+// now called in the html
 //const mainApp = new QBox1D();
