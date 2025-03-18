@@ -401,9 +401,9 @@ class QBox1D {
 		const energyDOM = makeEle(this.vp, "pre", null, "energyList", "energy list text");
 		this.eles.energyListDom = energyDOM;
 		energyDOM.addEventListener("click", (e) => {
-			const rowSize = 20; // tweak
-			this.energiesMouseY = e.offsetY - rowSize;
-			const mul = 1 / rowSize;
+			const rowHeight = 18.46; // tweak
+			this.energiesMouseY = e.offsetY - rowHeight;
+			const mul = 1 / rowHeight;
 			const add = 0;
 			const v = Math.floor(range(0, this.energiesMouseY * mul + add, this.maxQNum - 1));
 			this.#updateQnumScroll(v + this.scrollQOffset);
