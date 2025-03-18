@@ -26,11 +26,12 @@ class QSHO1D extends QBox1D {
 	}
 
 	setZoomCenterFromMode() {
+		const startZoom = .12;
 		const modeSettings = [
 			{ 
 				desc: "P on X anim T",
 				center: [0, 5.2],
-				zoom: .1516,
+				zoom: startZoom,
 				hAxis: 'X',
 				vAxis: 'P',
 				showAxisNumbers: false,
@@ -39,7 +40,7 @@ class QSHO1D extends QBox1D {
 			{ 
 				desc: "RI on X anim T",
 				center: [0, 0],
-				zoom: .1516,
+				zoom: startZoom,
 				hAxis: 'X',
 				vAxis: 'RI',
 				showAxisNumbers: false,
@@ -151,10 +152,19 @@ class QSHO1D extends QBox1D {
 	userDraw() {
 		this.userDrawCommon();
 		if (this.displayMode == QBox1D.displayModesEnum.X_P_T
-			|| this.displayMode == QBox1D.displayModesEnum.X_RI_T) {
-			const range = Math.sqrt(this.curQnum * 2 + 1);
-			this.drawPrim.drawLine([-range, -.25], [-range, .25], .02, "black");
-			this.drawPrim.drawLine([range, -.25], [range, .25], .02, "black");
+		  || this.displayMode == QBox1D.displayModesEnum.X_RI_T) {
+			const numSteps = 100;
+			const height = 1 / 32;
+			const energy = this.curQnum * 2 + 1;
+			const range = Math.sqrt(energy);
+			const down = energy * height;
+			const span = this.maxDataX - this.minDataX;
+			const step = span / numSteps;
+			this.drawPrim.drawLine([-range, -.25], [-range, .25], .02, "black"); // left
+			this.drawPrim.drawLine([range, -.25], [range, .25], .02, "black"); // right
+
+			const potential = calculus.funToArray((x) => x * x * height - down, undefined, this.minDataX, this.maxDataX, numSteps, false)
+			this.drawPrim.drawLinesSimple(potential, .02, 0, this.minDataX, step, "#0003");
 		}
 	}
 }

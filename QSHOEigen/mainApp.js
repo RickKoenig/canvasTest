@@ -62,7 +62,7 @@ class MainApp {
 
 		for (let q = 0; q <= this.maxQNum; ++q) {
 
-			console.log("test diffeq");
+			//console.log("test diffeq");
 			let maxErr = 0;
 			let errorStr = "";
 			for (let i = 0; i <= numSteps; ++i) {
@@ -83,9 +83,38 @@ class MainApp {
 			}
 			
 			// calc area
-			const area = calculus.calcArea(MainApp.funSHO, true, q, xStart, xEnd, numSteps);
+			//console.log("test area");
+			const area = calculus.calcAreaS(MainApp.funSHO, true, q, xStart, xEnd, numSteps);
 			console.log("Qnum = " + q.toString().padStart(3) + ", Max Error = " + maxErr.toFixed(6).padStart(8) + " Area = " + area.toFixed(6).padStart(8) + errorStr);
 		}
+	}
+
+	#calcParaCoef(p0, ph, p1) {
+		const a = 2 * (p1 + p0) - 4 * ph;
+		const b = 4 * ph - 3 * p0 - p1;
+		const c = p0;
+		return [a, b, c];
+	}
+
+	#quad(a, b, c, x) {
+		return x * (a * x + b) + c;
+	}
+
+	#testArea() {
+		console.log("test area");
+		const area = calculus.calcAreaS((x) => x * x, false, null, 2, 3, 10);
+		console.log("area = " + area);
+		console.log("test parabola");
+		const Ypnts = [11, 13, 17];
+		const arr = this.#calcParaCoef(...Ypnts);
+		let [a,b,c] = arr;
+		for (let i = 0; i <= 10; ++i) {
+			const x = i / 10;
+			const y = this.#quad(a, b, c, x);
+			console.log("x = " + x.toFixed(4).padStart(7) + ", y = " + y.toFixed(4).padStart(7));
+		}
+		console.log("Ypoints " + Ypnts[0] + " " + Ypnts[1] + " " + Ypnts[2]);
+		console.log("coefs " + a + " " + b + " " + c);
 	}
 
 	#userInit() {
@@ -107,6 +136,7 @@ class MainApp {
 		// before firing up Plotter2d
 		this.startCenter = [0, 0];
 		this.startZoom = .25;
+		this.#testArea();
 	}
 
 	#userBuildUI() {
