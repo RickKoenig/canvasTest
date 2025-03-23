@@ -9,7 +9,7 @@ class MainApp {
 	}
 
 	constructor() {
-		console.log("\n############# creating instance of MainApp");
+		console.log("%c\n############# creating instance of MainApp", "color: yellow");
 		++MainApp.numInstances;
 
 		// vertical panel UI
@@ -54,14 +54,14 @@ class MainApp {
 		const xStart = 0;
 		const xEnd = 2;
 		const numSteps = 1000;
-
+		/*
 		console.log("test area");
 		for (let q = 0; q <= this.maxQNum; ++q) {
 			
 			// calc area
 			const area = calculus.calcAreaT(MainApp.funBox, true, q, xStart, xEnd, numSteps);
 			console.log("Qnum = " + q.toString().padStart(3) + ", Area = " + area.toFixed(6).padStart(8));
-		}
+		}*/
 	}
 
 	#userInit() {

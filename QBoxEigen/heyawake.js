@@ -1,178 +1,224 @@
 'use strict';
 
-const boardDirections = {
-    UP: 1,
-    DOWN: 2,
-    LEFT: 4,
-    RIGHT: 8
+const bD = {
+    LEFT: 1,
+    RIGHT: 2,
+    UP: 4,
+    DOWN: 8
 }
 
-function isIsolatedOld(arr, blackSum) {
-    //return true;
-    // only check nearest neighbors
-    // BFS (Later)
-    // top and left are blocked
-    const sizeX = arr[0].length;
-    const sizeY = arr.length;
-    for (let j = 0; j < sizeY - 1; ++j) {
-        for (let i = 0; i < sizeX - 1; ++i) {
-            let surround = 0;
-            if (arr[j][i] == 1) { // only see if whites are surrounded
-                continue;
-            }
-            // left
-            if (i == 0) {
-                ++surround;
-            } else if (arr[j][i - 1] == 1) {
-                ++surround;
-            }
-            // top
-            if (j == 0) {
-                ++surround;
-            } else if (arr[j - 1][i] == 1) {
-                ++surround;
-            }
-            // right
-            if (arr[j][i + 1] == 1) {
-                ++surround;
-            }
-            // bottom
-            if (arr[j + 1][i] == 1) {
-                ++surround;
-            }
-            if (surround == 4) {
-                return true;
+function findFirstWhite(board) {
+    for (let j = 0; j < board.length; ++j) {
+        const row = board[j];
+        for (let i = 0; i < row.length; ++i) {
+            if (row[i] == 0) {
+                return [i, j];
             }
         }
     }
-    return false;
+    return null;
 }
 
-function isIsolated(arr, blackSum) {
-    const whiteSum = sqMax * sqMax - blackSum;
-    //return true;
-    // BFS NOW !!
-    // top and left are blocked
-    //let freeSum = 0;
-    let newSum;
-    do  {
-        newSum = 0;
-    } while(newSum);
-
-    for (let j = 0; j < sqMax - 1; ++j) {
-        const jm = j * sqMax;
-        for (let i = 0; i < sqMax - 1; ++i) {
-            let surround = 0;
-            const idx = jm + i;
-            if (arr[idx] == 1) {
-                continue;
-            }
-            // left
-            if (i == 0) {
-                ++surround;
-            } else if (arr[idx - 1] == 1) {
-                ++surround;
-            }
-            // top
-            if (j == 0) {
-                ++surround;
-            } else if (arr[idx - sqMax] == 1) {
-                ++surround;
-            }
-            // right
-            if (arr[idx + 1] == 1) {
-                ++surround;
-            }
-            // bottom
-            if (arr[idx + sqMax] == 1) {
-                ++surround;
-            }
-            if (surround == 4) {
-                return true;
+// return false if no whites are isolated
+function isIsolated(board, bounds) {
+    const sizeX = board[0].length;
+    const sizeY = board.length;
+    if (sizeX == 1 && sizeY == 1) {
+        return false; // a 1 by 1 is always good for any bounds
+    }
+    // BFS now !
+    // has at least 1 white
+    const blackSum = getBlackSum(board);
+    const whiteSum = sizeX * sizeY - blackSum;
+    const visited = createArray(sizeY, sizeX);
+    let numVisited = 0;
+    fillArray(visited, false);
+    let nexts = []; // array of coords for new visits
+    // setup visited seeds
+    if (!(bounds & bD.LEFT)) {
+        const i = 0;
+        for (let j = 0; j < sizeY; ++j) {
+            if (!visited[j][i] && board[j][i] == 0) { // white
+                visited[j][i] = true;
+                ++numVisited;
+                nexts.push([i, j]);
             }
         }
     }
-    return false;
+    if (!(bounds & bD.RIGHT)) {
+        const i = sizeX - 1;
+        for (let j = 0; j < sizeY; ++j) {
+            if (!visited[j][i] && board[j][i] == 0) { // white
+                visited[j][i] = true;
+                ++numVisited;
+                nexts.push([i, j]);
+            }
+        }
+    }
+    if (!(bounds & bD.UP)) {
+        const j = 0;
+        for (let i = 0; i < sizeX; ++i) {
+            if (!visited[j][i] && board[j][i] == 0) { // white
+                visited[j][i] = true;
+                ++numVisited;
+                nexts.push([i, j]);
+            }
+        }
+    }
+    if (!(bounds & bD.DOWN)) {
+        const j = sizeY - 1;
+        for (let i = 0; i < sizeX; ++i) {
+            if (!visited[j][i] && board[j][i] == 0) { // white
+                visited[j][i] = true;
+                ++numVisited;
+                nexts.push([i, j]);
+            }
+        }
+    }
+    // fully bounded, seed with first white
+    if (bounds == (bD.LEFT | bD.RIGHT | bD.UP | bD.DOWN)) {
+        let [i, j] = findFirstWhite(board);
+        visited[j][i] = true;
+        ++numVisited;
+        nexts.push([i, j]);
+    }
+    // run through new visits
+    while(nexts.length) {
+        //console.log("new visits = " + nexts.length);
+        const olds = nexts;
+        nexts = [];
+        for (const p of olds) {
+            let [i, j] = p;
+            // left
+            if (i > 0 && board[j][i - 1] == 0 && !visited[j][i - 1]) {
+                visited[j][i - 1] = true;
+                ++numVisited;
+                nexts.push([i - 1, j]);
+            }
+            // right
+            if (i < sizeX - 1 && board[j][i + 1] == 0 && !visited[j][i + 1]) {
+                visited[j][i + 1] = true;
+                ++numVisited;
+                nexts.push([i + 1, j]);
+            }
+            // up
+            if (j > 0 && board[j - 1][i] == 0 && !visited[j - 1][i]) {
+                visited[j - 1][i] = true;
+                ++numVisited;
+                nexts.push([i, j - 1]);
+            }
+            // down
+            if (j < sizeY - 1 && board[j + 1][i] == 0 && !visited[j + 1][i]) {
+                visited[j + 1][i] = true;
+                ++numVisited;
+                nexts.push([i, j + 1]);
+            }
+        }
+    }
+    //console.log("total visited = " + numVisited);
+    return numVisited != whiteSum;
 }
 
 function checkPosition(p) {
-    //return ""; // valid position
-    //return "test";
+    const doGoal = true;
+    const doBlackHorizontal = true;
+    const doBlackVertical = true;
+    const doIsolated = true;
+    const doBad = false;
+    if (doBad) {
+        return "bad";
+    }
     let blackSum = getBlackSum(p.board);
-    // check array
-    let status = ""; // good
+    let status = ""; // no status is good
     // check if blackSum matches goal
-    if (p.goal >= 0 && blackSum != p.goal) {
+    if (doGoal && p.goal >= 0 && blackSum != p.goal) {
         status = "wrong goal";
         return status;
     }
-    //return ""; // test early good
-    const arr = p.board;
-    const sizeX = arr[0].length;
-    const sizeY = arr.length;
+    const board = p.board;
+    const sizeX = board[0].length;
+    const sizeY = board.length;
     // check 2 blacks next to each other horizontal
-    for (let j = 0; j < sizeY; ++j) {
-        for (let i = 0; i < sizeX - 1; ++i) {
-            if (arr[j][i] == 1) {
-                if (arr[j][i + 1] == 1) {
-                    status = "2blacksH";
-                    return status;
+    if (doBlackHorizontal) {
+        for (let j = 0; j < sizeY; ++j) {
+            for (let i = 0; i < sizeX - 1; ++i) {
+                if (board[j][i] == 1) {
+                    if (board[j][i + 1] == 1) {
+                        status = "2blacksH";
+                        return status;
+                    }
                 }
             }
         }
     }
     // check 2 blacks next to each other vertical
-    for (let j = 0; j < sizeY - 1; ++j) {
-        for (let i = 0; i < sizeX; ++i) {
-            if (arr[j][i] == 1) {
-                if (arr[j + 1][i] == 1) {
-                    status = "2blacksV";
-                    return status;
+    if (doBlackVertical) {
+        for (let j = 0; j < sizeY - 1; ++j) {
+            for (let i = 0; i < sizeX; ++i) {
+                if (board[j][i] == 1) {
+                    if (board[j + 1][i] == 1) {
+                        status = "2blacksV";
+                        return status;
+                    }
                 }
             }
         }
     }
-    //return status;
     // check if white is isolated/trapped
-    const iso = isIsolatedOld(arr, blackSum, p.bounds);
-    if (iso) {
-        status = "isolated";
+    if (doIsolated) {
+        const iso = isIsolated(board, p.bounds);
+        if (iso) {
+            status = "isolated";
+        }
     }
     return status;
 }
 
-function getBlackSum(arr2d) {
+function getBlackSum(board) {
     let sum = 0;
-    for (const arr of arr2d) {
-        sum += arr.reduce((acc, cur) => acc + cur, 0);
+    for (const row of board) {
+        sum += row.reduce((acc, cur) => acc + cur, 0);
     }
     return sum;
 }
 
-function printBoard(arr) {
-    for (let j = 0; j < arr.length; ++j) {
-        //let row = "";
-        let row = "%c";
-        for (let i = 0; i < arr[0].length; ++i) {
-            //const idx = jm + i;
-            //row += arr[idx] ?  "\u25A0" : "\u25A1"; // browsers
-            row += arr[j][i] ?  "\u25A1" : "\u25A0"; // VSC
-            //row += arr[idx] ?  "B" : "W";
+function printBoard(board) {
+    for (const row of board) {
+        //let prefix = "";
+        let prefix = "%c";
+        for (const val of row) {
+            //prefix += val ?  "\u25A0" : "\u25A1"; // browsers
+            prefix += val ?  "\u25A1" : "\u25A0"; // VSC
+            //prefix += val ?  "B" : "W";
         }
-        console.log(row, "color: lightgray;"); 
+        console.log(prefix, "color: lightgray;"); 
     }
+}
+
+function getBoundsStr(b) {
+    if (b == 0) {
+        return "none";
+    }
+    let s = "";
+    if (b & bD.LEFT) s += "L";
+    if (b & bD.RIGHT) s += "R";
+    if (b & bD.UP) s += "U";
+    if (b & bD.DOWN) s += "D";
+    return s;
 }
 
 // brSizeX, brSizeY, bounds, goal
 function runBrute(p) {
-    console.log("\nrun brute with sizeX = " + p.brSizeX + ", sizeY = " + p.brSizeY + ", goal = " + p.goal);
-    let arr2d = createArray(p.brSizeY, p.brSizeX);
-    fillArray(arr2d,0);
+    console.log("\nrun brute with sizeX = " + p.brSizeX + ", sizeY = " + p.brSizeY 
+        + ", goal = " + p.goal + ", bounds = " + getBoundsStr(p.bounds));
+    let board = createArray(p.brSizeY, p.brSizeX);
+    fillArray(board,0);
     const maxWatch = 1000000000;
     let watch = 0;
     let numGood = 0;
-    let blackSum = getBlackSum(arr2d);
-    const pos = {board: arr2d, bounds: p.bounds, goal: p.goal};
+    let blackSum = getBlackSum(board);
+    let curSum = 0;
+    const pos = {board: board, bounds: p.bounds, goal: p.goal};
     do {
         let status = checkPosition(pos);
         if (!status) {
@@ -184,48 +230,106 @@ function runBrute(p) {
             if (!status) status = "good";
             // show array
             console.log("------- id = " + watch + ", blackSum = " + blackSum + ", status = " + status + " -------");
-            printBoard(arr2d);
+            printBoard(board);
         }
-
-        // next array
+        // next board
         let brk = false;
-        for(let j = 0; j < arr2d.length; ++j) {
+        for(let j = 0; j < board.length; ++j) {
             if (brk) {
                 break;
             }
-            const arr = arr2d[j];
-            for(let i = 0; i < arr.length; ++i) {
-                arr[i] ^= 1;
-                if (arr[i] != 0) {
+            const row = board[j];
+            for(let i = 0; i < row.length; ++i) {
+                if (row[i]) { // 1 to 0
+                    row[i] = 0;
+                    --curSum;
+                //} else if (true) { // 0 to 1, check if blackSum >= goal
+                } else if (curSum < p.goal) { // 0 to 1, check if blackSum >= goal
+                    // only if curSum < goal
+                    row[i] = 1;
+                    ++curSum;
                     brk = true;
                     break;
                 }
             }
         }
-        // watch array for too many iterations
+/*
+        // next array
+        let brk = false;
+        for(let j = 0; j < board.length; ++j) {
+            if (brk) {
+                break;
+            }
+            const row = board[j];
+            for(let i = 0; i < row.length; ++i) {
+                row[i] ^= 1;
+                if (row[i] != 0) {
+                    brk = true;
+                    break;
+                }
+            }
+        }
+*/        // watch array for too many iterations
         ++watch;
         if (watch >= maxWatch) {
             break;
         }
         // blackSum next array
-        blackSum = getBlackSum(arr2d);
+        blackSum = getBlackSum(board);
     } while (blackSum > 0); // see we reached the beginning
     console.log("good = " + numGood + ", bad = " + (watch - numGood) + ", total = " + watch);
 }
 
+function runBinaryTest() {
+    const board = createArray(3, 3);
+    fillArray(board, 0);
+    //let blackSum; // number of 1's in the array
+    let curSum = 0; // a better way than getBlackSum
+    let count = 0;
+    const goal = 1; // black is 1, white is 0, goal is num blacks
+    console.log("\nrun binary test, goal = " + goal);
+    // next array, with constraints
+    do {
+        console.log("count = " + (count++).toString().padStart(2) + ", " + JSON.stringify(board));
+
+        // next board
+        let brk = false;
+        for(let j = 0; j < board.length; ++j) {
+            if (brk) {
+                break;
+            }
+            const row = board[j];
+            for(let i = 0; i < row.length; ++i) {
+                if (row[i]) { // 1 to 0
+                    row[i] = 0;
+                    --curSum;
+                } else if (curSum < goal) { // 0 to 1, check if blackSum >= goal
+                    // only if curSum < goal
+                    row[i] = 1;
+                    ++curSum;
+                    brk = true;
+                    break;
+                }
+            }
+        }
+    } while (curSum > 0); // see if we reached the beginning optimized
+    console.log("count = " + count);
+}
+
 function runHeyawake() {
+    runBinaryTest();
     /*
         2D square in upper left corner FOR NOW, find valid solutions
         white is 0, black is 1
     */
-    console.log("\nheyawake test");
+    console.log("%c\nheyawake test", "color: yellow");
 
     // special positions
     const special = true;
     if (special) {
         console.log("\ncheck some special positions");
         const specialPositions = [
-            {
+            /*{
                 board: [
                     [1, 0, 1, 0, 1],
                     [0, 0, 0, 0, 0],
@@ -233,35 +337,56 @@ function runHeyawake() {
                     [0, 0, 0, 1, 0],
                     [1, 0, 1, 0, 1]
                 ],
-                bounds: boardDirections.UP | boardDirections.LEFT,
+                bounds: bD.LEFT | bD.UP,
                 goal: 10,
+            },
+            {
+                board: [
+                    [0, 0, 0],
+                    [0, 0, 0],
+                    [0, 0, 0],
+                ],
+                bounds: 0,//bD.LEFT | bD.UP,
+                goal: 0,
             },
             {
                 board: [
                     [0, 1, 0],
                     [1, 0, 1],
                 ],
-                bounds: boardDirections.UP | boardDirections.LEFT,
+                bounds: 0,//bD.LEFT | bD.UP,
                 goal: 3,
             }
+            {
+                board: [
+                    [0, 0, 0],
+                    [1, 0, 1],
+                    [0, 0, 0],
+                ],
+                bounds: bD.LEFT | bD.UP | bD.RIGHT | bD.DOWN,
+                goal: -1,
+            }*/
         ];
         for (const pos of specialPositions) {
+            console.log("");
+            printBoard(pos.board);
             let status = checkPosition(pos);
             if (!status) status = "good";
             const blackSum = getBlackSum(pos.board);
-            console.log("status = " + status + ", goal = " + pos.goal + ", blackSum = " + blackSum);
-            printBoard(pos.board);
+            console.log("status = " + status + ", goal = " + pos.goal + ", bounds = " + getBoundsStr(pos.bounds) + ", blackSum = " + blackSum);
         }
     }
     // try to solve for valid positions using some brute force
+    console.log("\ncheck some brute force positions");
     const brute = true;
     if (brute) {
         // brSizeX, brSizeY, bounds, goal
         const brutes = [
-            {brSizeX: 5, brSizeY: 5, bounds: boardDirections.UP | boardDirections.LEFT, goal: 10},
-            {brSizeX: 3, brSizeY: 3, bounds: boardDirections.UP | boardDirections.LEFT, goal: 4},
-            {brSizeX: 3, brSizeY: 2, bounds: boardDirections.UP | boardDirections.LEFT, goal: 2},
-            {brSizeX: 2, brSizeY: 2, bounds: boardDirections.UP | boardDirections.LEFT, goal: 2},
+            {brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},
+            {brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT, goal: 4},
+            {brSizeX: 3, brSizeY: 2, bounds: bD.RIGHT, goal: 3},
+            {brSizeX: 2, brSizeY: 2, bounds: bD.UP | bD.LEFT, goal: 2},
+            {brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.UP | bD.DOWN, goal: 4},
         ];
         for (const b of brutes) {
             runBrute(b);
