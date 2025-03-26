@@ -178,4 +178,4 @@ class MainApp {
 const mainApp = new MainApp();
 console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // end test static methods
 
-runHeyawake(); // test some heyawake configurations
+//runHeyawake(); // test some heyawake configurations
