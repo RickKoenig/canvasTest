@@ -1,206 +1,100 @@
 'use strict';
 
-// global
-let leaves = [];
-let tokenPos = [];
-
 class board {
     constructor(numLeaves, maxTokens) {
         this.numLeaves = numLeaves;
         this.maxTokens = maxTokens;
-        this.token = 0;
-        this.leaf = 0;
-        this.tokenPos = [];
-        this.leaves = [];
-        this.#initLeaves();
-        this.watch = 0;
+        this.token = 0; // number of tokens on the board(played), same as last token played
+        this.leaf = 0; // leaf where the next token will be placed
+        this.tokenPos = []; // in token, out leaf
+        this.leaves = createArray(numLeaves, 0); // each leaf is an array of tokens
     }
 
-    // empty arrays for all leaves
-    #initLeaves() {
-        for (let i = 0; i < this.numLeaves; ++i) {
-            this.leaves.push([]);
-        }
-    }
-
-    printLeaves() {
-        const str = JSON.stringify(this.leaves);
-        console.log(str);
-    }
-
-    printTokenPos() {
-        const str = JSON.stringify(this.tokenPos);
-        console.log(str);
-    }
-    
-    // check before calling
+    // check validity before calling, 'leaf' is reset to 0 for next token placment
     #addToken() {
         this.leaves[this.leaf].push(++this.token);
         this.tokenPos[this.token] = this.leaf;
+        this.leaf = 0;
     }
 
-    // return leaf removed from
+    // 'leaf' is where token was removed from
     #removeToken() {
-        const leaf = this.tokenPos[this.token];
+        this.leaf = this.tokenPos[this.token];
         this.tokenPos[this.token--] = null;
-        this.leaves[leaf].pop();
-        return leaf;
-        //return leaves[leaves.length - 1];
+        this.leaves[this.leaf].pop();
     }
 
-    // Depth First Search for now
+    // make sure new token is not the sum of any other tokens on this leaf
+    #checkToken() {
+        return true;
+        const newToken = this.token + 1;
+        return this.leaves[this.leaf].length < 2;
+        //return this.token < 2;
+        //return true;
+    }
+
+    printBoard() {
+        let str = JSON.stringify(this.leaves);
+        console.log(str);
+        str = JSON.stringify(this.tokenPos);
+        console.log(str + "\n");
+    }
+
+    
+    // depth first iteration for now, tricky
     nextPos() {
-        ++this.watch;
-        const maxWatch = 20;
-        let good = this.watch < maxWatch;
-        if (!good) {
-            console.log("watch hit !!");
-        }
-        while(true) {
-            // try to go deeper
-            if (this.token < this.maxTokens) {
-                //this.leaf = 0;
+        // try to go deeper
+        if (this.token < this.maxTokens) {
+            if (this.#checkToken()) {
                 this.#addToken();
-                this.leaf = 0;
+                return true;
+            }
+        }
+        let innerWatch = 0;
+        while(this.token > 0) {
+            // watchdog
+            ++innerWatch;
+            const maxWatch = 40;
+            if (innerWatch >= maxWatch) {
+                console.log("inner watch hit !!");
+                return false;
+            }
             // try to move token across
-            } else {
-                this.leaf = this.#removeToken();
+            //while(this.leaf < this.numLeaves) {
+                this.#removeToken();
                 ++this.leaf;
                 if (this.leaf < this.numLeaves) {
-                    this.#addToken();
-                // try to go back up
-                } else {
-                    console.log("going back up");
-                    if (this.token == 0) {
-                        return false;
-                    } else {
-                        this.leaf = this.#removeToken();
-                        ++this.leaf;
-                        continue;
+                    // no redundant cases, don't play if leaf to the left is empty
+                    if (this.leaves[this.leaf - 1].length > 0) {
+                        if (this.#checkToken()) {
+                            this.#addToken();
+                            return true;
+                        }
                     }
                 }
-            } 
-            return good;
+            //}
+            // try to go back up, then move across
+            console.log("going back up");
+            continue;
         }
     }
 }
 
-function initLeaves(numLeaves) {
-    for (let i = 0; i < numLeaves; ++i) {
-        leaves.push([]);
-    }
-    /*
-    // place '1' token
-    leaves[0].push(1);
-    */
-}
-
-function printLeaves() {
-    const str = JSON.stringify(this.leaves);
-    console.log(str);
-}
-
-function printTokenPos() {
-    const str = JSON.stringify(this.tokenPos);
-}
-
-// return success
-function addToken(token, leaf) {
-    leaves[leaf].push(token);
-    tokenPos[token] = leaf;
-    return true;
-}
-
-// return leaf removed from
-function removeToken(token) {
-    const leaf = tokenPos[token];
-    leaves[leaf].pop();
-    //return leaves[leaves.length - 1];
-    return leaf;
-};
-
-function doLadybug() {
-    console.log("doing ladybug puzzle");
-    const numLeaves = 3;
-    const maxTokens = 1;
-    const game = new board(numLeaves, maxTokens);
-    initLeaves(numLeaves);
-
-    while(true) {
-        console.log("");
-        game.printLeaves();
-        game.printTokenPos();
-        if (!game.nextPos()) {
-            break;
-        }
-    }
-}
-
-/*
 function doLadybug() {
     console.log("doing ladybug puzzle");
     const numLeaves = 3;
     const maxTokens = 3;
     const game = new board(numLeaves, maxTokens);
-    initLeaves(numLeaves);
-
-    // DFS
-    let token = 0;
-    let leaf = 0;
-    let watchInner = 0;
-    let watchOuter = 0;
-    while(true) {
-        // next token
-        while(true) {
-            ++token; // depth first
-            if (leaf < numLeaves && token <= maxTokens && addToken(token, leaf)) {
-                leaf = 0;
-                // good token
-                //--token;
-                break;
-            } else { // move to new leaf, otherwise remove a token
-                --token;
-                if (token > 0) {
-                    removeToken(token);
-                }
-                --token;
-                ++leaf;
-                if (leaf < numLeaves) {
-                    ++token;
-                    addToken(token, leaf);
-                    break;
-                } else {
-                    if (token <= 0) {
-                        break;
-                    }
-                    const popLeaf = removeToken(token);
-                    console.log("popLeaf = " + popLeaf);
-                    --token;
-                    leaf = popLeaf + 1;
-                }
-            }
-            ++watchInner;
-            if (watchInner > 1000) {
-                console.log("watch inner hit !!");
-                break;
-            }
-        } 
-        // done next token
-
-        if (token <= 0) {
+    let outerWatch = 0;
+    const maxOuterWatch = 2000;
+    do {
+        console.log("");
+        game.printBoard();
+        ++outerWatch;
+        if (outerWatch >= maxOuterWatch) {
+            console.log("outer watch hit");
             break;
         }
-        // print token
-        console.log("\ntoken = " + token + ", leaf = " + leaf);
-        printLeaves();
-
-        ++watchOuter;
-        if (watchOuter > 250) {
-            console.log("watch outerhit !!");
-            break;
-        }
-        //token = 0;
-    }
-    console.log("watchOuter = " + watchOuter);
+    } while(game.nextPos());
+    console.log("done ladybug puzzle, outerWatch = " + outerWatch);
 }
-*/
