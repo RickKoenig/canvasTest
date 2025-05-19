@@ -177,7 +177,3 @@ class MainApp {
 
 const mainApp = new MainApp();
 console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // end test static methods
-
-//runHeyawake(); // test some heyawake configurations
-//doLadybug(); // ladybugs on leaves puzzle
-doPosits(); // play with UNUM 3, posits

@@ -16,7 +16,7 @@ class positBits {
             this.rat += " special";
         } else {
             // get regime, unary coding
-            const {fb, n, k, r}  = this.#getRegime();
+            const {fb, n, m, k, r}  = this.#getRegime();
             // get exponent, usually 2 bits
             const e = this.#getBits(this.numExpBits);
             // get fraction
@@ -25,9 +25,12 @@ class positBits {
                  + ", fb = " + fb
                  + ", k = " + k 
                  + ", r = " + r 
+                 + ", m = " + m
                  + ", n = " + n
                  + ", e = " + e 
-                 + ", f = " + "frac bits left = " + this.numBits + ", bp = " + this.bp + ", f = " + f
+                 + ", f = " + "frac bits left = " + this.numBits 
+                 + ", bp = " + this.bp 
+                 + ", f = " + f
                 );
             // get rational
             const mant = (1 - 3 * sign) + f; // check associative property dependence
@@ -90,12 +93,14 @@ class positBits {
             }
         }
         const n = this.numBits; // how many bits left
+        const m = 1 << this.numExpBits;
         let r = fb ? k - 1 : -k;
         const ret = {
             fb: fb,
             n: n,
             k: k,
-            r: r
+            r: r,
+            m: m
         }
         return ret;
     }
@@ -119,12 +124,17 @@ function analyzePosits(numBits, numExpBits, bp) {
 
 function doPosits() {
     console.log("doing posits");
-    console.log("5 bit posits, exp bits = 1");
-    for (let bp = 0; bp < (1 << 5); ++bp) {
-        analyzePosits(5, 1, bp);
+    {
+        const nb = 5;
+        const eb = 1;
+        console.log("" + nb + " bit posits, exp bits = " + eb);
+        for (let bp = 0; bp < (1 << nb); ++bp) {
+            analyzePosits(nb, eb, bp);
+        }
+        console.log("done " + nb + " bit posits, exp bits = " + eb + "\n");
     }
-    console.log("done 5 bit posits, exp bits = 1\n");
     const numExpBits = 2;
+    /*
     //analyzePosits(6, numExpBits, 45);
     analyzePosits(9, numExpBits, 203);
     analyzePosits(9, numExpBits, -203);
@@ -148,6 +158,6 @@ function doPosits() {
             analyzePosits(numBits, numExpBits, bp); // special NaR
         }
         console.log("");
-    }
+    }*/
     console.log("done posits");
 }
