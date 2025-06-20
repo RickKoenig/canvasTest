@@ -217,7 +217,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveRegTiles.bind(this, "regSlot0"));
+		addEventListener("visibilitychange", this.#saveRegTiles.bind(this, "regSlot0"));
 	}
 
 	#clearRegTiles() {

@@ -318,7 +318,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveMonoTiles.bind(this, "monoSlot0"));
+		addEventListener("visibilitychange", this.#saveMonoTiles.bind(this, "monoSlot0"));
 	}
 
 	#clearMonoTiles() {

@@ -472,7 +472,7 @@ class QBox1D {
 		makeEle(this.vp, "hr");
 		
 		makeEle(this.vp, "button", null, null, "Quit Program", () => {
-			window.location.href = "../../index.html#plotter2d";
+			window.location.href = "../../index.html#2dplot";
 		});
 		this.updateEnergyList();
 		this.setZoomCenterFromMode();

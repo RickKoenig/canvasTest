@@ -261,10 +261,20 @@ class MainApp {
 		this.startCenter = [4.7, 2.5];
 		this.startZoom = .16;
 
+
+		// call this when exiting page, save slots into localStorage
+		window.addEventListener('visibilitychange', (outVal) => {
+			if (document.hidden) {
+				this.#userExit();
+			}
+		});
+
+		/*
+		// doesn't seem to work with mobile
 		// call this when exiting page, save slots into localStorage
 		window.addEventListener('beforeunload', (outVal) => {
 			this.#userExit();
-		});
+		}); */
 	}
 
 	#userBuildUI() {

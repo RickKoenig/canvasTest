@@ -322,7 +322,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#savePenTiles.bind(this, "penSlot0"));
+		addEventListener("visibilitychange", this.#savePenTiles.bind(this, "penSlot0"));
 	}
 
 	#clearPenTiles() {

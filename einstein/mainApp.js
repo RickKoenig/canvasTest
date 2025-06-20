@@ -398,7 +398,7 @@ class MainApp {
 		this.#animate();
 
 		// auto save
-		addEventListener("beforeunload", this.#saveHatTiles.bind(this, "hatSlot0"));
+		addEventListener("visibilitychange", this.#saveHatTiles.bind(this, "hatSlot0"));
 	}
 
 	#clearHatTiles() {
