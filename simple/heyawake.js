@@ -418,13 +418,18 @@ function runHeyawake() {
     if (brute) {
         // brSizeX, brSizeY, bounds, goal
         const brutes = [
-            {brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
+            /*{brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
             {brSizeX: 5, brSizeY: 7, bounds: bD.UP, goal: 14},
-            {brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},
+            {brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},*/
             /*{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT, goal: 4},
             {brSizeX: 3, brSizeY: 2, bounds: bD.RIGHT, goal: 3},
             {brSizeX: 2, brSizeY: 2, bounds: bD.UP | bD.LEFT, goal: 2},
             {brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.UP | bD.DOWN, goal: 4},*/
+            //{brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
+            //{brSizeX: 4, brSizeY: 4, bounds: 0, goal: 7},
+            //{brSizeX: 4, brSizeY: 4, bounds: bD.UP | bD.RIGHT, goal: 5},
+            //{brSizeX: 4, brSizeY: 4, bounds: bD.UP, goal: 6},
+
         ];
         for (const b of brutes) {
             runBrute(b);

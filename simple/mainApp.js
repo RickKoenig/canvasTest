@@ -3,12 +3,14 @@
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javascript tests!");
+	/*
 	inheritanceTests();
 	const codeWord = rudolphSim();
-	console.log("codeword = '" + codeWord + "'");
-	runHeyawake(); // test some heyawake configurations
-	doLadybug(); // ladybugs on leaves puzzle
-	doPosits(); // play with UNUM 3, posits	runScratch();
+	console.log("codeword = '" + codeWord + "'");*/
+	//runHeyawake(); // test some heyawake configurations
+	//doLadybug(); // ladybugs on leaves puzzle */
+	//doPosits(); // play with UNUM 3, posits	runScratch();
+	//doBenford(); // Benford distribution tests
 	console.log("DONE javascript tests!");
 }
 
@@ -83,7 +85,7 @@ class MainApp {
 	}
 
 	constructor() {
-		//javaScriptTests();
+		javaScriptTests();
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
