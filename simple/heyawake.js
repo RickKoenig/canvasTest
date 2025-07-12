@@ -225,7 +225,7 @@ function runBrute(p) {
     fillArray(andBoard, 1);
     const orBoard = createArray(p.brSizeY, p.brSizeX);
     fillArray(orBoard, 0);
-    const maxTotal = 1000000000; // don't go too far...
+    const maxTotal = 10000000000; // don't go too far...
     const doSkipGoal = true; // enable skip binary count when invalid position found (goal, 2blackH, 2blackV)
     const doSkipBlackH = true;
     const doSkipBlackV = true;
@@ -418,18 +418,20 @@ function runHeyawake() {
     if (brute) {
         // brSizeX, brSizeY, bounds, goal
         const brutes = [
-            /*{brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
-            {brSizeX: 5, brSizeY: 7, bounds: bD.UP, goal: 14},
-            {brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},*/
-            /*{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT, goal: 4},
-            {brSizeX: 3, brSizeY: 2, bounds: bD.RIGHT, goal: 3},
-            {brSizeX: 2, brSizeY: 2, bounds: bD.UP | bD.LEFT, goal: 2},
-            {brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.UP | bD.DOWN, goal: 4},*/
+            //{brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
+            //{brSizeX: 5, brSizeY: 7, bounds: bD.UP, goal: 14},
+            //{brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},
+            //{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT, goal: 4},
+            //{brSizeX: 3, brSizeY: 2, bounds: bD.RIGHT, goal: 3},
+            //{brSizeX: 2, brSizeY: 2, bounds: bD.UP | bD.LEFT, goal: 2},
+            //{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.UP | bD.DOWN, goal: 4},
             //{brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
             //{brSizeX: 4, brSizeY: 4, bounds: 0, goal: 7},
             //{brSizeX: 4, brSizeY: 4, bounds: bD.UP | bD.RIGHT, goal: 5},
             //{brSizeX: 4, brSizeY: 4, bounds: bD.UP, goal: 6},
-
+            //{brSizeX: 7, brSizeY: 7, bounds: 0, goal: 21},
+            {brSizeX: 3, brSizeY: 3, bounds: 0, goal: 5},
+            {brSizeX: 2, brSizeY: 7, bounds: bD.RIGHT, goal: 6},
         ];
         for (const b of brutes) {
             runBrute(b);

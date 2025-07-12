@@ -90,8 +90,11 @@ class MainApp {
 		++MainApp.numInstances;
 
 		// vertical panel UI
-		this.vp = document.getElementById("verticalPanel");
-		//this.vp = null; // OR, no vertical panel UI
+		if (!window.index2) {
+			this.vp = document.getElementById("verticalPanel");
+		} else {
+			this.vp = null;
+		}
 		this.eles = {}; // keep track of eles in vertical panel
 
 		// add all elements from vp to ele if needed
@@ -384,8 +387,11 @@ class MainApp {
 		}
 
 		// before firing up Plotter2d
-		this.startCenter = [.21, 1.52];
-		this.startZoom = .37;
+		//this.startCenter = [.21, 1.52];
+		//this.startZoom = .37;
+		this.startCenter = [0, 0];
+		this.startZoom = 1;
+		
 	}
 
 	#userBuildUI() {
