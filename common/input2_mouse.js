@@ -33,6 +33,7 @@ class Mouse {
 			//console.log("prevent right click image save");
 			e.preventDefault();
 		});
+		
 		this.div.addEventListener("mousedown", (e) => {
 			this.bmoused(e);
 		});
@@ -57,6 +58,24 @@ class Mouse {
 		this.div.addEventListener("click", (e) => {
 			this.bmousec(e);
 		});
+
+
+	//if (isMobile) {
+	/*
+		this.div.ontouchstart = this.btouchstart;
+		this.div.ontouchmove = this.btouchmove;
+		this.div.ontouchend = this.btouchend;
+		*/
+		this.div.addEventListener("touchstart", (e) => {
+			this.btouchstart(e);
+		});
+		this.div.addEventListener("touchmove", (e) => {
+			this.btouchmove(e);
+		});
+		this.div.addEventListener("touchend", (e) => {
+			this.btouchend(e);
+		});
+
     }
 
 	getxcode(e) {
@@ -153,6 +172,73 @@ class Mouse {
 		}
 	}
 	
+	btouchstart(e) {
+		const rect = this.div.getBoundingClientRect();
+		this.mxy[0] = Math.floor(e.touches[0].pageX - rect.left);
+		this.mxy[1] = Math.floor(e.touches[0].pageY - rect.top);
+		this.mbutcur[0] = 1;
+		this.mbuthold[0] = 1;
+		if (e.preventDefault) {
+			e.preventDefault();
+		}
+		this.#patchMouseTouchPosition();
+	}
+
+	btouchmove(e) {
+		const rect = this.div.getBoundingClientRect();
+		this.mxy[0] = Math.floor(e.touches[0].pageX - rect.left);
+		this.mxy[1] = Math.floor(e.touches[0].pageY - rect.top);
+		this.mbutcur[0] = 1;
+		this.mbuthold[0] = 1;
+		if (e.preventDefault) {
+			e.preventDefault();
+		}
+		this.#patchMouseTouchPosition();
+		/*	if (input.mx >= glc.clientWidth)
+			input.mx = glc.clientWidth - 1;
+		if (input.my >= glc.clientHeight)
+			input.my = glc.clientHeight - 1;
+		input.fmx= 2*input.mx/glc.clientWidth - 1;
+		input.fmy = -2*input.my/glc.clientHeight + 1; // flip y
+		if (gl.asp === undefined) // incase there is no webgl context
+			return;
+		//if (gl.asp > 1) {
+			input.fmx *= gl.asp;
+		//} else {
+		//	input.fmy /= gl.asp;
+		//} */
+	}
+
+	btouchend(e) {
+		this.mbutcur[0] = 0;
+		this.mbuthold[0] = 0;
+		if (e.preventDefault)
+			e.preventDefault();
+	}
+
+	#patchMouseTouchPosition() {
+		if (this.mxy[0] < 0)
+			this.mxy[0] = 0;
+		if (this.mxy[1] < 0)
+			this.mxy[1] = 0;
+		if (typeof glc === 'undefined') {
+			return;
+		}
+		if (this.mxy[0] >= glc.clientWidth)
+			this.mxy[0] = glc.clientWidth - 1;
+		if (this.mxy[1] >= glc.clientHeight)
+			this.mxy[1] = glc.clientHeight - 1;
+	/*	input.fmx= 2*input.mx/glc.clientWidth - 1;
+		input.fmy = -2*input.my/glc.clientHeight + 1; // flip y
+		if (gl.asp === undefined) // incase there is no webgl context
+			return;
+		//if (gl.asp > 1) {
+			input.fmx *= gl.asp;
+		//} else {
+		//	input.fmy /= gl.asp;
+		//}*/
+	}
+
     #updateEventInfo(eventStr) {
         this.events = eventStr + this.events;
         const maxSize = 60;
@@ -168,7 +254,7 @@ class Mouse {
 		"<br>mbut [" + this.mbut + "]"+ 
 		", mclick [" + this.mclick + "]";
 	}
-	
+
 	proc() {
 		this.maxX = this.canvas.width;
 		this.maxY = this.canvas.height;

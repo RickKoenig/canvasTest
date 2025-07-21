@@ -3,24 +3,25 @@
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=0
+	  ,minimum-scale=1, maximum-scale=1">
 	<title>Canvas test 2</title>
 	<link rel="stylesheet" href="style2.css">
 </head>
 
 <body>
+	<!-- graphics -->
+	
 	<!-- UI is added to verticalPanel -->
-	 <!--
 	<div id="verticalPanel">
 		<p>Go back to <a href="../../index.html#2dplot"> The Main page.</a></p>
-		<pre>SIMPLE<br> Use middle mouse button<br> to add and remove points</pre>
-	</div>
--->
-	<!-- graphics -->
-	<div class="centerg" id="plotter2dDiv" tabindex='0'>
-		<canvas class="inside" id="plotter2dCanvas"></canvas>
+		<br><pre>SIMPLE<br><br> Use middle mouse button<br> to add and remove points</pre>
 	</div>
 
+	<div class="divCanvas" id="plotter2dDiv" tabindex='0'>
+		<canvas class="inside" id="plotter2dCanvas"></canvas>
+	</div>
+	
 	<!-- scripts -->
 	<script src="isIndex2.js"></script>
 	<script src="../common/glmatrix/common.js"></script>

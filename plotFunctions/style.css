@@ -1,7 +1,7 @@
 body{
 	margin:0;
 	background: darkgray;
-	overflow: hidden;
+	overflow: auto;
 	display: flex;
 }
 
@@ -57,7 +57,7 @@ canvas{
 }
 
 #verticalPanel{
-	height: 822px;
+	height: 100%;
 	text-align: center;
 	margin-left: 10px;
 	margin-top: 5px;

@@ -276,7 +276,6 @@ compf.str = function(a,prec) {
 
 // test the many methods of compf
 compf.test = function() {
-	logger("unit test of compf\n");
 	var zv = compf.create();
 	var rv = compf.create(3);
 	var cv = compf.create(4,5);

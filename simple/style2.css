@@ -3,17 +3,32 @@
 	padding: 0;
 	border: 0;
 	outline: 0;
+}
+
+html{
+	height: 100%;
+}
+
+body{
+	margin:0;
+	background: darkgray;
+	overflow: hidden;
+	height: 100%;
+	display: flex;
+	justify-content: space-around;
+}
+
+div{
+	background-color: rgba(0,0,0,0);
 	width: 100%;
 	height: 100%;
 	overflow: hidden; /* Hide scrollbars */
 }
 
-div{
-	position: relative;
-	background-color: rgba(0,0,0,0);
-	width: 100%;
+.divCanvas {
+	display: inline-block;
+	width: 80%;
 	height: 100%;
-	overflow: hidden; /* Hide scrollbars */
 }
 
 canvas{
@@ -21,4 +36,57 @@ canvas{
 	width: 100%;
 	height: 100%;
 	overflow: hidden; /* Hide scrollbars */
+}
+
+pre, p, a{
+	margin:0;
+	text-align: center;
+	font-size: 1.75vw;
+	overflow: hidden;
+	white-space: pre-wrap;
+}
+
+hr{
+	background-color: rgb(107, 146, 129);
+	height: 3px;
+	margin: 0;
+	border-style: inset;
+	border-width: 1px;
+}
+
+input{
+	width: 50%;
+}
+
+button{
+	width: 50%;
+	border: none;
+	border-radius: 10px;
+	margin: 4px 4px 5px 4px;
+	cursor: pointer;
+	font-size: 1vw;
+}
+
+button:hover{
+	background:rgb(204, 196, 175);
+}
+
+#verticalPanel{
+	background: #ca8c;
+	width: 18%;
+	display: inline-block;
+	text-align: center;
+	height: 100%;
+	overflow: auto;
+}
+
+.editbox{
+	text-align: center;
+	width: 300px;
+	height: 60px;
+	border: none;
+	border-radius: 5px;
+	margin: 4px 4px 4px 4px;
+	font-size: 120%;
+	background-color: rgb(185, 204, 219);
 }

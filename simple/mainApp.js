@@ -90,11 +90,7 @@ class MainApp {
 		++MainApp.numInstances;
 
 		// vertical panel UI
-		if (!window.index2) {
-			this.vp = document.getElementById("verticalPanel");
-		} else {
-			this.vp = null;
-		}
+		this.vp = document.getElementById("verticalPanel");
 		this.eles = {}; // keep track of eles in vertical panel
 
 		// add all elements from vp to ele if needed
@@ -452,6 +448,7 @@ class MainApp {
 	}
 
 	#userDraw() {
+		//return;
 		// pnts
 		this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
 		// draw some extra stuff like midpoints
@@ -518,6 +515,11 @@ class MainApp {
 				this.drawPrim.drawCircle(pnt, .0075, inside ? "black" : "red"); // black inside, red outside
 			}
 		}
+		if (this.input.mouse.mbut[Mouse.LEFT]) {
+			let pnt = this.plotter2d.userMouse;
+			//let pnt = this.plotter2d.userMouse;
+			this.drawPrim.drawCircleO(pnt, .3, .05, "blue"); // test touch
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -525,6 +527,8 @@ class MainApp {
 		let countStr = "Frame Count = " + this.count;
 		countStr += "\nDirty Count = " + this.dirtyCount;
 		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
+		countStr += "\n";
+		countStr += this.input.mouse.stats;
 		this.eles.textInfoLog.innerText = countStr;
 	}
 
@@ -538,6 +542,7 @@ class MainApp {
 		this.#userProc(); // proc
 
 		//this.dirty = true; // test, always draw every frame
+		//this.dirty = false;
 		// draw when dirty
 		if (this.dirty) {
 			this.plotter2d.clearCanvas();

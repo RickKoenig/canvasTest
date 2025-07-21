@@ -31,6 +31,13 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, simple 2",
+            "url": "http://localhost:88/plotter2d/simple/index2.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, plotTriSect",
             "url": "http://localhost:88/plotter2d/plotTriSect/index.html",
             "webRoot": "${workspaceFolder}"

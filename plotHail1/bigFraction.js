@@ -375,7 +375,6 @@ fraction.isWhole = function(f) {
 
 // test the many methods of fraction
 fraction.test = function() {
-	logger("unit test of fraction\n");
 	// TODO: add unit test
 };
 
