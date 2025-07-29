@@ -5,7 +5,7 @@ class Input {
     constructor(divDraw, canvasDraw) {
         this.keyboard = new Keyboard(divDraw);
         this.mouse = new Mouse(divDraw, canvasDraw);
-        this. divDraw = divDraw;
+        this.divDraw = divDraw;
     }
 
     proc(area) { // either a <div> or a <canvas>

@@ -328,7 +328,12 @@ class EditTiles {
 	}
 
 	getHilitIdx() { // selected has higher priority than hilit
-		const hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx;
+		let hilitIdx;
+		if (window.isMobile) {
+			hilitIdx = this.curPntIdx; // MOBILE
+		} else {
+			hilitIdx = this.curPntIdx >= 0 ? this.curPntIdx : this.hilitPntIdx; // allow hover
+		}
 		return hilitIdx;
 	}
 

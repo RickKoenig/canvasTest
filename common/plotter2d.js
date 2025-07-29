@@ -171,7 +171,7 @@ class Plotter2d {
 
 	// given size of window or a fixed size set canvas size
 	#calcCanvasSize() {
-        if (window.index2) {
+        if (window.isMobile) {
             this.canvas.width = window.innerWidth * .80;
             this.canvas.height = window.innerHeight;
             return true;

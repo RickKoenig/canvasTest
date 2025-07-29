@@ -4,6 +4,7 @@
 
 
 
+
         
         {
             "name": "Launch Program",
@@ -31,8 +32,8 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, simple 2",
-            "url": "http://localhost:88/plotter2d/simple/index2.html",
+            "name": "Launch Chrome against localhost, simple MOBILE",
+            "url": "http://localhost:88/plotter2d/simple/indexMobile.html",
             "webRoot": "${workspaceFolder}"
         },
         {

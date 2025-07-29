@@ -59,13 +59,6 @@ class Mouse {
 			this.bmousec(e);
 		});
 
-
-	//if (isMobile) {
-	/*
-		this.div.ontouchstart = this.btouchstart;
-		this.div.ontouchmove = this.btouchmove;
-		this.div.ontouchend = this.btouchend;
-		*/
 		this.div.addEventListener("touchstart", (e) => {
 			this.btouchstart(e);
 		});
@@ -75,8 +68,10 @@ class Mouse {
 		this.div.addEventListener("touchend", (e) => {
 			this.btouchend(e);
 		});
-
     }
+
+
+	// MOUSE
 
 	getxcode(e) {
 		return e.offsetX;
@@ -171,6 +166,9 @@ class Mouse {
 			e.preventDefault();
 		}
 	}
+
+
+	// TOUCH
 	
 	btouchstart(e) {
 		const rect = this.div.getBoundingClientRect();
@@ -194,19 +192,6 @@ class Mouse {
 			e.preventDefault();
 		}
 		this.#patchMouseTouchPosition();
-		/*	if (input.mx >= glc.clientWidth)
-			input.mx = glc.clientWidth - 1;
-		if (input.my >= glc.clientHeight)
-			input.my = glc.clientHeight - 1;
-		input.fmx= 2*input.mx/glc.clientWidth - 1;
-		input.fmy = -2*input.my/glc.clientHeight + 1; // flip y
-		if (gl.asp === undefined) // incase there is no webgl context
-			return;
-		//if (gl.asp > 1) {
-			input.fmx *= gl.asp;
-		//} else {
-		//	input.fmy /= gl.asp;
-		//} */
 	}
 
 	btouchend(e) {
@@ -216,6 +201,9 @@ class Mouse {
 			e.preventDefault();
 	}
 
+
+	// COMMON
+	
 	#patchMouseTouchPosition() {
 		if (this.mxy[0] < 0)
 			this.mxy[0] = 0;
@@ -228,15 +216,6 @@ class Mouse {
 			this.mxy[0] = glc.clientWidth - 1;
 		if (this.mxy[1] >= glc.clientHeight)
 			this.mxy[1] = glc.clientHeight - 1;
-	/*	input.fmx= 2*input.mx/glc.clientWidth - 1;
-		input.fmy = -2*input.my/glc.clientHeight + 1; // flip y
-		if (gl.asp === undefined) // incase there is no webgl context
-			return;
-		//if (gl.asp > 1) {
-			input.fmx *= gl.asp;
-		//} else {
-		//	input.fmy /= gl.asp;
-		//}*/
 	}
 
     #updateEventInfo(eventStr) {

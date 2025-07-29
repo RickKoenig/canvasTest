@@ -268,13 +268,6 @@ class MainApp {
 				this.#userExit();
 			}
 		});
-
-		/*
-		// doesn't seem to work with mobile
-		// call this when exiting page, save slots into localStorage
-		window.addEventListener('beforeunload', (outVal) => {
-			this.#userExit();
-		}); */
 	}
 
 	#userBuildUI() {
