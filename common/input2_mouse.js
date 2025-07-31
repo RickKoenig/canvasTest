@@ -174,6 +174,8 @@ class Mouse {
 		const rect = this.div.getBoundingClientRect();
 		this.mxy[0] = Math.floor(e.touches[0].pageX - rect.left);
 		this.mxy[1] = Math.floor(e.touches[0].pageY - rect.top);
+		this.lmxy[0] = this.mxy[0];
+		this.lmxy[1] = this.mxy[1];
 		this.mbutcur[0] = 1;
 		this.mbuthold[0] = 1;
 		if (e.preventDefault) {
