@@ -27,3 +27,32 @@ class Runavg {
 		return this.sum/this.arr.length;
 	}
 }
+
+// convert float number to css percent
+function floatToCSSPercent(f) {
+	f *= 100;
+	const fs = f.toString();
+	const str = fs + "%";
+	return str;
+}
+
+// make an object name value pairs based on url like:
+// engw/engw3dtest/index.html?startstate=qcomp&startcircuit=teleport2random&startmode=expo
+function doURLParams() {
+	var ss = window.location.search;
+	let URLparams = {};
+	if (ss.charAt(0) == '?') {
+		// we have args
+		ss = ss.substring(1); // past '?'
+		var namevals = ss.split('&');
+		var i;
+		for (i=0;i<namevals.length;++i) {
+			var nv = namevals[i];
+			var nvs = nv.split('=');
+			if (nvs.length == 2) {
+				URLparams[nvs[0]] = decodeURI(nvs[1]);
+			}
+		}
+	}
+	return URLparams;
+}

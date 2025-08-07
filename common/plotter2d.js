@@ -170,10 +170,20 @@ class Plotter2d {
     }
 
 	// given size of window or a fixed size set canvas size
-	#calcCanvasSize() {
+	#calcCanvasSize(vp) {
         if (window.isMobile) {
-            this.canvas.width = window.innerWidth * .80;
+            const slightMargin = .02; // keep things from wrapping
+            const canvasWidth = vp ? 1 - window.panelWidthRatio : 1; // .80
+            this.canvas.width = window.innerWidth * canvasWidth;
             this.canvas.height = window.innerHeight;
+            //.80;
+            //this.canvas.parentElement.style.width = "80%";
+            this.canvas.parentElement.style.width = floatToCSSPercent(canvasWidth);
+            //.18;
+            //.vp.style.width = "18%";
+            if (vp) {
+                vp.style.width = floatToCSSPercent(window.panelWidthRatio - slightMargin);
+            }
             return true;
         }
         let wid;
@@ -203,7 +213,7 @@ class Plotter2d {
             userOffset = [0, 0];
         }
         this.userOffset = userOffset;
-        let dirt = this.#calcCanvasSize();
+        let dirt = this.#calcCanvasSize(vp);
         if (this.coordReset) {
             dirt = true;
             this.coordReset = false;

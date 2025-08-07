@@ -107,7 +107,8 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		this.plotter2d = new Plotter2d(this.plotter2dCanvas, this.ctx, this.vp, this.startCenter, this.startZoom);
+		this.plotter2d = new Plotter2d(
+			this.plotter2dCanvas, this.ctx, window.isMobile ? null : this.vp, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -283,6 +284,13 @@ class MainApp {
 		}
 	}
 
+	#randomColor() {
+		const r = getRandomInt(256);
+		const g = getRandomInt(256);
+		const b = getRandomInt(256);
+		this.vp.style.background = `rgb(${r}, ${g}, ${b}`;
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -391,6 +399,15 @@ class MainApp {
 	}
 
 	#userBuildUI() {
+		if (window.isMobile) {
+			makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
+			return;
+		}
+		makeEle(this.vp, "br");
+		makeEle(this.vp, "pre", null, null, "Use middle mouse button");
+		//makeEle(this.vp, "br");
+		makeEle(this.vp, "pre", null, null, "to add and remove points");
+
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "button", null, null, "Reset Counter", this.#resetCounter.bind(this));
@@ -555,7 +572,9 @@ class MainApp {
 			this.#userDraw(); //draw
 		}
 		// update UI, text
-		this.#userUpdateInfo();
+		if (!window.isMobile) {
+			this.#userUpdateInfo();
+		}
 
 		if (this.dirty) {
 			this.dirtyCount = 100;
