@@ -155,6 +155,7 @@ class MainApp {
 			this.drawPrim.drawLine(this.pnts2[i], isects[i], .01, "brown");
 			this.drawPrim.drawLine(this.pnts2[i], isects[j], .01, "brown");
 		}
+		this.drawPrim.drawCircleO(this.plotter2d.userMouse, .8, .01, "green");
 	}
 
 	#userUpdateInfo() {

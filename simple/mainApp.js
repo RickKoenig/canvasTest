@@ -8,6 +8,7 @@ function javaScriptTests() {
 	const codeWord = rudolphSim();
 	console.log("codeword = '" + codeWord + "'");*/
 	//runHeyawake(); // test some heyawake configurations
+	/*
 	//doLadybug(); // ladybugs on leaves puzzle */
 	//doPosits(); // play with UNUM 3, posits	runScratch();
 	//doBenford(); // Benford distribution tests
@@ -107,8 +108,12 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		const extraWidth = 1; // show more left and right
+		const extraHeight = 1;
 		this.plotter2d = new Plotter2d(
-			this.plotter2dCanvas, this.ctx, window.isMobile ? null : this.vp, this.startCenter, this.startZoom);
+			//this.plotter2dCanvas, this.ctx, window.isMobile ? null : this.vp
+			this.plotter2dCanvas, this.ctx, this.vp
+			,this.startCenter, this.startZoom, null, extraWidth, extraHeight);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
@@ -395,13 +400,12 @@ class MainApp {
 		//this.startZoom = .37;
 		this.startCenter = [0, 0];
 		this.startZoom = 1;
-		
 	}
 
 	#userBuildUI() {
 		if (window.isMobile) {
 			makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
-			return;
+			//return;
 		}
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "pre", null, null, "Use middle mouse button");
@@ -565,6 +569,7 @@ class MainApp {
 			this.plotter2d.clearCanvas();
 			// interact with mouse, calc all spaces
 			// goto user/cam space
+			//this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 			this.plotter2d.setSpace(Plotter2d.spaces.USER);
 			// now in user/cam space
 			this.graphPaper.draw("X", "Y");
@@ -572,9 +577,9 @@ class MainApp {
 			this.#userDraw(); //draw
 		}
 		// update UI, text
-		if (!window.isMobile) {
+		//if (!window.isMobile) {
 			this.#userUpdateInfo();
-		}
+		//}
 
 		if (this.dirty) {
 			this.dirtyCount = 100;

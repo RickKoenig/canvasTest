@@ -5,18 +5,16 @@
 	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=0
 	  ,minimum-scale=1, maximum-scale=1">
-	<title>Simple MOBILE plotter2d</title>
+	<title>H slider puzzle MOBILE plotter2d</title>
 	<link rel="stylesheet" href="styleMobile.css">
 </head>
 
 <body>
-	<!-- graphics -->
-	
 	<!-- UI is added to verticalPanel -->
 	<div id="verticalPanel">
 		<p>Go back to <a href="../../index.html#2dplot"><br>The Main page.</a></p>
 		<br>
-		<pre>SIMPLE MOBILE</pre>
+		<pre>'H' Slider Puzzle MOBILE</pre>
 		<br>
 	</div>
 
@@ -31,6 +29,7 @@
 		var params = doURLParams();
 		var panelWidthRatio = params.panelWidthRatio ? +params.panelWidthRatio : .2;
 	</script>
+	<script src='../common/bitmap32p.js'></script> <!-- for color conversions -->
 	<script src="../common/glmatrix/common.js"></script>
 	<script src="../common/glmatrix/vec2.js"></script>
 
@@ -49,17 +48,6 @@
 	<script src='../common/plotter2d.js'></script>
 	<script src='../common/graphPaper.js'></script>
 
-	<script src='../common/bitmap32p.js'></script> <!-- for color conversions -->
-
-	<script src='inheritance.js'></script>
-	<script src='rudolph.js'></script>
-	<script src='scratch.js'></script>
-	
-	<script src='../fourier/svgPath_8thNote.js'></script>
-	<script src='heyawake.js'></script>
-	<script src='ladybug.js'></script>
-	<script src='posits.js'></script>
-	<script src='benford.js'></script>
 	<script src='mainApp.js'></script>
 </body>
 

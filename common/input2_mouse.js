@@ -232,7 +232,7 @@ class Mouse {
 		", my " + this.mxy[1] + 
 		", mz " + this.wheelPos + 
 		", mdz " + this.wheelDelta + 
-		"<br>mbut [" + this.mbut + "]"+ 
+		"\nmbut [" + this.mbut + "]"+ 
 		", mclick [" + this.mclick + "]";
 	}
 

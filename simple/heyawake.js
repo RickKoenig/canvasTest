@@ -432,7 +432,8 @@ function runHeyawake() {
             //{brSizeX: 7, brSizeY: 7, bounds: 0, goal: 21},
             //{brSizeX: 3, brSizeY: 3, bounds: 0, goal: 5},
             //{brSizeX: 2, brSizeY: 7, bounds: bD.RIGHT, goal: 6},
-            {brSizeX: 4, brSizeY: 4, bounds: bD.RIGHT | bD.UP, goal: 6},
+            //{brSizeX: 4, brSizeY: 4, bounds: bD.RIGHT | bD.UP, goal: 6},
+            {brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
         ];
         for (const b of brutes) {
             runBrute(b);

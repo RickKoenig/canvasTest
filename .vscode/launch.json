@@ -2,10 +2,6 @@
     "version": "0.2.0",
     "configurations": [
 
-
-
-
-        
         {
             "name": "Launch Program",
             "program": "${workspaceFolder}/app.js",
@@ -14,6 +10,13 @@
                 "<node_internals>/**"
             ],
             "type": "node"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, H puzzle",
+            "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile.html",
+            "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
