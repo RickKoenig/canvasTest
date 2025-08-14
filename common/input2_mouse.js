@@ -228,11 +228,11 @@ class Mouse {
     
 	updateMouseStats() {
 		this.stats = 
-		"mx " + this.mxy[0] + 
-		", my " + this.mxy[1] + 
-		", mz " + this.wheelPos + 
-		", mdz " + this.wheelDelta + 
-		"\nmbut [" + this.mbut + "]"+ 
+		"mx " + this.mxy[0] +
+		", my " + this.mxy[1] +
+		", mz " + this.wheelPos +
+		", mdz " + this.wheelDelta +
+		"\nmbut [" + this.mbut + "]"+
 		", mclick [" + this.mclick + "]";
 	}
 

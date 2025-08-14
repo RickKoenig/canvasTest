@@ -47,6 +47,7 @@ class MainApp {
 		this.dirtyCount = 100;
 		this.#animate();
 	}
+
 	#randomColor() {
 		const r = getRandomInt(256);
 		const g = getRandomInt(256);
@@ -77,8 +78,8 @@ class MainApp {
 			this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 			return;
 		}
-	}		
-	
+	}
+
 	#userProc() {
 		// proc
 		//this.dirty = true;

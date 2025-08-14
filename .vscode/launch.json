@@ -14,7 +14,7 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, H puzzle",
+            "name": "Launch Chrome against localhost, H puzzle MOBILE",
             "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile.html",
             "webRoot": "${workspaceFolder}"
         },

@@ -44,7 +44,6 @@ class Plotter2d {
     
         // screen space dimensions of <canvas> / <div>
         this.W = vec2.create();
-        //this.WMin = 0;
     
         // screen to NDC space
         this.trans = vec2.create();
@@ -289,18 +288,18 @@ class Plotter2d {
 
         if (this.vp) {
             // xtrans
-            this.pieces.xTrans.textInfoEle.innerText = "center[0] = " 
+            this.pieces.xTrans.textInfoEle.innerText = "center[0] = "
                 + this.center[0].toFixed(2);
             // ytrans
-            this.pieces.yTrans.textInfoEle.innerText = "center[1] = " 
+            this.pieces.yTrans.textInfoEle.innerText = "center[1] = "
                 + this.center[1].toFixed(2);
             // scale
-            this.pieces.scale.textInfoEle.innerText = "zoom=" 
+            this.pieces.scale.textInfoEle.innerText = "zoom="
                 + this.zoom.toFixed(4) + ", logZ=" + this.logZoom.toFixed(4);
             // mouse
-            this.pieces.mouse.textInfoEle.innerText = "userMouse = (" 
+            this.pieces.mouse.textInfoEle.innerText = "userMouse = ("
                 + this.userMouse[0].toFixed(2) + ", " + this.userMouse[1].toFixed(2) + ")"
-                + "\nndcMouse = (" 
+                + "\nndcMouse = ("
                 + this.ndcMouse[0].toFixed(2) + ", " + this.ndcMouse[1].toFixed(2) + ")";
         }
         return dirt;
