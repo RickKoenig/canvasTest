@@ -244,7 +244,7 @@ class DrawPrimitives {
         this.ctx.save();
         this.ctx.textAlign = 'center';
         this.ctx.translate(center[0], center[1]);
-        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
+        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale) * this.plotter2d.extraZoom;
         let sy = size[1] * ndcZoom;
         // invert the font scale y for NDC and USER spaces for they run y from bottom to top
         this.ctx.scale(sy, this.plotter2d.curSpace == Plotter2d.spaces.SCREEN ? sy : -sy);

@@ -70,7 +70,7 @@ class GraphPaper {
         let i;
         for (i = 0; i < GraphPaper.levels.length - 1; ++i) {
             level = GraphPaper.levels[i];
-            if (this.plotter2d.zoom < level.lessTextZoom) {
+            if (this.plotter2d.zoom < level.lessTextZoom * this.plotter2d.extraZoom) {
                 break;
             }
         }

@@ -36,6 +36,7 @@ class Plotter2d {
         this.fixedSize = fixedSize;
         this.extraWidth = extraWidth; // how much x to show before scaling y, default: 1
         this.extraHeight = extraHeight; // how much x to show before scaling y, default: 1
+        this.extraZoom = extraWidth < extraHeight ? extraWidth : extraHeight;
         // mouse in user/cam space
         this.userMouse = vec2.create(); // current mouse coords in user/cam space
         this.lastUserMouse = vec2.create();
