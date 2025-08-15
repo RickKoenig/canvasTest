@@ -247,6 +247,10 @@ class Plotter2d {
             this.trans[1] = this.ndcMin[1];
         }
 
+        // use the mouse to navigate the user/cam space
+        let mxy = vec2.clone(mouse.mxy);
+        this.#screen2userCam(mxy); // now here
+
         let doCenter = false;
         if (whichBut >= 0) {
             if (mouse.wheelDelta) { // wheel mouse
@@ -272,13 +276,10 @@ class Plotter2d {
                 dirt = true;
             }
         }
-        // use the mouse to navigate the user/cam space
-        let mxy = vec2.clone(mouse.mxy);
-        //this.#screen2userCam(mxy); // was here
         if (doCenter) {
             this.#newcenter(mxy, this.userMouse);
         }
-        this.#screen2userCam(mxy); // now here
+
         let temp = vec2.create();
         vec2.scale(temp, this.ndcMin, this.invZoom);
         vec2.add(this.camMin, temp, this.center);
