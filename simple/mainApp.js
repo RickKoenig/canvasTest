@@ -347,7 +347,6 @@ class MainApp {
 			[-2, 1.5],
 			[-3, 1.8]
 		];
-		const numPnts3 = this.pnts3.length;
 		this.pntRad3 = .05; // size of point
 		this.editPnts3 = new EditPnts(this.pnts3, this.pntRad3); // defaults, no add remove points
 
@@ -364,7 +363,6 @@ class MainApp {
 			[-2, 2.5],
 			[-3, 2.8]
 		];
-		const numPnts4 = this.pnts4.length;
 		this.pntRad4 = .05; // size of point
 		this.editPnts4 = new EditPnts(this.pnts4, this.pntRad4); // defaults, no add remove points
 

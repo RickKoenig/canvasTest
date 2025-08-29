@@ -238,14 +238,16 @@ class DrawPrimitives {
 
     drawText(center, size, txt, foreColor = "black", backColor = undefined, ndcScale = false) {
         let textYSize = 1;
+        const ndcZoom = 1;
+        const ndcZoomText = this.plotter2d.getNdcZoom(ndcScale) * this.plotter2d.extraZoom;
+        const ndcZoomRect = this.plotter2d.extraZoom;
         if (backColor) {
-            this.drawRectangleCenter(center, [size[0], size[1]], backColor, ndcScale);
+            this.drawRectangleCenter(center, [size[0] * ndcZoomRect, size[1] * ndcZoomRect], backColor, ndcScale);
         }
         this.ctx.save();
         this.ctx.textAlign = 'center';
         this.ctx.translate(center[0], center[1]);
-        const ndcZoom = this.plotter2d.getNdcZoom(ndcScale) * this.plotter2d.extraZoom;
-        let sy = size[1] * ndcZoom;
+        let sy = size[1] * ndcZoomText;
         // invert the font scale y for NDC and USER spaces for they run y from bottom to top
         this.ctx.scale(sy, this.plotter2d.curSpace == Plotter2d.spaces.SCREEN ? sy : -sy);
         const adjCenter = .33; // TODO: no magic numbers, comes from font
