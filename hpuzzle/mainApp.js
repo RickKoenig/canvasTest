@@ -6,8 +6,17 @@ class Piece {
 		this.color = color;
 	}
 
-	draw(user) {
-		user.drawPrim.drawCircle(this.pos, this.rad ,this.color);
+	draw(user, small) {
+		if (small) {
+			user.drawPrim.drawCircleO(this.pos, this.rad  * .25, .025, this.color);
+			user.drawPrim.drawCircle(this.pos, this.rad  * .025, this.color);
+		} else {
+			user.drawPrim.drawCircle(this.pos, this.rad, this.color);
+			user.drawPrim.drawCircle(this.pos, this.rad * .1, "black");
+			if (this.mark) {
+				user.drawPrim.drawCircle(this.pos, this.rad * .035, "white");
+			}
+		}
 	}
 }
 
@@ -60,7 +69,7 @@ class PieceContainer {
 					this.state = this.statesEnum.IDLE;
 					// snap piece to even number when let go
 					const curObjPos = this.container[this.idx].pos;
-					const snap = .25;
+					const snap = .125;
 					curObjPos[0] = snap * Math.round(curObjPos[0] / snap);
 					curObjPos[1] = snap * Math.round(curObjPos[1] / snap);
 					this.idx = -1;
@@ -78,30 +87,52 @@ class PieceContainer {
 	}
 
 	draw() {
-		for (const so of this.container) {
-			so.draw(this.user);
+		//for (const so of this.container) {
+		for (let i = this.container.length - 1; i >= 0; --i) {
+			const so = this.container[i];
+			so.draw(this.user, i == 0);
 		}
 	}
 }
 
 class Board {
-	constructor(user, lineSegments, squares) {
+	constructor(user, lineSegments, squares, pieceRad) {
 		this.user = user;
 		this.lineSegments = lineSegments;
 		this.squares = squares;
+		this.pieceRad = pieceRad;
+	}
+
+	// see if a square in the direction, true or false
+	#checkSquareDir(i, j, di, dj) {
+		i += di;
+		j += dj;
+		return (i >= 0 && i < this.squares[0].length
+		  & j >= 0 && j < this.squares.length
+		  && this.squares[j][i]);
+
 	}
 
 	checkCollision(pos) {
 		this.collInfo = {
 			// best choice
 			pos: vec2.clone(pos),
-			isPen: false,
+			flip0: false,
+			flip1: false,
+			quad1: [0, 0],
+			mark: false
 		};
-		const i = Math.round(pos[0] / 2) + 2;
-		const j = Math.round(pos[1] / 2) + 1;
-		if (i < 0 || i >= this.squares[0].length
-		  || j < 0 | j >= this.squares.length
-		  || !this.squares[j][i]) {
+		let pi = Math.round(pos[0] / 2) + 2;
+		let pj = Math.round(pos[1] / 2) + 1;
+		let sqPos = vec2.create();
+		let sqCenter;
+		if (this.#checkSquareDir(pi, pj, 0, 0)) {
+
+			// inside, goto square space
+			sqCenter = [2 * pi - 4, 2 * pj - 2];
+			vec2.sub(sqPos, this.collInfo.pos, sqCenter);
+		} else {
+
 			// outside, find closest 'inside' square from 2D array
 			let bestI = -1, bestJ = -1;
 			let bestDist2 = Number.MAX_VALUE;
@@ -118,23 +149,113 @@ class Board {
 					}
 				}
 			}
-			const sqCenter = [2 * bestI - 4, 2 * bestJ - 2];
-			this.collInfo.pos[0] = range(sqCenter[0] - 1
-				, this.collInfo.pos[0]
-				, sqCenter[0] + 1);
-			this.collInfo.pos[1] = range(sqCenter[1] - 1
-				, this.collInfo.pos[1]
-				, sqCenter[1] + 1);
-			this.collInfo.isPen = true;
+			pi = bestI;
+			pj = bestJ;
+
+			// go inside closest square's space
+			sqCenter = [2 * pi - 4, 2 * pj - 2];
+			sqPos = vec2.create();
+			vec2.sub(sqPos, this.collInfo.pos, sqCenter);
+			// clip to inside square
+			sqPos[0] = range(-1, sqPos[0], 1);
+			sqPos[1] = range(-1, sqPos[1], 1);
 		}
+
+		// now move inside the square, maybe closer to the center
+		const pathWidth = 1 - this.pieceRad; // for each side
+
+		// calc quadrant
+		//this.collInfo.quadrant = 0;
+		this.collInfo.flip0 = sqPos[0] < 0;
+		this.collInfo.flip1 = sqPos[1] < 0;
+		// move to quadrant space
+		const dir = vec2.fromValues(1, 1); // default direction
+		if (this.collInfo.flip0) {
+			sqPos[0] = -sqPos[0];
+			dir[0] = -dir[0];
+		}
+		if (this.collInfo.flip1) {
+			sqPos[1] = -sqPos[1];
+			dir[1] = -dir[1];
+		}
+
+		vec2.scale(this.collInfo.quad1, dir, .5);
+		vec2.add(this.collInfo.quad1, sqCenter, this.collInfo.quad1);
+
+		// calc connect
+		const rightOpen = this.#checkSquareDir(pi, pj, dir[0], 0);
+		const topOpen = this.#checkSquareDir(pi, pj, 0, dir[1]);
+
+		if (rightOpen && topOpen) {
+			// special, concave section
+			//if (false) {
+ 			// if diagonal, no restrictions, everything open
+ 			if (!this.#checkSquareDir(pi, pj, dir[0], dir[1])) {
+				// concave corner, try circle arc
+				/*if (sqPos[0] > pathWidth && sqPos[0] < 1 
+				  && sqPos[1] > pathWidth && sqPos[1] < 1) {
+					let dist = vec2.length(sqPos);
+					dist = Math.min(1, dist - pathWidth);
+					this.collInfo.circlePart = true;
+					//dist = 1;
+					vec2.scale(sqPos, sqPos, 1);
+				}*/
+
+ 				// no diagonal, concave corner
+				if (sqPos[0] > pathWidth && sqPos[0] < 1
+				  && sqPos[1] > pathWidth && sqPos[1] < 1) {
+					// circle arc
+					const dist = vec2.dist(sqPos, [1, 1]);
+					if (dist < this.user.pieceRad) {
+						this.collInfo.mark = true;
+						// make piece be pieceRad distance from corner [1, 1]
+						vec2.sub(sqPos, [1, 1], sqPos);
+						vec2.scale(sqPos, sqPos, this.user.pieceRad / dist);
+						vec2.sub(sqPos, [1, 1], sqPos);
+					}
+				} else { // concave sides, pick closest one
+					if (sqPos[0] > sqPos[1]) {
+						sqPos[1] = Math.min(sqPos[1], pathWidth);
+					} else {
+						sqPos[0] = Math.min(sqPos[0], pathWidth);
+					}
+				}
+			}
+		} else {
+			if (!rightOpen) {
+				sqPos[0] = Math.min(sqPos[0], pathWidth);
+			}
+			if (!topOpen) {
+				sqPos[1] = Math.min(sqPos[1], pathWidth);
+			}
+		}
+
+		/*
+		const connect = this.#checkSquareDir(pi, pj, dir[0], dir[1]);
+		if (!connect) {
+			// no connecting path, more restrictions
+			sqPos[0] = Math.min(sqPos[0], pathWidth);
+		}
+		sqPos[1] = range(-pathWidth, sqPos[1], pathWidth);
+		*/
+
+		// go back to square space
+		if (this.collInfo.flip0) {
+			sqPos[0] = -sqPos[0];
+		}
+		if (this.collInfo.flip1) {
+			sqPos[1] = -sqPos[1];
+		}
+
+		// go back to user space
+		vec2.add(this.collInfo.pos, sqPos, sqCenter);
+		this.collInfo.sqCenter = vec2.clone(sqCenter);	
 		return this.collInfo;
 	}
 
 	draw() {
 		// draw puzzle outline
 		this.user.drawPrim.drawLinesParametric(this.lineSegments, .05, undefined, false, "black");
-		const collPnt = this.collInfo.pos;
-		this.user.drawPrim.drawCircle(collPnt, .1 ,"black");
 		//for (const coll of this.collInfo.collArr) {
 		//	this.user.drawPrim.drawCircle(coll.pos, .05 ,"cyan");
 		//}
@@ -169,7 +290,7 @@ class MainApp {
 		// USER before UI built
 		this.#userInit();
 
-		const safe = .5;
+		const safe = .75;
 		const extraWidth = 5 + safe; // show more left and right
 		const extraHeight = 3 + safe;
 		// fire up all instances of the classes that are needed
@@ -198,7 +319,6 @@ class MainApp {
 	}
 
 	#initBoard() {
-
 		// 'H' puzzle
 		const pointsH = [
 			[-5, -3],
@@ -229,51 +349,125 @@ class MainApp {
 
 		// test1 puzzle
 		const pointsTest1 = [
-			[-3, -3],
-			[-3, 1],
-			[3, 1],
-			[3, -3],
-			[-3, -3]
+			[-5, -3],
+			[-5, 1],
+			[1, 1],
+			[1, -3],
+			[-5, -3]
 		];
 
 		const squaresTest1 = [
-			// upside down
-			[false, true, true, true],
-			[false, true, true, true]
+			[true, true, true],
+			[true, true, true]
 		];
 
 		// test2 puzzle
 		const pointsTest2 = [
-			[-3, -3],
+			[-5, -3],
+			[-5, 1],
 			[-3, 1],
-			[-1, 1],
-			[-1, -1],
-			[3, -1],
-			[3, -3],
-			[-3, -3]
+			[-3, -1],
+			[1, -1],
+			[1, -3],
+			[-5, -3]
 		];
 
 		const squaresTest2 = [
-			[false, true, true, true],
-			[false, true, false, false],
+			// upside down
+			[true, true, true],
+			[true, false, false],
 		];
 
-		this.board = new Board(this, pointsH, squaresH);
-		//this.board = new Board(this, pointsTest1, squaresTest1);
-		//this.board = new Board(this, pointsTest2, squaresTest2);
+		// test3 puzzle
+		const pointsTest3 = [
+			[-5, -3],
+			[-5, -1],
+			[-1, -1],
+			[-1, 1],
+			[-3, 1],
+			[-3, -3],
+			[-5, -3]
+		];
+
+		const squaresTest3 = [
+			// upside down
+			[true, false],
+			[false, true]
+		];
+
+		// test4 puzzle
+		const pointsTest4 = [
+			[-5, -3],
+			[-5, -1],
+			[-1, -1],
+			[-1, -3],
+			[-5, -3],
+		];
+
+		const squaresTest4 = [
+			// upside down
+			[true, true]
+		];
+
+		this.boards = [
+			{
+				lineSegments: pointsH,
+				squares: squaresH
+			}, {
+				lineSegments: pointsTest1,
+				squares: squaresTest1
+			}, {
+				lineSegments: pointsTest2,
+				squares: squaresTest2
+			}, {
+				lineSegments: pointsTest3,
+				squares: squaresTest3
+			}, {
+				lineSegments: pointsTest4,
+				squares: squaresTest4
+			}
+		];
+
+		this.curBoard = 0;
+		const board = this.boards[this.curBoard];
+		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
+	}
+
+	#nextBoard() {
+		++this.curBoard;
+		if (this.curBoard >= this.boards.length) {
+			this.curBoard -= this.boards.length;
+		}
+		const board = this.boards[this.curBoard];
+		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
+	}
+
+	#prevBoard() {
+		--this.curBoard;
+		if (this.curBoard < 0) {
+			this.curBoard += this.boards.length;
+		}
+		const board = this.boards[this.curBoard];
+		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
 	}
 
 	#initPieces() {
 		// slide objects and container
-		const rad = .125;//.75;
-		const safe = .95;
+		const rad = this.pieceRad;
+		const safe = .95; // select more inside circle radius
+		const pieceDataArr = [
+			{ pos: [-2, 0],
+				color: "red"
+			}, {
+				pos: [-.5, 1.5],
+				color: "#0f04"
+			}
+		];
 		this.pieceContainer = new PieceContainer(this, rad * safe);
-		let slideObj = new Piece([-2, 0], rad, "red");
-		this.pieceContainer.add(slideObj);
-		slideObj = new Piece([-.5, 1.5], rad, "green");
-		this.pieceContainer.add(slideObj);
-		//slideObj = new Piece([4, -2], rad, "green");
-		//this.pieceContainer.add(slideObj);
+		for (const pieceData of pieceDataArr) {
+			let slideObj = new Piece(pieceData.pos, rad, pieceData.color);
+			this.pieceContainer.add(slideObj);
+		}
 	}
 
 	#userInit() {
@@ -285,6 +479,7 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
+		this.pieceRad = .75;
 		this.#initBoard();
 		this.#initPieces();
 
@@ -315,7 +510,11 @@ class MainApp {
 					}
 				);
 			}
-			return;
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "button", null, null, "next board", this.#nextBoard.bind(this));
+			makeEle(this.vp, "button", null, null, "prev board", this.#prevBoard.bind(this));
+
 		}
 	}
 
@@ -336,10 +535,15 @@ class MainApp {
 
 
 		this.pieceContainer.proc();
+
+		// keep points inside
 		const parr = this.pieceContainer.container;
-		const p0 = parr[0].pos;
-		const p1 = parr[1].pos;
-		this.collInfo = this.board.checkCollision(p1);
+		//for (let i = 0; i < parr.length; ++i) {
+			this.collInfo = this.board.checkCollision(parr[0].pos);
+			parr[1].pos = this.collInfo.pos;
+			parr[1].mark = this.collInfo.mark;
+		//}
+
 		++this.count;
 	}
 
@@ -349,10 +553,19 @@ class MainApp {
 		this.board.draw();
 
 		// test, draw line between 2 pieces
+		/*
 		const parr = this.pieceContainer.container;
 		const p0 = parr[0].pos;
 		const p1 = parr[1].pos;
 		this.drawPrim.drawLine(p0, p1, .05, "black");
+		*/
+		this.drawPrim.drawLine(this.collInfo.sqCenter
+			, this.collInfo.quad1, .0375, "#8884");
+		this.drawPrim.drawCircleO(this.collInfo.quad1, .1, .025, "black");
+		if (this.collInfo.circlePart) {
+			this.drawPrim.drawCircle([-2, 2], .2, "purple");
+		}
+
 		// end test
 
 		// draw cursor, when pressed / touched
@@ -371,18 +584,11 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let countStr = "\nFrame Count = " + this.count;
-		countStr += "\nDirty Count = " + this.dirtyCount;
-		countStr += "\nAvg fps = " + this.avgFps.toFixed(2);
-		countStr += "\n<span style='color: darkgreen; font-size: 1.25em'>"
-			+ (this.collInfo.isPen
-			? "&lt; outside &gt;"
-			: "&lt; inside &gt;");
-		countStr += "</span>"
-		countStr += "\n";
-		countStr += this.input.mouse.stats;
+		let infoStr = "\nInfo";
+		infoStr += "\ncur board = " + this.curBoard;
+		infoStr += "\nflip0 = " + this.collInfo.flip0 + " \nflip1 = " + this.collInfo.flip1;
 		if (this.eles.textInfoLog) {
-			this.eles.textInfoLog.innerHTML = countStr;
+			this.eles.textInfoLog.innerHTML = infoStr;
 		}
 	}
 
