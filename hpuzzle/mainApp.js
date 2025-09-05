@@ -483,10 +483,10 @@ class MainApp {
 		if (window.isMobile) {
 			makeEle(this.vp, "hr");
 			makeEle(this.vp, "br");
-			makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
-			makeEle(this.vp, "br");
-			makeEle(this.vp, "br");
 			makeEle(this.vp, "button", null, null, "Reset Pieces", this.#initPieces.bind(this));
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "br");
+			makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 			this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 			this.stepRat = .10;
 			this.iterations = 40;
@@ -612,9 +612,21 @@ class MainApp {
 				this.drawPrim.drawCircleO(pnt, 2, .0375, "gray");
 			}
 		}
-		this.drawPrim.drawText([0, -1.5], [1.82, .08]
-		  , "Move green circles to the right, Blue circles to the left"
+		const landscape = this.plotter2dCanvas.width > this.plotter2dCanvas.height;
+		this.drawPrim.drawText([0, -1.3], [1.82, .14]
+		  , "Move green circles to the right"
 		  , "black", "#0002");
+		this.drawPrim.drawText([0, -1.8], [1.82, .14]
+		  , "Move blue circles to the left"
+		  , "black", "#0002");
+		if (!landscape) {
+			this.drawPrim.drawText([0, -2.3], [1.82, .14]
+			  , "Landscape mode looks better"
+		  	  , "darkred", "#0002");
+		}
+		this.drawPrim.drawText([0, -2.8], [1.2, .14]
+		  , landscape ? "Landscape mode" : "Portrait mode"
+		  , "#000c", "#0002");
 		const scaleWinText = [1, .2];
 		vec2.scale(scaleWinText, scaleWinText, .125 + this.winCount * .006);
 		if (this.winCount > 0) {
