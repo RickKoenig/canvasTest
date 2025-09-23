@@ -6,10 +6,10 @@ function javaScriptTests() {
 	/*
 	inheritanceTests();
 	const codeWord = rudolphSim();
-	console.log("codeword = '" + codeWord + "'");*/
+	console.log("codeword = '" + codeWord + "'");
+	*/
 	//runHeyawake(); // test some heyawake configurations
-	/*
-	//doLadybug(); // ladybugs on leaves puzzle */
+	//doLadybug(); // ladybugs on leaves puzzle
 	//doPosits(); // play with UNUM 3, posits	runScratch();
 	//doBenford(); // Benford distribution tests
 	console.log("DONE javascript tests!");

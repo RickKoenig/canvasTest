@@ -35,6 +35,20 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, minimal",
+            "url": "http://localhost:88/plotter2d/minimal/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, undecided",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, simple MOBILE",
             "url": "http://localhost:88/plotter2d/simple/indexMobile.html",
             "webRoot": "${workspaceFolder}"

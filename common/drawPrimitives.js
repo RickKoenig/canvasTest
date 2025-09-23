@@ -29,21 +29,21 @@ class DrawPrimitives {
         this.ctx.stroke();
     }
 
-    drawRectangle(topLeft, size, color = "black", ndcScale = false) {
+    drawRectangle(corner, size, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         const sizeScale = vec2.create();
         vec2.scale(sizeScale, size, ndcZoom);
         this.ctx.fillStyle = color;
-        this.ctx.fillRect(topLeft[0], topLeft[1], sizeScale[0], sizeScale[1]);
+        this.ctx.fillRect(corner[0], corner[1], sizeScale[0], sizeScale[1]);
     }
 
-    drawRectangleO(topLeft, size, lineWidth, color = "black", ndcScale = false) {
+    drawRectangleO(corner, size, lineWidth, color = "black", ndcScale = false) {
         const ndcZoom = this.plotter2d.getNdcZoom(ndcScale);
         this.ctx.lineWidth = lineWidth * ndcZoom;
         const sizeScale = vec2.create();
         vec2.scale(sizeScale, size, ndcZoom);
         this.ctx.strokeStyle = color;
-        this.ctx.strokeRect(topLeft[0], topLeft[1], sizeScale[0], sizeScale[1]);
+        this.ctx.strokeRect(corner[0], corner[1], sizeScale[0], sizeScale[1]);
     }
 
     drawRectangleCenter(center, size, color = "black", ndcScale = false) {

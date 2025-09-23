@@ -29,6 +29,30 @@ function getBlackSum(board) {
 }
 
 function printBoard(board) {
+    // use ANSI console codes
+    //console.log('\x1b[31mThis text is red.\x1b[0m'); // Red text
+    for (const row of board) {
+        let line = "";
+        for (const val of row) {
+            switch(val) {
+                case 0: // white
+                    line += "\x1b[47;30mw";
+                    break;
+                case 1: // black
+                    line += "\x1b[40;37mb";
+                    break;
+                case 2: // unknown
+                    line += "\x1b[44;37m.";
+                    break;
+            }
+        }
+        console.log(line + "\x1b[0;49m");
+    }
+}
+
+/*
+function printBoard(board) {
+    //console.log('\x1b[31mThis text is red.\x1b[0m'); // Red text
     for (const row of board) {
         //let prefix = "";
         let prefix = "%c";
@@ -52,6 +76,7 @@ function printBoard(board) {
         console.log(prefix, "color: lightgray;"); 
     }
 }
+*/
 
 function getBoundsStr(b) {
     if (b == 0) {
@@ -352,12 +377,20 @@ function runBrute(p) {
     }
 }
 
+function changeConsoleColor(n) {
+
+}
+
 function runHeyawake() {
+    console.log("heyawake test");
     /*
         2D square, find valid solutions
         white is 0, black is 1
     */
-    console.log("%c\nheyawake test", "color: yellow");
+    // test ANSI console codes
+    for (let i = 0; i < 8; ++i) {
+        console.log('\x1b[' + (i + 30) + 'mThis text is ' + i + '\x1b[0m'); // 3 bit text color
+    }
 
     // special positions
     const special = true;
@@ -418,22 +451,24 @@ function runHeyawake() {
     if (brute) {
         // brSizeX, brSizeY, bounds, goal
         const brutes = [
-            //{brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
+            //{brSizeX: 2, brSizeY: 2, bounds: bD.LEFT, goal: -1},
             //{brSizeX: 5, brSizeY: 7, bounds: bD.UP, goal: 14},
             //{brSizeX: 5, brSizeY: 5, bounds: bD.LEFT | bD.UP, goal: 10},
             //{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT, goal: 4},
             //{brSizeX: 3, brSizeY: 2, bounds: bD.RIGHT, goal: 3},
             //{brSizeX: 2, brSizeY: 2, bounds: bD.UP | bD.LEFT, goal: 2},
-            //{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.UP | bD.DOWN, goal: 4},
+            //{brSizeX: 3, brSizeY: 3, bounds: bD.UP | bD.LEFT | bD.DOWN, goal: 4},
             //{brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
             //{brSizeX: 4, brSizeY: 4, bounds: 0, goal: 7},
             //{brSizeX: 4, brSizeY: 4, bounds: bD.UP | bD.RIGHT, goal: 5},
             //{brSizeX: 4, brSizeY: 4, bounds: bD.UP, goal: 6},
             //{brSizeX: 7, brSizeY: 7, bounds: 0, goal: 21},
             //{brSizeX: 3, brSizeY: 3, bounds: 0, goal: 5},
+            {brSizeX: 3, brSizeY: 3, bounds: bD.LEFT, goal: 4},
             //{brSizeX: 2, brSizeY: 7, bounds: bD.RIGHT, goal: 6},
             //{brSizeX: 4, brSizeY: 4, bounds: bD.RIGHT | bD.UP, goal: 6},
-            {brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
+            //{brSizeX: 7, brSizeY: 5, bounds: 0, goal: 15},
+            //{brSizeX: 7, brSizeY: 7, bounds: 0, goal: 21},
         ];
         for (const b of brutes) {
             runBrute(b);
