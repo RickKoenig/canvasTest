@@ -25,6 +25,52 @@ class MainApp {
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
+		// load an svg image
+		const svgName = '../fourier/8thNote.svg';
+		this.svg = new Image();
+		//this.svg.onload = () => this.svgLoaded = true;
+		this.svg.onerror = function(e) {
+        	console.error('Error loading svg image!');
+			console.log(e);
+    	};		
+		this.svg.src = svgName;
+
+		const svgNameGreen = '../fourier/8thNoteGreen.svg';
+		this.svgGreen = new Image();
+		//this.svgGreen.onload = () => this.svgGreenLoaded = true;
+		this.svgGreen.onerror = function(e) {
+        	console.error('Error loading svgGreen image!');
+			console.log(e);
+    	};		
+		this.svgGreen.src = svgNameGreen;
+
+		const svgBlueName = '../fourier/frog.svg';
+		this.svgBlue = new Image();
+		//this.svgBlue.onload = () => this.svgBlueLoaded = true;
+		this.svgBlue.onerror = function(e) {
+        	console.error('Error loading svgBlue image!');
+			console.log(e);
+    	};		
+		this.svgBlue.src = svgBlueName;
+
+		// load svg as text
+		fetch(svgName)
+		.then((res) => res.text())
+		.then((text) => {
+			// do something with "text"
+			console.log("text = " + text);
+		})
+		.catch((e) => console.error(e));
+
+		// load a bitmap image
+		this.bm = new Image();
+		//this.bm.onload = () => this.bmLoaded = true;
+		this.bm.onerror = function(e) {
+        	console.error('Error loading bm image!');
+			console.log(e);
+    	};		
+		this.bm.src = '../../engw/common/sptpics/wonMedal.png';
+
 		// USER before UI built
 		this.#userInit();
 
@@ -63,9 +109,9 @@ class MainApp {
 		this.AvgFpsObj = new Runavg(500);
 
 		// position graphics
-		this.startCenter = [.5, .5];
-		this.startZoom = 1.8;
-		this.pos = [0, 0];
+		this.startCenter = [1.5, 1.5];
+		this.startZoom = .6;
+		this.cursorPos = [0, 0];
 	}
 
 	#userBuildUI() {
@@ -93,14 +139,31 @@ class MainApp {
 		// some graphics
 		const mbut = this.input.mouse.mbut[Mouse.LEFT];
 		if (mbut) {
-			this.pos = vec2.clone(this.plotter2d.userMouse);
+			this.cursorPos = vec2.clone(this.plotter2d.userMouse);
 		}
 	}
 
 	#userDraw() {
 		const lineWid = .02;
     	this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
-		this.drawPrim.drawCircleO(this.pos, .1, .005, "brown"); // center
+    	this.drawPrim.drawRectangleO([2, 1], [1, 1], lineWid);
+    	this.drawPrim.drawRectangleO([1.5, 1], [.5, .5], lineWid);
+    	this.drawPrim.drawRectangleO([2.5, .5], [.5, .5], lineWid);
+    	this.drawPrim.drawRectangleO([1.5, 0], [1, .5], lineWid);
+		
+    	this.drawPrim.drawRectangleO([1, 2], [1, 1], lineWid);
+    	this.drawPrim.drawRectangleO([0, 1.5], [1, .5], lineWid);
+		//if (this.svgLoaded) {
+			this.drawPrim.drawImage(this.svg, [0, 0], [1, 1]);
+			this.drawPrim.drawImage(this.svgGreen, [2, 1], [1, 1], true);
+			this.drawPrim.drawImage(this.svgBlue, [1.5, 1], [.5, .5], false, false);
+			this.drawPrim.drawImage(this.svg, [2.5, .5], [.5, .5], true, true);
+			this.drawPrim.drawImage(this.svg, [1.5, 0], [1, .5]);
+
+			this.drawPrim.drawImage(this.bm, [1, 2], [1, 1]);
+			this.drawPrim.drawImage(this.bm, [0, 1.5], [1, .5]);
+		//}
+		this.drawPrim.drawCircleO(this.cursorPos, .1, .005, "brown"); // center
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

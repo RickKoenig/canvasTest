@@ -4,7 +4,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 	<title>Canvas test</title>
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="styleMobile.css">
 </head>
 
 <body>
@@ -22,6 +22,12 @@
 	</div>
 
 	<!-- scripts -->
+	<script src="../common/utilsMisc.js"></script>
+	<script>
+		var isMobile = true;
+		var params = doURLParams();
+		var panelWidthRatio = params.panelWidthRatio ? +params.panelWidthRatio : .2;
+	</script>
 	<script src="../common/glmatrix/common.js"></script>
 	<script src="../common/glmatrix/vec2.js"></script>
 
@@ -30,7 +36,6 @@
 	<script src="../common/utilsPlotter2dUI.js"></script>
 	<script src="../common/utilsEditPoints.js"></script>
 	<script src="../common/utilsEditTiles.js"></script>
-	<script src="../common/utilsMisc.js"></script>
 
 	<script src="../common/input2_keyTable.js"></script>
 	<script src="../common/input2_key.js"></script>

@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+    
 
         {
             "name": "Launch Program",
@@ -43,7 +44,7 @@
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost, undecided",
-            "url": "http://localhost:88/plotter2d/nextPuzzle/index.html",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile.html",
             "webRoot": "${workspaceFolder}"
         },
         {

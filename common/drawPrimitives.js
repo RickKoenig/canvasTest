@@ -259,4 +259,34 @@ class DrawPrimitives {
         this.ctx.fillText(text, center[0], center[1]);
         this.ctx.restore();
     }
+
+    // assume USER or NDC space for now
+    drawImage(img, corner, size, flipx = false, flipy = false) {
+        this.ctx.save();
+        let cx = corner[0];
+        let cy = -corner[1];
+        let wx = size[0];
+        let wy = -size[1];
+        let sx = 1;
+        let sy = -1;
+        if (flipx) {
+            cx = -cx - wx;
+            sx = -sx;
+        }
+        if (flipy) {
+            cy = -cy - wy;
+            sy = -sy;
+        }
+		this.ctx.scale(sx, sy);
+        this.ctx.drawImage(img, cx, cy, wx, wy);
+        this.ctx.restore();
+        /*			
+			this.ctx.drawImage(this.svg, 0, 0, 1, -1);
+			this.ctx.drawImage(this.svg, 2, -1, 1, -1);
+			this.ctx.drawImage(this.svg, 1.5, -1, .5, -.5);
+			this.drawPrim.drawImage(this.svg, 4, 4, 1, 1);
+			 */
+
+
+    }
 }
