@@ -7,8 +7,14 @@ class Piece {
 	}
 
 	draw(user) {
-		user.drawPrim.drawCircle(this.pos, this.rad, this.color);
-		user.drawPrim.drawCircle(this.pos, this.rad * .05, "black");
+		const pos = [this.pos[0] - this.rad, this.pos[1] - this.rad];
+		const scale = [this.rad * 2, this.rad * 2];
+		if (this.color == "green") {
+			user.drawPrim.drawImage(user.frogGreen, pos, scale);
+		} else if (this.color == "blue") {
+			user.drawPrim.drawImage(user.frogBlue, pos, scale, true); // look left
+		}
+		user.drawPrim.drawCircle(this.pos, this.rad * .15, "black"); // reference dot
 	}
 }
 
@@ -90,22 +96,10 @@ class PieceContainer {
 }
 
 class Board {
-	constructor(user, lineSegments, squares, pieceRad) {
+	constructor(user, lineSegments, pieceRad) {
 		this.user = user;
 		this.lineSegments = lineSegments;
-		this.squares = squares;
-		this.origSquares = clone(squares);
 		this.pieceRad = pieceRad;
-	}
-
-	// see if a square in the direction, true or false
-	#checkSquareDir(i, j, di, dj) {
-		i += di;
-		j += dj;
-		return (i >= 0 && i < this.squares[0].length
-		  & j >= 0 && j < this.squares.length
-		  && this.squares[j][i]);
-
 	}
 
 	checkCollision(pos) {
@@ -113,124 +107,13 @@ class Board {
 		this.squares = clone(this.origSquares);
 		const pieceCont = this.user.pieceContainer;
 		const cont = pieceCont.container;
-		for (let i = 0; i < cont.length; ++i) {
-			if (i != pieceCont.idx) {
-				let pi = Math.round(cont[i].pos[0] / 2) + 2;
-				let pj = Math.round(cont[i].pos[1] / 2) + 1;
-				this.squares[pj][pi] = false;
-			}
-		}
+		const sdp = this.user.pieceContainer.startDragPos;
 		this.collInfo = {
 			// best choice
 			pos: vec2.clone(pos),
 		};
-		let pi = Math.round(pos[0] / 2) + 2;
-		let pj = Math.round(pos[1] / 2) + 1;
-		let sqPos = vec2.create();
-		let sqCenter;
-		if (this.#checkSquareDir(pi, pj, 0, 0)) {
-
-			// inside, goto square space
-			sqCenter = [2 * pi - 4, 2 * pj - 2];
-			vec2.sub(sqPos, this.collInfo.pos, sqCenter);
-		} else {
-
-			// outside, find closest 'inside' square from 2D array
-			let bestI = -1, bestJ = -1;
-			let bestDist2 = Number.MAX_VALUE;
-			for (let j = 0; j < this.squares.length; ++j) {
-				for (let i = 0; i < this.squares[0].length; ++i) {
-					if (this.squares[j][i]) {
-						const sqCenter = [2 * i - 4, 2 * j - 2];
-						const dist2 = vec2.sqrDist(sqCenter, pos);
-						if (dist2 < bestDist2) {
-							bestI = i;
-							bestJ = j;
-							bestDist2 = dist2;
-						}
-					}
-				}
-			}
-			pi = bestI;
-			pj = bestJ;
-
-			// go inside closest square's space
-			sqCenter = [2 * pi - 4, 2 * pj - 2];
-			sqPos = vec2.create();
-			vec2.sub(sqPos, this.collInfo.pos, sqCenter);
-			// clip to inside square
-			sqPos[0] = range(-1, sqPos[0], 1);
-			sqPos[1] = range(-1, sqPos[1], 1);
-		}
-
-		// now move inside the square, maybe closer to the center
-		const pathWidth = 1 - this.pieceRad; // for each side
-
-		// calc quadrant
-		const flip0 = sqPos[0] < 0;
-		const flip1 = sqPos[1] < 0;
-		// move to quadrant space
-		const dir = vec2.fromValues(1, 1); // default direction
-		if (flip0) {
-			sqPos[0] = -sqPos[0];
-			dir[0] = -dir[0];
-		}
-		if (flip1) {
-			sqPos[1] = -sqPos[1];
-			dir[1] = -dir[1];
-		}
-		const quad = vec2.create();
-		vec2.scale(quad, dir, .5);
-		vec2.add(quad, sqCenter, quad);
-
-		// calc connect
-		const rightOpen = this.#checkSquareDir(pi, pj, dir[0], 0);
-		const topOpen = this.#checkSquareDir(pi, pj, 0, dir[1]);
-
-		if (rightOpen && topOpen) {
-			// special, concave section
- 			// if diagonal, no restrictions, everything open
- 			if (!this.#checkSquareDir(pi, pj, dir[0], dir[1])) {
-				// concave corner, try circle arc
- 				// no diagonal, concave corner
-				if (sqPos[0] > pathWidth && sqPos[0] < 1
-				  && sqPos[1] > pathWidth && sqPos[1] < 1) {
-					// circle arc
-					const dist = vec2.dist(sqPos, [1, 1]);
-					if (dist < this.user.pieceRad) {
-						// make piece be pieceRad distance from corner [1, 1]
-						vec2.sub(sqPos, [1, 1], sqPos);
-						vec2.scale(sqPos, sqPos, this.user.pieceRad / dist);
-						vec2.sub(sqPos, [1, 1], sqPos);
-					}
-				} else { // concave sides, pick closest one
-					if (sqPos[0] > sqPos[1]) {
-						sqPos[1] = Math.min(sqPos[1], pathWidth);
-					} else {
-						sqPos[0] = Math.min(sqPos[0], pathWidth);
-					}
-				}
-			}
-		} else {
-			if (!rightOpen) {
-				sqPos[0] = Math.min(sqPos[0], pathWidth);
-			}
-			if (!topOpen) {
-				sqPos[1] = Math.min(sqPos[1], pathWidth);
-			}
-		}
-
-		// go back to square space
-		if (flip0) {
-			sqPos[0] = -sqPos[0];
-		}
-		if (flip1) {
-			sqPos[1] = -sqPos[1];
-		}
-
-		// go back to user space
-		vec2.add(this.collInfo.pos, sqPos, sqCenter);
-		this.collInfo.sqCenter = vec2.clone(sqCenter);	
+		this.collInfo.pos[1] = 0;
+		this.collInfo.pos[0] = range(-8, this.collInfo.pos[0], 8);
 		return this.collInfo;
 	}
 
@@ -265,11 +148,14 @@ class MainApp {
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
+		// load an svg image
+		this.#loadSvg("frog", "../fourier/frog");
+
 		// USER before UI built
 		this.#userInit();
 
 		const safe = .25;
-		const extraWidth = 5 + safe; // show more left and right
+		const extraWidth = 9 + safe; // show more left and right
 		const extraHeight = 3 + safe;
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
@@ -289,6 +175,29 @@ class MainApp {
 		this.#animate();
 	}
 
+	#loadSvg(baseSvg, baseName) {
+		const exts = [
+			"",
+			"Green",
+			"Blue"
+		];
+		for (const ext of exts) {
+			this.#load1Svg(baseSvg + ext, baseName + ext + ".svg");
+		}
+	}
+
+	#load1Svg(svg, name) {
+		const img = new Image();
+		this[svg] = img;
+		//this.svgBlue.onload = () => this.svgBlueLoaded = true;
+		img.onerror = function(e) {
+        	console.error('Error loading ' + svg +  ' image!');
+			console.log(e);
+    	};		
+		img.src = name;
+
+	}
+
 	#randomColor() {
 		const r = getRandomInt(256);
 		const g = getRandomInt(256);
@@ -297,136 +206,24 @@ class MainApp {
 	}
 
 	#initBoard() {
-		// 'H' puzzle
-		const pointsH = [
-			[-5, -3],
-			[-5, 3],
-			[-3, 3],
-			[-3, 1],
-			[-1, 1],
-			[-1, 3],
-			[1, 3],
-			[1, 1],
-			[3, 1],
-			[3, 3],
-			[5, 3],
-			[5, -3],
-			[3, -3],
-			[3, -1],
-			[-3, -1],
-			[-3, -3],
-			[-5, -3]
-		];
-
-		const squaresH = [
-			// upside down
-			[true, false, false, false, true],
-			[true, true, true, true, true],
-			[true, false, true, false, true],
-		];
-
-		// test1 puzzle
-		const pointsTest1 = [
-			[-5, -3],
-			[-5, 1],
-			[1, 1],
-			[1, -3],
-			[-5, -3]
-		];
-
-		const squaresTest1 = [
-			[true, true, true],
-			[true, true, true]
-		];
-
-		// test2 puzzle
-		const pointsTest2 = [
-			[-5, -3],
-			[-5, 1],
-			[-3, 1],
-			[-3, -1],
-			[1, -1],
-			[1, -3],
-			[-5, -3]
-		];
-
-		const squaresTest2 = [
-			// upside down
-			[true, true, true],
-			[true, false, false],
-		];
-
-		// test3 puzzle
-		const pointsTest3 = [
-			[-5, -3],
-			[-5, -1],
-			[-1, -1],
-			[-1, 1],
-			[-3, 1],
-			[-3, -3],
-			[-5, -3]
-		];
-
-		const squaresTest3 = [
-			// upside down
-			[true, false],
-			[false, true]
-		];
-
-		// test4 puzzle
-		const pointsTest4 = [
-			[-5, -3],
-			[-5, -1],
-			[-1, -1],
-			[-1, -3],
-			[-5, -3],
-		];
-
-		const squaresTest4 = [
-			// upside down
-			[true, true]
+		// frog puzzle
+		const pointsFrog = [
+			[-9, -1],
+			[-9, 1],
+			[9, 1],
+			[9, -1],
+			[-9, -1]
 		];
 
 		this.boards = [
 			{
-				lineSegments: pointsH,
-				squares: squaresH
-			}, {
-				lineSegments: pointsTest1,
-				squares: squaresTest1
-			}, {
-				lineSegments: pointsTest2,
-				squares: squaresTest2
-			}, {
-				lineSegments: pointsTest3,
-				squares: squaresTest3
-			}, {
-				lineSegments: pointsTest4,
-				squares: squaresTest4
+				lineSegments: pointsFrog,
 			}
 		];
 
 		this.curBoard = 0;
 		const board = this.boards[this.curBoard];
-		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
-	}
-
-	#nextBoard() {
-		++this.curBoard;
-		if (this.curBoard >= this.boards.length) {
-			this.curBoard -= this.boards.length;
-		}
-		const board = this.boards[this.curBoard];
-		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
-	}
-
-	#prevBoard() {
-		--this.curBoard;
-		if (this.curBoard < 0) {
-			this.curBoard += this.boards.length;
-		}
-		const board = this.boards[this.curBoard];
-		this.board = new Board(this, board.lineSegments, board.squares, this.pieceRad);
+		this.board = new Board(this, board.lineSegments, this.pieceRad);
 	}
 
 	#initPieces() {
@@ -435,23 +232,29 @@ class MainApp {
 		const safe = .95; // select more inside circle radius
 		const pieceDataArr = [
 			{ 
-				pos: [-4, -2],
-				color: "#0b0e"
+				pos: [-8, 0],
+				color: "green"
+			}, {
+				pos: [-6, 0],
+				color: "green"
 			}, {
 				pos: [-4, 0],
-				color: "#0b0e"
+				color: "green"
 			}, { 
-				pos: [-4, 2],
-				color: "#0b0e"
+				pos: [-2, 0],
+				color: "green"
 			}, { 
-				pos: [4, -2],
-				color: "#00fe"
+				pos: [2, 0],
+				color: "blue"
 			}, {
 				pos: [4, 0],
-				color: "#00fe"
+				color: "blue"
 			}, { 
-				pos: [4, 2],
-				color: "#00fe"
+				pos: [6, 0],
+				color: "blue"
+			}, { 
+				pos: [8, 0],
+				color: "blue"
 			}
 		];
 		this.pieceContainer = new PieceContainer(this, rad * safe);
@@ -491,40 +294,6 @@ class MainApp {
 			this.stepRat = .10;
 			this.iterations = 40;
 			makeEle(this.vp, "hr");
-/*			{
-				const label = "iterations";
-				const min = 1;
-				const max = 100;
-				const start = 40;
-				const step = 1;
-				const precision = 0;
-				new makeEleCombo(this.vp, label, min, max, start, step, precision,
-					(v) => {
-						this.iterations = v;
-						this.dirty = true;
-					}
-				);
-			}
-			makeEle(this.vp, "hr");
-			{
-				const label = "step ratio";
-				const min = .01;
-				const max = .99;
-				const start = .10;
-				const step = .01;
-				const precision = 2;
-				new makeEleCombo(this.vp, label, min, max, start, step, precision,
-					(v) => {
-						this.stepRat = v;
-						this.dirty = true;
-					}
-				);
-			}
-			makeEle(this.vp, "br");
-			makeEle(this.vp, "br");
-			makeEle(this.vp, "button", null, null, "next board", this.#nextBoard.bind(this));
-			makeEle(this.vp, "button", null, null, "prev board", this.#prevBoard.bind(this));
-*/
 		}
 	}
 
@@ -572,6 +341,8 @@ class MainApp {
 			}
 			parr[idx].pos = vec2.clone(walk); // set result
 		}
+
+		/*
 		let winGood = 0;
 		// green right
 		for (let i = 0; i < 3; ++i) {
@@ -585,6 +356,8 @@ class MainApp {
 				++winGood;
 			}
 		}
+		*/
+		const winGood = 0;
 		if (winGood == 6) {
 			if (this.winCount < 360) {
 			++this.winCount;
@@ -613,18 +386,18 @@ class MainApp {
 			}
 		}
 		const landscape = this.plotter2dCanvas.width > this.plotter2dCanvas.height;
-		this.drawPrim.drawText([0, -1.3], [1.82, .14]
-		  , "Move green circles to the right"
+		this.drawPrim.drawText([0, -1.5], [1.82, .14]
+		  , "Move green frogs to the right"
 		  , "black", "#0002");
-		this.drawPrim.drawText([0, -1.8], [1.82, .14]
-		  , "Move blue circles to the left"
+		this.drawPrim.drawText([0, -2], [1.82, .14]
+		  , "Move blue frogs to the left"
 		  , "black", "#0002");
 		if (!landscape) {
-			this.drawPrim.drawText([0, -2.3], [1.82, .14]
+			this.drawPrim.drawText([0, -2.5], [1.82, .14]
 			  , "Landscape mode looks better"
 		  	  , "darkred", "#0002");
 		}
-		this.drawPrim.drawText([0, -2.8], [1.2, .14]
+		this.drawPrim.drawText([0, -3], [1.2, .14]
 		  , landscape ? "Landscape mode" : "Portrait mode"
 		  , "#000c", "#0002");
 		const scaleWinText = [1, .2];
@@ -639,7 +412,6 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "\nInfo";
-		//infoStr += "\ncur board = " + this.curBoard;
 		infoStr += "\nfps = " + this.avgFps.toFixed(3) + "\n\n";
 		if (this.eles.textInfoLog) {
 			this.eles.textInfoLog.innerHTML = infoStr;

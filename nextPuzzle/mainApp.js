@@ -26,35 +26,11 @@ class MainApp {
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
 		// load an svg image
-		const svgName = '../fourier/8thNote.svg';
-		this.svg = new Image();
-		//this.svg.onload = () => this.svgLoaded = true;
-		this.svg.onerror = function(e) {
-        	console.error('Error loading svg image!');
-			console.log(e);
-    	};		
-		this.svg.src = svgName;
-
-		const svgNameGreen = '../fourier/8thNoteGreen.svg';
-		this.svgGreen = new Image();
-		//this.svgGreen.onload = () => this.svgGreenLoaded = true;
-		this.svgGreen.onerror = function(e) {
-        	console.error('Error loading svgGreen image!');
-			console.log(e);
-    	};		
-		this.svgGreen.src = svgNameGreen;
-
-		const svgBlueName = '../fourier/frog.svg';
-		this.svgBlue = new Image();
-		//this.svgBlue.onload = () => this.svgBlueLoaded = true;
-		this.svgBlue.onerror = function(e) {
-        	console.error('Error loading svgBlue image!');
-			console.log(e);
-    	};		
-		this.svgBlue.src = svgBlueName;
+		this.#loadSvg("svg", "../fourier/8thNote");
+		this.#loadSvg("frog", "../fourier/frog");
 
 		// load svg as text
-		fetch(svgName)
+		fetch("../fourier/8thNoteBlue.svg")
 		.then((res) => res.text())
 		.then((text) => {
 			// do something with "text"
@@ -90,6 +66,29 @@ class MainApp {
 		this.dirty = true; // draw at least once
 		this.dirtyCount = 100;
 		this.#animate();
+	}
+
+	#loadSvg(baseSvg, baseName) {
+		const exts = [
+			"",
+			"Green",
+			"Blue"
+		];
+		for (const ext of exts) {
+			this.#load1Svg(baseSvg + ext, baseName + ext + ".svg");
+		}
+	}
+
+	#load1Svg(svg, name) {
+		const img = new Image();
+		this[svg] = img;
+		//this.svgBlue.onload = () => this.svgBlueLoaded = true;
+		img.onerror = function(e) {
+        	console.error('Error loading ' + svg +  ' image!');
+			console.log(e);
+    	};		
+		img.src = name;
+
 	}
 
 	#randomColor() {
@@ -154,13 +153,13 @@ class MainApp {
     	this.drawPrim.drawRectangleO([1, 2], [1, 1], lineWid);
     	this.drawPrim.drawRectangleO([0, 1.5], [1, .5], lineWid);
 		//if (this.svgLoaded) {
-			this.drawPrim.drawImage(this.svg, [0, 0], [1, 1]);
-			this.drawPrim.drawImage(this.svgGreen, [2, 1], [1, 1], true);
-			this.drawPrim.drawImage(this.svgBlue, [1.5, 1], [.5, .5], false, false);
+			this.drawPrim.drawImage(this.frog, [0, 0], [1, 1]);
+			this.drawPrim.drawImage(this.frogGreen, [2, 1], [1, 1], true);
+			this.drawPrim.drawImage(this.frogBlue, [1.5, 1], [.5, .5], false, false);
 			this.drawPrim.drawImage(this.svg, [2.5, .5], [.5, .5], true, true);
-			this.drawPrim.drawImage(this.svg, [1.5, 0], [1, .5]);
+			this.drawPrim.drawImage(this.svgGreen, [1.5, 0], [1, .5]);
 
-			this.drawPrim.drawImage(this.bm, [1, 2], [1, 1]);
+			this.drawPrim.drawImage(this.svgBlue, [1, 2], [1, 1]);
 			this.drawPrim.drawImage(this.bm, [0, 1.5], [1, .5]);
 		//}
 		this.drawPrim.drawCircleO(this.cursorPos, .1, .005, "brown"); // center
