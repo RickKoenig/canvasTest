@@ -1,32 +1,38 @@
 'use strict';
 class Piece {
-	constructor(pos, rad, color) {
+	constructor(pos, leftFace) {
 		this.pos = vec2.clone(pos);
-		this.rad = rad;
-		this.color = color;
+		this.leftFace = leftFace;
+		this.canMove = false;
 	}
 
-	draw(user) {
-		const pos = [this.pos[0] - this.rad, this.pos[1] - this.rad];
-		const scale = [this.rad * 2, this.rad * 2];
-		if (this.color == "green") {
-			user.drawPrim.drawImage(user.frogGreen, pos, scale);
-		} else if (this.color == "blue") {
+	draw(user, rad) {
+		const pos = [this.pos[0] - rad, this.pos[1] - rad];
+		const scale = [rad * 2, rad * 2];
+		if (this.leftFace) {
 			user.drawPrim.drawImage(user.frogBlue, pos, scale, true); // look left
+		} else {
+			user.drawPrim.drawImage(user.frogGreen, pos, scale);
 		}
-		user.drawPrim.drawCircle(this.pos, this.rad * .15, "black"); // reference dot
+		if (this.canMove) {
+			user.drawPrim.drawCircle(this.pos, rad * .25, "black"); // reference dot
+		}
 	}
 }
 
 class PieceContainer {
-	constructor(user, selectRad) {
+	// pieces are on even 'x' numbers from -8 to +8
+	constructor(user, selectDist) {
 		this.user = user;
-		this.selectRad2 = selectRad * selectRad;
+		this.selectDist = selectDist;
 		this.container = [];
 	    this.statesEnum = makeEnum(["IDLE", "DRAGGING"]);
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
-		this.startDragPos = null;
+		this.min = -8;
+		this.max = 8;
+		this.step = 2;
+		this.bothDir = false;
 	}
 
 	add(so) {
@@ -37,6 +43,35 @@ class PieceContainer {
 		return this.state == this.statesEnum.DRAGGING;
 	}
 
+	getLoser() {
+		if (this.state == this.statesEnum.DRAGGING) {
+			return false;
+		}
+		for (const curPiece of this.container) {
+			if (curPiece.canMove) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	getWinner() {
+		if (this.state == this.statesEnum.DRAGGING) {
+			return false;
+		}
+		// see if winner
+		let winGood = 0;
+		const parr = this.container;
+		for (let i = 0; i < 8; ++i) {
+			if (parr[i].pos[0] > 0 && !parr[i].leftFace) {
+				++winGood;
+			} else if (parr[i].pos[0] < 0 && parr[i].leftFace) {
+				++winGood;
+			}
+		}
+		return winGood == 8;
+	}
+
 	proc() {
 		const mbut = this.user.input.mouse.mbut[Mouse.LEFT];
 		const lmbut = this.user.input.mouse.lmbut[Mouse.LEFT];
@@ -44,54 +79,147 @@ class PieceContainer {
 		switch(this.state) {
 			case this.statesEnum.IDLE:
 				if (mbut && !lmbut) {
-					// find closest piece
+					// PICK up piece if within range
 					for (let i = 0; i < this.container.length; ++i) {
 						const userMouse = this.user.plotter2d.userMouse;
-						const curObjPos = this.container[i].pos;
-						const dist = vec2.squaredDistance(userMouse, curObjPos);
-						if (dist < this.selectRad2) {
+						const curPiece = this.container[i];
+						const curObjPos = curPiece.pos;
+						const dist = Math.abs(userMouse[0] - curObjPos[0]);
+						if (curPiece.canMove && dist < this.selectDist) {
 							this.state = this.statesEnum.DRAGGING;
 							this.idx = i;
-							this.startDragPos = vec2.clone(this.user.plotter2d.userMouse);
+							this.#setBounds();
 							console.log("switch to DRAG");
 							break;
 						}
-						console.log("user mouse = " + userMouse[0].toFixed(3)
-							+ " " + userMouse[1].toFixed(3));
-						console.log("cur obj pos = " + curObjPos[0].toFixed(3)
-							+ " " + curObjPos[1].toFixed(3));
 					}
-					console.log("stay in IDLE");
 				}
 				break;
 			case this.statesEnum.DRAGGING:
 				if (!mbut && lmbut) {
+					// DROP piece
 					this.state = this.statesEnum.IDLE;
-					// snap piece to even number when let go
 					const curObjPos = this.container[this.idx].pos;
-					const snap = 2;
-					curObjPos[0] = snap * Math.round(curObjPos[0] / snap);
-					curObjPos[1] = snap * Math.round(curObjPos[1] / snap);
-					this.idx = -1;
+					let x = curObjPos[0];
+					// find closest left, middle, right
+					if (2 * x < this.left + this.middle) {
+						x = this.left;
+					} else if (2 * x > this.middle + this.right) {
+						x = this.right;
+					} else {
+						x = this.middle;
+					}
+					curObjPos[0] = x;
+					curObjPos[1] = 0;
 					console.log("switch to IDLE");
 				}
 				break;
 		}
 		// run states
+		this.#setCanMove();
 		switch(this.state) {
 			// update piece
 			case this.statesEnum.DRAGGING:
-				this.container[this.idx].pos = vec2.clone(this.user.plotter2d.userMouse);
+				const curPiece = this.container[this.idx];
+				let mousePosX = this.user.plotter2d.userMouse[0];
+				// keep within bounds
+				mousePosX = range(this.left, mousePosX, this.right);
+				curPiece.pos[0] = mousePosX;
+				const moveDistRight = this.right - this.middle;
+				const moveDistLeft = this.left - this.middle;
+				if (moveDistRight == 2 * this.step) {
+					curPiece.pos[1] = this.#parabola(mousePosX - this.middle);
+				} else if (moveDistLeft == -2 * this.step) {
+					curPiece.pos[1] = this.#parabola(this.middle - mousePosX);
+				} else {
+					curPiece.pos[1] = 0;
+				}
 				break;
 		}
+		return 1;
 	}
 
 	draw() {
 		// reverse order
 		for (let i = this.container.length - 1; i >= 0; --i) {
 			const so = this.container[i];
-			so.draw(this.user);
+			so.draw(this.user, this.selectDist);
 		}
+	}
+	// pass in even integers
+	#checkOpen(x) {
+		if (x < this.min || x > this.max) {
+			return false;
+		}
+		for (const p of this.container) {
+			if (p.pos[0] == x) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	#setCanMove() {
+		for (const curPiece of this.container) {
+			curPiece.canMove = false;
+		}
+		if (this.state == this.statesEnum.IDLE) {
+			for (const curPiece of this.container) {
+				const x = curPiece.pos[0];
+				if (curPiece.leftFace) {
+					if (this.#checkOpen(x - this.step)) {
+						curPiece.canMove = true;
+					} else if (this.#checkOpen(x - 2 * this.step)) {
+						curPiece.canMove = true;
+					}
+				} else { // rightFace
+					if (this.#checkOpen(x + this.step)) {
+						curPiece.canMove = true;
+					} else if (this.#checkOpen(x + 2 * this.step)) {
+						curPiece.canMove = true;
+					}
+				}
+			}
+		}
+	}
+
+	#setBounds() {
+		// find if a frog can move to a left or right open square
+		const curPiece = this.container[this.idx];
+		const x = curPiece.pos[0];
+		// calc left opening
+		const left1 = this.#checkOpen(x - this.step);
+		const left2 = this.#checkOpen(x - 2 * this.step);
+		if (left1) {
+			this.left = x - this.step; // move 1 to the left
+		} else if (left2) {
+			this.left = x - 2 * this.step; // jump 2 to the left
+		} else {
+			this.left = x;
+		}
+		this.middle = x;
+		// calc right opening
+		const right1 = this.#checkOpen(x + this.step);
+		const right2 = this.#checkOpen(x + 2 * this.step);
+		if (right1) {
+			this.right = x + this.step; // move 1 to the left
+		} else if (right2) {
+			this.right = x + 2 * this.step; // jump 2 to the left
+		} else {
+			this.right = x;
+		}
+		if (!this.bothDir) { // only allow green frogs to move to the right etc.
+			if (curPiece.leftFace) {
+				this.right = x;
+			} else {
+				this.left = x;
+			}
+		}
+	}
+
+	// arc of the jump
+	#parabola(x) {
+		return x * (4 - x) * .5;
 	}
 }
 
@@ -102,24 +230,13 @@ class Board {
 		this.pieceRad = pieceRad;
 	}
 
-	checkCollision(pos) {
-		// mark pieces on board as filled
-		this.squares = clone(this.origSquares);
-		const pieceCont = this.user.pieceContainer;
-		const cont = pieceCont.container;
-		const sdp = this.user.pieceContainer.startDragPos;
-		this.collInfo = {
-			// best choice
-			pos: vec2.clone(pos),
-		};
-		this.collInfo.pos[1] = 0;
-		this.collInfo.pos[0] = range(-8, this.collInfo.pos[0], 8);
-		return this.collInfo;
-	}
-
 	draw() {
 		// draw puzzle outline
 		this.user.drawPrim.drawLinesParametric(this.lineSegments, .05, undefined, false, "black");
+		// hardcoded for 9 by 1 board
+		for (let i = -4; i <= 4; ++i) {
+			this.user.drawPrim.drawRectangleCenter([2 * i, 0], [1.6, 1.6], "#0003");
+		}
 	}
 }
 
@@ -148,15 +265,24 @@ class MainApp {
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
 
-		// load an svg image
-		this.#loadSvg("frog", "../fourier/frog");
+		// load svg images
+		this.#loadSvgs("frog", "../fourier/frog");
+
+		// load a badge bitmap
+		this.bm = new Image();
+		//this.bm.onload = () => this.bmLoaded = true;
+		this.bm.onerror = function(e) {
+        	console.error('Error loading bm image!');
+			console.log(e);
+    	};		
+		this.bm.src = '../../engw/common/sptpics/wonMedal.png';
 
 		// USER before UI built
 		this.#userInit();
 
 		const safe = .25;
 		const extraWidth = 9 + safe; // show more left and right
-		const extraHeight = 3 + safe;
+		const extraHeight = 5 + safe;
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(
@@ -175,9 +301,9 @@ class MainApp {
 		this.#animate();
 	}
 
-	#loadSvg(baseSvg, baseName) {
+	#loadSvgs(baseSvg, baseName) {
 		const exts = [
-			"",
+			//"",
 			"Green",
 			"Blue"
 		];
@@ -189,7 +315,6 @@ class MainApp {
 	#load1Svg(svg, name) {
 		const img = new Image();
 		this[svg] = img;
-		//this.svgBlue.onload = () => this.svgBlueLoaded = true;
 		img.onerror = function(e) {
         	console.error('Error loading ' + svg +  ' image!');
 			console.log(e);
@@ -228,40 +353,69 @@ class MainApp {
 
 	#initPieces() {
 		// slide objects and container
-		const rad = this.pieceRad;
+		const dist = this.pieceDist;
 		const safe = .95; // select more inside circle radius
 		const pieceDataArr = [
 			{ 
 				pos: [-8, 0],
-				color: "green"
+				leftFace: false
 			}, {
 				pos: [-6, 0],
-				color: "green"
+				leftFace: false
 			}, {
 				pos: [-4, 0],
-				color: "green"
+				leftFace: false
 			}, { 
 				pos: [-2, 0],
-				color: "green"
+				leftFace: false
 			}, { 
 				pos: [2, 0],
-				color: "blue"
+				leftFace: true
 			}, {
 				pos: [4, 0],
-				color: "blue"
+				leftFace: true
 			}, { 
 				pos: [6, 0],
-				color: "blue"
+				leftFace: true
 			}, { 
 				pos: [8, 0],
-				color: "blue"
+				leftFace: true
 			}
 		];
-		this.pieceContainer = new PieceContainer(this, rad * safe);
+		const pieceDataArrTest = [
+			{ 
+				pos: [-4, 0],
+				leftFace: false
+			}, {
+				pos: [4, 0],
+				leftFace: false
+			}, {
+				pos: [6, 0],
+				leftFace: false
+			}, { 
+				pos: [8, 0],
+				leftFace: false
+			}, { 
+				pos: [-8, 0],
+				leftFace: true
+			}, {
+				pos: [-6, 0],
+				leftFace: true
+			}, { 
+				pos: [-2, 0],
+				leftFace: true
+			}, { 
+				pos: [2, 0],
+				leftFace: true
+			}
+		];
+		this.pieceContainer = new PieceContainer(this, dist * safe);
 		for (const pieceData of pieceDataArr) {
-			let slideObj = new Piece(pieceData.pos, rad, pieceData.color);
+			let slideObj = new Piece(pieceData.pos, pieceData.leftFace);
 			this.pieceContainer.add(slideObj);
 		}
+		this.winner = false;
+		this.loser = false;
 	}
 
 	#userInit() {
@@ -273,7 +427,7 @@ class MainApp {
 		this.oldTime; // for delta time
 		this.avgFpsObj = new Runavg(500);
 
-		this.pieceRad = .875; // how tight the fit is, IMPORTANT
+		this.pieceDist = .9; // how tight the fit is, IMPORTANT
 		this.#initBoard();
 		this.#initPieces();
 
@@ -291,8 +445,6 @@ class MainApp {
 			makeEle(this.vp, "br");
 			makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 			this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-			this.stepRat = .10;
-			this.iterations = 40;
 			makeEle(this.vp, "hr");
 		}
 	}
@@ -313,54 +465,15 @@ class MainApp {
 		this.avgFps = this.avgFpsObj.add(this.fps);
 
 		this.pieceContainer.proc();
-
-		// keep pieces inside board puzzle
-		const parr = this.pieceContainer.container;
-		let halfPoint = null;
-		if (this.pnts && this.pnts.length > 0) {
-			halfPoint = vec2.clone(this.pnts[Math.floor(this.pnts.length / 2)]);
+		this.winner |= this.pieceContainer.getWinner();
+		if (this.winner) {
+			this.loser = false;
+		} else {
+			this.loser = this.pieceContainer.getLoser();
 		}
-		this.pnts = [];
-		const idx = this.pieceContainer.idx;
-		if (idx >= 0) { // dragging piece 0
-			let walk;
-			if (halfPoint) {
-				walk = vec2.clone(halfPoint);
-			} else {
-				walk = vec2.clone(this.pieceContainer.startDragPos);
-			}
-			walk = this.board.checkCollision(walk).pos;
-			this.pnts.push(vec2.clone(walk));
-			const diff = vec2.create();
-			for (let i = 1; i < this.iterations; ++i) {
-				vec2.sub(diff, parr[idx].pos, walk);
-				vec2.scale(diff, diff, this.stepRat);
-				vec2.add(walk, walk, diff);
-				walk = this.board.checkCollision(walk).pos;
-				this.pnts.push(vec2.clone(walk));
-			}
-			parr[idx].pos = vec2.clone(walk); // set result
-		}
-
-		/*
-		let winGood = 0;
-		// green right
-		for (let i = 0; i < 3; ++i) {
-			if (parr[i].pos[0] == 4) {
-				++winGood;
-			}
-		}
-		// blue left
-		for (let i = 3; i < 6; ++i) {
-			if (parr[i].pos[0] == -4) {
-				++winGood;
-			}
-		}
-		*/
-		const winGood = 0;
-		if (winGood == 6) {
+		if (this.winner) {
 			if (this.winCount < 360) {
-			++this.winCount;
+				++this.winCount;
 			}
 		} else {
 			this.winCount = 0;
@@ -368,45 +481,55 @@ class MainApp {
 	}
 
 	#userDraw() {
+		this.ctx.save();
+		this.ctx.translate(0, -.5);
 		// draw disc objects
 		this.pieceContainer.draw();
 		this.board.draw();
 		// draw cursor, when pressed / touched
 		if (this.input.mouse.mbut[Mouse.LEFT]) {
-			const pnt = this.plotter2d.userMouse;
+			const pnt = vec2.clone(this.plotter2d.userMouse);
+			pnt[1] = 0;
 			const isDragging = this.pieceContainer.isDragging();
 			if (isDragging) {
 				// touch selected
 				this.drawPrim.drawCircleO(pnt, 2, .25, "black");
 				this.drawPrim.drawCircleO(pnt, 2, .05, "white");
-
 			} else {
 				// touch NOT selected
 				this.drawPrim.drawCircleO(pnt, 2, .0375, "gray");
 			}
 		}
 		const landscape = this.plotter2dCanvas.width > this.plotter2dCanvas.height;
-		this.drawPrim.drawText([0, -1.5], [1.82, .14]
+		const textScale = [2, .15];
+		const textYStart = -1.5;
+		const textYstep = -.9;
+		this.drawPrim.drawText([0, textYStart], textScale
 		  , "Move green frogs to the right"
 		  , "black", "#0002");
-		this.drawPrim.drawText([0, -2], [1.82, .14]
+		this.drawPrim.drawText([0, textYStart + textYstep], textScale
 		  , "Move blue frogs to the left"
 		  , "black", "#0002");
+		this.drawPrim.drawText([0, textYStart + 2 * textYstep], textScale
+		  , landscape ? "Landscape mode" : "Portrait mode"
+		  , "#000c", "#0002");
 		if (!landscape) {
-			this.drawPrim.drawText([0, -2.5], [1.82, .14]
+			this.drawPrim.drawText([0, textYStart + 3 * textYstep], textScale
 			  , "Landscape mode looks better"
 		  	  , "darkred", "#0002");
 		}
-		this.drawPrim.drawText([0, -3], [1.2, .14]
-		  , landscape ? "Landscape mode" : "Portrait mode"
-		  , "#000c", "#0002");
-		const scaleWinText = [1, .2];
-		vec2.scale(scaleWinText, scaleWinText, .125 + this.winCount * .006);
-		if (this.winCount > 0) {
-			this.drawPrim.drawText([0, 0],scaleWinText
-		  	  , "You Win !!"
-		  	  , "black", "#0002");
+		if (this.loser) {
+			this.drawPrim.drawText([0, 3], [1, .15]
+			, "OOPS !!"
+			, "darkred", "#0002");
 		}
+		const scale = .125 + this.winCount * .015;
+		const offset = -scale / 2;
+
+		if (this.winCount > 0) {
+			this.drawPrim.drawImage(this.bm, [offset, 3.5 + offset], [scale, scale]);
+		}
+		this.ctx.restore();
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

@@ -553,7 +553,7 @@ class MainApp {
 		}
 		this.pnts = [];
 		const idx = this.pieceContainer.idx;
-		if (idx >= 0) { // dragging piece 0
+		if (idx >= 0) { // dragging piece idx
 			let walk;
 			if (halfPoint) {
 				walk = vec2.clone(halfPoint);
@@ -572,6 +572,8 @@ class MainApp {
 			}
 			parr[idx].pos = vec2.clone(walk); // set result
 		}
+
+		// see if winner
 		let winGood = 0;
 		// green right
 		for (let i = 0; i < 3; ++i) {
