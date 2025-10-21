@@ -57,6 +57,13 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, 2d car physics",
+            "url": "http://localhost:88/plotter2d/physicsCar2D/indexMobile.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, simple MOBILE",
             "url": "http://localhost:88/plotter2d/simple/indexMobile.html",
             "webRoot": "${workspaceFolder}"
