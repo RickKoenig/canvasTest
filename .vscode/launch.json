@@ -50,6 +50,13 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, fixed math test",
+            "url": "http://localhost:88/plotter2d/fixedMathTest/index.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, undecided",
             "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile.html",
             "webRoot": "${workspaceFolder}"
