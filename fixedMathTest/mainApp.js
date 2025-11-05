@@ -1,6 +1,6 @@
 'use strict';
 
-// do a fixed point system in javascript
+// do a consistent fixed point system in javascript
 
 const FMath = {};
 //helper
@@ -134,8 +134,16 @@ FMath.sub = function(out, a, b) {
 	return out;
 }
 
-// check
 FMath.mul = function(out, a, b) {
+	console.log("\naraw = " + FMath.numberToHex32(a.raw));
+	console.log("braw = " + FMath.numberToHex32(b.raw));
+	const ar = a.raw >> (FMath.JSBits - FMath.intBits - FMath.fracBits);
+	const br = b.raw >> (FMath.JSBits - FMath.intBits - FMath.fracBits);
+	let outr = ar * br;
+	outr <<= (FMath.JSBits - FMath.intBits - 2 * FMath.fracBits);
+	outr += 1 << (FMath.JSBits - FMath.intBits - FMath.fracBits - 1); // rounding
+	out.raw = outr & FMath.mask;
+	console.log("craw = " + FMath.numberToHex32(out.raw));
 	return out;
 }
 
@@ -164,37 +172,44 @@ function testFMath() {
 		+ ", fracBits = " + FMath.fracBits);
 	console.log("epsilonNum = " + FMath.epsilonNum);
 	console.log("overNum = " + FMath.overNum);
-	/*
-	for (let b = -FMath.overNum; b <= FMath.overNum; b += FMath.epsilonNum) {
-		const fb = FMath.fromNumber(b);
-		for (let a = -FMath.overNum; a <= FMath.overNum; a += FMath.epsilonNum) {
-			const fa = FMath.fromNumber(a);
-			const fc = FMath.create();
-			FMath.sub(fc, fa, fb);
-			console.log(FMath.toPrettyString(fa) + " - " + FMath.toPrettyString(fb)
-				+ " = " + FMath.toPrettyString(fc));
+	const doUnary = false;
+	const doBinary = true;
+	if (doUnary) {
+		for (let n = -FMath.overNum; n <= FMath.overNum; n += FMath.epsilonNum) {
+			const f = FMath.fromNumber(n);
+			const fFloor = FMath.create();
+			FMath.floor(fFloor, f);
+			const fCeil = FMath.create();
+			FMath.ceil(fCeil, f);
+			const fRound = FMath.create();
+			FMath.round(fRound, f);
+			console.log("f = " + FMath.toPrettyString(f)
+				+ ", fRaw = " + FMath.toRawString(f) 
+				//+ ",      fFloor = " + FMath.toPrettyString(fFloor)
+				//+ ", fFloorRaw = " + FMath.toRawString(fFloor)
+				+ ",      fCeil = " + FMath.toPrettyString(fCeil)
+				+ ", fCeiRaw = " + FMath.toRawString(fCeil)
+				+ ",      fRound = " + FMath.toPrettyString(fRound)
+				+ ", fRoundRaw = " + FMath.toRawString(fRound)
+				+ '  #');
 		}
-	}*/
-	/*
-	for (let n = -FMath.overNum; n <= FMath.overNum; n += FMath.epsilonNum) {
-		const f = FMath.fromNumber(n);
-		const fFloor = FMath.create();
-		FMath.floor(fFloor, f);
-		const fCeil = FMath.create();
-		FMath.ceil(fCeil, f);
-		const fRound = FMath.create();
-		FMath.round(fRound, f);
-		console.log("f = " + FMath.toPrettyString(f)
-			+ ", fRaw = " + FMath.toRawString(f) 
-			//+ ",      fFloor = " + FMath.toPrettyString(fFloor)
-			//+ ", fFloorRaw = " + FMath.toRawString(fFloor)
-			+ ",      fCeil = " + FMath.toPrettyString(fCeil)
-			+ ", fCeiRaw = " + FMath.toRawString(fCeil)
-			+ ",      fRound = " + FMath.toPrettyString(fRound)
-			+ ", fRoundRaw = " + FMath.toRawString(fRound)
-			+ '  #');
 	}
-	*/
+	if (doBinary) {
+		for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+		//const aVal = -1.75;
+		//const bVal = .25;
+		//for (let b = bVal; b <= bVal; b += FMath.epsilonNum) {
+			const fb = FMath.fromNumber(b);
+			for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+			//for (let a = aVal; a <= aVal; a += FMath.epsilonNum) {
+				const fa = FMath.fromNumber(a);
+				const fc = FMath.create();
+				FMath.mul(fc, fa, fb);
+				console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
+					+ " = " + FMath.toPrettyString(fc));
+			}
+		}
+	}
 			/*
 				mul
 				inv
