@@ -1,232 +1,8 @@
 'use strict';
 
 // do a consistent fixed point system in javascript
-
-const FMath = {};
-//helper
-FMath.intPow = function(b, e) {
-	let r = 1;
-	while(e-- > 0) {
-		r *= b;
-	}
-	return r;
-}
-FMath.intBits = 8;//2; // do a max of 13, 13 * 4 = 52, one less then 2 ** 53 - 1, Math.INT_MAX
-FMath.fracBits = 8;//2; // do a max of 13
-FMath.JSBits = 32; // when javascript works in ints, 2's complement
-FMath.mulFracFactor = FMath.intPow(2, FMath.JSBits - FMath.intBits);
-FMath.mulJS = FMath.intPow(2, FMath.JSBits);
-
-FMath.mask = (FMath.intPow(2, FMath.intBits + FMath.fracBits)) - 1; // put all bits to MSB position
-FMath.mask *= FMath.intPow(2, FMath.JSBits - FMath.intBits - FMath.fracBits);
-
-FMath.floorMask = FMath.intPow(2, FMath.intBits) - 1;
-FMath.floorMask *= FMath.intPow(2, FMath.JSBits - FMath.intBits);
-
-FMath.addRound = FMath.intPow(2, FMath.JSBits - FMath.intBits - 1);
-
-FMath.epsilonNum = 1 / FMath.intPow(2, FMath.fracBits);
-FMath.overNum = FMath.intPow(2, FMath.intBits - 1);
-// binary
-// example: if intBits = 3, fracBits = 3
-// iiif ff00 0000 0000 0000 0000 0000 0000
-// example: if intBits = 2, fracBits = 2
-// iiff 0000 0000 0000 0000 0000 0000 0000
-
-// helpers
-FMath.numberToHex32 = function(n) {
-	const uVal = n < 0 ? (n + FMath.mulJS) : n; // convert to unsigned
-	const str = uVal.toString(16);
-	const strPad = '0x' + str.padStart(8, '0');
-	return strPad;  // hex string
-}
-
-FMath.numberToPrettyString = function(n) {
-	let ret = n.toString();
-	if (ret >= 0) {
-		ret = " " + ret;
-	}
-	ret = ret.padEnd(8);
-	return ret;
-}
-
-// create
-FMath.create = function() {
-	return {
-		raw: 0 // 32 bit
-	};
-}
-
-FMath.fromNumber = function(n) {
-	const out = FMath.create();
-	out.raw = (n * FMath.mulFracFactor) & FMath.mask;
-	return out;
-}
-
-FMath.clone = function(f) {
-	return clone(f);
-}
-
-// replace
-FMath.copy = function(out, f) {
-	out.raw = f.raw;
-	return out;
-}
-
-FMath.setNumber = function(out, n) {
-	out.raw = (n * FMath.mulFracFactor) & FMath.mask;
-	return out;
-}
-
-// output
-FMath.toNumber = function(f) {
-	return f.raw / FMath.mulFracFactor;
-}
-
-FMath.toPrettyString = function(f) {
-	const n = FMath.toNumber(f);
-	return FMath.numberToPrettyString(n);
-}
-
-FMath.toRawString = function(f) {
-	return FMath.numberToHex32(f.raw);
-}
-
-// unary operators
-FMath.neg = function(out, a) {
-	out.raw = -a.raw & FMath.mask;
-	return out;
-}
-
-FMath.floor = function(out, a) {
-	out.raw =  a.raw & FMath.floorMask;
-	return out;
-}
-
-FMath.ceil = function(out, a) {
-	FMath.neg(out, a);
-	FMath.floor(out, out);
-	FMath.neg(out, out);
-	return out;
-}
-
-FMath.round = function(out, a) {
-	out.raw = a.raw + FMath.addRound;
-	FMath.floor(out, out);
-	return out;
-}
-
-// check
-FMath.inv = function(out, a) {
-	out.raw = 1;
-	return out;
-}
-
-// binary operators
-FMath.add = function(out, a, b) {
-	out.raw = (a.raw + b.raw) & FMath.mask;
-	return out;
-}
-
-FMath.sub = function(out, a, b) {
-	out.raw = (a.raw - b.raw) & FMath.mask;
-	return out;
-}
-
-FMath.mul = function(out, a, b) {
-	//console.log("\naraw = " + FMath.numberToHex32(a.raw));
-	//console.log("braw = " + FMath.numberToHex32(b.raw));
-	const ar = a.raw >> (FMath.JSBits - FMath.intBits - FMath.fracBits);
-	const br = b.raw >> (FMath.JSBits - FMath.intBits - FMath.fracBits);
-	let outr = ar * br;
-	outr <<= (FMath.JSBits - FMath.intBits - 2 * FMath.fracBits);
-	outr += 1 << (FMath.JSBits - FMath.intBits - FMath.fracBits - 1); // rounding
-	out.raw = outr & FMath.mask;
-	//console.log("craw = " + FMath.numberToHex32(out.raw));
-	return out;
-}
-
-// check
-FMath.div = function(out, a, b) {
-	return out;
-}
-
-// check
-FMath.mod = function(out, a, b) {
-	return out;
-}
-
-// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
-
-function testFMath() {
-	console.log("begin testFMath");
-	const strMask = FMath.numberToHex32(FMath.mask);
-	console.log("     mask = " + strMask);
-	const strFloorMask = FMath.numberToHex32(FMath.floorMask);
-	console.log("floorMask = " + strFloorMask);
-	const strAddRound = FMath.numberToHex32(FMath.addRound);
-	console.log(" addRound = " + strAddRound);
-	console.log("JSBits = " + FMath.JSBits 
-		+ ", intBits = " + FMath.intBits 
-		+ ", fracBits = " + FMath.fracBits);
-	console.log("epsilonNum = " + FMath.epsilonNum);
-	console.log("overNum = " + FMath.overNum);
-	const doUnary = false;
-	const doBinary = false;
-	const doPrec = true;
-	if (doUnary) {
-		for (let n = -FMath.overNum; n <= FMath.overNum; n += FMath.epsilonNum) {
-			const f = FMath.fromNumber(n);
-			const fFloor = FMath.create();
-			FMath.floor(fFloor, f);
-			const fCeil = FMath.create();
-			FMath.ceil(fCeil, f);
-			const fRound = FMath.create();
-			FMath.round(fRound, f);
-			console.log("f = " + FMath.toPrettyString(f)
-				+ ", fRaw = " + FMath.toRawString(f) 
-				//+ ",      fFloor = " + FMath.toPrettyString(fFloor)
-				//+ ", fFloorRaw = " + FMath.toRawString(fFloor)
-				+ ",      fCeil = " + FMath.toPrettyString(fCeil)
-				+ ", fCeiRaw = " + FMath.toRawString(fCeil)
-				+ ",      fRound = " + FMath.toPrettyString(fRound)
-				+ ", fRoundRaw = " + FMath.toRawString(fRound)
-				+ '  #');
-		}
-	}
-	if (doBinary) {
-		for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
-		//const aVal = -1.75;
-		//const bVal = .25;
-		//for (let b = bVal; b <= bVal; b += FMath.epsilonNum) {
-			const fb = FMath.fromNumber(b);
-			for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
-			//for (let a = aVal; a <= aVal; a += FMath.epsilonNum) {
-				const fa = FMath.fromNumber(a);
-				const fc = FMath.create();
-				FMath.mul(fc, fa, fb);
-				console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
-					+ " = " + FMath.toPrettyString(fc));
-			}
-		}
-	}
-	if (doPrec) {
-		for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
-			const fb = FMath.fromNumber(b);
-			for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
-				const fa = FMath.fromNumber(a);
-				const fc = FMath.create();
-				FMath.mul(fc, fa, fb);
-			}
-		}
-	}
-			/*
-				inv
-				div
-				mod
-			*/
-	console.log("end testFMath");
-}
+//const FMath = FMathNum;
+const FMath = FMathBigInt;
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -240,7 +16,7 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		testFMath();
+		this.#testFMath();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -260,8 +36,10 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
+		//const vp = this.vp;
+		const vp = null;
 		this.plotter2d = new Plotter2d(
-			this.plotter2dCanvas, this.ctx, /*this.vp*/ null
+			this.plotter2dCanvas, this.ctx, vp
 			, this.startCenter, this.startZoom);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
@@ -274,6 +52,92 @@ class MainApp {
 		this.dirty = true; // draw at least once
 		this.dirtyCount = 100;
 		this.#animate();
+	}
+
+	#testFMath() {
+		console.log("begin testFMath");
+		//const strMask = FMath.numberToHex32(FMath.mask);
+		//console.log("     mask = " + strMask);
+		//const strFloorMask = FMath.numberToHex32(FMath.floorMask);
+		//console.log("floorMask = " + strFloorMask);
+		//const strAddRound = FMath.numberToHex32(FMath.addRound);
+		//console.log(" addRound = " + strAddRound);
+		console.log("JSBits = " + FMath.JSBits 
+			+ ", intBits = " + FMath.intBits 
+			+ ", fracBits = " + FMath.fracBits);
+		console.log("epsilonNum = " + FMath.epsilonNum);
+		console.log("overNum = " + FMath.overNum);
+		const doUnary = true;
+		const doBinary = false;
+		const doPrecMul = false;
+		if (doUnary) {
+			console.log("do unary");
+			for (let n = -FMath.overNum; n < FMath.overNum; n += FMath.epsilonNum) {
+				const f = FMath.fromNumber(n);
+				const fFloor = FMath.create();
+				FMath.floor(fFloor, f);
+				const fCeil = FMath.create();
+				FMath.ceil(fCeil, f);
+				const fRound = FMath.create();
+				FMath.round(fRound, f);
+				console.log("f = " + FMath.toPrettyString(f)
+					+ ",      fFloor = " + FMath.toPrettyString(fFloor)
+					+ ",      fCeil = " + FMath.toPrettyString(fCeil)
+					+ ",      fRound = " + FMath.toPrettyString(fRound)
+					+ '  #');
+			}
+		}
+		if (doBinary) {
+			console.log("do binary");
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+			//const aVal = -1.75;
+			//const bVal = .25;
+			//for (let b = bVal; b <= bVal; b += FMath.epsilonNum) {
+				const fb = FMath.fromNumber(b);
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+				//for (let a = aVal; a <= aVal; a += FMath.epsilonNum) {
+					const fa = FMath.fromNumber(a);
+					const fc = FMath.create();
+					FMath.mul(fc, fa, fb);
+					console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
+						+ " = " + FMath.toPrettyString(fc));
+				}
+			}
+		}
+		// compare number with FMath
+		if (doPrecMul) {
+			console.log("do precision");
+			let maxAbsDelta = 0;
+			let maxA = 0;
+			let maxB = 0;
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+				const fb = FMath.fromNumber(b);
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+					const c = a * b;
+					const extraCheck = 1.1;
+					if (Math.abs(c) < FMath.overNum / extraCheck) { // only check non overflow products
+						const fa = FMath.fromNumber(a);
+						const fc = FMath.create();
+						FMath.mul(fc, fa, fb);
+						const nfc = FMath.toNumber(fc);
+						const delta = c - nfc
+						const absDelta = Math.abs(delta);
+						if (absDelta > maxAbsDelta) {
+							maxAbsDelta = absDelta;
+							maxA = a;
+							maxB = b;
+						}
+						if (absDelta > .2) {
+							console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
+								+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+								+ ", delta = " + delta.toFixed(5));
+						}
+					}
+				}
+			}
+			console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
+		}
+		console.log("end testFMath");
 	}
 
 	#randomColor() {
@@ -299,6 +163,7 @@ class MainApp {
 	}
 
 	#userBuildUI() {
+		makeEle(this.vp, "hr");
 		makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
