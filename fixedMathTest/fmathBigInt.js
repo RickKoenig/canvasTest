@@ -1,39 +1,23 @@
 'use strict';
 
 // do a consistent fixed point system in javascript
-// TODO: convert to BigInt
+// using BigInt
 
 class FMathBigInt {
 
 	static {
 		// BigInts
-		FMathBigInt.intBits = 2n;
+		FMathBigInt.intBits = 2n; // for overflow
 		FMathBigInt.fracBits = 2n;
-
-		//FMathBigInt.JSBits = 32n; // for overflow
-		FMathBigInt.mulFracFactor = 1n << FMathBigInt.fracBits;
-		//FMathBigInt.mulJS = 1n << FMathBigInt.JSBits; // for overflow
-
-		FMathBigInt.addRound = 0n;// TODO:FMathNum.intPow(2, FMathNum.JSBits - FMathNum.intBits - 1);
+		FMathBigInt.addRound = 1n << (FMathBigInt.fracBits - 1n); // .5
 
 		// Numbers
-		FMathBigInt.epsilonNum = 1 / Number(FMathBigInt.mulFracFactor);
+		FMathBigInt.mulFracFactor = 1 << Number(FMathBigInt.fracBits);
+		FMathBigInt.epsilonNum = 1 / FMathBigInt.mulFracFactor;
 		FMathBigInt.overNum = 1 << (Number(FMathBigInt.intBits) - 1);
-		// binary
-		// example: if intBits = 3, fracBits = 3
-		// iiif ff00 0000 0000 0000 0000 0000 0000
-		// example: if intBits = 2, fracBits = 2
-		// iiff 0000 0000 0000 0000 0000 0000 0000
 	}
 
 	// helpers
-	/*static numberToHex32(n) {
-		const uVal = n < 0 ? (n + FMathBigInt.mulJS) : n; // convert to unsigned
-		const str = uVal.toString(16);
-		const strPad = '0x' + str.padStart(8, '0');
-		return strPad;  // hex string
-	}*/
-
 	static numberToPrettyString(n) {
 		let ret = n.toString();
 		if (ret >= 0) {
@@ -46,14 +30,13 @@ class FMathBigInt {
 	// create
 	static create = function() {
 		return {
-			raw: 0n // 32 bit
+			raw: 0n
 		};
 	}
 
 	static fromNumber(n) {
-		const toInt = Math.round(n * Number(FMathBigInt.mulFracFactor));
 		const out = FMathBigInt.create();
-		out.raw = BigInt(toInt);
+		FMathBigInt.setNumber(out, n);
 		return out;
 	}
 	
@@ -68,13 +51,14 @@ class FMathBigInt {
 	}
 
 	static setNumber(out, n) {
-		out.raw = (n * FMathBigInt.mulFracFactor);
+		const toInt = Math.round(n * FMathBigInt.mulFracFactor);
+		out.raw = BigInt(toInt);
 		return out;
 	}
 
 	// output
 	static toNumber(f) {
-		return Number(f.raw) / Number(FMathBigInt.mulFracFactor);
+		return Number(f.raw) / FMathBigInt.mulFracFactor;
 	}
 
 	static toPrettyString(f) {
@@ -82,23 +66,26 @@ class FMathBigInt {
 		return FMathBigInt.numberToPrettyString(n);
 	}
 
-	/*
-	static toRawString(f) {
-		return FMathBigInt.numberToHex32(f.raw);
-	}*/
-
 	// unary operators
 	static neg(out, a) {
-		out.raw = -a.raw;// & FMathBigInt.mask;
+		out.raw = -a.raw;
 		return out;
 	}
 	
-	static floor = function(out, a) {
-//FMathBigInt.mulFracFactor
-		const b = a.raw / FMathBigInt.mulFracFactor;//Number(a) >> Number(FMathBigInt.fracBits);
-		out.raw =  b * FMathBigInt.mulFracFactor;//BigInt(b << Number(FMathBigInt.fracBits));//3n;//a.raw;// & FMathBigInt.floorMask;
+	static trunc = function(out, a) {
+		if (a.raw >= 0) {
+			out.raw = a.raw >> FMathBigInt.fracBits << FMathBigInt.fracBits;
+		} else {
+			out.raw = -(-(a.raw) >> FMathBigInt.fracBits << FMathBigInt.fracBits);
+		}
 		return out;
 	}
+
+	static floor = function(out, a) {
+		out.raw = a.raw >> FMathBigInt.fracBits << FMathBigInt.fracBits;
+		return out;
+	}
+
 	static ceil(out, a) {
 		FMathBigInt.neg(out, a);
 		FMathBigInt.floor(out, out);
@@ -112,42 +99,37 @@ class FMathBigInt {
 		return out;
 	}
 	
-	// check
 	static inv = function(out, a) {
-		out.raw = 1;
+		let bigARaw = 1n << (2n * FMathBigInt.fracBits);
+		out.raw = bigARaw / a.raw;
 		return out;
 	}
 
 	// binary operators
 	static add = function(out, a, b) {
-		out.raw = (a.raw + b.raw) & FMathBigInt.mask;
+		out.raw = (a.raw + b.raw);
 		return out;
 	}
 
 	static sub = function(out, a, b) {
-		out.raw = (a.raw - b.raw) & FMathBigInt.mask;
+		out.raw = (a.raw - b.raw);
 		return out;
 	}
 
 	static mul = function(out, a, b) {
-		//console.log("\naraw = " + FMathBigInt.numberToHex32(a.raw));
-		//console.log("braw = " + FMathBigInt.numberToHex32(b.raw));
-		const ar = a.raw >> (FMathBigInt.JSBits - FMathBigInt.intBits - FMathBigInt.fracBits);
-		const br = b.raw >> (FMathBigInt.JSBits - FMathBigInt.intBits - FMathBigInt.fracBits);
-		let outr = ar * br;
-		outr <<= (FMathBigInt.JSBits - FMathBigInt.intBits - 2 * FMathBigInt.fracBits);
-		outr += 1 << (FMathBigInt.JSBits - FMathBigInt.intBits - FMathBigInt.fracBits - 1); // rounding
-		out.raw = outr & FMathBigInt.mask;
-		//console.log("craw = " + FMathBigInt.numberToHex32(out.raw));
+		out.raw = a.raw * b.raw;
+		out.raw += FMathBigInt.addRound;
+		out.raw >>= FMathBigInt.fracBits;
 		return out;
 	}
 
-	// check
 	static div = function(out, a, b) {
+		let bigARaw = a.raw << FMathBigInt.fracBits;
+		out.raw = bigARaw / b.raw;
 		return out;
 	}
 
-	// check
+	// TODO
 	static mod = function(out, a, b) {
 		return out;
 	}

@@ -1,6 +1,7 @@
 'use strict';
 
 // do a consistent fixed point system in javascript
+// using Number
 // on hold, trying BigInt instead
 
 class FMathNum {

@@ -56,48 +56,58 @@ class MainApp {
 
 	#testFMath() {
 		console.log("begin testFMath");
-		//const strMask = FMath.numberToHex32(FMath.mask);
-		//console.log("     mask = " + strMask);
-		//const strFloorMask = FMath.numberToHex32(FMath.floorMask);
-		//console.log("floorMask = " + strFloorMask);
-		//const strAddRound = FMath.numberToHex32(FMath.addRound);
-		//console.log(" addRound = " + strAddRound);
-		console.log("JSBits = " + FMath.JSBits 
-			+ ", intBits = " + FMath.intBits 
-			+ ", fracBits = " + FMath.fracBits);
+		console.log(`intBits = ${FMath.intBits}, fracBits = ${FMath.fracBits}`);
 		console.log("epsilonNum = " + FMath.epsilonNum);
 		console.log("overNum = " + FMath.overNum);
-		const doUnary = true;
-		const doBinary = false;
+		const doFromNumber = false;
+		const doUnary = false;
+
+		const doMul = false;
 		const doPrecMul = false;
-		if (doUnary) {
-			console.log("do unary");
-			for (let n = -FMath.overNum; n < FMath.overNum; n += FMath.epsilonNum) {
+		const doDiv = false;
+		const doPrecDiv = false;
+		const doMod = false;
+		const doPrecMod = false;
+
+		if (doFromNumber) {
+			console.log("do fromNumber");
+			for (let n = -FMath.overNum; n <= FMath.overNum; n += FMath.epsilonNum * .25) {
 				const f = FMath.fromNumber(n);
-				const fFloor = FMath.create();
-				FMath.floor(fFloor, f);
-				const fCeil = FMath.create();
-				FMath.ceil(fCeil, f);
-				const fRound = FMath.create();
-				FMath.round(fRound, f);
-				console.log("f = " + FMath.toPrettyString(f)
-					+ ",      fFloor = " + FMath.toPrettyString(fFloor)
-					+ ",      fCeil = " + FMath.toPrettyString(fCeil)
-					+ ",      fRound = " + FMath.toPrettyString(fRound)
+				console.log("n = " + FMath.numberToPrettyString(n) 
+					+ ", f = " + FMath.toPrettyString(f)
 					+ '  #');
 			}
 		}
-		if (doBinary) {
-			console.log("do binary");
-			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
-			//const aVal = -1.75;
-			//const bVal = .25;
-			//for (let b = bVal; b <= bVal; b += FMath.epsilonNum) {
-				const fb = FMath.fromNumber(b);
-				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
-				//for (let a = aVal; a <= aVal; a += FMath.epsilonNum) {
-					const fa = FMath.fromNumber(a);
-					const fc = FMath.create();
+		if (doUnary) {
+			console.log("do unary ops");
+			const fCeil = FMath.create();
+			const fRound = FMath.create();
+			const fInv = FMath.create();
+			for (let n = -FMath.overNum; n < FMath.overNum; n += FMath.epsilonNum) {
+				if (n == 0) {
+					continue;
+				}
+				const f = FMath.fromNumber(n);
+				const fFloor = FMath.create();
+				FMath.floor(fFloor, f);
+				FMath.ceil(fCeil, f);
+				FMath.round(fRound, f);
+				FMath.inv(fInv, f);
+				console.log("f = " + FMath.toPrettyString(f)
+					+ ",      fFloor = " + FMath.toPrettyString(fFloor)
+					+ ",      fCeil = " + FMath.toPrettyString(fCeil)
+//					+ ",      fRound = " + FMath.toPrettyString(fRound)
+					+ ",      fInv = " + FMath.toPrettyString(fInv)
+					+ '  #');
+			}
+		}
+		if (doMul) {
+			console.log("do binary op mul");
+			const fc = FMath.create();
+			for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+				const fa = FMath.fromNumber(a);
+				for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+					const fb = FMath.fromNumber(b);
 					FMath.mul(fc, fa, fb);
 					console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
 						+ " = " + FMath.toPrettyString(fc));
@@ -106,36 +116,111 @@ class MainApp {
 		}
 		// compare number with FMath
 		if (doPrecMul) {
-			console.log("do precision");
+			console.log("do prec mul");
 			let maxAbsDelta = 0;
 			let maxA = 0;
 			let maxB = 0;
+			const errRatio = 2; // get to the best number
+			const fc = FMath.create();
 			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
 				const fb = FMath.fromNumber(b);
 				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
 					const c = a * b;
-					const extraCheck = 1.1;
-					if (Math.abs(c) < FMath.overNum / extraCheck) { // only check non overflow products
-						const fa = FMath.fromNumber(a);
-						const fc = FMath.create();
-						FMath.mul(fc, fa, fb);
-						const nfc = FMath.toNumber(fc);
-						const delta = c - nfc
-						const absDelta = Math.abs(delta);
-						if (absDelta > maxAbsDelta) {
-							maxAbsDelta = absDelta;
-							maxA = a;
-							maxB = b;
-						}
-						if (absDelta > .2) {
-							console.log(FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
-								+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
-								+ ", delta = " + delta.toFixed(5));
-						}
+					const fa = FMath.fromNumber(a);
+					FMath.mul(fc, fa, fb);
+					const nfc = FMath.toNumber(fc);
+					const delta = c - nfc
+					const absDelta = Math.abs(delta);
+					if (absDelta > maxAbsDelta) {
+						maxAbsDelta = absDelta;
+						maxA = a;
+						maxB = b;
+					}
+					if (errRatio * absDelta > FMath.epsilonNum) {
+						console.error("Too much absDelta !! " + FMath.toPrettyString(fa) + " * " + FMath.toPrettyString(fb)
+							+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+							+ ", delta = " + delta.toFixed(5));
 					}
 				}
 			}
 			console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
+		}
+		if (doDiv) {
+			console.log("do binary op div");
+			const fc = FMath.create();
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+				const fb = FMath.fromNumber(b);
+				if (b == 0) {
+					continue;
+				}
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+					const fa = FMath.fromNumber(a);
+						FMath.div(fc, fa, fb);
+						console.log(FMath.toPrettyString(fa) + " / " + FMath.toPrettyString(fb)
+							+ " = " + FMath.toPrettyString(fc));
+					}
+				}
+		}
+		if (doPrecDiv) {
+			console.log("do prec div");
+			let maxAbsDelta = 0;
+			let maxA = 0;
+			let maxB = 0;
+			const errRatio = 1; // get to the 2nd best number for now
+			const fc = FMath.create();
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+				if (b == 0) {
+					continue;
+				}
+				const fb = FMath.fromNumber(b);
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+					const c = a / b;
+					const fa = FMath.fromNumber(a);
+					FMath.div(fc, fa, fb);
+					const nfc = FMath.toNumber(fc);
+					const delta = c - nfc
+					const absDelta = Math.abs(delta);
+					if (absDelta > maxAbsDelta) {
+						maxAbsDelta = absDelta;
+						maxA = a;
+						maxB = b;
+					}
+					if (errRatio * absDelta > FMath.epsilonNum) {
+						console.error("Too much absDelta !! " + FMath.toPrettyString(fa) + " / " + FMath.toPrettyString(fb)
+							+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+							+ ", delta = " + delta.toFixed(5));
+					}
+				}
+			}
+			console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
+
+		}
+		if (doMod) {
+			console.log("do mod");
+			const maxN = 15;
+			const step = .021;
+			let maxRd = 0;
+			for (let a = -maxN; a < maxN; a += step) {
+				for (let b = -maxN; b < maxN; b += step) {
+					if (b == 0) {
+						continue;
+					}
+					const r = a % b;
+					let q = a / b;
+					q = Math.trunc(q);
+					const r2 = a - b * q;
+					const rd = r - r2;
+					const absRd = Math.abs(rd);
+					if (absRd > maxRd) {
+						maxRd = absRd;
+						console.log(`${a} % ${b} = ${r}, r2 = ${r2}, rd = ${rd}`);
+					}
+				}
+			}
+			console.log(`maxRd = ${maxRd}`);
+		}
+		if (doPrecMod) {
+			console.log("do prec mod");
 		}
 		console.log("end testFMath");
 	}
