@@ -2,6 +2,8 @@
 
 // do a consistent fixed point system in javascript
 // using BigInt
+// completely static
+// no longer used
 
 class FMathBigInt {
 
@@ -14,7 +16,10 @@ class FMathBigInt {
 		// Numbers
 		FMathBigInt.mulFracFactor = 1 << Number(FMathBigInt.fracBits);
 		FMathBigInt.epsilonNum = 1 / FMathBigInt.mulFracFactor;
-		FMathBigInt.overNum = 1 << (Number(FMathBigInt.intBits) - 1);
+		FMathBigInt.overNum = Number(1n << (FMathBigInt.intBits- 1n));
+
+		// FMath
+		FMathBigInt.one = {raw: BigInt(FMathBigInt.mulFracFactor)};
 	}
 
 	// helpers
@@ -100,19 +105,17 @@ class FMathBigInt {
 	}
 	
 	static inv = function(out, a) {
-		let bigARaw = 1n << (2n * FMathBigInt.fracBits);
-		out.raw = bigARaw / a.raw;
-		return out;
+		return FMathBigInt.div(out, FMathBigInt.one, a);
 	}
 
 	// binary operators
 	static add = function(out, a, b) {
-		out.raw = (a.raw + b.raw);
+		out.raw = a.raw + b.raw;
 		return out;
 	}
 
 	static sub = function(out, a, b) {
-		out.raw = (a.raw - b.raw);
+		out.raw = a.raw - b.raw;
 		return out;
 	}
 
@@ -124,13 +127,23 @@ class FMathBigInt {
 	}
 
 	static div = function(out, a, b) {
-		let bigARaw = a.raw << FMathBigInt.fracBits;
-		out.raw = bigARaw / b.raw;
+		let aRaw = a.raw;
+		let bRaw = b.raw;
+		aRaw <<= FMathBigInt.fracBits;
+		let bRawH = bRaw / 2n;
+		if (aRaw < 0 != bRaw < 0) { // XOR
+			bRawH = -bRawH;
+		}
+		aRaw += bRawH;
+		out.raw = aRaw / bRaw;
 		return out;
 	}
 
-	// TODO
 	static mod = function(out, a, b) {
+		let q = a.raw / b.raw; // div with trunc, a straight BigInt
+		let btq = b.raw * q; // back to FMath
+		btq = a.raw - btq;
+		out.raw = btq;
 		return out;
 	}
 

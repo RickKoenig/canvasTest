@@ -1,8 +1,6 @@
 'use strict';
 
 // do a consistent fixed point system in javascript
-//const FMath = FMathNum;
-const FMath = FMathBigInt;
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
@@ -16,7 +14,7 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		this.#testFMath();
+		this.#testFMath(2, 2);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -54,14 +52,19 @@ class MainApp {
 		this.#animate();
 	}
 
-	#testFMath() {
+	#testFMath(intP, fracP) {
+		//const FMath = FMathNum; // static 
+		//const FMath = FMathBigInt; // static
+		//const FMath = FMathBigIntInstance; // static
+		const FMath = new FMathBigIntInstance(intP, fracP); // instance
+
 		console.log("begin testFMath");
 		console.log(`intBits = ${FMath.intBits}, fracBits = ${FMath.fracBits}`);
 		console.log("epsilonNum = " + FMath.epsilonNum);
 		console.log("overNum = " + FMath.overNum);
 		const doFromNumber = false;
 		const doUnary = false;
-
+		const doPrecUnary = true;
 		const doMul = false;
 		const doPrecMul = false;
 		const doDiv = false;
@@ -80,25 +83,91 @@ class MainApp {
 		}
 		if (doUnary) {
 			console.log("do unary ops");
+			const fNeg = FMath.create();
+			const fAbs = FMath.create();
+			const fTrunc = FMath.create();
+			const fFloor = FMath.create();
 			const fCeil = FMath.create();
 			const fRound = FMath.create();
 			const fInv = FMath.create();
-			for (let n = -FMath.overNum; n < FMath.overNum; n += FMath.epsilonNum) {
-				if (n == 0) {
+			const fSqrt = FMath.create();
+			for (let n = -FMath.overNum; n <= FMath.overNum; n += FMath.epsilonNum) {
+				/*if (n == 0) {
 					continue;
-				}
+				}*/
 				const f = FMath.fromNumber(n);
-				const fFloor = FMath.create();
+				FMath.neg(fNeg, f);
+				FMath.abs(fAbs, f);
+				FMath.trunc(fTrunc, f);
 				FMath.floor(fFloor, f);
 				FMath.ceil(fCeil, f);
 				FMath.round(fRound, f);
 				FMath.inv(fInv, f);
+				FMath.sqrt(fSqrt, f);
 				console.log("f = " + FMath.toPrettyString(f)
-					+ ",      fFloor = " + FMath.toPrettyString(fFloor)
-					+ ",      fCeil = " + FMath.toPrettyString(fCeil)
+//					+ ",      fNeg = " + FMath.toPrettyString(fNeg)
+					+ ",      fAbs = " + FMath.toPrettyString(fAbs)
+					+ ",      fTrunc = " + FMath.toPrettyString(fTrunc)
+//					+ ",      fFloor = " + FMath.toPrettyString(fFloor)
+//					+ ",      fCeil = " + FMath.toPrettyString(fCeil)
 //					+ ",      fRound = " + FMath.toPrettyString(fRound)
 					+ ",      fInv = " + FMath.toPrettyString(fInv)
+					+ ",      fSqrt = " + FMath.toPrettyString(fSqrt)
 					+ '  #');
+			}
+		}
+		if (doPrecUnary) {
+			const parms = [
+				//{	name: "neg",	op: (n) => -n,			fOp : FMath.neg.bind(FMath),	errRatio: .5},
+				//{	name: "abs",	op: (n) => Math.abs(n),	fOp : FMath.abs.bind(FMath),	errRatio: .5},
+				//{	name: "trunc",	op: (n) => Math.trunc(n),fOp : FMath.trunc.bind(FMath),	errRatio: .5},
+				//{	name: "floor",	op: (n) => Math.floor(n),fOp : FMath.floor.bind(FMath),	errRatio: .5},
+				//{	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMath.ceil.bind(FMath),	errRatio: .5},
+				//{	name: "round",	op: (n) => Math.round(n),fOp : FMath.round.bind(FMath),	errRatio: .5},
+				//{	name: "inv",	op: (n) => 1 / n,		fOp : FMath.inv.bind(FMath),	errRatio: .5},
+				{	name: "sqrt",	op: (n) => n >= 0 ? Math.sqrt(n) : 0,fOp : FMath.sqrt.bind(FMath),	errRatio: 1},
+			];
+			for (const parm of parms) {
+				console.log("\n========\ndo prec " + parm.name);
+				let maxAbsDelta = 0;
+				let maxN = "---";
+				let maxC = "---";
+				let maxFn = "---";
+				const errRatio = parm.errRatio; // get to the best number
+				const fc = FMath.create();
+				for (let b = -FMath.overNum; b <= FMath.overNum; b += FMath.epsilonNum) {
+					const fb = FMath.fromNumber(b);
+					const c = b ? parm.op(b) : 0;
+					parm.fOp(fc, fb);
+					const nfc = FMath.toNumber(fc);
+					const delta = c - nfc
+					const absDelta = Math.abs(delta);
+					if (absDelta > maxAbsDelta) {
+						maxAbsDelta = absDelta;
+						maxN = b;
+						maxC = c;
+						maxFn = clone(fc);
+					}
+					let str = "check absDelta " + parm.name + "(" + FMath.toPrettyString(fb)
+							+ ") = " + FMath.toPrettyString(fc) + ",n = " + c.toFixed(5)
+							+ ", delta = " + delta.toFixed(5);
+					// half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
+					if (absDelta > errRatio * FMath.epsilonNum) {
+						console.log(str);
+					} else {
+						if (false) {
+							console.log(str);
+						}
+					}
+				}
+				console.log("maxAbsDelta = " 
+					+ maxAbsDelta.toFixed(7) + ", max err ratio = " 
+					+ (maxAbsDelta / FMath.epsilonNum).toFixed(7) + " maxErrLocation: n = " + maxN);
+				let str = "check absDelta " + parm.name + "(" + maxN
+						+ ") = " + FMath.toPrettyString(maxFn) + ", result = " + maxC
+						+ ", delta = " + maxAbsDelta.toFixed(5);
+				// half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
+				console.log(str);
 			}
 		}
 		if (doMul) {
@@ -166,15 +235,17 @@ class MainApp {
 			let maxAbsDelta = 0;
 			let maxA = 0;
 			let maxB = 0;
-			const errRatio = 1; // get to the 2nd best number for now
+			const errRatio = 2; // get to the best number
 			const fc = FMath.create();
-			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
-				if (b == 0) {
+			//for (let b = 1.5; b <= 1.5; b += FMath.epsilonNum) {
+			for (let b = -FMath.overNum; b <= FMath.overNum; b += FMath.epsilonNum) {
+				/*if (b == 0) {
 					continue;
-				}
+				}*/
 				const fb = FMath.fromNumber(b);
+				//for (let a = 1.75; a <= 1.75; a += FMath.epsilonNum) {
 				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
-					const c = a / b;
+					const c = b != 0 ? a / b : 0;
 					const fa = FMath.fromNumber(a);
 					FMath.div(fc, fa, fb);
 					const nfc = FMath.toNumber(fc);
@@ -186,41 +257,80 @@ class MainApp {
 						maxB = b;
 					}
 					if (errRatio * absDelta > FMath.epsilonNum) {
-						console.error("Too much absDelta !! " + FMath.toPrettyString(fa) + " / " + FMath.toPrettyString(fb)
+						console.error("check absDelta " + FMath.toPrettyString(fa) + " / " + FMath.toPrettyString(fb)
 							+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
 							+ ", delta = " + delta.toFixed(5));
+					} else {
+						if (true) {
+							console.log("check absDelta " + FMath.toPrettyString(fa) + " / " + FMath.toPrettyString(fb)
+								+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+								+ ", delta = " + delta.toFixed(5));
+						}
+					}
+				}
+			}
+			console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
+		}
+		if (doMod) {
+			console.log("do binary op mod");
+			
+			const fc = FMath.create();
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+				const fb = FMath.fromNumber(b);
+				if (b == 0) {
+					continue;
+				}
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+					const fa = FMath.fromNumber(a);
+					FMath.mod(fc, fa, fb);
+					console.log(FMath.toPrettyString(fa) + " % " + FMath.toPrettyString(fb)
+						+ " = " + FMath.toPrettyString(fc));
+				}
+			}
+		}
+		if (doPrecMod) {
+			console.log("do prec mod");
+			let maxAbsDelta = 0;
+			let maxA = 0;
+			let maxB = 0;
+			const errRatio = 2; // get to the best number
+			const fc = FMath.create();
+			//for (let b = 1.5; b <= 1.5; b += FMath.epsilonNum) {
+			for (let b = -FMath.overNum; b < FMath.overNum; b += FMath.epsilonNum) {
+			//for (let b = FMath.epsilonNum; b < FMath.overNum; b += FMath.epsilonNum) {
+				if (b == 0) {
+					continue;
+				}
+				const fb = FMath.fromNumber(b);
+				//for (let a = 1.75; a <= 1.75; a += FMath.epsilonNum) {
+				for (let a = -FMath.overNum; a < FMath.overNum; a += FMath.epsilonNum) {
+				//for (let a = 0; a < FMath.overNum; a += FMath.epsilonNum) {
+					const c = a % b;
+					const fa = FMath.fromNumber(a);
+					FMath.mod(fc, fa, fb);
+					const nfc = FMath.toNumber(fc);
+					const delta = c - nfc
+					const absDelta = Math.abs(delta);
+					if (absDelta > maxAbsDelta) {
+						maxAbsDelta = absDelta;
+						maxA = a;
+						maxB = b;
+					}
+					if (errRatio * absDelta > FMath.epsilonNum) {
+						console.error("check absDelta " + FMath.toPrettyString(fa) + " % " + FMath.toPrettyString(fb)
+							+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+							+ ", delta = " + delta.toFixed(5));
+					} else {
+						if (false) {
+							console.log("check absDelta " + FMath.toPrettyString(fa) + " % " + FMath.toPrettyString(fb)
+								+ " = " + FMath.toPrettyString(fc) + ",c = " + c.toFixed(5)
+								+ ", delta = " + delta.toFixed(5));
+						}
 					}
 				}
 			}
 			console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
 
-		}
-		if (doMod) {
-			console.log("do mod");
-			const maxN = 15;
-			const step = .021;
-			let maxRd = 0;
-			for (let a = -maxN; a < maxN; a += step) {
-				for (let b = -maxN; b < maxN; b += step) {
-					if (b == 0) {
-						continue;
-					}
-					const r = a % b;
-					let q = a / b;
-					q = Math.trunc(q);
-					const r2 = a - b * q;
-					const rd = r - r2;
-					const absRd = Math.abs(rd);
-					if (absRd > maxRd) {
-						maxRd = absRd;
-						console.log(`${a} % ${b} = ${r}, r2 = ${r2}, rd = ${rd}`);
-					}
-				}
-			}
-			console.log(`maxRd = ${maxRd}`);
-		}
-		if (doPrecMod) {
-			console.log("do prec mod");
 		}
 		console.log("end testFMath");
 	}

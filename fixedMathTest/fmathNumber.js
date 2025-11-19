@@ -3,6 +3,7 @@
 // do a consistent fixed point system in javascript
 // using Number
 // on hold, trying BigInt instead
+// no longer used
 
 class FMathNum {
 
