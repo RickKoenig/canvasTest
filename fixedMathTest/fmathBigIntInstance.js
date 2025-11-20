@@ -12,7 +12,7 @@ class FMathBigIntInstance {
 		this.addRound = 1n << (this.fracBits - 1n); // .5
 
 		// Numbers
-		this.mulFracFactor = 1 << Number(this.fracBits);
+		this.mulFracFactor = Number(2n ** this.fracBits);
 		this.epsilonNum = 1 / this.mulFracFactor;
 		this.overNum = Number(1n << (this.intBits- 1n));
 
@@ -80,6 +80,19 @@ class FMathBigIntInstance {
 
 	abs(out, a) {
 		out.raw = a.raw < 0n ? -a.raw : a.raw;
+	}
+
+	sign(out, a) {
+		let s;
+		if (a.raw > 0n) {
+			s = this.mulFracFactor;
+		} else if (a.raw < 0n) {
+			s = -this.mulFracFactor;
+		} else {
+			s = 0n;
+		}
+		out.raw = s;
+		return out;
 	}
 	
 	trunc = function(out, a) {
@@ -183,39 +196,49 @@ class FMathBigIntInstance {
 }
 
 /*
+NYI: TODO:
 class CMath {
 	// constants
     // keep all Math constants for now
-    static E = Math.E;
-    static LN10 = Math.LN10;
-    static LN2 = Math.LN2;
-    static LOG10E = Math.LOG10E;
-    static LOG2E = Math.LOG2E;
-    static PI = Math.PI;
-    static SQRT1_2 = Math.SQRT1_2;
-    static SQRT2 = Math.SQRT2;
+    PI
+    E
+    SQRT2
+    SQRT1_2
+    LN10
+    LN2
+    LOG10E
+    LOG2E
 
     // functions
-    static acosh = Math.acosh;
-    static acos = Math.acos;
-    static asinh = Math.asinh;
-    static asin = Math.asin;
-    static atan2 = Math.atan2;
-    static atanh = Math.atanh;
-    static atan = Math.atan;
-    static cbrt = Math.cbrt;
-    static cosh = Math.cosh;
-    static cos(a) {
-    static exp = Math.exp;
-    static log10 = Math.log10;
-    static log2 = Math.log2;
-    static log = Math.log;
-    static pow = Math.pow;
-    static random = Math.random;
-    static sign = Math.sign;
-    static sinh = Math.sinh;
-    static sin(a) {
-    static tanh = Math.tanh;
-    static tan = Math.tan;
+
+	// trigonometric
+    sin
+    cos
+    tan
+    asin
+    acos
+    atan
+    atan2(y, x)
+
+	// hyperbolic
+    sinh
+    cosh
+    tanh
+    acosh
+    asinh
+    atanh
+
+	// logarithms
+    log
+    log10
+    log2
+
+	// exponents
+    exp
+    pow(b, e)
+
+	// miscellaneous
+    cbrt
+    random
 }
 */
