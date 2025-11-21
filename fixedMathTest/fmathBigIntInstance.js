@@ -32,6 +32,13 @@ class FMathBigIntInstance {
 		return ret;
 	}
 
+	// conversion between different bit sizes, BigInt
+	static convert(n, from, to) {
+		n += 1n << BigInt(from - to - 1);
+		const out = n >> BigInt(from - to);
+		return out;
+	}
+
 	// create
 	create = function() {
 		return {

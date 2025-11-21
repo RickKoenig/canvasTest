@@ -12,7 +12,7 @@ function unitTest(intP, fracP) {
     console.log("overNum = " + FMath.overNum);
     const doFromNumber = false;
     const doUnary = false;
-    const doPrecUnary = false;
+    const doPrecUnary = true;
     const doMul = false;
     const doPrecMul = false;
     const doDiv = false;
@@ -71,13 +71,13 @@ function unitTest(intP, fracP) {
     if (doPrecUnary) {
         const parms = [
             //{	name: "neg",	op: (n) => -n,			fOp : FMath.neg.bind(FMath),	errRatio: .5},
-            {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMath.abs.bind(FMath),	errRatio: .5},
-            {	name: "sign",	op: (n) => Math.sign(n),fOp : FMath.sign.bind(FMath),	errRatio: .5},
+            //{	name: "abs",	op: (n) => Math.abs(n),	fOp : FMath.abs.bind(FMath),	errRatio: .5},
+            //{	name: "sign",	op: (n) => Math.sign(n),fOp : FMath.sign.bind(FMath),	errRatio: .5},
             //{	name: "trunc",	op: (n) => Math.trunc(n),fOp : FMath.trunc.bind(FMath),	errRatio: .5},
             //{	name: "floor",	op: (n) => Math.floor(n),fOp : FMath.floor.bind(FMath),	errRatio: .5},
             //{	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMath.ceil.bind(FMath),	errRatio: .5},
             //{	name: "round",	op: (n) => Math.round(n),fOp : FMath.round.bind(FMath),	errRatio: .5},
-            //{	name: "inv",	op: (n) => 1 / n,		fOp : FMath.inv.bind(FMath),	errRatio: .5},
+            {	name: "inv",	op: (n) => 1 / n,		fOp : FMath.inv.bind(FMath),	errRatio: .5},
             {	name: "sqrt",	op: (n) => n >= 0 ? Math.sqrt(n) : 0,fOp : FMath.sqrt.bind(FMath),	errRatio: 1},
         ];
         for (const parm of parms) {
@@ -286,23 +286,69 @@ function unitTest(intP, fracP) {
         console.log("maxAbsDelta = " + maxAbsDelta + ", maxA = " + maxA + ", maxB = " + maxB);
     }
     if (testConstants) {
-        console.log("test constants");
+        console.log("\n========\ntest constants");
+        const mFrac = 32; // keep at this value
+        Math.ZERO = 0;
+        Math.ONE = 1;
         const constNames = [
+            "ZERO",
+            "ONE",
             "PI",
             "E",
-        //    "SQRT2",
-        //    "SQRT1_2",
-        //    "LN10",
-        //    "LN2",
-        //    "LOG10E",
-        //    "LOG2E"
+            "SQRT2",
+            "SQRT1_2",
+            "LN10",
+            "LN2",
+            "LOG10E",
+            "LOG2E"
         ];
-        const fix32p32 = new FMathBigIntInstance(32, 32); // instance, high precision
-
-        for (const cName of constNames) {
-            const c = Math[cName];
-            const fc = fix32p32.fromNumber(c);
-            console.log(cName + " = " + c);
+        // consistency
+        const master32 = { // times 2 to the mFrac power, rounded to nearest BigInt
+            ZERO: 0n,
+            ONE: 4294967296n,
+            PI: 13493037705n,
+            E: 11674931555n,
+            SQRT2: 6074001000n,
+            SQRT1_2: 3037000500n,
+            LN10: 9889527671n,
+            LN2: 2977044472n,
+            LOG10E: 1865280597n,
+            LOG2E: 6196328019n
+        };
+        const fix32p32 = new FMathBigIntInstance(mFrac, mFrac); // instance, high precision
+        const generate = false;
+        const test = true;
+        if (generate) {
+            console.log("generate");
+            for (const cName of constNames) {
+                const c = Math[cName];
+                const fc = fix32p32.fromNumber(c);
+                const fcn = fix32p32.toPrettyString(fc);
+                //console.log(cName + " = " + c + " " + fcn);
+                console.log(cName + ": " + fc.raw + "n,");
+            }
+        }
+        if (test) {
+            const fc32 = FMath.create(); // 32
+            const ft = FMath.create(); // tFrac
+            for (const cName of constNames) {
+                const c = Math[cName];
+                fc32.raw = master32[cName];
+                for (let tFrac = 0; tFrac <= 32; ++tFrac) {
+                    const fixTest = new FMathBigIntInstance(tFrac, tFrac); // make fit here
+                    ft.raw = FMathBigIntInstance.convert(fc32.raw, mFrac, tFrac);
+                    const fc32s = fix32p32.toPrettyString(fc32);
+                    const fts = fixTest.toPrettyString(ft);
+                    const absDelta = Math.abs(c - fixTest.toNumber(ft));
+                    const err = absDelta / fixTest.epsilonNum;
+                    console.log(cName + " n = " + c
+                        + ", fc32 = " + fc32s
+                        + ", ft" + tFrac + " = " + fts
+                        + " del = " + absDelta
+                        + " err = " + err
+                    );
+                }
+            }
         }
     }
     console.log("end testFMath");
