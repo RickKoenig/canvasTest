@@ -5,11 +5,55 @@
 // create a static like class with 2 parameters
 
 class FMathBigIntInstance {
+	static mFrac = 32; // master high precision constants
 	constructor(intPart, fracPart) {
 		// BigInts
 		this.intBits = BigInt(intPart); // for overflow
 		this.fracBits = BigInt(fracPart);
 		this.addRound = 1n << (this.fracBits - 1n); // .5
+
+		// constants
+        Math.ZERO = 0;
+        Math.ONE = 1;
+        this.constNames = [
+            "ZERO",
+            "ONE",
+            "PI",
+            "E",
+            "SQRT2",
+            "SQRT1_2",
+            "LN10",
+            "LN2",
+            "LOG10E",
+            "LOG2E"
+        ];
+        // consistency
+        this.master32 = { // times 2 to the mFrac power, rounded to nearest BigInt
+            ZERO: 0n,
+            ONE: 4294967296n,
+            PI: 13493037705n,
+            E: 11674931555n,
+            SQRT2: 6074001000n,
+            SQRT1_2: 3037000500n,
+            LN10: 9889527671n,
+            LN2: 2977044472n,
+            LOG10E: 1865280597n,
+            LOG2E: 6196328019n
+        };
+		const generate = false;
+		if (generate) {
+			console.log("generate");
+			for (const cName of this.constNames) {
+				const big = BigInt(Math.round((2 ** 32) * Math[cName]));
+				console.log(cName + ": " + big);
+			}
+		}
+		for (const cName of this.constNames) {
+			const raw = this.master32[cName];
+			const ft = this.create(); // tFrac
+			ft.raw = FMathBigIntInstance.convert(raw, FMathBigIntInstance.mFrac, fracPart);
+			this[cName] = ft;
+		}
 
 		// Numbers
 		this.mulFracFactor = Number(2n ** this.fracBits);
@@ -181,7 +225,42 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// advanced
+	// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
+
+	// more advanced functions
+
+
+
+// NYI: TODO:
+
+    // functions
+
+	// trigonometric
+//    sin
+//    cos
+//    tan
+//    asin
+//    acos
+//    atan
+//    atan2(y, x)
+
+	// hyperbolic
+//    sinh
+//    cosh
+//    tanh
+//    acosh
+//    asinh
+//    atanh
+
+	// logarithms
+//    log
+//    log10
+//    log2
+
+	// exponents
+//    exp
+//    pow(b, e)
+
 	sqrt = function(out, a) {
 		if (a.raw <= 0n) {
 			out.raw = 0;
@@ -199,53 +278,9 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
-}
-
-/*
-NYI: TODO:
-class CMath {
-	// constants
-    // keep all Math constants for now
-    PI
-    E
-    SQRT2
-    SQRT1_2
-    LN10
-    LN2
-    LOG10E
-    LOG2E
-
-    // functions
-
-	// trigonometric
-    sin
-    cos
-    tan
-    asin
-    acos
-    atan
-    atan2(y, x)
-
-	// hyperbolic
-    sinh
-    cosh
-    tanh
-    acosh
-    asinh
-    atanh
-
-	// logarithms
-    log
-    log10
-    log2
-
-	// exponents
-    exp
-    pow(b, e)
+//    cbrt
 
 	// miscellaneous
-    cbrt
-    random
+//    random
+
 }
-*/
