@@ -65,7 +65,7 @@ class FMathNum {
 		};
 	}
 
-	static fromNumber(n) {
+	static create(n) {
 		const out = FMathNum.create();
 		out.raw = (n * FMathNum.mulFracFactor) & FMathNum.mask;
 		return out;

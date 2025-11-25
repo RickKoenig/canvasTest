@@ -5,7 +5,7 @@
 // create a static like class with 2 parameters
 
 class FMathBigIntInstance {
-	static mFrac = 32; // master high precision constants
+	static mFrac = 32; // master of high precision constants, 32 bit
 	constructor(intPart, fracPart) {
 		// BigInts
 		this.intBits = BigInt(intPart); // for overflow
@@ -27,7 +27,7 @@ class FMathBigIntInstance {
             "LOG10E",
             "LOG2E"
         ];
-        // consistency
+        // consistency, make a copy from generate
         this.master32 = { // times 2 to the mFrac power, rounded to nearest BigInt
             ZERO: 0n,
             ONE: 4294967296n,
@@ -48,6 +48,7 @@ class FMathBigIntInstance {
 				console.log(cName + ": " + big);
 			}
 		}
+		// setup constants into instance
 		for (const cName of this.constNames) {
 			const raw = this.master32[cName];
 			const ft = this.create(); // tFrac
@@ -84,20 +85,19 @@ class FMathBigIntInstance {
 	}
 
 	// create
-	create = function() {
-		return {
-			raw: 0n
-		};
-	}
-
-	fromNumber(n) {
-		const out = this.create();
-		this.setNumber(out, n);
+	create = function(n) {
+		let raw = 0n;
+		const out = {raw: 0n};
+		if (n) {
+			this.setNumber(out, n);
+		}
 		return out;
 	}
-	
+
 	clone(f) {
-		return clone(f);
+		const out = this.create();
+		out.raw = f.raw;
+		return out;
 	}
 
 	// replace
@@ -146,7 +146,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 	
-	trunc = function(out, a) {
+	trunc(out, a) {
 		if (a.raw >= 0) {
 			out.raw = a.raw >> this.fracBits << this.fracBits;
 		} else {
@@ -155,7 +155,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	floor = function(out, a) {
+	floor(out, a) {
 		out.raw = a.raw >> this.fracBits << this.fracBits;
 		return out;
 	}
@@ -173,7 +173,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 	
-	inv = function(out, a) {
+	inv(out, a) {
 		// don't do divide by zero
 		if (a.raw == 0n) {
 			out.raw = 0;
@@ -183,24 +183,24 @@ class FMathBigIntInstance {
 	}
 
 	// binary operators
-	add = function(out, a, b) {
+	add(out, a, b) {
 		out.raw = a.raw + b.raw;
 		return out;
 	}
 
-	sub = function(out, a, b) {
+	sub(out, a, b) {
 		out.raw = a.raw - b.raw;
 		return out;
 	}
 
-	mul = function(out, a, b) {
+	mul(out, a, b) {
 		out.raw = a.raw * b.raw;
 		out.raw += this.addRound;
 		out.raw >>= this.fracBits;
 		return out;
 	}
 
-	div = function(out, a, b) {
+	div(out, a, b) {
 		if (b.raw == 0n) {
 			out.raw = 0n;
 			return out;
@@ -217,7 +217,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	mod = function(out, a, b) {
+	mod(out, a, b) {
 		let q = a.raw / b.raw; // div with trunc, a straight BigInt
 		let btq = b.raw * q; // back to FMath
 		btq = a.raw - btq;
@@ -237,7 +237,51 @@ class FMathBigIntInstance {
 
 	// trigonometric
 //    sin
+	sin(out, a) {
+		const steps = 20;
+		const sum = this.create();
+		const term = this.create();
+		const n = this.clone(this.ONE);
+		const d = this.clone(this.ONE);
+		const m = this.create();
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.mul(n, n, a);
+			this.add(m, m, this.ONE);
+			this.mul(d, d, m);
+		}
+		this.div(term, n, d);
+		this.add(sum, sum, term);
+		out.raw = sum.raw;
+	}
 //    cos
+	cos(out, a) {
+		const steps = 20;
+		const sum = this.create();
+		const term = this.create();
+		const n = this.clone(this.ONE);
+		const d = this.clone(this.ONE);
+		const m = this.create();
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.mul(n, n, a);
+			this.add(m, m, this.ONE);
+			this.mul(d, d, m);
+		}
+		this.div(term, n, d);
+		this.add(sum, sum, term);
+		out.raw = sum.raw;
+	}
 //    tan
 //    asin
 //    acos
@@ -252,29 +296,51 @@ class FMathBigIntInstance {
 //    asinh
 //    atanh
 
+	// exponents
+	exp(out, a) {
+		const steps = 20;
+		const sum = this.create();
+		const term = this.create();
+		const n = this.clone(this.ONE);
+		const d = this.clone(this.ONE);
+		const m = this.create();
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.mul(n, n, a);
+			this.add(m, m, this.ONE);
+			this.mul(d, d, m);
+		}
+		this.div(term, n, d);
+		this.add(sum, sum, term);
+		out.raw = sum.raw;
+	}
+//    pow(b, e)
+
 	// logarithms
 //    log
 //    log10
 //    log2
 
-	// exponents
-//    exp
-//    pow(b, e)
-
-	sqrt = function(out, a) {
+	sqrt(out, a) {
+		const steps = 8;
 		if (a.raw <= 0n) {
 			out.raw = 0;
 			return out;
 		}
-		let two = this.fromNumber(2);
-		let r = this.clone(two);
-		let adr = this.create();
-		for (let i = 0; i < 8; ++i) {
-			this.div(adr, a, r);
-			this.add(r, adr, r);
-			this.div(r, r, two);
+		const two = this.create(2); // two = 2;
+		const guess = this.clone(two); // r = 2;
+		const newGuess = this.create(); // newGuess;
+		for (let i = 0; i < steps; ++i) {
+			this.div(newGuess, a, guess); // newGuess = a / guess;
+			this.add(guess, newGuess, guess); // guess = (newGuess + guess) / 2;
+			this.div(guess, guess, two);
 		}
-		out.raw = r.raw;
+		out.raw = guess.raw;
 		return out;
 	}
 
