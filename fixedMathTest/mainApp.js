@@ -14,7 +14,7 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		unitTest(3,8);
+		unitTest(1, 4);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
