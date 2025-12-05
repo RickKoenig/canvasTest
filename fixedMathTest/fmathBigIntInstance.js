@@ -44,7 +44,7 @@ class FMathBigIntInstance {
 			HALFPI: Math.PI / 2,
 			ATAN_I : -0.0464964749,
             ATAN_J : 0.15931422,
-            ATAN_K : 0.327622764,
+            ATAN_K : -0.327622764,
 
 		};
         // consistency, make a copy from generate
@@ -71,7 +71,7 @@ class FMathBigIntInstance {
 			HALFPI: 6746518852n,
 			ATAN_I: -199700839n,
 			ATAN_J: 684249365n,
-			ATAN_K: 1407129057n,
+			ATAN_K: -1407129057n,
 		};
 		// get all the names of extras
 		for (const extraCon in this.constObjectsExtra) {
@@ -91,7 +91,7 @@ class FMathBigIntInstance {
 		const generate = false;
 		if (generate) { // turn on to get BigInt values from Numbers, paste that into generated32 above
 			// built in math constants
-			let str = "\ngenerate 'this.generated32'\n\n";
+			let str = "\ngenerate 'this.generated32' constants\n\n";
 			str += "// built in\n";
 			for (const cName of this.constNamesMath) {
 				const big = BigInt(Math.round((2 ** 32) * Math[cName]));
@@ -234,6 +234,8 @@ class FMathBigIntInstance {
 		return this.div(out, this.ONE, a);
 	}
 
+	// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
+
 	// binary operators
 	min(out, a, b) {
 		out.raw = a.raw < b.raw ? a.raw : b.raw;
@@ -291,7 +293,30 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
+	sqrt(out, a) {
+		const steps = 8;
+		if (a.raw <= 0n) {
+			out.raw = 0;
+			return out;
+		}
+		const guess = this.clone(this.TWO); // r = 2;
+		const newGuess = this.create(); // newGuess;
+		for (let i = 0; i < steps; ++i) {
+			this.div(newGuess, a, guess); // newGuess = a / guess;
+			this.add(guess, newGuess, guess); // guess = (newGuess + guess) / 2;
+			this.mul(guess, guess, this.HALF);
+		}
+		out.raw = guess.raw;
+		return out;
+	}
+
+	// cbrt
+
+	hypot(out, a, b) {
+		const a2 = this.create();
+		const b2 = this.create();
+		return this.sqrt(out, this.add(out, this.mul(a2, a, a), this.mul(b2, b, b)));
+	}
 
 	// more advanced functions
 
@@ -387,8 +412,10 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-//    asin
-//    acos
+	// asin
+
+	// acos
+
 	atan(out, y) {
 		return this.atan2(out, y, this.ONE);
 	}
@@ -420,11 +447,11 @@ class FMathBigIntInstance {
 		this.mul(r, this.ATAN_I, s);
 		this.add(r, r, this.ATAN_J);
 		this.mul(r, r, s);
-		this.sub(r, r, this.ATAN_K);
+		this.add(r, r, this.ATAN_K);
 		this.mul(r, r, s);
 		this.mul(r, r, a);
 		this.add(r, r, a);
-		//let r = ((I * s + J) * s - K) * s * a + a;
+		//let r = ((I * s + J) * s + K) * s * a + a;
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}
@@ -437,14 +464,6 @@ class FMathBigIntInstance {
 		out.raw = r.raw;
 		return out;
 	}
-
-	// hyperbolic
-//    sinh
-//    cosh
-//    tanh
-//    acosh
-//    asinh
-//    atanh
 
 	// exponents
 	exp(out, a) {
@@ -470,33 +489,30 @@ class FMathBigIntInstance {
 		out.raw = sum.raw;
 		return out;
 	}
-//    pow(b, e)
+
+	// pow(b, e)
 
 	// logarithms
-//    log
-//    log10
-//    log2
+	// log
 
-	sqrt(out, a) {
-		const steps = 8;
-		if (a.raw <= 0n) {
-			out.raw = 0;
-			return out;
-		}
-		const guess = this.clone(this.TWO); // r = 2;
-		const newGuess = this.create(); // newGuess;
-		for (let i = 0; i < steps; ++i) {
-			this.div(newGuess, a, guess); // newGuess = a / guess;
-			this.add(guess, newGuess, guess); // guess = (newGuess + guess) / 2;
-			this.mul(guess, guess, this.HALF);
-		}
-		out.raw = guess.raw;
-		return out;
-	}
+	// log10
 
-//    cbrt
+	// log2
+
+	// hyperbolic
+	// sinh
+
+	// cosh
+
+	// tanh
+
+	// acosh
+
+	// asinh
+
+	// atanh
 
 	// miscellaneous
-//    random
+	// random
 
 }
