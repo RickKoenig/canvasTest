@@ -40,12 +40,19 @@ class FMathBigIntInstance {
 			HALF: 1 / 2,
 			THIRD: 1 / 3,
 			FOURTH: 1 / 4,
+			EIGHTH: 1 / 8,
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
 			ATAN_I : -0.0464964749,
             ATAN_J : 0.15931422,
             ATAN_K : -0.327622764,
-
+			E_1_2 : Math.exp(.5), // e^^(1/2)
+			E_1_4 : Math.exp(.25), // e^^(1/4)
+			E_1_8 : Math.exp(.125), // e^^(1/8)
+			E_M1 : Math.exp(-1), // e^^(-1) or 1 / e
+			E_M1_2 : Math.exp(-.5), // e^^(-1/2)
+			E_M1_4 : Math.exp(-.25), // e^^(-1/4)
+			E_M1_8 : Math.exp(-.125), // e^^(-1/8)
 		};
         // consistency, make a copy from generate
         this.generated32 = { // times 2 to the masterFrac power, rounded to nearest BigInt
@@ -67,11 +74,19 @@ class FMathBigIntInstance {
 			HALF: 2147483648n,
 			THIRD: 1431655765n,
 			FOURTH: 1073741824n,
+			EIGHTH: 536870912n,
 			TWOPI: 26986075409n,
 			HALFPI: 6746518852n,
 			ATAN_I: -199700839n,
 			ATAN_J: 684249365n,
 			ATAN_K: -1407129057n,
+			E_1_2: 7081203938n,
+			E_1_4: 5514847172n,
+			E_1_8: 4866835547n,
+			E_M1: 1580030169n,
+			E_M1_2: 2605029347n,
+			E_M1_4: 3344923893n,
+			E_M1_8: 3790295335n,
 		};
 		// get all the names of extras
 		for (const extraCon in this.constObjectsExtra) {
@@ -293,6 +308,8 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	// roots
+
 	sqrt(out, a) {
 		const steps = 8;
 		if (a.raw <= 0n) {
@@ -310,7 +327,19 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// cbrt
+	cbrt(out, a) {
+		const aa = this.clone(a);
+		let neg = false;
+		if (a.raw < 0) {
+			neg = true;
+			this.neg(aa, aa);
+		}
+		this.pow(out, aa, this.THIRD);
+		if (neg) {
+			this.neg(out, out);
+		}
+		return out;
+	}
 
 	hypot(out, a, b) {
 		const a2 = this.create();
@@ -402,12 +431,25 @@ class FMathBigIntInstance {
 
 	// slightly broken
 	tan(out, a) {
-		const na = this.create();
-		this.normAngRad(na, a);
+		const na = this.clone(a);
+        // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
+		this.abs(na, na);
+		this.mod(na, na, this.PI);
+		this.sub(na, na, this.HALFPI);
+		this.abs(na, na);
+		const compare = this.create(2 / 8);
+		this.mul(compare, compare, this.HALFPI);
+		if (na.raw <= compare.raw) {
+			out.raw = 0n;
+			return out;
+		}
+
+		this.copy(na, a);
+		this.normAngRad(na, na);
 		const x = this.create();
 		const y = this.create();
-		this.cos(x, na);
-		this.sin(y, na);
+		this.cosNoNorm(x, na);
+		this.sinNoNorm(y, na);
 		this.div(out, y, x);
 		return out;
 	}
@@ -467,7 +509,7 @@ class FMathBigIntInstance {
 
 	// exponents
 	exp(out, a) {
-		const steps = 20;
+		const steps = 40;
 		const sum = this.create();
 		const term = this.create();
 		const n = this.clone(this.ONE);
@@ -490,29 +532,130 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// pow(b, e)
+	pow(out, b, e) {
+		const low = this.create(3 / 32);
+		if (b.raw <= low.raw) {
+			out.raw = 0n;
+			return out;
+		}
+		const lb = this.create();
+		this.log(lb, b);
+		this.mul(lb, lb, e);
+		this.exp(out, lb);
+		return out;
+	}
 
 	// logarithms
-	// log
+	log(out, oy) {
+		const low = this.create(3 / 32);
+		if (oy.raw <= low.raw) {
+			out.raw = 0n;
+			return out;
+		}
+		const offset = this.create();
+		const y = this.clone(oy);
+		
+		// move arg close to 1 for better results
+		let watch = 100;
+		while (y.raw >= this.E_1_4.raw && watch > 0) {
+			this.add(offset, offset, this.FOURTH);
+			this.mul(y, y, this.E_M1_4);
+			--watch;
+		}
+		while (y.raw < this.E_M1_4.raw && watch > 0) {
+			this.sub(offset, offset, this.FOURTH);
+			this.mul(y, y, this.E_1_4);
+			--watch;
+		}
+		if (!watch) {
+			console.error("watch hit!!!");
+		}
 
-	// log10
+		const steps = 10;
+		const n = this.create();
+		const d = this.create(1);
+		const x = this.create();
+		const sum = this.create();
+		this.sub(x, y, this.ONE);
+		this.copy(n, x);
+		const term = this.create();
+		const m = this.create();
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.mul(n, n, x);
+			this.add(d, d, this.ONE);
+			this.neg(d, d);
+			this.mul(d, d, m);
+		}
+		this.add(sum, sum, offset);
+		out.raw = sum.raw;
+		return out;
+	}
 
-	// log2
+	log10(out, oy) {
+		this.log(out, oy);
+		this.mul(out, out, this.LOG10E);
+		return out;
+	}
+
+	log2(out, oy) {
+		this.log(out, oy);
+		this.mul(out, out, this.LOG2E);
+		return out;
+	}
 
 	// hyperbolic
-	// sinh
+	sinh(out, a) {
+		const e = this.create();
+		this.exp(e, a);
+		const inve = this.create();
+		this.inv(inve, e);
+		const terms = this.create();
+		this.sub(terms, e, inve);
+		this.mul(terms, terms, this.HALF);
+		out.raw = terms.raw;
+		return out;
+	}
 
-	// cosh
+	cosh(out, a) {
+		const e = this.create();
+		this.exp(e, a);
+		const inve = this.create();
+		this.inv(inve, e);
+		const terms = this.create();
+		this.add(terms, e, inve);
+		this.mul(terms, terms, this.HALF);
+		out.raw = terms.raw;
+		return out;
+	}
 
-	// tanh
+	tanh(out, a) {
+		const e = this.create();
+		this.exp(e, a);
+		const inve = this.create();
+		this.inv(inve, e);
 
-	// acosh
+		const topTerms = this.create();
+		this.sub(topTerms, e, inve);
+		this.mul(topTerms, topTerms, this.HALF);
 
-	// asinh
+		const botTerms = this.create();
+		this.add(botTerms, e, inve);
+		this.mul(botTerms, botTerms, this.HALF);
 
-	// atanh
+		this.div(out, topTerms, botTerms);
+		return out;
+	}
 
 	// miscellaneous
-	// random
-
+	random(out) {
+		const n = Math.random();
+		this.setNumber(out, n);
+		return out;
+	}
 }

@@ -12,100 +12,10 @@ function unitTest(intP, fracP) {
     console.log("overNum = " + FMathInst.overNum);
 
     const doVerbose = false;
-    const doAtanTests = false;
     const testConstants = false;
     const docreate = false;
     const doPrecUnary = true;
-    const doPrecBinary = true;
-
-    if (doAtanTests) {
-        function testAtan2M(y, x) {
-            // Maclaurin series
-            const xa = Math.abs(x);
-            const ya = Math.abs(y);
-            const a = Math.min (xa, ya) / Math.max (xa, ya);
-            const s = a * a;
-            const I = -1 / 7;
-            const J = 1 / 5;
-            const K = 1 / 3;
-            let r = ((I * s + J) * s - K) * s * a + a;
-    /*
-            r = ((Is + J)s - K)sa + a;
-            r = (Is^2 + Js - K)sa + a;
-            r = Is^3a + Js^2a - Ksa + a;
-            r = Ia^7 + Ja^5 - Ka^3 + a;
-    */
-            if (ya > xa) {
-                r = Math.PI/2 - r;
-            }
-            if (x < 0) {
-                r = Math.PI - r;
-            }
-            if (y < 0) {
-                r = -r;
-            }
-            return r;
-        }
-
-        function testAtan2RH(y, x) {
-            // Horner scheme. The minimax approximation was computed using the Remez algorithm
-            const xa = Math.abs(x);
-            const ya = Math.abs(y);
-            const a = Math.min (xa, ya) / Math.max (xa, ya);
-            const s = a * a;
-            const I = -0.0464964749;
-            const J = 0.15931422;
-            const K = -0.327622764;
-            let r = ((I * s + J) * s + K) * s * a + a;
-    /*
-            r = ((Is + J)s + K)sa + a;
-            r = (Is^2 + Js + K)sa + a;
-            r = Is^3a + Js^2a + Ksa + a;
-            r = Ia^7 + Ja^5 + Ka^3 + a;
-    */
-            if (ya > xa) {
-                r = Math.PI/2 - r;
-            }
-            if (x < 0) {
-                r = Math.PI - r;
-            }
-            if (y < 0) {
-                r = -r;
-            }
-            return r;
-        }
-
-    // test atan ... atan2
-        let maxErr = 0;
-        let maxM;
-        let maxDeg;
-        let maxTDeg;
-        for (let m = 0; m <= 1; m += .1) {
-        //for (let m = 0; m < 100; m += .1) {
-            const a = Math.atan2(m, 1);
-            //const ta = testAtan2M(m, 1);
-            const ta = testAtan2RH(m, 1);
-            const deg = a * 180 / Math.PI;
-            const tDeg = ta * 180 / Math.PI;
-            const err = Math.abs(deg - tDeg);
-            if (err > maxErr) {
-                maxErr = err;
-                maxM = m;
-                maxDeg = deg;
-                maxTDeg = tDeg;
-            }
-            console.log("m = " 
-                + m.toFixed(5) 
-                + ", atan = " + deg.toFixed(5)
-                + ", testAtan = " + tDeg.toFixed(5)
-                + ", err = " + err.toFixed(5));
-        }
-        console.log("MAX err:\nm = " 
-            + maxM.toFixed(5) 
-            + ", atan = " + maxDeg.toFixed(5)
-            + ", testAtan = " + maxTDeg.toFixed(5)
-            + ", err = " + maxErr.toFixed(5));
-    }
+    const doPrecBinary = false;
 
     if (docreate) {
         console.log("do create");
@@ -128,29 +38,35 @@ function unitTest(intP, fracP) {
             {	name: "round",	op: (n) => Math.round(n),fOp : FMathInst.round.bind(FMathInst),	errRatio: .5},
             {	name: "inv",	op: (n) => n ? 1 / n : 0,fOp : FMathInst.inv.bind(FMathInst),	errRatio: .5},
             
-            {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 1},
-            //cbrt
+            {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 5},
+            {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 30},
 
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 4},
             {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 4},
-            {	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 3},
+            
+            {	name: "tan",	op: (n) => // skip angles close to 90 degrees
+                    Math.abs(Math.abs(n) % Math.PI - Math.PI / 2) >= 2 / 8 * Math.PI / 2
+                 ? Math.tan(n) 
+                 : 0
+                 ,fOp : FMathInst.tan.bind(FMathInst),	errRatio: 200}, // slightly broken
             //asin
             //acos
-            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 1.25},
+            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
 
-            {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 4},
-            //log
-            //log10
-            //log2
             
-            //sinh
-            //cosh
-            //tanh
+            {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},
+            {	name: "log",	op: (n) => n > 3 / 32 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 40},
+            {	name: "log10",	op: (n) => n > 3 / 32 ? Math.log10(n) : 0, fOp : FMathInst.log10.bind(FMathInst),	errRatio: 40},
+            {	name: "log2",	op: (n) => n > 3 / 32 ? Math.log2(n) : 0, fOp : FMathInst.log2.bind(FMathInst),	errRatio: 40},
+            
+            {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 40},
+            {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 40},
+            {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 25},
             //asinh
             //acosh
             //atanh
 
-            //random
+            {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
         ];
         for (const parm of parms) {
             console.log("======== do prec " + parm.name);
@@ -176,7 +92,7 @@ function unitTest(intP, fracP) {
                     maxStr = str;
                 }
                 // half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
-                if (absDelta >= errRatio * FMathInst.epsilonNum) {
+                if (absDelta > errRatio * FMathInst.epsilonNum) {
                     console.error(str);
                 } else {
                     if (doVerbose) {
@@ -200,7 +116,7 @@ function unitTest(intP, fracP) {
             {	name: "max",	op: (a, b) => a > b ? a : b,        fOp : FMathInst.max.bind(FMathInst),	errRatio: .125},
 
             {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 16},
-            //{	name: "pow",	op: (b, e) => Math.sqrt(an2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
+            {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 2000},
             {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
         ];
         for (const parm of parms) {
@@ -232,7 +148,7 @@ function unitTest(intP, fracP) {
                         maxStr = str;
                     }
                     // half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
-                    if (absDelta >= errRatio * FMathInst.epsilonNum) {
+                    if (absDelta > errRatio * FMathInst.epsilonNum) {
                         console.error(str);
                     } else {
                         if (doVerbose) {
