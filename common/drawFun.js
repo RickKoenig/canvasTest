@@ -2,6 +2,7 @@
 
 class DrawFun {
     constructor(graphPaper) {
+		this.graphPaper = graphPaper;
         this.ctx = graphPaper.dp.ctx; // canvas 2D context
         this.dp = graphPaper.dp; // draw primitives
 		this.plotter2d = graphPaper.dp.plotter2d;
@@ -23,7 +24,7 @@ class DrawFun {
 		this.functionG = g;
 	}
 
-	#drawParametric(lineStep, phase, graphPaper, p) {
+	#drawParametric(lineStep, phase, color) {
 		if (!this.functionF) {
 			return;
 		}
@@ -47,18 +48,18 @@ class DrawFun {
 			} catch (err) {
 				//console.error("Error drawing function: <<< " + err + " >>>");
 			}
-			if (x >= graphPaper.minGrid[0] && x <= graphPaper.maxGrid[0]) { 
-				if (y >= graphPaper.minGrid[1] && y <= graphPaper.maxGrid[1]) { 
+			if (x >= this.graphPaper.minGrid[0] && x <= this.graphPaper.maxGrid[0]) { 
+				if (y >= this.graphPaper.minGrid[1] && y <= this.graphPaper.maxGrid[1]) { 
 					this.ctx.lineTo(x, y);
 				}
 			}
 		}
-		this.ctx.strokeStyle = "blue";
+		this.ctx.strokeStyle = color;
 		this.ctx.lineWidth = .01;
 		this.ctx.stroke();
 	}
 
-	#drawNormal(lineStep, phase, graphPaper) {
+	#drawNormal(lineStep, phase, color) {
         const p = this.plotter2d;
 		if (!this.functionG) {
 			return;
@@ -66,8 +67,8 @@ class DrawFun {
 		// draw a user defined function, default is a sine wave
 		this.ctx.beginPath();
 		const margin = 0; // .125; // test min and max range, user/cam space
-		const minX = Math.max(p.camMin[0], graphPaper.minGrid[0]) + margin;
-		const maxX = Math.min(p.camMax[0], graphPaper.maxGrid[0]) - margin;
+		const minX = Math.max(p.camMin[0], this.graphPaper.minGrid[0]) + margin;
+		const maxX = Math.min(p.camMax[0], this.graphPaper.maxGrid[0]) - margin;
 		for (let s = 0; s <= lineStep; ++s) {
 			let t = s / lineStep; //  t goes from [0 to 1]
 			t = lerp(minX, maxX, t); // t goes from [minX to maxX]
@@ -78,22 +79,21 @@ class DrawFun {
 				//console.error("Error drawing function: <<< " + err + " >>>");
 				y = t + phase;
 			}
-			if (y >= graphPaper.minGrid[1] && y <= graphPaper.maxGrid[1]) { 
+			if (y >= this.graphPaper.minGrid[1] && y <= this.graphPaper.maxGrid[1]) { 
 				this.ctx.lineTo(t, y);
 			}
 		}
-		this.ctx.strokeStyle = "blue";
+		this.ctx.strokeStyle = color;
 		this.ctx.lineWidth = .01;
 		this.ctx.stroke();
     }
 
 	// 'graphPaper' is used for constraining the function to the size of the graph paper
-    draw(doParametric, lineStep = 500, phase, graphPaper, p) {
+    draw(doParametric, lineStep = 500, phase, color = "blue") {
 		if (doParametric) {
-			this.#drawParametric(lineStep, phase, graphPaper, p);
+			this.#drawParametric(lineStep, phase, color);
 		} else {
-			this.#drawNormal(lineStep, phase, graphPaper, p);
+			this.#drawNormal(lineStep, phase, color);
 		}
 	}
-
 }

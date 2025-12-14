@@ -455,7 +455,6 @@ class FMathBigIntInstance {
 	}
 
 	// asin
-
 	// acos
 
 	atan(out, y) {
@@ -649,6 +648,41 @@ class FMathBigIntInstance {
 		this.mul(botTerms, botTerms, this.HALF);
 
 		this.div(out, topTerms, botTerms);
+		return out;
+	}
+
+	// asinh
+	// acosh
+
+	atanh(out, a) {
+		
+		const na = this.clone(a);
+        // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
+		this.abs(na, na);
+		const compare = this.create(15 / 16);
+		//if (true) {
+		if (na.raw >= compare.raw) {
+			out.raw = 0n;
+			return out;
+		}
+
+		const steps = 20;
+		const sum = this.create();
+		const term = this.create();
+		const n = this.clone(a);
+		const d = this.clone(this.ONE);
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.add(d, d, this.TWO);
+			this.mul(n, n, a);
+			this.mul(n, n, a);
+		}
+		out.raw = sum.raw;
 		return out;
 	}
 

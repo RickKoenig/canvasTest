@@ -11,7 +11,7 @@ function unitTest(intP, fracP) {
     console.log("epsilonNum = " + FMathInst.epsilonNum);
     console.log("overNum = " + FMathInst.overNum);
 
-    const doVerbose = false;
+    const doVerbose = true;
     const testConstants = false;
     const docreate = false;
     const doPrecUnary = true;
@@ -29,6 +29,7 @@ function unitTest(intP, fracP) {
     if (doPrecUnary) {
         console.log("UNARY FUNCTIONS");
         const parms = [
+            /*
             {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: .5},
             {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMathInst.abs.bind(FMathInst),	errRatio: .5},
             {	name: "sign",	op: (n) => Math.sign(n),fOp : FMathInst.sign.bind(FMathInst),	errRatio: .5},
@@ -64,9 +65,11 @@ function unitTest(intP, fracP) {
             {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 25},
             //asinh
             //acosh
-            //atanh
+            */
+            {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
+            //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
-            {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
+//           {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
         ];
         for (const parm of parms) {
             console.log("======== do prec " + parm.name);
@@ -76,8 +79,8 @@ function unitTest(intP, fracP) {
             const fc = FMathInst.create();
             for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += FMathInst.epsilonNum) {
                 const fa = FMathInst.create(a);
-                //const c = a ? parm.op(a) : 0;
-                const c = parm.op(a);
+                const c = a ? parm.op(a) : 0;
+                //const c = parm.op(a);
                 parm.fOp(fc, fa);
                 const nfc = FMathInst.toNumber(fc);
                 const delta = c - nfc

@@ -43,6 +43,9 @@ class MainApp {
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
 
+		this.drawFun = new DrawFun(this.graphPaper);
+		//this.drawFun.changeFunctionG(function(x) {return(x * x)});
+
 		// USER build UI
 		this.#userBuildUI();
 
@@ -108,7 +111,11 @@ class MainApp {
 	#userDraw() {
 		const lineWid = .02;
     	this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
-		this.drawPrim.drawCircleO(this.pos, .1, .005, "brown"); // center
+		this.drawPrim.drawCircleO(this.pos, .1, .005, "brown"); // cursor
+		this.drawFun.changeFunctionG((x) => Math.atan(x) / (Math.PI / 2));
+		this.drawFun.draw(false, 400, 0, "red");
+		this.drawFun.changeFunctionG((x) => Math.tanh(x));
+		this.drawFun.draw(false, 400, 0, "green");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
