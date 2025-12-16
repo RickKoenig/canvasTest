@@ -11,11 +11,93 @@ function unitTest(intP, fracP) {
     console.log("epsilonNum = " + FMathInst.epsilonNum);
     console.log("overNum = " + FMathInst.overNum);
 
-    const doVerbose = true;
+    const testMinMax = true;
+    const doVerbose = false;
     const testConstants = false;
     const docreate = false;
-    const doPrecUnary = true;
+    const doPrecUnary = false;
     const doPrecBinary = false;
+
+    function taylorCoef(x) { // 1, 3, 5, 7
+        const s = x * x;
+        return x * (1 - s * (1 / 3 - s * (1 /5  - s / 7)));
+    }
+
+    function remezCoef(x) { // 1, 3, 5, 7
+        const s = x * x;
+        const C3 = 0.327622764;
+        const C5 = 0.15931422;
+        const C7 = 0.0464964749;
+        return x * (1 - s * (C3 - s * (C5  - s * C7)));
+    }
+
+    function getMaxErr(coefs) {
+        let maxE = 0;
+        for (let x = 0; x <= 1; x += 1 / 32) {
+            const math = Math.atan(x);
+            const calc = calcCoef(x, ...coefs);
+            const E = Math.abs(calc - math);
+            if (E > maxE) {
+                maxE = E;
+            }
+        }
+        return maxE;
+    }
+
+    function makeCalcCoefs() {
+        const coefs = [0, 0, 0, 0];
+        const maxE = getMaxErr(coefs);
+        console.log("maxE = " + maxE);
+        //return [Math.PI / 4, 0, 0, 0];
+        return [1, -1 / 3, 1 / 5, -1 / 7];
+    }
+
+    function calcCoef(x, a, b, c, d) { // 1, 3, 5, 7
+        const s = x * x;
+        return x * (a + s * (b + s * (c  + s * d)));
+    }
+
+    if (testMinMax) { // maybe, Remez algorithm
+        // test atan from 0 to 1, should get 0 to PI/4
+        let maxEtaylor = 0;
+        let maxEXtaylor = 0;
+        let maxEremez = 0;
+        let maxEXremez = 0;
+        let maxECalc = 0;
+        let maxEXCalc = 0;
+        const coefs = makeCalcCoefs();
+        const fixed = 5;
+        console.log("atan");
+        for (let x = 0; x <= 1; x += 1 / 32) {
+            const math = Math.atan(x);
+            const taylor = taylorCoef(x);
+            const remez = remezCoef(x);
+            //const calc = calcCoef(x, Math.PI / 4, 0, 0, 0);
+            const calc = calcCoef(x, ...coefs);
+            const Etaylor = Math.abs(taylor - math);
+            if (Etaylor > maxEtaylor) {
+                maxEtaylor = Etaylor;
+                maxEXtaylor = x;
+            }
+            const Eremez = Math.abs(remez - math);
+            if (Eremez > maxEremez) {
+                maxEremez = Eremez;
+                maxEXremez = x;
+            }
+            const Ecalc = Math.abs(calc - math);
+            if (Ecalc > maxECalc) {
+                maxECalc = Ecalc;
+                maxEXCalc = x;
+            }
+            console.log("x = " + x.toFixed(fixed) + ", atan = " + math.toFixed(fixed)
+                + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
+                + ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]"
+                + ", [calc = " + calc.toFixed(fixed) + ", E = " + Ecalc.toFixed(fixed) + "]");
+        }
+        console.log("maxEXtaylor = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
+        console.log("maxEXremez = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed));
+        console.log("maxXEoc = " + maxEXCalc.toFixed(fixed) + ", maxEoc = " + maxECalc.toFixed(fixed));
+    }
 
     if (docreate) {
         console.log("do create");

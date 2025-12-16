@@ -482,7 +482,7 @@ class FMathBigIntInstance {
 			out.raw = 0n; // avoid division by zero
 			return out;
 		}
-		this.div(a, num, den);
+		this.div(a, num, den); // 0 to 1
 		this.mul(s, a, a);
 
 		this.mul(r, this.ATAN_I, s);
