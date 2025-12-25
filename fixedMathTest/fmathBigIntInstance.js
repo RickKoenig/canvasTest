@@ -43,6 +43,7 @@ class FMathBigIntInstance {
 			EIGHTH: 1 / 8,
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
+			// remez
 			ATAN_I : -0.0464964749,
             ATAN_J : 0.15931422,
             ATAN_K : -0.327622764,

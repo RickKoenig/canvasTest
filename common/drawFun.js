@@ -76,7 +76,7 @@ class DrawFun {
 			try { // drawFunction might be defined, but if you run it, it might generate an error
 				y = this.functionG(t + phase);
 			} catch (err) {
-				//console.error("Error drawing function: <<< " + err + " >>>");
+				console.error("Error drawing function: <<< " + err + " >>>");
 				y = t + phase;
 			}
 			if (y >= this.graphPaper.minGrid[1] && y <= this.graphPaper.maxGrid[1]) { 

@@ -10,11 +10,29 @@ class MainApp {
 		return MainApp.numInstances;
 	}
 
+	mul(a, b) {
+		return a * b;
+	}
+
+	testBind() {
+		console.log("in test bind");
+		const a = 3;
+		const b = 4;
+		const m = this.mul(a, b);
+		console.log(m);
+
+		const triple = this.mul.bind(null, 3);
+		const c = 10;
+		const d = triple(c);
+		console.log(d);
+	}
+
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
 		unitTest(2, 6);
+		this.testBind();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -76,6 +94,8 @@ class MainApp {
 		this.startCenter = [.5, .5];
 		this.startZoom = 1.8;
 		this.pos = [0, 0];
+		this.coefs = [0, 0, 0, 0];
+		this.Err = 0;
 	}
 
 	#userBuildUI() {
@@ -84,6 +104,23 @@ class MainApp {
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
+		{
+			for (let i = 0; i < 4; ++i) {
+				const label = "C" + (1 + 2 * i);
+				const min = -1;
+				const max = 1;
+				const start = 0;
+				const step = 1 / 32;
+				const precision = 5;
+				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+					(v) => {
+						this.C1 = v;
+						this.dirty = true;
+						this.coefs[i] = v;
+					}
+				);
+			}
+		}
 	}		
 	
 	#userProc() {
@@ -100,29 +137,29 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
-
-		// some graphics
-		const mbut = this.input.mouse.mbut[Mouse.LEFT];
-		if (mbut) {
-			this.pos = vec2.clone(this.plotter2d.userMouse);
-		}
+		this.Err = getMaxErr(this.coefs);
 	}
 
 	#userDraw() {
 		const lineWid = .02;
     	this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
-		this.drawPrim.drawCircleO(this.pos, .1, .005, "brown"); // cursor
-		this.drawFun.changeFunctionG((x) => Math.atan(x) / (Math.PI / 2));
+		this.drawFun.changeFunctionG((x) => Math.atan(x));
 		this.drawFun.draw(false, 400, 0, "red");
-		this.drawFun.changeFunctionG((x) => Math.tanh(x));
+		this.drawFun.changeFunctionG(calcCoef.bind(this, ...this.coefs));
 		this.drawFun.draw(false, 400, 0, "green");
+		this.drawPrim.drawCircleO(this.coefs, .01, .005, "red"); // cursor
+		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], .01, .005, "green"); // cursor
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\n\n";
+		infoStr += "\n\nX1 = " + this.coefs[0] 
+			+ "\nX3 = "+ this.coefs[1]
+			+ "\nX5 = "+ this.coefs[2]
+			+ "\nX7 = "+ this.coefs[3]
+		infoStr += "\n\nError = " + this.Err.toFixed(6);
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 
@@ -131,7 +168,7 @@ class MainApp {
 		// proc
 		// update input system
 		this.input.proc();
-		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.RIGHT) || this.dirty;
+		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, Mouse.LEFT) || this.dirty;
 		// USER: do USER stuff
 		this.#userProc(); // proc
 
