@@ -117,6 +117,28 @@ class Bitmap32p {
 		}
 	}
 
+	static colorArrToStr(colArr) {
+		const r = Math.round(range(0, colArr[0] * 255, 255));
+		const g = Math.round(range(0, colArr[1] * 255, 255));
+		const b = Math.round(range(0, colArr[2] * 255, 255));
+		const a = colArr[3] !== undefined ? Math.round(range(0, colArr[3] * 255, 255)) : 255;
+		const c32 = 256 * (256 * (256 * a + b) + g) + r;
+		const colStr = Bitmap32p.color32ToStr(c32);
+		return colStr;
+	}
+
+	static intensityToStr(val) {
+		if (val >= 1) {
+			return "white";
+		} else if (val <= 0) {
+			return "black";
+		}
+		//const strcol = Bitmap32p.colorArrToStr([val, (2 * val) % 1, (4 * val) % 1]);
+		const strcol = Bitmap32p.colorArrToStr([val, val, val]);
+		return strcol;
+	}	
+
+
 	static color32ToStr(c32) {
 		const r = c32 & 0xff;
 		const g = (c32 >> 8) & 0xff;

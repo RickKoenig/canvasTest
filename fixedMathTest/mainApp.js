@@ -91,11 +91,25 @@ class MainApp {
 		this.AvgFpsObj = new Runavg(500);
 
 		// position graphics
-		this.startCenter = [.5, .5];
-		this.startZoom = 1.8;
+		this.startCenter = [0, 0];
+		this.startZoom = .7;
 		this.pos = [0, 0];
 		this.coefs = [0, 0, 0, 0];
 		this.Err = 0;
+
+		// build error array
+		this.errArr = [];
+		for (let y = -1; y <= 1; y += 1 / 32) {
+			const errRow = [];
+			for (let x = -1; x <= 1; x += 1 / 32) {
+				//const err = x * x + y * y;
+				const coefs = [x, y, 0, 0];
+				const err = getMaxErr(coefs);
+				const errCol = Bitmap32p.intensityToStr(err);
+				errRow.push(errCol);
+			}
+			this.errArr.push(errRow);
+		}
 	}
 
 	#userBuildUI() {
@@ -110,11 +124,10 @@ class MainApp {
 				const min = -1;
 				const max = 1;
 				const start = 0;
-				const step = 1 / 32;
+				const step = 1 / 256;
 				const precision = 5;
 				new makeEleCombo(this.vp, label, min, max, start, step, precision,
 					(v) => {
-						this.C1 = v;
 						this.dirty = true;
 						this.coefs[i] = v;
 					}
@@ -142,13 +155,28 @@ class MainApp {
 
 	#userDraw() {
 		const lineWid = .02;
-    	this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
+		for (let y = -1, j = 0; y <= 1; y += 1 / 32, ++j) {
+			const errRow = this.errArr[j];
+			for (let x = -1, i = 0; x <= 1; x += 1 / 32, ++i) {
+				this.drawPrim.drawCircle([x, y], .015, "black");
+				//this.drawPrim.drawCircle([x, y], .012, "green");
+				const errCol = errRow[i];
+				this.drawPrim.drawCircle([x, y], .012, errCol);
+			}
+		}
+		for (let x = 0; x <= 1; x += 1 / 64) {
+			this.drawPrim.drawCircle([x, -1.25], .02, "black");
+			const strcol = Bitmap32p.intensityToStr(x);
+			//const strcol = Bitmap32p.colorArrToStr([x, 0, 0]);
+			this.drawPrim.drawCircle([x, -1.25], .018, strcol);
+		}
+		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
 		this.drawFun.changeFunctionG((x) => Math.atan(x));
 		this.drawFun.draw(false, 400, 0, "red");
 		this.drawFun.changeFunctionG(calcCoef.bind(this, ...this.coefs));
 		this.drawFun.draw(false, 400, 0, "green");
-		this.drawPrim.drawCircleO(this.coefs, .01, .005, "red"); // cursor
-		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], .01, .005, "green"); // cursor
+		this.drawPrim.drawCircleO(this.coefs, .03, .015, "red"); // cursor
+		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], .03, .015, "green"); // cursor
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
