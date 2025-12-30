@@ -127,15 +127,25 @@ class Bitmap32p {
 		return colStr;
 	}
 
-	static intensityToStr(val) {
+	// draw some kind of color gradient
+	static intensityToStr(val, doColor) {
 		if (val >= 1) {
 			return "white";
 		} else if (val <= 0) {
 			return "black";
 		}
-		//const strcol = Bitmap32p.colorArrToStr([val, (2 * val) % 1, (4 * val) % 1]);
-		const strcol = Bitmap32p.colorArrToStr([val, val, val]);
-		return strcol;
+		if (doColor) {
+			const ang = (Math.PI * 2) * val * 4;
+			const ar =  val + val * Math.max(0, Math.cos(ang));
+			const ag = val + val * Math.max(0, Math.cos(ang - Math.PI * 2 / 3));
+			const ab = val + val * Math.max(0, Math.cos(ang - Math.PI * 4 / 3));
+			//const strcol = Bitmap32p.colorArrToStr([val, (2 * val) % 1, (4 * val) % 1]);
+			const strcol = Bitmap32p.colorArrToStr([ar, ag, ab]);
+			return strcol;
+		} else {
+			const strcol = Bitmap32p.colorArrToStr([val, val, val]);
+			return strcol;
+		}
 	}	
 
 

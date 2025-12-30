@@ -53,6 +53,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
             E = Ep;
         } else {
             coefs[idx] = cSave; // restore
+            coefs[idx] = range(-1, coefs[idx], 1);
             return;
         }
     }
@@ -69,6 +70,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
         }
         E = En;
     }
+    coefs[idx] = range(-1, coefs[idx], 1);
     if (watch == maxWatch) {
         console.error("watch hit !!, watch = " + watch);
     } else {
@@ -95,14 +97,14 @@ function makeCalcCoefs(coefs) { // 1, 3, 5, 7
     const startStep = 1;
     const endStep = 10;
     const cycles = 10;
-    let idx = 0;
+    let idx = 1;
     for (let j = 0; j < terms * cycles; ++j) {
         for (let i = startStep; i < endStep; ++i) {
             const step = 1 / 2 ** i; // refine step
             makeCalcCoefsDeeper(coefs, idx, step);
         }
-        ++idx;
-        if (idx >= terms) {
+        --idx;
+        if (idx < 0) {
             idx = 1;
         }
     }

@@ -99,14 +99,14 @@ class MainApp {
 
 		// build error array
 		this.errArr = [];
-		for (let y = -1; y <= 1; y += 1 / 32) {
+		this.res = 64;
+		for (let y = -1; y <= 1; y += 1 / this.res) {
 			const errRow = [];
-			for (let x = -1; x <= 1; x += 1 / 32) {
+			for (let x = -1; x <= 1; x += 1 / this.res) {
 				//const err = x * x + y * y;
 				const coefs = [x, y, 0, 0];
 				const err = getMaxErr(coefs);
-				const errCol = Bitmap32p.intensityToStr(err);
-				errRow.push(errCol);
+				errRow.push(err);
 			}
 			this.errArr.push(errRow);
 		}
@@ -133,6 +133,42 @@ class MainApp {
 					}
 				);
 			}
+			{
+				const label = "offset";
+				const min = -16;
+				const max = 16;
+				const start = 0;
+				const step = 1 / 256;
+				const precision = 5;
+				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+					(v) => {
+						this.dirty = true;
+						this.offset = v;
+					}
+				);
+			}
+			{
+				const label = "mag";
+				const min = 1;
+				const max = 100;
+				const start = 1;
+				const step = 1 / 256;
+				const precision = 5;
+				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+					(v) => {
+						this.dirty = true;
+						this.mag = v;
+					}
+				);
+			}
+			makeEle(this.vp, "br");
+			this.doColor = true;
+			makeEle(this.vp, "span", null, "marg", "Color");
+			this.eles.doColor = makeEle(this.vp, "input", "doColor", null, "ho", (v) => {
+				this.dirty = true;
+				this.doColor = v;
+			}, "checkbox");
+			this.eles.doColor.checked = this.doColor;
 		}
 	}		
 	
@@ -155,20 +191,21 @@ class MainApp {
 
 	#userDraw() {
 		const lineWid = .02;
-		for (let y = -1, j = 0; y <= 1; y += 1 / 32, ++j) {
+		for (let y = -1, j = 0; y <= 1; y += 1 / this.res, ++j) {
 			const errRow = this.errArr[j];
-			for (let x = -1, i = 0; x <= 1; x += 1 / 32, ++i) {
-				this.drawPrim.drawCircle([x, y], .015, "black");
+			for (let x = -1, i = 0; x <= 1; x += 1 / this.res, ++i) {
+				this.drawPrim.drawCircle([x, y], .00012 * this.res, "black");
 				//this.drawPrim.drawCircle([x, y], .012, "green");
-				const errCol = errRow[i];
-				this.drawPrim.drawCircle([x, y], .012, errCol);
+				const err = errRow[i];
+				const errCol = Bitmap32p.intensityToStr(err * this.mag + this.offset, this.doColor);
+				this.drawPrim.drawCircle([x, y], .00011 * this.res, errCol);
 			}
 		}
-		for (let x = 0; x <= 1; x += 1 / 64) {
-			this.drawPrim.drawCircle([x, -1.25], .02, "black");
-			const strcol = Bitmap32p.intensityToStr(x);
+		for (let x = 0; x <= 1; x += 1 / this.res) {
+			this.drawPrim.drawCircle([x, -1.25], .00012 * this.res, "black");
+			const strcol = Bitmap32p.intensityToStr(x, this.doColor);
 			//const strcol = Bitmap32p.colorArrToStr([x, 0, 0]);
-			this.drawPrim.drawCircle([x, -1.25], .018, strcol);
+			this.drawPrim.drawCircle([x, -1.25], .00011 * this.res, strcol);
 		}
 		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
 		this.drawFun.changeFunctionG((x) => Math.atan(x));
@@ -182,12 +219,15 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
-		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\n\nX1 = " + this.coefs[0] 
+		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
+		infoStr += "\nX1 = " + this.coefs[0] 
 			+ "\nX3 = "+ this.coefs[1]
 			+ "\nX5 = "+ this.coefs[2]
 			+ "\nX7 = "+ this.coefs[3]
-		infoStr += "\n\nError = " + this.Err.toFixed(6);
+		infoStr += "\nError = " + this.Err.toFixed(6);
+		const min = this.offset;
+		const max = this.offset + this.mag;
+		infoStr += "\nRange = [" + min.toFixed(3) + ", " + max.toFixed(3) + "]";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 
