@@ -100,6 +100,7 @@ class MainApp {
 		// build error array
 		this.errArr = [];
 		this.res = 64;
+		this.sliderMul = 128;
 		for (let y = -1; y <= 1; y += 1 / this.res) {
 			const errRow = [];
 			for (let x = -1; x <= 1; x += 1 / this.res) {
@@ -119,14 +120,19 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
 		{
+			makeEle(this.vp, "button", null, null, "Calc coefs", v => 
+			{
+				makeCalcCoefs2(this.coefs);
+				this.#updateSliders();
+			});
 			for (let i = 0; i < 4; ++i) {
 				const label = "C" + (1 + 2 * i);
 				const min = -1;
 				const max = 1;
 				const start = 0;
-				const step = 1 / 256;
+				const step = 1 / (this.res * this.sliderMul);
 				const precision = 5;
-				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+				this.eles[label] = new makeEleCombo(this.vp, label, min, max, start, step, precision,
 					(v) => {
 						this.dirty = true;
 						this.coefs[i] = v;
@@ -169,8 +175,16 @@ class MainApp {
 				this.doColor = v;
 			}, "checkbox");
 			this.eles.doColor.checked = this.doColor;
+
 		}
-	}		
+	}	
+	
+	#updateSliders() {
+		for (let i = 0; i < 4; ++i) {
+			const label = "C" + (1 + 2 * i);
+			this.eles[label].setValue(this.coefs[i]);
+		}
+	}
 	
 	#userProc() {
 		// proc
@@ -194,26 +208,26 @@ class MainApp {
 		for (let y = -1, j = 0; y <= 1; y += 1 / this.res, ++j) {
 			const errRow = this.errArr[j];
 			for (let x = -1, i = 0; x <= 1; x += 1 / this.res, ++i) {
-				this.drawPrim.drawCircle([x, y], .00012 * this.res, "black");
+				this.drawPrim.drawCircle([x, y], .49 / this.res, "black");
 				//this.drawPrim.drawCircle([x, y], .012, "green");
 				const err = errRow[i];
 				const errCol = Bitmap32p.intensityToStr(err * this.mag + this.offset, this.doColor);
-				this.drawPrim.drawCircle([x, y], .00011 * this.res, errCol);
+				this.drawPrim.drawCircle([x, y], .45 / this.res, errCol);
 			}
 		}
 		for (let x = 0; x <= 1; x += 1 / this.res) {
-			this.drawPrim.drawCircle([x, -1.25], .00012 * this.res, "black");
+			this.drawPrim.drawCircle([x, -1.25], .49 / this.res, "black");
 			const strcol = Bitmap32p.intensityToStr(x, this.doColor);
 			//const strcol = Bitmap32p.colorArrToStr([x, 0, 0]);
-			this.drawPrim.drawCircle([x, -1.25], .00011 * this.res, strcol);
+			this.drawPrim.drawCircle([x, -1.25], .45 / this.res, strcol);
 		}
 		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
 		this.drawFun.changeFunctionG((x) => Math.atan(x));
 		this.drawFun.draw(false, 400, 0, "red");
 		this.drawFun.changeFunctionG(calcCoef.bind(this, ...this.coefs));
 		this.drawFun.draw(false, 400, 0, "green");
-		this.drawPrim.drawCircleO(this.coefs, .03, .015, "red"); // cursor
-		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], .03, .015, "green"); // cursor
+		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
+		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

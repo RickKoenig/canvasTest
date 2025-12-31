@@ -97,15 +97,94 @@ function makeCalcCoefs(coefs) { // 1, 3, 5, 7
     const startStep = 1;
     const endStep = 10;
     const cycles = 10;
-    let idx = 1;
+    let idx = 0;
     for (let j = 0; j < terms * cycles; ++j) {
         for (let i = startStep; i < endStep; ++i) {
             const step = 1 / 2 ** i; // refine step
             makeCalcCoefsDeeper(coefs, idx, step);
         }
-        --idx;
-        if (idx < 0) {
-            idx = 1;
+        ++idx;
+        if (idx > 1) {
+            idx = 0;
+        }
+    }
+}
+
+function makeCalcCoefsDeeper2(coefs, idx, step) {
+    //const fixed = 5; // printing prec
+    let dir = 0;
+    // setup dir
+    let E = getMaxErr(coefs);
+    let cSave = coefs[idx]; // save
+    // minus
+    coefs[idx] -= step;
+    const Em = getMaxErr(coefs);
+    if (Em < E) {
+        dir = -1
+        E = Em;
+    } else {
+        coefs[idx] = cSave; // restore
+        // plus
+        coefs[idx] += step;
+        const Ep = getMaxErr(coefs);
+        if (Ep < E) {
+            dir = 1;
+            E = Ep;
+        } else {
+            coefs[idx] = cSave; // restore
+            coefs[idx] = range(-1, coefs[idx], 1);
+            return;
+        }
+    }
+    // move in dir
+    let maxWatch = 1000;
+    let watch = 0;
+    while(++watch < maxWatch) {
+        cSave = coefs[idx];
+        coefs[idx] += dir * step;
+        const En = getMaxErr(coefs);
+        if (En >= E) {
+            coefs[idx] = cSave;
+            break;
+        }
+        E = En;
+    }
+    coefs[idx] = range(-1, coefs[idx], 1);
+    if (watch == maxWatch) {
+        console.error("watch hit !!, watch = " + watch);
+    } else {
+        console.log(`watch = ${watch} / ${maxWatch}`);
+    }
+    // adjust coefs to minimize the maxE
+    //console.log("minE = " + E);
+    //return [Math.PI / 4, 0, 0, 0];
+    //console.log("coeffs = " + coefs);
+}
+
+function makeCalcCoefs2(coefs) { // 1, 3, 5, 7
+    coefs.length = 4;
+    const terms = 2;
+    coefs.fill(0);
+    // try remez
+    //coefs[0] = 1;
+    //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
+    //coefs.splice(0, remezCoefs.length, ...remezCoefs);
+    //const taylorCoefs = [1, -1 / 3, 1 / 5, -1 / 7];
+    //coefs.splice(0, taylorCoefs.length, ...taylorCoefs);
+    //return;
+    // end try remez
+    const startStep = 1;
+    const endStep = 10;
+    const cycles = 10;
+    let idx = 0;
+    for (let j = 0; j < terms * cycles; ++j) {
+        for (let i = startStep; i < endStep; ++i) {
+            const step = 1 / 2 ** i; // refine step
+            makeCalcCoefsDeeper2(coefs, idx, step);
+        }
+        ++idx;
+        if (idx > 1) {
+            idx = 0;
         }
     }
 }
@@ -137,14 +216,19 @@ function unitTest(intP, fracP) {
         let maxEXremez = 0;
         let maxECalc = 0;
         let maxEXCalc = 0;
+        let maxECalc2 = 0;
+        let maxEXCalc2 = 0;
         const coefs = [];
+        const coefs2 = [];
         makeCalcCoefs(coefs);
+        makeCalcCoefs2(coefs2);
         console.log("atan");
         for (let x = 0; x <= 1; x += 1 / 64) {
             const math = Math.atan(x);
             const taylor = taylorCoef(x);
             const remez = remezCoef(x);
             const calc = calcCoef(...coefs, x);
+            const calc2 = calcCoef(...coefs2, x);
             const Etaylor = Math.abs(taylor - math);
             if (Etaylor > maxEtaylor) {
                 maxEtaylor = Etaylor;
@@ -160,11 +244,17 @@ function unitTest(intP, fracP) {
                 maxECalc = Ecalc;
                 maxEXCalc = x;
             }
+            const Ecalc2 = Math.abs(calc2 - math);
+            if (Ecalc2 > maxECalc2) {
+                maxECalc2 = Ecalc2;
+                maxEXCalc2 = x;
+            }
             
             console.log("x = " + x.toFixed(fixed) + ", atan = " + math.toFixed(fixed)
                 + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
                 + ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]"
-                + ", [calc = " + calc.toFixed(fixed) + ", E = " + Ecalc.toFixed(fixed) + "]");
+                + ", [calc = " + calc.toFixed(fixed) + ", E = " + Ecalc.toFixed(fixed) + "]"
+                + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
         }
         console.log("maxEXtaylor = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
         console.log("maxEXremez = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
@@ -173,6 +263,9 @@ function unitTest(intP, fracP) {
         );
         console.log("maxEXcalc = " + maxEXCalc.toFixed(fixed) + ", maxEcalc = " + maxECalc.toFixed(fixed)
             + ", calcCoefs = " + coefs
+        );
+        console.log("maxEXcalc2 = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
+            + ", calcCoefs2 = " + coefs2
         );
     }
 
