@@ -13,16 +13,33 @@ function remezCoef(x) { // 1, 3, 5, 7
     return x * (1 + s * (C3 + s * (C5  + s * C7)));
 }
 
-function calcCoef(a, b, c, d, x) { // 1, 3, 5, 7
-    const s = x * x;
-    return x * (a + s * (b + s * (c  + s * d)));
+function chebyToRawCoefs(coefs) {
+    const a1 = coefs[0] - 3 * coefs[1] + 5 * coefs[2] - 7 * coefs[3];
+    const b1 = 4 * coefs[1] - 20 * coefs[2] + 56 * coefs[3];
+    const c1 = 16 * coefs[2] - 112 * coefs[3];
+    const d1 = 64 * coefs[3];
+    return [a1, b1, c1, d1];
 }
 
-function getMaxErr(coefs) {
+function calcCoef(coefs, doChebyshev, x) { // 1, 3, 5, 7
+    const s = x * x;
+    if (doChebyshev) {
+        /*
+        const a1 = coefs[0] - 3 * coefs[1] + 5 * coefs[2] - 7 * coefs[3];
+        const b1 = 4 * coefs[1] - 20 * coefs[2] + 56 * coefs[3];
+        const c1 = 16 * coefs[2] - 112 * coefs[3];
+        const d1 = 64 * coefs[3];
+        return x * (a1 + s * (b1 + s * (c1  + s * d1)));*/
+        coefs = chebyToRawCoefs(coefs);
+    }
+    return x * (coefs[0] + s * (coefs[1] + s * (coefs[2]  + s * coefs[3])));
+}
+
+function getMaxErr(coefs, doChebyshev) {
     let maxE = 0;
     for (let x = 0; x <= 1; x += 1 / 32) {
         const math = Math.atan(x);
-        const calc = calcCoef(...coefs, x);
+        const calc = calcCoef(coefs, doChebyshev, x);
         const E = Math.abs(calc - math);
         if (E > maxE) {
             maxE = E;
@@ -31,7 +48,82 @@ function getMaxErr(coefs) {
     return maxE;
 }
 
-function makeCalcCoefsDeeper(coefs, idx, step) {
+function makeCalcCoefsDeeper2(coefs, step, doChebyshev) {
+    console.log("deeper2");
+    let maxWatch = 20000;
+    let watch = 0;
+    let dim = 4;
+    while(++watch < maxWatch) {
+        let EMin = getMaxErr(coefs, doChebyshev);
+        let cBase = coefs.slice();
+        //for (let i = 0; i < dim; ++i) {
+        //    coefs[i] = cBase[i] - step; // same as iArr
+        //}
+        //coefs.splice(0, remezCoefs.length, ...remezCoefs);
+        let coefMin = coefs.slice();
+        //let iMin = [0, 0, 0, 0];
+        let done = true;
+
+        const iArr = [-1, -1, -1, -1];
+        let dig = 0;
+        while(++watch < maxWatch && dig < dim) {
+            for (let i = 0; i < dim; ++i) {
+                coefs[i] = cBase[i] + step * iArr[i];
+            }
+            const E = getMaxErr(coefs, doChebyshev);
+            if (E < EMin) {
+                coefMin = coefs.slice();
+                EMin = E;
+                done = false;
+            }
+			//console.log("iarr" + iArr);
+			// move to next iteration
+            while(dig < dim && ++watch < maxWatch) {
+				++iArr[dig];
+				if (iArr[dig] > 1) {
+					iArr[dig++] = -1;
+				} else {
+					dig = 0;
+					break;
+				}
+			}
+            // done move to next iteration
+		}
+        coefs.splice(0, coefMin.length, ...coefMin);
+        if (done) {
+            break;
+        }
+    }
+    //coefs[dig] = range(-1, coefs[dig], 1);
+    if (watch == maxWatch) {
+        console.error("watch2 hit !!, watch = " + watch);
+    } else {
+        console.log(`watch2 = ${watch} / ${maxWatch}`);
+    }
+}
+
+function makeCalcCoefs2(coefs, doChebyshev) { // 1, 3, 5, 7
+    if (!coefs.length) {
+        coefs.length = 4;
+        coefs.fill(0);
+    }
+    // try remez
+    //coefs[0] = 1;
+    //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
+    //coefs.splice(0, remezCoefs.length, ...remezCoefs);
+    //const taylorCoefs = [1, -1 / 3, 1 / 5, -1 / 7];
+    //coefs.splice(0, taylorCoefs.length, ...taylorCoefs);
+    //return;
+    // end try remez
+    const startStep = 5;
+    const endStep = 15;// 15;
+    for (let i = startStep; i <= endStep; ++i) {
+        const step = 1 / 2 ** i; // refine step
+        makeCalcCoefsDeeper2(coefs, step, doChebyshev);
+    }
+}
+
+function makeCalcCoefsDeeper(coefs, idx, step, doChebyshev) {
     //const fixed = 5; // printing prec
     let dir = 0;
     // setup dir
@@ -39,7 +131,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
     let cSave = coefs[idx]; // save
     // minus
     coefs[idx] -= step;
-    const Em = getMaxErr(coefs);
+    const Em = getMaxErr(coefs, doChebyshev);
     if (Em < E) {
         dir = -1
         E = Em;
@@ -47,7 +139,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
         coefs[idx] = cSave; // restore
         // plus
         coefs[idx] += step;
-        const Ep = getMaxErr(coefs);
+        const Ep = getMaxErr(coefs, doChebyshev);
         if (Ep < E) {
             dir = 1;
             E = Ep;
@@ -63,7 +155,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
     while(++watch < maxWatch) {
         cSave = coefs[idx];
         coefs[idx] += dir * step;
-        const En = getMaxErr(coefs);
+        const En = getMaxErr(coefs, doChebyshev);
         if (En >= E) {
             coefs[idx] = cSave;
             break;
@@ -82,7 +174,7 @@ function makeCalcCoefsDeeper(coefs, idx, step) {
     //console.log("coeffs = " + coefs);
 }
 
-function makeCalcCoefs(coefs) { // 1, 3, 5, 7
+function makeCalcCoefs(coefs, doChebyshev) { // 1, 3, 5, 7
     coefs.length = 4;
     const terms = 2;
     coefs.fill(0);
@@ -101,7 +193,7 @@ function makeCalcCoefs(coefs) { // 1, 3, 5, 7
     for (let j = 0; j < terms * cycles; ++j) {
         for (let i = startStep; i < endStep; ++i) {
             const step = 1 / 2 ** i; // refine step
-            makeCalcCoefsDeeper(coefs, idx, step);
+            makeCalcCoefsDeeper(coefs, idx, step, doChebyshev);
         }
         ++idx;
         if (idx > 1) {
@@ -110,86 +202,7 @@ function makeCalcCoefs(coefs) { // 1, 3, 5, 7
     }
 }
 
-function makeCalcCoefsDeeper2(coefs, idx, step) {
-    //const fixed = 5; // printing prec
-    let dir = 0;
-    // setup dir
-    let E = getMaxErr(coefs);
-    let cSave = coefs[idx]; // save
-    // minus
-    coefs[idx] -= step;
-    const Em = getMaxErr(coefs);
-    if (Em < E) {
-        dir = -1
-        E = Em;
-    } else {
-        coefs[idx] = cSave; // restore
-        // plus
-        coefs[idx] += step;
-        const Ep = getMaxErr(coefs);
-        if (Ep < E) {
-            dir = 1;
-            E = Ep;
-        } else {
-            coefs[idx] = cSave; // restore
-            coefs[idx] = range(-1, coefs[idx], 1);
-            return;
-        }
-    }
-    // move in dir
-    let maxWatch = 1000;
-    let watch = 0;
-    while(++watch < maxWatch) {
-        cSave = coefs[idx];
-        coefs[idx] += dir * step;
-        const En = getMaxErr(coefs);
-        if (En >= E) {
-            coefs[idx] = cSave;
-            break;
-        }
-        E = En;
-    }
-    coefs[idx] = range(-1, coefs[idx], 1);
-    if (watch == maxWatch) {
-        console.error("watch hit !!, watch = " + watch);
-    } else {
-        console.log(`watch = ${watch} / ${maxWatch}`);
-    }
-    // adjust coefs to minimize the maxE
-    //console.log("minE = " + E);
-    //return [Math.PI / 4, 0, 0, 0];
-    //console.log("coeffs = " + coefs);
-}
-
-function makeCalcCoefs2(coefs) { // 1, 3, 5, 7
-    coefs.length = 4;
-    const terms = 2;
-    coefs.fill(0);
-    // try remez
-    //coefs[0] = 1;
-    //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
-    //coefs.splice(0, remezCoefs.length, ...remezCoefs);
-    //const taylorCoefs = [1, -1 / 3, 1 / 5, -1 / 7];
-    //coefs.splice(0, taylorCoefs.length, ...taylorCoefs);
-    //return;
-    // end try remez
-    const startStep = 1;
-    const endStep = 10;
-    const cycles = 10;
-    let idx = 0;
-    for (let j = 0; j < terms * cycles; ++j) {
-        for (let i = startStep; i < endStep; ++i) {
-            const step = 1 / 2 ** i; // refine step
-            makeCalcCoefsDeeper2(coefs, idx, step);
-        }
-        ++idx;
-        if (idx > 1) {
-            idx = 0;
-        }
-    }
-}
-
-function unitTest(intP, fracP) {
+function unitTest(intP, fracP, doChebyshev) {
     //const FMath = FMathNum; // static 
     //const FMath = FMathBigInt; // static
     const FMath = FMathBigIntInstance; // static
@@ -219,16 +232,16 @@ function unitTest(intP, fracP) {
         let maxECalc2 = 0;
         let maxEXCalc2 = 0;
         const coefs = [];
-        const coefs2 = [];
-        makeCalcCoefs(coefs);
-        makeCalcCoefs2(coefs2);
+        let coefs2 = [];
+        makeCalcCoefs(coefs, false);
+        makeCalcCoefs2(coefs2, doChebyshev);
         console.log("atan");
-        for (let x = 0; x <= 1; x += 1 / 64) {
+        for (let x = 0; x <= 1; x += 1 / 32) { // 64
             const math = Math.atan(x);
             const taylor = taylorCoef(x);
             const remez = remezCoef(x);
-            const calc = calcCoef(...coefs, x);
-            const calc2 = calcCoef(...coefs2, x);
+            const calc = calcCoef(coefs, false, x);
+            const calc2 = calcCoef(coefs2, doChebyshev, x);
             const Etaylor = Math.abs(taylor - math);
             if (Etaylor > maxEtaylor) {
                 maxEtaylor = Etaylor;
@@ -264,6 +277,7 @@ function unitTest(intP, fracP) {
         console.log("maxEXcalc = " + maxEXCalc.toFixed(fixed) + ", maxEcalc = " + maxECalc.toFixed(fixed)
             + ", calcCoefs = " + coefs
         );
+        coefs2 = chebyToRawCoefs(coefs2);
         console.log("maxEXcalc2 = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
             + ", calcCoefs2 = " + coefs2
         );

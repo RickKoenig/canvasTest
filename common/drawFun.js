@@ -55,7 +55,7 @@ class DrawFun {
 			}
 		}
 		this.ctx.strokeStyle = color;
-		this.ctx.lineWidth = .01;
+		this.ctx.lineWidth = .002;
 		this.ctx.stroke();
 	}
 
@@ -84,7 +84,7 @@ class DrawFun {
 			}
 		}
 		this.ctx.strokeStyle = color;
-		this.ctx.lineWidth = .01;
+		this.ctx.lineWidth = .002;
 		this.ctx.stroke();
     }
 

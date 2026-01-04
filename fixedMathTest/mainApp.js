@@ -14,25 +14,35 @@ class MainApp {
 		return a * b;
 	}
 
-	testBind() {
-		console.log("in test bind");
-		const a = 3;
-		const b = 4;
-		const m = this.mul(a, b);
-		console.log(m);
-
-		const triple = this.mul.bind(null, 3);
-		const c = 10;
-		const d = triple(c);
-		console.log(d);
+	testIter() {
+		console.log("in test iter");
+		const arr = [0, 0, 0, 0];
+		let maxWatch = 1000;
+		let watch = 0;
+		let dig = 0;
+		while(++watch < maxWatch && dig < 4) {
+			console.log(arr);
+			while(dig < 4 && watch > 0) {
+				++watch;
+				++arr[dig];
+				if (arr[dig] > 1) {
+					arr[dig++] = 0;
+				} else {
+					dig = 0;
+					break;
+				}
+			}
+		}
+		console.log("watch iter = " + watch);
 	}
 
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		unitTest(2, 6);
-		this.testBind();
+		this.doChebyshev = true;
+		unitTest(2, 6, this.doChebyshev); // false
+		this.testIter();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -99,14 +109,14 @@ class MainApp {
 
 		// build error array
 		this.errArr = [];
-		this.res = 64;
-		this.sliderMul = 128;
+		this.res = 32;
+		this.sliderMul = 1024;
 		for (let y = -1; y <= 1; y += 1 / this.res) {
 			const errRow = [];
 			for (let x = -1; x <= 1; x += 1 / this.res) {
 				//const err = x * x + y * y;
 				const coefs = [x, y, 0, 0];
-				const err = getMaxErr(coefs);
+				const err = getMaxErr(coefs, this.doChebyshev);
 				errRow.push(err);
 			}
 			this.errArr.push(errRow);
@@ -122,7 +132,7 @@ class MainApp {
 		{
 			makeEle(this.vp, "button", null, null, "Calc coefs", v => 
 			{
-				makeCalcCoefs2(this.coefs);
+				makeCalcCoefs2(this.coefs, this.doChebyshev);
 				this.#updateSliders();
 			});
 			for (let i = 0; i < 4; ++i) {
@@ -200,7 +210,7 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
-		this.Err = getMaxErr(this.coefs);
+		this.Err = getMaxErr(this.coefs, this.doChebyshev);
 	}
 
 	#userDraw() {
@@ -224,7 +234,7 @@ class MainApp {
 		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
 		this.drawFun.changeFunctionG((x) => Math.atan(x));
 		this.drawFun.draw(false, 400, 0, "red");
-		this.drawFun.changeFunctionG(calcCoef.bind(this, ...this.coefs));
+		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, this.doChebyshev));
 		this.drawFun.draw(false, 400, 0, "green");
 		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
 		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
@@ -234,10 +244,12 @@ class MainApp {
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\nX1 = " + this.coefs[0] 
-			+ "\nX3 = "+ this.coefs[1]
-			+ "\nX5 = "+ this.coefs[2]
-			+ "\nX7 = "+ this.coefs[3]
+		const fix = 5;
+		const rawCoefs = chebyToRawCoefs(this.coefs);
+		infoStr += "\nX1 = " + rawCoefs[0].toFixed(fix)
+			+ "\nX3 = " + rawCoefs[1].toFixed(fix)
+			+ "\nX5 = " + rawCoefs[2].toFixed(fix)
+			+ "\nX7 = " + rawCoefs[3].toFixed(fix)
 		infoStr += "\nError = " + this.Err.toFixed(6);
 		const min = this.offset;
 		const max = this.offset + this.mag;
