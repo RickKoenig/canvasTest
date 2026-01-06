@@ -44,9 +44,18 @@ class FMathBigIntInstance {
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
 			// remez
-			ATAN_I : -0.0464964749,
-            ATAN_J : 0.15931422,
-            ATAN_K : -0.327622764,
+			/*
+			ATAN_1 : 1,
+            ATAN_3 : -0.327622764,
+            ATAN_5 : 0.15931422,
+			ATAN_7 : -0.0464964749,
+			*/
+			
+			ATAN_1 : 0.99920654296875,
+			ATAN_3 : -0.3212890625,
+			ATAN_5 : 0.146484375,
+			ATAN_7 : -0.0390625,
+
 			E_1_2 : Math.exp(.5), // e^^(1/2)
 			E_1_4 : Math.exp(.25), // e^^(1/4)
 			E_1_8 : Math.exp(.125), // e^^(1/8)
@@ -78,9 +87,17 @@ class FMathBigIntInstance {
 			EIGHTH: 536870912n,
 			TWOPI: 26986075409n,
 			HALFPI: 6746518852n,
-			ATAN_I: -199700839n,
-			ATAN_J: 684249365n,
-			ATAN_K: -1407129057n,
+/*
+			ATAN_1: 4294967296n,
+			ATAN_3: -1407129057n,
+			ATAN_5: 684249365n,
+			ATAN_7: -199700839n,
+*/
+			ATAN_1: 4291559424n,
+			ATAN_3: -1379926016n,
+			ATAN_5: 629145600n,
+			ATAN_7: -167772160n,
+
 			E_1_2: 7081203938n,
 			E_1_4: 5514847172n,
 			E_1_8: 4866835547n,
@@ -104,7 +121,7 @@ class FMathBigIntInstance {
 		for (const con in this.constObjectsExtra) {
 			this.constNumbers[con] = this.constObjectsExtra[con];
 		}
-		const generate = false;
+		const generate = true;
 		if (generate) { // turn on to get BigInt values from Numbers, paste that into generated32 above
 			// built in math constants
 			let str = "\ngenerate 'this.generated32' constants\n\n";
@@ -486,14 +503,14 @@ class FMathBigIntInstance {
 		this.div(a, num, den); // 0 to 1
 		this.mul(s, a, a);
 
-		this.mul(r, this.ATAN_I, s);
-		this.add(r, r, this.ATAN_J);
+		this.mul(r, this.ATAN_7, s);
+		this.add(r, r, this.ATAN_5);
 		this.mul(r, r, s);
-		this.add(r, r, this.ATAN_K);
+		this.add(r, r, this.ATAN_3);
 		this.mul(r, r, s);
+		this.add(r, r, this.ATAN_1);
 		this.mul(r, r, a);
-		this.add(r, r, a);
-		//let r = ((I * s + J) * s + K) * s * a + a;
+		//let r = (((I * s + J) * s + K) * s + L) * a;
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}

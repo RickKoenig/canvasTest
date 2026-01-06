@@ -41,7 +41,7 @@ class MainApp {
 		++MainApp.numInstances;
 
 		this.doChebyshev = true;
-		unitTest(2, 6, this.doChebyshev); // false
+		unitTest(2, 16, this.doChebyshev); // false
 		this.testIter();
 
 		// vertical panel UI

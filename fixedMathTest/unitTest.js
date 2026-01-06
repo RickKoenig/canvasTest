@@ -123,85 +123,6 @@ function makeCalcCoefs2(coefs, doChebyshev) { // 1, 3, 5, 7
     }
 }
 
-function makeCalcCoefsDeeper(coefs, idx, step, doChebyshev) {
-    //const fixed = 5; // printing prec
-    let dir = 0;
-    // setup dir
-    let E = getMaxErr(coefs);
-    let cSave = coefs[idx]; // save
-    // minus
-    coefs[idx] -= step;
-    const Em = getMaxErr(coefs, doChebyshev);
-    if (Em < E) {
-        dir = -1
-        E = Em;
-    } else {
-        coefs[idx] = cSave; // restore
-        // plus
-        coefs[idx] += step;
-        const Ep = getMaxErr(coefs, doChebyshev);
-        if (Ep < E) {
-            dir = 1;
-            E = Ep;
-        } else {
-            coefs[idx] = cSave; // restore
-            coefs[idx] = range(-1, coefs[idx], 1);
-            return;
-        }
-    }
-    // move in dir
-    let maxWatch = 1000;
-    let watch = 0;
-    while(++watch < maxWatch) {
-        cSave = coefs[idx];
-        coefs[idx] += dir * step;
-        const En = getMaxErr(coefs, doChebyshev);
-        if (En >= E) {
-            coefs[idx] = cSave;
-            break;
-        }
-        E = En;
-    }
-    coefs[idx] = range(-1, coefs[idx], 1);
-    if (watch == maxWatch) {
-        console.error("watch hit !!, watch = " + watch);
-    } else {
-        console.log(`watch = ${watch} / ${maxWatch}`);
-    }
-    // adjust coefs to minimize the maxE
-    //console.log("minE = " + E);
-    //return [Math.PI / 4, 0, 0, 0];
-    //console.log("coeffs = " + coefs);
-}
-
-function makeCalcCoefs(coefs, doChebyshev) { // 1, 3, 5, 7
-    coefs.length = 4;
-    const terms = 2;
-    coefs.fill(0);
-    // try remez
-    //coefs[0] = 1;
-    //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
-    //coefs.splice(0, remezCoefs.length, ...remezCoefs);
-    //const taylorCoefs = [1, -1 / 3, 1 / 5, -1 / 7];
-    //coefs.splice(0, taylorCoefs.length, ...taylorCoefs);
-    //return;
-    // end try remez
-    const startStep = 1;
-    const endStep = 10;
-    const cycles = 10;
-    let idx = 0;
-    for (let j = 0; j < terms * cycles; ++j) {
-        for (let i = startStep; i < endStep; ++i) {
-            const step = 1 / 2 ** i; // refine step
-            makeCalcCoefsDeeper(coefs, idx, step, doChebyshev);
-        }
-        ++idx;
-        if (idx > 1) {
-            idx = 0;
-        }
-    }
-}
-
 function unitTest(intP, fracP, doChebyshev) {
     //const FMath = FMathNum; // static 
     //const FMath = FMathBigInt; // static
@@ -217,7 +138,7 @@ function unitTest(intP, fracP, doChebyshev) {
     const doVerbose = false;
     const testConstants = false;
     const docreate = false;
-    const doPrecUnary = false;
+    const doPrecUnary = true;
     const doPrecBinary = false;
 
     if (testMinMax) { // maybe, Remez algorithm
@@ -227,20 +148,15 @@ function unitTest(intP, fracP, doChebyshev) {
         let maxEXtaylor = 0;
         let maxEremez = 0;
         let maxEXremez = 0;
-        let maxECalc = 0;
-        let maxEXCalc = 0;
         let maxECalc2 = 0;
         let maxEXCalc2 = 0;
-        const coefs = [];
         let coefs2 = [];
-        makeCalcCoefs(coefs, false);
         makeCalcCoefs2(coefs2, doChebyshev);
         console.log("atan");
         for (let x = 0; x <= 1; x += 1 / 32) { // 64
             const math = Math.atan(x);
             const taylor = taylorCoef(x);
             const remez = remezCoef(x);
-            const calc = calcCoef(coefs, false, x);
             const calc2 = calcCoef(coefs2, doChebyshev, x);
             const Etaylor = Math.abs(taylor - math);
             if (Etaylor > maxEtaylor) {
@@ -252,11 +168,6 @@ function unitTest(intP, fracP, doChebyshev) {
                 maxEremez = Eremez;
                 maxEXremez = x;
             }
-            const Ecalc = Math.abs(calc - math);
-            if (Ecalc > maxECalc) {
-                maxECalc = Ecalc;
-                maxEXCalc = x;
-            }
             const Ecalc2 = Math.abs(calc2 - math);
             if (Ecalc2 > maxECalc2) {
                 maxECalc2 = Ecalc2;
@@ -266,16 +177,12 @@ function unitTest(intP, fracP, doChebyshev) {
             console.log("x = " + x.toFixed(fixed) + ", atan = " + math.toFixed(fixed)
                 + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
                 + ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]"
-                + ", [calc = " + calc.toFixed(fixed) + ", E = " + Ecalc.toFixed(fixed) + "]"
                 + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
         }
         console.log("maxEXtaylor = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
         console.log("maxEXremez = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
             + ", remezCoefs = " + [1, -0.327622764, 0.15931422, -0.0464964749]
 
-        );
-        console.log("maxEXcalc = " + maxEXCalc.toFixed(fixed) + ", maxEcalc = " + maxECalc.toFixed(fixed)
-            + ", calcCoefs = " + coefs
         );
         coefs2 = chebyToRawCoefs(coefs2);
         console.log("maxEXcalc2 = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
@@ -318,8 +225,9 @@ function unitTest(intP, fracP, doChebyshev) {
                  ,fOp : FMathInst.tan.bind(FMathInst),	errRatio: 200}, // slightly broken
             //asin
             //acos
+            */
             {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
-
+            /*
             
             {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},
             {	name: "log",	op: (n) => n > 3 / 32 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 40},
@@ -332,8 +240,8 @@ function unitTest(intP, fracP, doChebyshev) {
             //asinh
             //acosh
             */
-            {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
-            //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
+            //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
+            // //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
 //           {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
         ];
