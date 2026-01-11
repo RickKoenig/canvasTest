@@ -43,19 +43,42 @@ class FMathBigIntInstance {
 			EIGHTH: 1 / 8,
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
-			// remez
-			/*
-			ATAN_1 : 1,
-            ATAN_3 : -0.327622764,
-            ATAN_5 : 0.15931422,
-			ATAN_7 : -0.0464964749,
-			*/
+
+			// remez atan
+			ATAN_1: 1,
+            ATAN_3: -0.327622764,
+            ATAN_5: 0.15931422,
+			ATAN_7: -0.0464964749,
 			
+			// new remez atan
+			/*
 			ATAN_1 : 0.99920654296875,
 			ATAN_3 : -0.3212890625,
 			ATAN_5 : 0.146484375,
 			ATAN_7 : -0.0390625,
+			*/
 
+			// remez sin
+			/*
+			SIN_1: 0.999908447265625,
+			SIN_3:-0.166259765625,
+			SIN_5: 0.0078125,
+			SIN_7: 0,
+			*/
+
+			SIN_1: 1.5706787109375,
+			SIN_3: -0.6453857421875,
+			SIN_5: 0.07861328125,
+			SIN_7: -0.00390625,
+			
+
+			// taylor sin
+			SIN_1t: 1,
+			SIN_3t: -1 / 6,
+			SIN_5t: 1 / 120,
+			SIN_7t: 1 / 5040,
+
+			// scale factors
 			E_1_2 : Math.exp(.5), // e^^(1/2)
 			E_1_4 : Math.exp(.25), // e^^(1/4)
 			E_1_8 : Math.exp(.125), // e^^(1/8)
@@ -64,47 +87,73 @@ class FMathBigIntInstance {
 			E_M1_4 : Math.exp(-.25), // e^^(-1/4)
 			E_M1_8 : Math.exp(-.125), // e^^(-1/8)
 		};
+		
         // consistency, make a copy from generate
         this.generated32 = { // times 2 to the masterFrac power, rounded to nearest BigInt
 			// built in
-			PI: 13493037705n,
-			E: 11674931555n,
-			SQRT2: 6074001000n,
-			SQRT1_2: 3037000500n,
-			LN10: 9889527671n,
-			LN2: 2977044472n,
-			LOG10E: 1865280597n,
-			LOG2E: 6196328019n,
+			PI: 13493037705n, // 3.141592653589793
+			E: 11674931555n, // 2.718281828459045
+			SQRT2: 6074001000n, // 1.4142135623730951
+			SQRT1_2: 3037000500n, // 0.7071067811865476
+			LN10: 9889527671n, // 2.302585092994046
+			LN2: 2977044472n, // 0.6931471805599453
+			LOG10E: 1865280597n, // 0.4342944819032518
+			LOG2E: 6196328019n, // 1.4426950408889634
 			// extra
-			ZERO: 0n,
-			ONE: 4294967296n,
-			TWO: 8589934592n,
-			THREE: 12884901888n,
-			FOUR: 17179869184n,
-			HALF: 2147483648n,
-			THIRD: 1431655765n,
-			FOURTH: 1073741824n,
-			EIGHTH: 536870912n,
-			TWOPI: 26986075409n,
-			HALFPI: 6746518852n,
-/*
-			ATAN_1: 4294967296n,
-			ATAN_3: -1407129057n,
-			ATAN_5: 684249365n,
-			ATAN_7: -199700839n,
-*/
-			ATAN_1: 4291559424n,
-			ATAN_3: -1379926016n,
-			ATAN_5: 629145600n,
-			ATAN_7: -167772160n,
+			ZERO: 0n, // 0
+			ONE: 4294967296n, // 1
+			TWO: 8589934592n, // 2
+			THREE: 12884901888n, // 3
+			FOUR: 17179869184n, // 4
+			HALF: 2147483648n, // 0.5
+			THIRD: 1431655765n, // 0.3333333333333333
+			FOURTH: 1073741824n, // 0.25
+			EIGHTH: 536870912n, // 0.125
+			// pi
+			TWOPI: 26986075409n, // 6.283185307179586
+			HALFPI: 6746518852n, // 1.5707963267948966
+			// old remez atan
+			/*
+			ATAN_1: 4294967296n, // 1
+			ATAN_3: -1407129057n, // -0.327622764
+			ATAN_5: 684249365n, // 0.15931422
+			ATAN_7: -199700839n, // -0.0464964749
+			*/
+			// new remez atan
+			
+			ATAN_1: 4291559424n, // 0.99920654296875
+			ATAN_3: -1379926016n, // -0.3212890625
+			ATAN_5: 629145600n, // 0.146484375
+			ATAN_7: -167772160n, // -0.0390625
+		
+			
+			// remez sin
+			/*
+			SIN_1: 4294574080n, // 0.999908447265625
+			SIN_3: -714080256n, // -0.166259765625
+			SIN_5: 33554432n, // 0.0078125
+			SIN_7: 0n, // 0
+			*/
+			
+			SIN_1: 6746013696n, // 1.5706787109375
+			SIN_3: -2771910656n, // -0.6453857421875
+			SIN_5: 337641472n, // 0.07861328125
+			SIN_7: -16777216n, // -0.00390625
 
-			E_1_2: 7081203938n,
-			E_1_4: 5514847172n,
-			E_1_8: 4866835547n,
-			E_M1: 1580030169n,
-			E_M1_2: 2605029347n,
-			E_M1_4: 3344923893n,
-			E_M1_8: 3790295335n,
+			// taylor sin
+			SIN_1t: 4294967296n, // 1
+			SIN_3t: -715827883n, // -0.16666666666666666
+			SIN_5t: 35791394n, // 0.008333333333333333
+			SIN_7t: 852176n, // 0.0001984126984126984
+
+			// exp offsets
+			E_1_2: 7081203938n, // 1.6487212707001282
+			E_1_4: 5514847172n, // 1.2840254166877414
+			E_1_8: 4866835547n, // 1.1331484530668263
+			E_M1: 1580030169n, // 0.36787944117144233
+			E_M1_2: 2605029347n, // 0.6065306597126334
+			E_M1_4: 3344923893n, // 0.7788007830714049
+			E_M1_8: 3790295335n, // 0.8824969025845955
 		};
 		// get all the names of extras
 		for (const extraCon in this.constObjectsExtra) {
@@ -127,14 +176,15 @@ class FMathBigIntInstance {
 			let str = "\ngenerate 'this.generated32' constants\n\n";
 			str += "// built in\n";
 			for (const cName of this.constNamesMath) {
-				const big = BigInt(Math.round((2 ** 32) * Math[cName]));
-				str += cName + ": " + big + "n,\n";
+				const val = Math[cName];
+				const big = BigInt(Math.round((2 ** 32) * val));
+				str += cName + ": " + big + "n, // " + val + "\n";
 			}
 			str += "// extra\n";
 			for (const cName of this.constNamesExtra) {
 				const val = this.constObjectsExtra[cName];
 				const big = BigInt(Math.round((2 ** 32) * val));
-				str += cName + ": " + big + "n,\n";
+				str += cName + ": " + big + "n, // " + val + "\n";
 			}
 			console.log(str);
 			console.log("END generate\n");
@@ -326,6 +376,22 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	// coefs
+	calcCoef(out, x, c1, c3, c5, c7) {
+		const x2 = this.create();
+		this.mul(x2, x, x);
+		this.mul(out, c7, x2);
+		this.add(out, out, c5);
+		this.mul(out, out, x2);
+		this.add(out, out, c3);
+		this.mul(out, out, x2);
+		this.add(out, out, c1);
+		this.mul(out, out, x);
+		//let out = (((I * x2 + J) * x2 + K) * x2 + L) * x;
+		return out;
+	}
+
+
 	// roots
 
 	sqrt(out, a) {
@@ -414,6 +480,70 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	sin2NoNorm(out, a) {
+		this.calcCoef(out, a, this.SIN_1, this.SIN_3, this.SIN_5, this.SIN_7);
+		/*
+		const steps = 4;
+		const sum = this.create();
+		const term = this.create();
+		const n = this.clone(a);
+		const d = this.clone(this.ONE);
+		const m = this.clone(this.ONE);
+		let i = 0;
+		while(true) {
+			this.div(term, n, d);
+			this.add(sum, sum, term);
+			if (++i == steps) {
+				break;
+			}
+			this.mul(n, n, a);
+			this.mul(n, n, a);
+			this.neg(n, n);
+			this.add(m, m, this.ONE);
+			this.mul(d, d, m);
+			this.add(m, m, this.ONE);
+			this.mul(d, d, m);
+		}
+		out.raw = sum.raw;*/
+		return out;
+	}
+
+	/*
+			let neg = a < 0;
+			let na = neg ? -a : a;
+			na %= 4;
+			if (na >= 3) {
+				na -= 4;
+			} else if (na >= 1) {
+				na = 2 - na;
+			}
+			if (neg) {
+				na = -na;
+			}
+			return na;
+	*/
+
+	sin2(out, a) {
+		const na = this.clone(a);
+		//this.normAngRad(na, a);
+		const neg = a.raw < this.ZERO.raw;
+		if (neg) {
+			this.neg(na, na);
+		}
+		this.mod(na, na, this.FOUR);
+		if (na.raw >= this.THREE.raw) {
+			this.sub(na, na, this.FOUR);
+		} else if (na.raw >= this.ONE.raw) {
+			this.sub(na, this.TWO, na);
+		}
+		this.sin2NoNorm(out, na);
+		//this.copy(out, na);
+		if (neg) {
+			this.neg(out, out);
+		}
+		return out;
+	}
+
 	cosNoNorm(out, a) {
 		const steps = 20;
 		const sum = this.create();
@@ -443,7 +573,7 @@ class FMathBigIntInstance {
 	cos(out, a) {
 		const na = this.create();
 		this.normAngRad(na, a);
-		this.cosNoNorm(out, a);
+		this.cosNoNorm(out, na);
 		return out;
 	}
 
@@ -485,7 +615,7 @@ class FMathBigIntInstance {
 		const num = this.create();
 		const den = this.create();
 		const a = this.create();
-		const s = this.create();
+		//const s = this.create();
 		const r = this.create();
 		// Horner scheme. The minimax approximation was computed using the Remez algorithm
 		/* const xa = Math.abs(x);
@@ -501,8 +631,10 @@ class FMathBigIntInstance {
 			return out;
 		}
 		this.div(a, num, den); // 0 to 1
-		this.mul(s, a, a);
 
+		this.calcCoef(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
+		/*
+		this.mul(s, a, a);
 		this.mul(r, this.ATAN_7, s);
 		this.add(r, r, this.ATAN_5);
 		this.mul(r, r, s);
@@ -510,6 +642,7 @@ class FMathBigIntInstance {
 		this.mul(r, r, s);
 		this.add(r, r, this.ATAN_1);
 		this.mul(r, r, a);
+		*/
 		//let r = (((I * s + J) * s + K) * s + L) * a;
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);

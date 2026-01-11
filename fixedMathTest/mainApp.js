@@ -14,6 +14,7 @@ class MainApp {
 		return a * b;
 	}
 
+	/*
 	testIter() {
 		console.log("in test iter");
 		const arr = [0, 0, 0, 0];
@@ -35,14 +36,17 @@ class MainApp {
 		}
 		console.log("watch iter = " + watch);
 	}
+	*/
 
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
 		this.doChebyshev = true;
-		unitTest(2, 16, this.doChebyshev); // false
-		this.testIter();
+		//this.xRange = [0, Math.PI / 2];
+		this.xRange = [0, 1];
+		unitTest(4, 12, 8, false, this.doChebyshev, this.xRange[0], this.xRange[1]); // false
+		//this.testIter();
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -107,6 +111,9 @@ class MainApp {
 		this.coefs = [0, 0, 0, 0];
 		this.Err = 0;
 
+		//this.fun = Math.atan;
+		this.fun = (x) => Math.sin(x * (Math.PI / 2));
+		//this.fun = Math.sin;
 		// build error array
 		this.errArr = [];
 		this.res = 32;
@@ -116,7 +123,7 @@ class MainApp {
 			for (let x = -1; x <= 1; x += 1 / this.res) {
 				//const err = x * x + y * y;
 				const coefs = [x, y, 0, 0];
-				const err = getMaxErr(coefs, this.doChebyshev);
+				const err = getMaxErr(coefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
 				errRow.push(err);
 			}
 			this.errArr.push(errRow);
@@ -132,13 +139,13 @@ class MainApp {
 		{
 			makeEle(this.vp, "button", null, null, "Calc coefs", v => 
 			{
-				makeCalcCoefs2(this.coefs, this.doChebyshev);
+				makeCalcCoefs2(this.coefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
 				this.#updateSliders();
 			});
 			for (let i = 0; i < 4; ++i) {
 				const label = "C" + (1 + 2 * i);
-				const min = -1;
-				const max = 1;
+				const min = -2;
+				const max = 2;
 				const start = 0;
 				const step = 1 / (this.res * this.sliderMul);
 				const precision = 5;
@@ -210,7 +217,7 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
-		this.Err = getMaxErr(this.coefs, this.doChebyshev);
+		this.Err = getMaxErr(this.coefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
 	}
 
 	#userDraw() {
@@ -232,10 +239,28 @@ class MainApp {
 			this.drawPrim.drawCircle([x, -1.25], .45 / this.res, strcol);
 		}
 		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
-		this.drawFun.changeFunctionG((x) => Math.atan(x));
-		this.drawFun.draw(false, 400, 0, "red");
+		this.drawFun.changeFunctionG((x) => this.fun(x));
+		this.drawFun.draw(false, 400, 0, "red", .002);
 		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, this.doChebyshev));
-		this.drawFun.draw(false, 400, 0, "green");
+		this.drawFun.draw(false, 400, 0, "green", .0014);
+
+		function normAngOne(a) {
+			let neg = a < 0;
+			let na = neg ? -a : a;
+			na %= 4;
+			if (na >= 3) {
+				na -= 4;
+			} else if (na >= 1) {
+				na = 2 - na;
+			}
+			if (neg) {
+				na = -na;
+			}
+			return na;
+		}
+
+		this.drawFun.changeFunctionG(normAngOne);
+		this.drawFun.draw(false, 500, 0, "hows t", .04);
 		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
 		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
 	}
@@ -244,7 +269,7 @@ class MainApp {
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
-		const fix = 5;
+		const fix = 9;
 		const rawCoefs = chebyToRawCoefs(this.coefs);
 		infoStr += "\nX1 = " + rawCoefs[0].toFixed(fix)
 			+ "\nX3 = " + rawCoefs[1].toFixed(fix)
@@ -253,7 +278,7 @@ class MainApp {
 		infoStr += "\nError = " + this.Err.toFixed(6);
 		const min = this.offset;
 		const max = this.offset + this.mag;
-		infoStr += "\nRange = [" + min.toFixed(3) + ", " + max.toFixed(3) + "]";
+		infoStr += "\ncolRange = [" + min.toFixed(2) + ", " + max.toFixed(2) + "]";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 

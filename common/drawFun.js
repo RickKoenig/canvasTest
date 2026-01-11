@@ -24,7 +24,7 @@ class DrawFun {
 		this.functionG = g;
 	}
 
-	#drawParametric(lineStep, phase, color) {
+	#drawParametric(lineStep, phase, color, lineWidth) {
 		if (!this.functionF) {
 			return;
 		}
@@ -55,11 +55,11 @@ class DrawFun {
 			}
 		}
 		this.ctx.strokeStyle = color;
-		this.ctx.lineWidth = .002;
+		this.ctx.lineWidth = lineWidth;
 		this.ctx.stroke();
 	}
 
-	#drawNormal(lineStep, phase, color) {
+	#drawNormal(lineStep, phase, color, lineWidth) {
         const p = this.plotter2d;
 		if (!this.functionG) {
 			return;
@@ -84,16 +84,16 @@ class DrawFun {
 			}
 		}
 		this.ctx.strokeStyle = color;
-		this.ctx.lineWidth = .002;
+		this.ctx.lineWidth = lineWidth;
 		this.ctx.stroke();
     }
 
 	// 'graphPaper' is used for constraining the function to the size of the graph paper
-    draw(doParametric, lineStep = 500, phase, color = "blue") {
+    draw(doParametric, lineStep = 500, phase, color = "blue", lineWidth = .002) {
 		if (doParametric) {
-			this.#drawParametric(lineStep, phase, color);
+			this.#drawParametric(lineStep, phase, color, lineWidth);
 		} else {
-			this.#drawNormal(lineStep, phase, color);
+			this.#drawNormal(lineStep, phase, color, lineWidth);
 		}
 	}
 }
