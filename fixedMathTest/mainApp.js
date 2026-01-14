@@ -43,9 +43,12 @@ class MainApp {
 		++MainApp.numInstances;
 
 		this.doChebyshev = true;
-		//this.xRange = [0, Math.PI / 2];
-		this.xRange = [0, 1];
-		unitTest(4, 12, 8, false, this.doChebyshev, this.xRange[0], this.xRange[1]); // false
+		this.xRange = [0, Math.PI / 2];
+		//this.xRange = [0, 1];
+		//this.fun = Math.atan;
+		//this.fun = (x) => Math.sin(x * (Math.PI / 2));
+		this.fun = Math.sin;
+		unitTest(4, 12, 5, false, this.doChebyshev, this.xRange[0], this.xRange[1]); // false
 		//this.testIter();
 
 		// vertical panel UI
@@ -109,11 +112,9 @@ class MainApp {
 		this.startZoom = .7;
 		this.pos = [0, 0];
 		this.coefs = [0, 0, 0, 0];
+		this.cbCoefs = [0, 0, 0, 0];
 		this.Err = 0;
 
-		//this.fun = Math.atan;
-		this.fun = (x) => Math.sin(x * (Math.PI / 2));
-		//this.fun = Math.sin;
 		// build error array
 		this.errArr = [];
 		this.res = 32;
@@ -139,8 +140,10 @@ class MainApp {
 		{
 			makeEle(this.vp, "button", null, null, "Calc coefs", v => 
 			{
-				makeCalcCoefs2(this.coefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
+				makeCalcCoefs2(this.cbCoefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
 				this.#updateSliders();
+				this.coefs = chebyToRawCoefs(this.cbCoefs);
+				convertCoefs(this.coefs, this.xRange[0], this.xRange[1]);
 			});
 			for (let i = 0; i < 4; ++i) {
 				const label = "C" + (1 + 2 * i);
@@ -152,7 +155,9 @@ class MainApp {
 				this.eles[label] = new makeEleCombo(this.vp, label, min, max, start, step, precision,
 					(v) => {
 						this.dirty = true;
-						this.coefs[i] = v;
+						this.cbCoefs[i] = v;
+						this.coefs = chebyToRawCoefs(this.cbCoefs);
+						convertCoefs(this.coefs, this.xRange[0], this.xRange[1]);
 					}
 				);
 			}
@@ -199,7 +204,7 @@ class MainApp {
 	#updateSliders() {
 		for (let i = 0; i < 4; ++i) {
 			const label = "C" + (1 + 2 * i);
-			this.eles[label].setValue(this.coefs[i]);
+			this.eles[label].setValue(this.cbCoefs[i]);
 		}
 	}
 	
@@ -217,7 +222,7 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
-		this.Err = getMaxErr(this.coefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
+		this.Err = getMaxErr(this.coefs, false, this.fun, this.xRange[0], this.xRange[1]);
 	}
 
 	#userDraw() {
@@ -232,6 +237,8 @@ class MainApp {
 				this.drawPrim.drawCircle([x, y], .45 / this.res, errCol);
 			}
 		}
+		this.drawFun.changeFunctionG(normAngOne);
+		this.drawFun.draw(false, 500, 0, "darkmagenta", .01);
 		for (let x = 0; x <= 1; x += 1 / this.res) {
 			this.drawPrim.drawCircle([x, -1.25], .49 / this.res, "black");
 			const strcol = Bitmap32p.intensityToStr(x, this.doColor);
@@ -241,7 +248,7 @@ class MainApp {
 		//this.drawPrim.drawRectangleO([0, 0], [1, 1], lineWid);
 		this.drawFun.changeFunctionG((x) => this.fun(x));
 		this.drawFun.draw(false, 400, 0, "red", .002);
-		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, this.doChebyshev));
+		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, false));
 		this.drawFun.draw(false, 400, 0, "green", .0014);
 
 		function normAngOne(a) {
@@ -259,8 +266,6 @@ class MainApp {
 			return na;
 		}
 
-		this.drawFun.changeFunctionG(normAngOne);
-		this.drawFun.draw(false, 500, 0, "hows t", .04);
 		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
 		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
 	}
@@ -270,7 +275,7 @@ class MainApp {
 		let infoStr = "Info";
 		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
 		const fix = 9;
-		const rawCoefs = chebyToRawCoefs(this.coefs);
+		const rawCoefs = this.coefs;//chebyToRawCoefs(this.coefs);
 		infoStr += "\nX1 = " + rawCoefs[0].toFixed(fix)
 			+ "\nX3 = " + rawCoefs[1].toFixed(fix)
 			+ "\nX5 = " + rawCoefs[2].toFixed(fix)

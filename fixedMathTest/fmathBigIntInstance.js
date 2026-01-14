@@ -43,6 +43,7 @@ class FMathBigIntInstance {
 			EIGHTH: 1 / 8,
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
+			THREEHALFPI: 3 * Math.PI / 2,
 
 			// remez atan
 			ATAN_1: 1,
@@ -60,17 +61,21 @@ class FMathBigIntInstance {
 
 			// remez sin
 			/*
-			SIN_1: 0.999908447265625,
-			SIN_3:-0.166259765625,
-			SIN_5: 0.0078125,
-			SIN_7: 0,
+			SIN_1r: 0.999908447265625,
+			SIN_3r:-0.166259765625,
+			SIN_5r: 0.0078125,
+			SIN_7r: 0,
 			*/
-
-			SIN_1: 1.5706787109375,
-			SIN_3: -0.6453857421875,
-			SIN_5: 0.07861328125,
-			SIN_7: -0.00390625,
-			
+/*
+			SIN_1r: 1.5706787109375,
+			SIN_3r: -0.6453857421875,
+			SIN_5r: 0.07861328125,
+			SIN_7r: -0.00390625,
+*/			
+			SIN_1r: 0.9999251234196375,
+			SIN_3r: -0.16651744389484935,
+			SIN_5r: 0.008220467914556176,
+			SIN_7r: -0.00016554684008878345,
 
 			// taylor sin
 			SIN_1t: 1,
@@ -78,7 +83,7 @@ class FMathBigIntInstance {
 			SIN_5t: 1 / 120,
 			SIN_7t: 1 / 5040,
 
-			// scale factors
+			// exp offsets
 			E_1_2 : Math.exp(.5), // e^^(1/2)
 			E_1_4 : Math.exp(.25), // e^^(1/4)
 			E_1_8 : Math.exp(.125), // e^^(1/8)
@@ -112,6 +117,7 @@ class FMathBigIntInstance {
 			// pi
 			TWOPI: 26986075409n, // 6.283185307179586
 			HALFPI: 6746518852n, // 1.5707963267948966
+			THREEHALFPI: 20239556557n, // 4.71238898038469			
 			// old remez atan
 			/*
 			ATAN_1: 4294967296n, // 1
@@ -129,17 +135,23 @@ class FMathBigIntInstance {
 			
 			// remez sin
 			/*
-			SIN_1: 4294574080n, // 0.999908447265625
-			SIN_3: -714080256n, // -0.166259765625
-			SIN_5: 33554432n, // 0.0078125
-			SIN_7: 0n, // 0
+			SIN_1r: 4294574080n, // 0.999908447265625
+			SIN_3r: -714080256n, // -0.166259765625
+			SIN_5r: 33554432n, // 0.0078125
+			SIN_7r: 0n, // 0
 			*/
+			/*
+			SIN_1r: 6746013696n, // 1.5706787109375
+			SIN_3r: -2771910656n, // -0.6453857421875
+			SIN_5r: 337641472n, // 0.07861328125
+			SIN_7r: -16777216n, // -0.00390625
+			*/
+						
+			SIN_1r: 4294645704n, // 0.9999251234196375
+			SIN_3r: -715186976n, // -0.16651744389484935
+			SIN_5r: 35306641n, // 0.008220467914556176
+			SIN_7r: -711018n, // -0.00016554684008878345
 			
-			SIN_1: 6746013696n, // 1.5706787109375
-			SIN_3: -2771910656n, // -0.6453857421875
-			SIN_5: 337641472n, // 0.07861328125
-			SIN_7: -16777216n, // -0.00390625
-
 			// taylor sin
 			SIN_1t: 4294967296n, // 1
 			SIN_3t: -715827883n, // -0.16666666666666666
@@ -170,7 +182,7 @@ class FMathBigIntInstance {
 		for (const con in this.constObjectsExtra) {
 			this.constNumbers[con] = this.constObjectsExtra[con];
 		}
-		const generate = true;
+		const generate = false;
 		if (generate) { // turn on to get BigInt values from Numbers, paste that into generated32 above
 			// built in math constants
 			let str = "\ngenerate 'this.generated32' constants\n\n";
@@ -447,8 +459,23 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	normAngRadSin(na, a) {
+		const neg = a.raw < this.ZERO.raw;
+		this.copy(na, a);
+		if (neg) {
+			this.neg(na, na);
+		}
+		this.mod(na, na, this.TWOPI); // 2 * PI
+		if (na.raw >= this.THREEHALFPI.raw) { // 3 / 2 * PI
+			this.sub(na, na, this.TWOPI); // 2 * PI
+		} else if (na.raw >= this.HALFPI.raw) { //PI / 2
+			this.sub(na, this.PI, na); //PI
+		}
+		return neg;
+	}
+
 	sinNoNorm(out, a) {
-		const steps = 20;
+		const steps = 6;
 		const sum = this.create();
 		const term = this.create();
 		const n = this.clone(a);
@@ -476,12 +503,13 @@ class FMathBigIntInstance {
 	sin(out, a) {
 		const na = this.create();
 		this.normAngRad(na, a);
-		this.sinNoNorm(out, a);
+		this.sinNoNorm(out, na);
 		return out;
 	}
 
 	sin2NoNorm(out, a) {
-		this.calcCoef(out, a, this.SIN_1, this.SIN_3, this.SIN_5, this.SIN_7);
+		//this.calcCoef(out, a, this.SIN_1t, this.SIN_3t, this.SIN_5t, this.SIN_7t);
+		this.calcCoef(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
 		/*
 		const steps = 4;
 		const sum = this.create();
@@ -524,20 +552,25 @@ class FMathBigIntInstance {
 	*/
 
 	sin2(out, a) {
-		const na = this.clone(a);
+		const na = this.create();
+		//this.sin2NoNorm(out, na);
+		//return out;
 		//this.normAngRad(na, a);
+		/*
 		const neg = a.raw < this.ZERO.raw;
 		if (neg) {
 			this.neg(na, na);
 		}
-		this.mod(na, na, this.FOUR);
-		if (na.raw >= this.THREE.raw) {
-			this.sub(na, na, this.FOUR);
-		} else if (na.raw >= this.ONE.raw) {
-			this.sub(na, this.TWO, na);
+		this.mod(na, na, this.TWOPI); // 2 * PI
+		if (na.raw >= this.THREEHALFPI.raw) { // 3 / 2 * PI
+			this.sub(na, na, this.TWOPI); // 2 * PI
+		} else if (na.raw >= this.HALFPI.raw) { //PI / 2
+			this.sub(na, this.PI, na); //PI
 		}
 		this.sin2NoNorm(out, na);
-		//this.copy(out, na);
+		//this.copy(out, na);*/
+		const neg = this.normAngRadSin(na, a);
+		this.sin2NoNorm(out, na);
 		if (neg) {
 			this.neg(out, out);
 		}

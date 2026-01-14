@@ -45,6 +45,21 @@ function getMaxErr(coefs, doChebyshev, fun, start, finish) {
     return maxE;
 }
 
+// 1, 3, 5, 7
+// assume start == 0
+function convertCoefs(coefs, start, finish) {
+    //finish = 1;
+    finish = 1 / finish;
+    const step = finish * finish;
+    coefs[0] *= finish;
+    finish *= step;
+    coefs[1] *= finish;
+    finish *= step;
+    coefs[2] *= finish;
+    finish *= step;
+    coefs[3] *= finish
+}
+
 function makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, start, finish) {
     //console.log("deeper2");
     let maxWatch = 20000;
@@ -106,7 +121,7 @@ function makeCalcCoefs2(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
         coefs.fill(0);
     }
     // new function with input range 0 to 1
-    const fun01 = (x) => fun(x / finish);
+    const fun01 = (x) => fun(x * finish);
     // try remez
     //coefs[0] = 1;
     //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
@@ -119,11 +134,14 @@ function makeCalcCoefs2(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
     const endStep = 15;// 15;
     for (let i = startStep; i <= endStep; ++i) {
         const step = 1 / 2 ** i; // refine step
-        makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, 0, 1);
+        makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun01, 0, 1);
     }
+    // convert coefs from [0, 1] back to range [start, finish] // for now assume start is 0
+    //convertCoefs(coefs, start, finish);
 }
 
-function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) {
+function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finish) {
+    const skipP = intP + fracP - displayP;
     //const FMath = FMathNum; // static 
     //const FMath = FMathBigInt; // static
     const FMath = FMathBigIntInstance; // static
@@ -143,7 +161,10 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
 
     if (testMinMax) { // maybe, Remez algorithm, try atan, then try more functions
         //const fun = Math.atan;
-        const fun = (x) => Math.sin(x * (Math.PI / 2));
+        //const funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
+        const fun = Math.sin;
+        const funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
+        //const fun = (x) => Math.sin(x * (Math.PI / 2));
         console.log("\nTest MIN MAX fun");
         const fixed = 6;
         // test fun from 0 to 1, should get 0 to PI/4, now try generic function
@@ -153,14 +174,16 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
         //let maxEXremez = 0;
         let maxECalc2 = 0;
         let maxEXCalc2 = 0;
-        let coefs2 = [];
-        makeCalcCoefs2(coefs2, doChebyshev, fun, start, finish);
-        console.log("unary functions like fun");
-        for (let x = 0; x <= 1; x += 1 / 32) { // 64
+        const coefs2cb = [];
+        makeCalcCoefs2(coefs2cb, doChebyshev, fun, start, finish);
+		const coefs2 = chebyToRawCoefs(coefs2cb);
+		convertCoefs(coefs2, start, finish);
+        console.log("minmax unary functions like fun");
+        for (let x = 0; x <= finish; x += 2 ** -displayP) { //} / 32) { // 64
             const math = fun(x);
-            const taylor = taylorCoef(x);
+            const taylor = calcCoef(funCoef, false, x);
             //const remez = remezCoef(x);
-            const calc2 = calcCoef(coefs2, doChebyshev, x);
+            const calc2 = calcCoef(coefs2, false, x);
             const Etaylor = Math.abs(taylor - math);
             if (Etaylor > maxEtaylor) {
                 maxEtaylor = Etaylor;
@@ -188,7 +211,7 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
         //console.log("maxEremezX = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
         //    + ", remezCoefs = " + [1, -0.327622764, 0.15931422, -0.0464964749]
         //);
-        coefs2 = chebyToRawCoefs(coefs2);
+        //coefs2 = chebyToRawCoefs(coefs2);
         console.log("maxEcalc2X = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
             + ", calcCoefs2 = " + coefs2
         );
@@ -223,7 +246,7 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
             {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 30},
 */
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 4},
-            {	name: "sin2",	op: (n) => Math.sin(n* (Math.PI / 2)),fOp : FMathInst.sin2.bind(FMathInst),errRatio: 4},
+            {	name: "sin2",	op: (n) => Math.sin(n),fOp : FMathInst.sin2.bind(FMathInst),errRatio: 4},
  /*           {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 4},
             
             {	name: "tan",	op: (n) => // skip angles close to 90 degrees
@@ -253,6 +276,7 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
 
 //           {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
         ];
+        const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
             console.log("\n======== do prec " + parm.name);
             let maxAbsDelta = 0;
@@ -261,7 +285,6 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
             const fc = FMathInst.create();
             const startA = positiveOnly ? 0 : -FMathInst.overNum;
             //for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += FMathInst.epsilonNum) {
-            const stepP = FMathInst.epsilonNum * 2 ** skipP;
             for (let a = startA; a <= FMathInst.overNum; a += stepP) {
                 const fa = FMathInst.create(a);
                 const c = a ? parm.op(a) : 0;
@@ -307,18 +330,19 @@ function unitTest(intP, fracP, skipP, positiveOnly, doChebyshev, start, finish) 
             {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 2000},
             {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
         ];
+        const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
             console.log("======== do prec " + parm.name);
             let maxAbsDelta = 0;
             let maxStr = "100% ACCURATE !!";
             const errRatio = parm.errRatio; // get to the best number
             const fc = FMathInst.create();
-            for (let b = -FMathInst.overNum; b <= FMathInst.overNum; b += FMathInst.epsilonNum) {
+            for (let b = -FMathInst.overNum; b <= FMathInst.overNum; b += stepP) {
                 //if (b == 0) {
                 //    continue;
                 //}
                 const fb = FMathInst.create(b);
-                for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += FMathInst.epsilonNum) {
+                for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += stepP) {
                     const fa = FMathInst.create(a);
                     const c = parm.op(a, b);
                     parm.fOp(fc, fa, fb);
