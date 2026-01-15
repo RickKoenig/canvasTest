@@ -7,7 +7,7 @@
 class FMathBigIntInstance {
 	static masterFrac = 32; // master of high precision constants, 32 bit fraction
 	constructor(intPart, fracPart) { // intPart is for overflow if needed
-		this.version = .125; // try to keep as N / (2^p)
+		this.version = 200; // integer
 		// BigInts
 		this.intBits = BigInt(intPart); // for overflow
 		this.fracBits = BigInt(fracPart);
@@ -60,18 +60,6 @@ class FMathBigIntInstance {
 			*/
 
 			// remez sin
-			/*
-			SIN_1r: 0.999908447265625,
-			SIN_3r:-0.166259765625,
-			SIN_5r: 0.0078125,
-			SIN_7r: 0,
-			*/
-/*
-			SIN_1r: 1.5706787109375,
-			SIN_3r: -0.6453857421875,
-			SIN_5r: 0.07861328125,
-			SIN_7r: -0.00390625,
-*/			
 			SIN_1r: 0.9999251234196375,
 			SIN_3r: -0.16651744389484935,
 			SIN_5r: 0.008220467914556176,
@@ -117,36 +105,23 @@ class FMathBigIntInstance {
 			// pi
 			TWOPI: 26986075409n, // 6.283185307179586
 			HALFPI: 6746518852n, // 1.5707963267948966
-			THREEHALFPI: 20239556557n, // 4.71238898038469			
-			// old remez atan
-			/*
+			THREEHALFPI: 20239556557n, // 4.71238898038469	
+
+			// old remez atan			
 			ATAN_1: 4294967296n, // 1
 			ATAN_3: -1407129057n, // -0.327622764
 			ATAN_5: 684249365n, // 0.15931422
 			ATAN_7: -199700839n, // -0.0464964749
-			*/
-			// new remez atan
 			
+			// new remez atan
+			/*
 			ATAN_1: 4291559424n, // 0.99920654296875
 			ATAN_3: -1379926016n, // -0.3212890625
 			ATAN_5: 629145600n, // 0.146484375
 			ATAN_7: -167772160n, // -0.0390625
-		
+			*/
 			
 			// remez sin
-			/*
-			SIN_1r: 4294574080n, // 0.999908447265625
-			SIN_3r: -714080256n, // -0.166259765625
-			SIN_5r: 33554432n, // 0.0078125
-			SIN_7r: 0n, // 0
-			*/
-			/*
-			SIN_1r: 6746013696n, // 1.5706787109375
-			SIN_3r: -2771910656n, // -0.6453857421875
-			SIN_5r: 337641472n, // 0.07861328125
-			SIN_7r: -16777216n, // -0.00390625
-			*/
-						
 			SIN_1r: 4294645704n, // 0.9999251234196375
 			SIN_3r: -715186976n, // -0.16651744389484935
 			SIN_5r: 35306641n, // 0.008220467914556176
@@ -403,9 +378,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-
 	// roots
-
 	sqrt(out, a) {
 		const steps = 8;
 		if (a.raw <= 0n) {
@@ -508,67 +481,12 @@ class FMathBigIntInstance {
 	}
 
 	sin2NoNorm(out, a) {
-		//this.calcCoef(out, a, this.SIN_1t, this.SIN_3t, this.SIN_5t, this.SIN_7t);
 		this.calcCoef(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
-		/*
-		const steps = 4;
-		const sum = this.create();
-		const term = this.create();
-		const n = this.clone(a);
-		const d = this.clone(this.ONE);
-		const m = this.clone(this.ONE);
-		let i = 0;
-		while(true) {
-			this.div(term, n, d);
-			this.add(sum, sum, term);
-			if (++i == steps) {
-				break;
-			}
-			this.mul(n, n, a);
-			this.mul(n, n, a);
-			this.neg(n, n);
-			this.add(m, m, this.ONE);
-			this.mul(d, d, m);
-			this.add(m, m, this.ONE);
-			this.mul(d, d, m);
-		}
-		out.raw = sum.raw;*/
 		return out;
 	}
 
-	/*
-			let neg = a < 0;
-			let na = neg ? -a : a;
-			na %= 4;
-			if (na >= 3) {
-				na -= 4;
-			} else if (na >= 1) {
-				na = 2 - na;
-			}
-			if (neg) {
-				na = -na;
-			}
-			return na;
-	*/
-
 	sin2(out, a) {
 		const na = this.create();
-		//this.sin2NoNorm(out, na);
-		//return out;
-		//this.normAngRad(na, a);
-		/*
-		const neg = a.raw < this.ZERO.raw;
-		if (neg) {
-			this.neg(na, na);
-		}
-		this.mod(na, na, this.TWOPI); // 2 * PI
-		if (na.raw >= this.THREEHALFPI.raw) { // 3 / 2 * PI
-			this.sub(na, na, this.TWOPI); // 2 * PI
-		} else if (na.raw >= this.HALFPI.raw) { //PI / 2
-			this.sub(na, this.PI, na); //PI
-		}
-		this.sin2NoNorm(out, na);
-		//this.copy(out, na);*/
 		const neg = this.normAngRadSin(na, a);
 		this.sin2NoNorm(out, na);
 		if (neg) {
@@ -648,13 +566,7 @@ class FMathBigIntInstance {
 		const num = this.create();
 		const den = this.create();
 		const a = this.create();
-		//const s = this.create();
 		const r = this.create();
-		// Horner scheme. The minimax approximation was computed using the Remez algorithm
-		/* const xa = Math.abs(x);
-		const ya = Math.abs(y);
-		const a = Math.min (xa, ya) / Math.max (xa, ya);
-		const s = a * a; */
 		this.abs(xa, x);
 		this.abs(ya, y);
 		this.min(num, xa, ya);
@@ -664,19 +576,7 @@ class FMathBigIntInstance {
 			return out;
 		}
 		this.div(a, num, den); // 0 to 1
-
 		this.calcCoef(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
-		/*
-		this.mul(s, a, a);
-		this.mul(r, this.ATAN_7, s);
-		this.add(r, r, this.ATAN_5);
-		this.mul(r, r, s);
-		this.add(r, r, this.ATAN_3);
-		this.mul(r, r, s);
-		this.add(r, r, this.ATAN_1);
-		this.mul(r, r, a);
-		*/
-		//let r = (((I * s + J) * s + K) * s + L) * a;
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}

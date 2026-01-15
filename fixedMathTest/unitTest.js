@@ -5,17 +5,6 @@ function taylorCoef(x) { // 1, 3, 5, 7
     return x * (1 - s * (1 / 3 - s * (1 /5  - s / 7)));
 }
 
-/*
-// atan, remez keep for now
-function remezCoef(x) { // 1, 3, 5, 7
-    const s = x * x;
-    const C3 = -0.327622764;
-    const C5 = 0.15931422;
-    const C7 = -0.0464964749;
-    return x * (1 + s * (C3 + s * (C5  + s * C7)));
-}
-*/
-
 function chebyToRawCoefs(coefs) {
     const a1 = coefs[0] - 3 * coefs[1] + 5 * coefs[2] - 7 * coefs[3];
     const b1 = 4 * coefs[1] - 20 * coefs[2] + 56 * coefs[3];
@@ -68,14 +57,8 @@ function makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, start, finish) {
     while(++watch < maxWatch) {
         let EMin = getMaxErr(coefs, doChebyshev, fun, start, finish);
         let cBase = coefs.slice();
-        //for (let i = 0; i < dim; ++i) {
-        //    coefs[i] = cBase[i] - step; // same as iArr
-        //}
-        //coefs.splice(0, remezCoefs.length, ...remezCoefs);
         let coefMin = coefs.slice();
-        //let iMin = [0, 0, 0, 0];
         let done = true;
-
         const iArr = [-1, -1, -1, -1];
         let dig = 0;
         while(++watch < maxWatch && dig < dim) {
@@ -106,7 +89,6 @@ function makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, start, finish) {
             break;
         }
     }
-    //coefs[dig] = range(-1, coefs[dig], 1);
     if (watch == maxWatch) {
         console.error("watch2 hit !!, watch = " + watch);
     } else {
@@ -122,29 +104,17 @@ function makeCalcCoefs2(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
     }
     // new function with input range 0 to 1
     const fun01 = (x) => fun(x * finish);
-    // try remez
-    //coefs[0] = 1;
-    //const remezCoefs = [1, -0.327622764, 0.15931422, -0.0464964749];
-    //coefs.splice(0, remezCoefs.length, ...remezCoefs);
-    //const taylorCoefs = [1, -1 / 3, 1 / 5, -1 / 7];
-    //coefs.splice(0, taylorCoefs.length, ...taylorCoefs);
-    //return;
-    // end try remez
     const startStep = 5;
     const endStep = 15;// 15;
     for (let i = startStep; i <= endStep; ++i) {
         const step = 1 / 2 ** i; // refine step
         makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun01, 0, 1);
     }
-    // convert coefs from [0, 1] back to range [start, finish] // for now assume start is 0
-    //convertCoefs(coefs, start, finish);
 }
 
 function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finish) {
     const skipP = intP + fracP - displayP;
-    //const FMath = FMathNum; // static 
-    //const FMath = FMathBigInt; // static
-    const FMath = FMathBigIntInstance; // static
+    const FMath = FMathBigIntInstance; // static, uses BigInt, interface
     const FMathInst = new FMath(intP, fracP); // instance
 
     console.log("begin testFMath");
@@ -155,23 +125,25 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
     const testMinMax = true;
     const doVerbose = true;
     const testConstants = false;
-    const docreate = false;
     const doPrecUnary = true;
     const doPrecBinary = false;
 
-    if (testMinMax) { // maybe, Remez algorithm, try atan, then try more functions
-        //const fun = Math.atan;
-        //const funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
-        const fun = Math.sin;
-        const funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
-        //const fun = (x) => Math.sin(x * (Math.PI / 2));
+    if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions
+        const doAtan = false;
+        const doSin = true;
+        let fun;
+        let funCoef;
+        if (doAtan) {
+            fun = Math.atan;
+            funCoef = [1, -1 / 3, 1 / 5, -1 / 7];
+        } else if (doSin) {
+            fun = Math.sin;
+            funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
+        }
         console.log("\nTest MIN MAX fun");
-        const fixed = 6;
         // test fun from 0 to 1, should get 0 to PI/4, now try generic function
         let maxEtaylor = 0;
         let maxEXtaylor = 0;
-        //let maxEremez = 0;
-        //let maxEXremez = 0;
         let maxECalc2 = 0;
         let maxEXCalc2 = 0;
         const coefs2cb = [];
@@ -179,53 +151,34 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
 		const coefs2 = chebyToRawCoefs(coefs2cb);
 		convertCoefs(coefs2, start, finish);
         console.log("minmax unary functions like fun");
-        for (let x = 0; x <= finish; x += 2 ** -displayP) { //} / 32) { // 64
+        const fixed = 6;
+        for (let x = 0; x <= finish; x += 2 ** (1 - displayP)) { //} / 32) { // 64
             const math = fun(x);
             const taylor = calcCoef(funCoef, false, x);
-            //const remez = remezCoef(x);
             const calc2 = calcCoef(coefs2, false, x);
+            // deltas
+            // Taylor
             const Etaylor = Math.abs(taylor - math);
             if (Etaylor > maxEtaylor) {
                 maxEtaylor = Etaylor;
                 maxEXtaylor = x;
             }
-            /*
-            const Eremez = Math.abs(remez - math);
-            if (Eremez > maxEremez) {
-                maxEremez = Eremez;
-                maxEXremez = x;
-            }
-            */
+            // maybe Remez
             const Ecalc2 = Math.abs(calc2 - math);
             if (Ecalc2 > maxECalc2) {
                 maxECalc2 = Ecalc2;
                 maxEXCalc2 = x;
             }
-            
             console.log("x = " + x.toFixed(fixed) + ", fun = " + math.toFixed(fixed)
                 + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
-                //+ ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]"
                 + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
         }
         console.log("maxEtaylorX = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
-        //console.log("maxEremezX = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
-        //    + ", remezCoefs = " + [1, -0.327622764, 0.15931422, -0.0464964749]
-        //);
-        //coefs2 = chebyToRawCoefs(coefs2);
         console.log("maxEcalc2X = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
             + ", calcCoefs2 = " + coefs2
         );
     }
 
-    if (docreate) {
-        console.log("do create");
-        for (let n = -FMathInst.overNum; n <= FMathInst.overNum; n += FMathInst.epsilonNum * .25) {
-            const f = FMathInst.create(n);
-            console.log("n = " + FMathInst.numberToPrettyString(n) 
-                + ", f = " + FMathInst.toPrettyString(f)
-                + '  #');
-        }
-    }
     if (doPrecUnary) {
         console.log("UNARY FUNCTIONS");
         const r = FMathInst.create();
@@ -284,11 +237,9 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
             const errRatio = parm.errRatio; // get to the best number
             const fc = FMathInst.create();
             const startA = positiveOnly ? 0 : -FMathInst.overNum;
-            //for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += FMathInst.epsilonNum) {
             for (let a = startA; a <= FMathInst.overNum; a += stepP) {
                 const fa = FMathInst.create(a);
                 const c = a ? parm.op(a) : 0;
-                //const c = parm.op(a);
                 parm.fOp(fc, fa);
                 const nfc = FMathInst.toNumber(fc);
                 const delta = c - nfc
@@ -317,7 +268,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
     if (doPrecBinary) {
         console.log("BINARY FUNCTIONS");
         const parms = [
-            {	name: "add",	op: (a, b) => a + b,        fOp : FMathInst.add.bind(FMathInst),	errRatio: .125},
+           /* {	name: "add",	op: (a, b) => a + b,        fOp : FMathInst.add.bind(FMathInst),	errRatio: .125},
             {	name: "sub",	op: (a, b) => a - b,        fOp : FMathInst.sub.bind(FMathInst),	errRatio: .125},
             {	name: "mul",	op: (a, b) => a * b,        fOp : FMathInst.mul.bind(FMathInst),	errRatio: .75},
             {	name: "div",	op: (a, b) => b ? a / b : 0,        fOp : FMathInst.div.bind(FMathInst),	errRatio: 1.25},
@@ -326,7 +277,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
             {	name: "min",	op: (a, b) => a < b ? a : b,        fOp : FMathInst.min.bind(FMathInst),	errRatio: .125},
             {	name: "max",	op: (a, b) => a > b ? a : b,        fOp : FMathInst.max.bind(FMathInst),	errRatio: .125},
 
-            {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 16},
+            {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 16}, */
             {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 2000},
             {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
         ];
