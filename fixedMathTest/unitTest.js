@@ -112,7 +112,7 @@ function makeCalcCoefs2(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
     }
 }
 
-function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finish) {
+function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const skipP = intP + fracP - displayP;
     const FMath = FMathBigIntInstance; // static, uses BigInt, interface
     const FMathInst = new FMath(intP, fracP); // instance
@@ -129,61 +129,50 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, start, finis
     const doPrecBinary = false;
 
     if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions
-        const doAtan = false;
-        const doSin = true;
-        let fun;
-        let funCoef;
-        if (doAtan) {
-            fun = Math.atan;
-            funCoef = [1, -1 / 3, 1 / 5, -1 / 7];
-        } else if (doSin) {
-            fun = Math.sin;
-            funCoef = [1, -1 / 6, 1 / 120, -1 / 5040];
-        }
-        console.log("\nTest MIN MAX fun");
-        // test fun from 0 to 1, should get 0 to PI/4, now try generic function
-        let maxEtaylor = 0;
-        let maxEXtaylor = 0;
-        let maxECalc2 = 0;
-        let maxEXCalc2 = 0;
-        const coefs2cb = [];
-        makeCalcCoefs2(coefs2cb, doChebyshev, fun, start, finish);
-		const coefs2 = chebyToRawCoefs(coefs2cb);
-		convertCoefs(coefs2, start, finish);
-        console.log("minmax unary functions like fun");
-        const fixed = 6;
-        for (let x = 0; x <= finish; x += 2 ** (1 - displayP)) { //} / 32) { // 64
-            const math = fun(x);
-            const taylor = calcCoef(funCoef, false, x);
-            const calc2 = calcCoef(coefs2, false, x);
-            // deltas
-            // Taylor
-            const Etaylor = Math.abs(taylor - math);
-            if (Etaylor > maxEtaylor) {
-                maxEtaylor = Etaylor;
-                maxEXtaylor = x;
+        for (const curFun of funs) {
+            console.log("\nTest MIN MAX unary '" + curFun.name + "'");
+            let maxEtaylor = 0;
+            let maxEXtaylor = 0;
+            let maxECalc2 = 0;
+            let maxEXCalc2 = 0;
+            const coefs2cb = [];
+            const xRange = curFun.xRange;
+            const start = xRange[0];
+            const finish = xRange[1];
+            makeCalcCoefs2(coefs2cb, doChebyshev, curFun.fun, start, finish);
+            const coefs2 = chebyToRawCoefs(coefs2cb);
+            convertCoefs(coefs2, start, finish);
+            const fixed = 6;
+            for (let x = 0; x <= finish; x += 2 ** (1 - displayP)) { //} / 32) { // 64
+                const math = curFun.fun(x);
+                const taylor = calcCoef(curFun.tayCoef, false, x);
+                const calc2 = calcCoef(coefs2, false, x);
+                // deltas
+                // Taylor
+                const Etaylor = Math.abs(taylor - math);
+                if (Etaylor > maxEtaylor) {
+                    maxEtaylor = Etaylor;
+                    maxEXtaylor = x;
+                }
+                // maybe Remez
+                const Ecalc2 = Math.abs(calc2 - math);
+                if (Ecalc2 > maxECalc2) {
+                    maxECalc2 = Ecalc2;
+                    maxEXCalc2 = x;
+                }
+                console.log("x = " + x.toFixed(fixed) + ", " + curFun.name + " = " + math.toFixed(fixed)
+                    + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
+                    + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
             }
-            // maybe Remez
-            const Ecalc2 = Math.abs(calc2 - math);
-            if (Ecalc2 > maxECalc2) {
-                maxECalc2 = Ecalc2;
-                maxEXCalc2 = x;
-            }
-            console.log("x = " + x.toFixed(fixed) + ", fun = " + math.toFixed(fixed)
-                + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
-                + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
+            console.log("maxEtaylorX = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
+            console.log("maxEcalc2X = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
+                + ", calcCoefs2 = " + coefs2
+            );
         }
-        console.log("maxEtaylorX = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
-        console.log("maxEcalc2X = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
-            + ", calcCoefs2 = " + coefs2
-        );
     }
 
     if (doPrecUnary) {
-        console.log("UNARY FUNCTIONS");
-        const r = FMathInst.create();
-        FMathInst.sin2(r, FMathInst.create(1.1));
-        console.log("test tri = " + FMathInst.toPrettyString(r));
+        console.log("\nUNARY FUNCTIONS");
         const parms = [
             /*
             {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: .5},

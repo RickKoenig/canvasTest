@@ -364,7 +364,7 @@ class FMathBigIntInstance {
 	}
 
 	// coefs
-	calcCoef(out, x, c1, c3, c5, c7) {
+	calcCoefFix(out, x, c1, c3, c5, c7) {
 		const x2 = this.create();
 		this.mul(x2, x, x);
 		this.mul(out, c7, x2);
@@ -481,7 +481,7 @@ class FMathBigIntInstance {
 	}
 
 	sin2NoNorm(out, a) {
-		this.calcCoef(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
+		this.calcCoefFix(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
 		return out;
 	}
 
@@ -576,7 +576,7 @@ class FMathBigIntInstance {
 			return out;
 		}
 		this.div(a, num, den); // 0 to 1
-		this.calcCoef(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
+		this.calcCoefFix(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}

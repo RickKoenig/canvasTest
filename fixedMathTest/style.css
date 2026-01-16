@@ -76,6 +76,13 @@ button{
 	font-size: 85%;
 }
 
+select{
+	margin: 4px 4px 5px 4px;
+	width: 150px;
+	text-align: center;
+	font-size: 140%;
+}
+
 .editbox{
 	text-align: center;
 	width: 300px;

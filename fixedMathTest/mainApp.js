@@ -19,13 +19,25 @@ class MainApp {
 		++MainApp.numInstances;
 
 		this.doChebyshev = true;
-		this.xRange = [0, Math.PI / 2];
-		//this.xRange = [0, 1];
-		//this.fun = Math.atan;
-		//this.fun = (x) => Math.sin(x * (Math.PI / 2));
-		this.fun = Math.sin;
-		//unitTest(4, 12, 4, false, this.doChebyshev, this.xRange[0], this.xRange[1]); // false
-		unitTest(3, 12, 5, false, this.doChebyshev, this.xRange[0], this.xRange[1]); // false
+
+		this.funs = [
+			{
+				fun: Math.sin,
+				xRange: [0, Math.PI / 2],
+				tayCoef: [1, -1 / 6, 1 / 120, -1 / 5040],
+				name: "sin"
+			},
+			{
+				fun: Math.atan,
+				xRange: [0, 1],
+				tayCoef: [1, -1 / 3, 1 / 5, -1 / 7],
+				name: "atan"
+			}
+		];
+		this.curFunIdx = 0;
+		this.curFun = this.funs[this.curFunIdx];
+		//unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
+		unitTest(3, 12, 5, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -101,10 +113,11 @@ class MainApp {
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "button", null, null, "Calc coefs", v => 
 		{
-			makeCalcCoefs2(this.cbCoefs, this.doChebyshev, this.fun, this.xRange[0], this.xRange[1]);
+			const xRange = this.curFun.xRange;
+			makeCalcCoefs2(this.cbCoefs, this.doChebyshev, this.curFun.fun, xRange[0], xRange[1]);
 			this.#updateSliders();
 			this.coefs = chebyToRawCoefs(this.cbCoefs);
-			convertCoefs(this.coefs, this.xRange[0], this.xRange[1]);
+			convertCoefs(this.coefs, xRange[0], xRange[1]);
 		});
 		makeEle(this.vp, "hr");
 		for (let i = 0; i < 4; ++i) {
@@ -119,11 +132,28 @@ class MainApp {
 					this.dirty = true;
 					this.cbCoefs[i] = v;
 					this.coefs = chebyToRawCoefs(this.cbCoefs);
-					convertCoefs(this.coefs, this.xRange[0], this.xRange[1]);
+					const xRange = this.curFun.xRange;
+					convertCoefs(this.coefs, xRange[0], xRange[1]);
 				}
 			);
 			makeEle(this.vp, "hr");
 		}
+		const funNames = [];
+		for (const fun of this.funs) {
+			funNames.push(fun.name);
+		}
+		makeEle(this.vp, "pre", null, null, "function");
+		makeSelect(this.vp, funNames, (v) => 
+			{
+				this.curFunIdx = v; 
+				this.curFun = this.funs[this.curFunIdx];
+				const xRange = this.curFun.xRange;
+				this.cbCoefs = [0, 0, 0, 0];
+				this.#updateSliders();
+				this.coefs = chebyToRawCoefs(this.cbCoefs);
+				convertCoefs(this.coefs, xRange[0], xRange[1]);
+			}
+		);
 	}	
 	
 	#updateSliders() {
@@ -147,11 +177,16 @@ class MainApp {
 			this.fps = 1000 / delTime;
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
-		this.Err = getMaxErr(this.coefs, false, this.fun, this.xRange[0], this.xRange[1]);
+		const xRange = this.curFun.xRange;
+		this.Err = getMaxErr(this.coefs, false, this.curFun.fun, xRange[0], xRange[1]);
 	}
 
 	#userDraw() {
-		function normAngOne(a) {
+		const xRange = this.curFun.xRange;
+		this.drawPrim.drawLine([xRange[0], -.25], [xRange[0], .25], .03, "brown");
+		this.drawPrim.drawLine([xRange[1], -.25], [xRange[1], .25], .03, "brown");
+		// find symmetries, for trig and other functions
+		function normAngOneSin(a) {
 			let neg = a < 0;
 			let na = neg ? -a : a;
 			na %= 4;
@@ -165,14 +200,18 @@ class MainApp {
 			}
 			return na;
 		}
-		this.drawFun.changeFunctionG(normAngOne);
-		this.drawFun.draw(false, 500, 0, "darkmagenta", .01);
-		this.drawFun.changeFunctionG((x) => this.fun(x));
-		this.drawFun.draw(false, 400, 0, "red", .002);
+		this.drawFun.changeFunctionG(normAngOneSin);
+		this.drawFun.draw(false, 500, 0, "darkmagenta", .0045);
+		// draw current function
+		this.drawFun.changeFunctionG((x) => this.curFun.fun(x));
+		this.drawFun.draw(false, 400, 0, "red", .004);
+		// draw cacl2 function (Remez)
 		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, false));
 		this.drawFun.draw(false, 400, 0, "green", .0014);
+		// draw 4 coords as 2 circles in 2 dimensions
 		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
 		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
+    //drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -186,7 +225,8 @@ class MainApp {
 			+ "\nX5 = " + rawCoefs[2].toFixed(fix)
 			+ "\nX7 = " + rawCoefs[3].toFixed(fix)
 		infoStr += "\nError = " + this.Err.toFixed(6);
-		infoStr += "\nrange = " + this.xRange[0].toFixed(5) + ", " + this.xRange[1].toFixed(5);
+		const xRange = this.curFun.xRange;
+		infoStr += "\nrange = " + xRange[0].toFixed(5) + ", " + xRange[1].toFixed(5);
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 
