@@ -28,6 +28,25 @@ class MainApp {
 				name: "sin"
 			},
 			{
+				fun: Math.cos,
+				altFun: Math.sin,
+				xRange: [0, Math.PI / 2],
+				tayCoef: [1, -1 / 6, 1 / 120, -1 / 5040],
+				name: "cos"
+			},
+			{
+				fun: Math.tan,
+				xRange: [0, Math.PI / 4],
+				tayCoef: [1, 1 / 3, 2 / 15, 17 / 315],
+				name: "tan"
+			},
+			{
+				fun: Math.asin,
+				xRange: [0, 1],
+				tayCoef: [1, 1 / 6, 3 / 40, 5 / 112],
+				name: "asin"
+			},
+			{
 				fun: Math.atan,
 				xRange: [0, 1],
 				tayCoef: [1, -1 / 3, 1 / 5, -1 / 7],
@@ -37,7 +56,7 @@ class MainApp {
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
 		//unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
-		unitTest(3, 12, 5, false, this.doChebyshev, this.funs);
+		unitTest(4, 12, 7, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -114,7 +133,7 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Calc coefs", v => 
 		{
 			const xRange = this.curFun.xRange;
-			makeCalcCoefs2(this.cbCoefs, this.doChebyshev, this.curFun.fun, xRange[0], xRange[1]);
+			makeCalcCoefsRemez(this.cbCoefs, this.doChebyshev, this.curFun.altFun ? this.curFun.altFun : this.curFun.fun, xRange[0], xRange[1]);
 			this.#updateSliders();
 			this.coefs = chebyToRawCoefs(this.cbCoefs);
 			convertCoefs(this.coefs, xRange[0], xRange[1]);
@@ -139,21 +158,20 @@ class MainApp {
 			makeEle(this.vp, "hr");
 		}
 		const funNames = [];
-		for (const fun of this.funs) {
-			funNames.push(fun.name);
+		for (const curFun of this.funs) {
+			funNames.push(curFun.name);
 		}
 		makeEle(this.vp, "pre", null, null, "function");
 		makeSelect(this.vp, funNames, (v) => 
-			{
-				this.curFunIdx = v; 
-				this.curFun = this.funs[this.curFunIdx];
-				const xRange = this.curFun.xRange;
-				this.cbCoefs = [0, 0, 0, 0];
-				this.#updateSliders();
-				this.coefs = chebyToRawCoefs(this.cbCoefs);
-				convertCoefs(this.coefs, xRange[0], xRange[1]);
-			}
-		);
+		{
+			this.curFunIdx = v; 
+			this.curFun = this.funs[this.curFunIdx];
+			const xRange = this.curFun.xRange;
+			this.cbCoefs = [0, 0, 0, 0];
+			this.#updateSliders();
+			this.coefs = chebyToRawCoefs(this.cbCoefs);
+			convertCoefs(this.coefs, xRange[0], xRange[1]);
+		});
 	}	
 	
 	#updateSliders() {
@@ -183,8 +201,10 @@ class MainApp {
 
 	#userDraw() {
 		const xRange = this.curFun.xRange;
-		this.drawPrim.drawLine([xRange[0], -.25], [xRange[0], .25], .03, "brown");
-		this.drawPrim.drawLine([xRange[1], -.25], [xRange[1], .25], .03, "brown");
+		this.drawPrim.drawLine([xRange[0], -2], [xRange[0], 2], .02, "brown");
+		this.drawPrim.drawLine([xRange[1], -2], [xRange[1], 2], .02, "brown");
+
+
 		// find symmetries, for trig and other functions
 		function normAngOneSin(a) {
 			let neg = a < 0;
@@ -202,10 +222,12 @@ class MainApp {
 		}
 		this.drawFun.changeFunctionG(normAngOneSin);
 		this.drawFun.draw(false, 500, 0, "darkmagenta", .0045);
+
+
 		// draw current function
 		this.drawFun.changeFunctionG((x) => this.curFun.fun(x));
 		this.drawFun.draw(false, 400, 0, "red", .004);
-		// draw cacl2 function (Remez)
+		// draw function (Remez)
 		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, false));
 		this.drawFun.draw(false, 400, 0, "green", .0014);
 		// draw 4 coords as 2 circles in 2 dimensions

@@ -43,21 +43,14 @@ class FMathBigIntInstance {
 			EIGHTH: 1 / 8,
 			TWOPI: Math.PI * 2,
 			HALFPI: Math.PI / 2,
+			QUARTERPI: Math.PI / 4,
 			THREEHALFPI: 3 * Math.PI / 2,
 
 			// remez atan
-			ATAN_1: 1,
-            ATAN_3: -0.327622764,
-            ATAN_5: 0.15931422,
-			ATAN_7: -0.0464964749,
-			
-			// new remez atan
-			/*
 			ATAN_1 : 0.99920654296875,
 			ATAN_3 : -0.3212890625,
 			ATAN_5 : 0.146484375,
 			ATAN_7 : -0.0390625,
-			*/
 
 			// remez sin
 			SIN_1r: 0.9999251234196375,
@@ -65,11 +58,17 @@ class FMathBigIntInstance {
 			SIN_5r: 0.008220467914556176,
 			SIN_7r: -0.00016554684008878345,
 
-			// taylor sin
-			SIN_1t: 1,
-			SIN_3t: -1 / 6,
-			SIN_5t: 1 / 120,
-			SIN_7t: 1 / 5040,
+			// remez asin
+			 ASIN_1r: 0.745086669921875,
+			 ASIN_3r: 2.4578857421875,
+			 ASIN_5r: -5.09619140625,
+			 ASIN_7r: 3.4296875,
+			
+			// remez tan
+			TAN_1r: 0.9996531301086894,
+			TAN_3r: 0.3396489719996322,
+			TAN_5r: 0.10293455475618167,
+			TAN_7r: 0.1059499776568214,
 
 			// exp offsets
 			E_1_2 : Math.exp(.5), // e^^(1/2)
@@ -105,33 +104,32 @@ class FMathBigIntInstance {
 			// pi
 			TWOPI: 26986075409n, // 6.283185307179586
 			HALFPI: 6746518852n, // 1.5707963267948966
+			QUARTERPI: 3373259426n, // 0.7853981633974483
 			THREEHALFPI: 20239556557n, // 4.71238898038469	
 
-			// old remez atan			
-			ATAN_1: 4294967296n, // 1
-			ATAN_3: -1407129057n, // -0.327622764
-			ATAN_5: 684249365n, // 0.15931422
-			ATAN_7: -199700839n, // -0.0464964749
-			
-			// new remez atan
-			/*
+			// remez atan
 			ATAN_1: 4291559424n, // 0.99920654296875
 			ATAN_3: -1379926016n, // -0.3212890625
 			ATAN_5: 629145600n, // 0.146484375
 			ATAN_7: -167772160n, // -0.0390625
-			*/
 			
 			// remez sin
 			SIN_1r: 4294645704n, // 0.9999251234196375
 			SIN_3r: -715186976n, // -0.16651744389484935
 			SIN_5r: 35306641n, // 0.008220467914556176
 			SIN_7r: -711018n, // -0.00016554684008878345
-			
-			// taylor sin
-			SIN_1t: 4294967296n, // 1
-			SIN_3t: -715827883n, // -0.16666666666666666
-			SIN_5t: 35791394n, // 0.008333333333333333
-			SIN_7t: 852176n, // 0.0001984126984126984
+
+			// remez asin
+			ASIN_1r: 3200122880n, // 0.745086669921875
+			ASIN_3r: 10556538880n, // 2.4578857421875
+			ASIN_5r: -21887975424n, // -5.09619140625
+			ASIN_7r: 14730395648n, // 3.4296875
+
+			// remez tan
+			TAN_1r: 4293477501n, // 0.9996531301086894
+			TAN_3r: 1458781227n, // 0.3396489719996322
+			TAN_5r: 442100546n, // 0.10293455475618167
+			TAN_7r: 455051689n, // 0.1059499776568214
 
 			// exp offsets
 			E_1_2: 7081203938n, // 1.6487212707001282
@@ -374,7 +372,7 @@ class FMathBigIntInstance {
 		this.mul(out, out, x2);
 		this.add(out, out, c1);
 		this.mul(out, out, x);
-		//let out = (((I * x2 + J) * x2 + K) * x2 + L) * x;
+		//let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
 		return out;
 	}
 
@@ -422,7 +420,6 @@ class FMathBigIntInstance {
 
 	// output (-PI to PI]
 	normAngRad(out, a) {
-        const r = this.create();
         this.mod(out, a, this.TWOPI);
         if (out.raw > this.PI.raw) {
             this.sub(out, out, this.TWOPI);
@@ -432,6 +429,19 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	// output (-PI/2 to PI/2]
+	normAngRadHalf(out, a) {
+        const r = this.create();
+        this.mod(out, a, this.PI);
+        if (out.raw > this.HALFPI.raw) {
+            this.sub(out, out, this.PI);
+        } else if (out.raw <= -this.HALFPI.raw) {
+            this.add(out, out, this.PI);
+        }
+		return out;
+	}
+
+	// closest triangle wave to sin function
 	normAngRadSin(na, a) {
 		const neg = a.raw < this.ZERO.raw;
 		this.copy(na, a);
@@ -447,6 +457,7 @@ class FMathBigIntInstance {
 		return neg;
 	}
 
+	// taylor N steps
 	sinNoNorm(out, a) {
 		const steps = 6;
 		const sum = this.create();
@@ -480,23 +491,25 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	sin2NoNorm(out, a) {
+	// remez
+	sinRNoNorm(out, a) {
 		this.calcCoefFix(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
 		return out;
 	}
 
-	sin2(out, a) {
+	sinR(out, a) {
 		const na = this.create();
 		const neg = this.normAngRadSin(na, a);
-		this.sin2NoNorm(out, na);
+		this.sinRNoNorm(out, na);
 		if (neg) {
 			this.neg(out, out);
 		}
 		return out;
 	}
 
+	// taylor N steps
 	cosNoNorm(out, a) {
-		const steps = 20;
+		const steps = 6;
 		const sum = this.create();
 		const term = this.create();
 		const n = this.clone(this.ONE);
@@ -528,39 +541,51 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// slightly broken
-	tan(out, a) {
-		const na = this.clone(a);
-        // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
-		this.abs(na, na);
-		this.mod(na, na, this.PI);
-		this.sub(na, na, this.HALFPI);
-		this.abs(na, na);
-		const compare = this.create(2 / 8);
-		this.mul(compare, compare, this.HALFPI);
-		if (na.raw <= compare.raw) {
-			out.raw = 0n;
-			return out;
-		}
+	// remez
+	tanRNoNorm(out, a) {
+		this.calcCoefFix(out, a, this.TAN_1r, this.TAN_3r, this.TAN_5r, this.TAN_7r);
+	}
 
-		this.copy(na, a);
-		this.normAngRad(na, na);
-		const x = this.create();
-		const y = this.create();
-		this.cosNoNorm(x, na);
-		this.sinNoNorm(y, na);
-		this.div(out, y, x);
+	tanR(out, a) {
+		const na = this.create();
+		this.normAngRadHalf(na, a); // (-PI/2 to PI/2]
+		const absNa = this.create();
+		if (na.raw > this.QUARTERPI.raw) {
+			this.sub(na, this.HALFPI, na)
+			this.tanRNoNorm(out, na);
+			this.inv(out, out);
+		} else if (na.raw < -this.QUARTERPI.raw) {
+			const mp = this.clone(this.HALFPI);
+			this.neg(mp, mp);
+			this.sub(na, mp, na)
+			this.tanRNoNorm(out, na);
+			this.inv(out, out);
+		} else {
+			this.tanRNoNorm(out, na);
+		}
 		return out;
 	}
 
-	// asin
-	// acos
-
-	atan(out, y) {
-		return this.atan2(out, y, this.ONE);
+	// remez
+	asinR(out, y) {
+		const ay = this.clone(y);
+		this.abs(ay, y);
+		if (ay.raw > this.ONE.raw) {
+			out.raw = 0n;
+			return out;
+		}
+		this.calcCoefFix(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
+		return out;
 	}
 
-	atan2(out, y, x) {
+	// acos
+
+	// remez
+	atanR(out, m) {
+		return this.atan2R(out, m, this.ONE);
+	}
+
+	atan2R(out, y, x) {
 		const xa = this.create();
 		const ya = this.create();
 		const num = this.create();

@@ -49,7 +49,7 @@ function convertCoefs(coefs, start, finish) {
     coefs[3] *= finish
 }
 
-function makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, start, finish) {
+function makeCalcCoefsDeeperRemez(coefs, step, doChebyshev, fun, start, finish) {
     //console.log("deeper2");
     let maxWatch = 20000;
     let watch = 0;
@@ -96,19 +96,20 @@ function makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun, start, finish) {
     }
 }
 
+// Remez coefs, in Chebyshev space
 // for now assume start is 0, scale only
-function makeCalcCoefs2(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
+function makeCalcCoefsRemez(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5, 7
     if (!coefs.length) {
         coefs.length = 4;
         coefs.fill(0);
     }
     // new function with input range 0 to 1
-    const fun01 = (x) => fun(x * finish);
+    const funXform = (x) => fun(x * finish);
     const startStep = 5;
     const endStep = 15;// 15;
     for (let i = startStep; i <= endStep; ++i) {
         const step = 1 / 2 ** i; // refine step
-        makeCalcCoefsDeeper2(coefs, step, doChebyshev, fun01, 0, 1);
+        makeCalcCoefsDeeperRemez(coefs, step, doChebyshev, funXform, 0, 1);
     }
 }
 
@@ -123,7 +124,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("overNum = " + FMathInst.overNum);
 
     const testMinMax = true;
-    const doVerbose = true;
+    const doVerbose = false;
     const testConstants = false;
     const doPrecUnary = true;
     const doPrecBinary = false;
@@ -133,40 +134,40 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             console.log("\nTest MIN MAX unary '" + curFun.name + "'");
             let maxEtaylor = 0;
             let maxEXtaylor = 0;
-            let maxECalc2 = 0;
-            let maxEXCalc2 = 0;
-            const coefs2cb = [];
+            let maxEremez = 0;
+            let maxEXremez = 0;
+            const coefsRemezCheby = [];
             const xRange = curFun.xRange;
             const start = xRange[0];
             const finish = xRange[1];
-            makeCalcCoefs2(coefs2cb, doChebyshev, curFun.fun, start, finish);
-            const coefs2 = chebyToRawCoefs(coefs2cb);
-            convertCoefs(coefs2, start, finish);
+            makeCalcCoefsRemez(coefsRemezCheby, doChebyshev, curFun.altFun ? curFun.altFun : curFun.fun, start, finish);
+            const coefsRemez = chebyToRawCoefs(coefsRemezCheby);
+            convertCoefs(coefsRemez, start, finish);
             const fixed = 6;
             for (let x = 0; x <= finish; x += 2 ** (1 - displayP)) { //} / 32) { // 64
                 const math = curFun.fun(x);
-                const taylor = calcCoef(curFun.tayCoef, false, x);
-                const calc2 = calcCoef(coefs2, false, x);
                 // deltas
                 // Taylor
+                const taylor = calcCoef(curFun.tayCoef, false, x);
                 const Etaylor = Math.abs(taylor - math);
                 if (Etaylor > maxEtaylor) {
                     maxEtaylor = Etaylor;
                     maxEXtaylor = x;
                 }
-                // maybe Remez
-                const Ecalc2 = Math.abs(calc2 - math);
-                if (Ecalc2 > maxECalc2) {
-                    maxECalc2 = Ecalc2;
-                    maxEXCalc2 = x;
+                // Remez
+                const remez = calcCoef(coefsRemez, false, x);
+                const Eremez = Math.abs(remez - math);
+                if (Eremez > maxEremez) {
+                    maxEremez = Eremez;
+                    maxEXremez = x;
                 }
                 console.log("x = " + x.toFixed(fixed) + ", " + curFun.name + " = " + math.toFixed(fixed)
                     + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
-                    + ", [calc2 = " + calc2.toFixed(fixed) + ", E = " + Ecalc2.toFixed(fixed) + "]");
+                    + ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]");
             }
             console.log("maxEtaylorX = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
-            console.log("maxEcalc2X = " + maxEXCalc2.toFixed(fixed) + ", maxEcalc2 = " + maxECalc2.toFixed(fixed)
-                + ", calcCoefs2 = " + coefs2
+            console.log("maxEremezX = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
+                + ", calcCoefsRemez = " + coefsRemez
             );
         }
     }
@@ -175,6 +176,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
         console.log("\nUNARY FUNCTIONS");
         const parms = [
             /*
+            // basic
             {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: .5},
             {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMathInst.abs.bind(FMathInst),	errRatio: .5},
             {	name: "sign",	op: (n) => Math.sign(n),fOp : FMathInst.sign.bind(FMathInst),	errRatio: .5},
@@ -183,30 +185,26 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMathInst.ceil.bind(FMathInst),	errRatio: .5},
             {	name: "round",	op: (n) => Math.round(n),fOp : FMathInst.round.bind(FMathInst),	errRatio: .5},
             {	name: "inv",	op: (n) => n ? 1 / n : 0,fOp : FMathInst.inv.bind(FMathInst),	errRatio: .5},
-            
+            // roots
             {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 5},
             {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 30},
 */
+            // trigonometric
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 4},
-            {	name: "sin2",	op: (n) => Math.sin(n),fOp : FMathInst.sin2.bind(FMathInst),errRatio: 4},
- /*           {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 4},
-            
-            {	name: "tan",	op: (n) => // skip angles close to 90 degrees
-                    Math.abs(Math.abs(n) % Math.PI - Math.PI / 2) >= 2 / 8 * Math.PI / 2
-                 ? Math.tan(n) 
-                 : 0
-                 ,fOp : FMathInst.tan.bind(FMathInst),	errRatio: 200}, // slightly broken
-            //asin
+            {	name: "sinR",	op: (n) => Math.sin(n),fOp : FMathInst.sinR.bind(FMathInst),errRatio: 4},
+ //           {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 4},
+            {	name: "tanR",	op: (n) => Math.tan(n),fOp : FMathInst.tanR.bind(FMathInst),	errRatio: 250}, // remez
+
+            {	name: "asinR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asinR.bind(FMathInst),	errRatio: 150},
             //acos
-            */
-            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
+            {	name: "atanR",	op: (n) => Math.atan(n),fOp : FMathInst.atanR.bind(FMathInst),	errRatio: 15},
+            // exponents, logarithms
             /*
-            
             {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},
             {	name: "log",	op: (n) => n > 3 / 32 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 40},
             {	name: "log10",	op: (n) => n > 3 / 32 ? Math.log10(n) : 0, fOp : FMathInst.log10.bind(FMathInst),	errRatio: 40},
             {	name: "log2",	op: (n) => n > 3 / 32 ? Math.log2(n) : 0, fOp : FMathInst.log2.bind(FMathInst),	errRatio: 40},
-            
+            // hyperbolic
             {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 40},
             {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 40},
             {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 25},
@@ -216,7 +214,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
             // //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
-//           {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
+            //{	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
         ];
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
