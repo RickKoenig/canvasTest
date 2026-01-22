@@ -123,13 +123,13 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("epsilonNum = " + FMathInst.epsilonNum);
     console.log("overNum = " + FMathInst.overNum);
 
-    const testMinMax = true;
-    const doVerbose = false;
+    const testMinMax = false;
+    const doVerbose = true;
     const testConstants = false;
-    const doPrecUnary = true;
+    const doPrecUnary = false;
     const doPrecBinary = false;
 
-    if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions
+    if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions, in floating point
         for (const curFun of funs) {
             console.log("\nTest MIN MAX unary '" + curFun.name + "'");
             let maxEtaylor = 0;
@@ -192,11 +192,12 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             // trigonometric
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 4},
             {	name: "sinR",	op: (n) => Math.sin(n),fOp : FMathInst.sinR.bind(FMathInst),errRatio: 4},
- //           {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 4},
+            {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 8},
+            {	name: "cosR",	op: (n) => Math.cos(n),fOp : FMathInst.cosR.bind(FMathInst),	errRatio: 4},
             {	name: "tanR",	op: (n) => Math.tan(n),fOp : FMathInst.tanR.bind(FMathInst),	errRatio: 250}, // remez
 
             {	name: "asinR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asinR.bind(FMathInst),	errRatio: 150},
-            //acos
+            {	name: "acosR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acosR.bind(FMathInst),	errRatio: 150},
             {	name: "atanR",	op: (n) => Math.atan(n),fOp : FMathInst.atanR.bind(FMathInst),	errRatio: 15},
             // exponents, logarithms
             /*
@@ -226,7 +227,8 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             const startA = positiveOnly ? 0 : -FMathInst.overNum;
             for (let a = startA; a <= FMathInst.overNum; a += stepP) {
                 const fa = FMathInst.create(a);
-                const c = a ? parm.op(a) : 0;
+                //const c = a ? parm.op(a) : 0;
+                const c = parm.op(a);
                 parm.fOp(fc, fa);
                 const nfc = FMathInst.toNumber(fc);
                 const delta = c - nfc

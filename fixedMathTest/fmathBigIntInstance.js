@@ -541,6 +541,13 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	cosR(out, a) {
+		const na = this.clone(a);
+		this.add(na, na, this.HALFPI);
+		this.sinR(out, na);
+		return out;
+	}
+
 	// remez
 	tanRNoNorm(out, a) {
 		this.calcCoefFix(out, a, this.TAN_1r, this.TAN_3r, this.TAN_5r, this.TAN_7r);
@@ -567,6 +574,11 @@ class FMathBigIntInstance {
 	}
 
 	// remez
+	aSinRNoCheck(out, y) {
+		this.calcCoefFix(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
+		return out;
+	}
+
 	asinR(out, y) {
 		const ay = this.clone(y);
 		this.abs(ay, y);
@@ -574,11 +586,21 @@ class FMathBigIntInstance {
 			out.raw = 0n;
 			return out;
 		}
-		this.calcCoefFix(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
+		this.aSinRNoCheck(out, y);
 		return out;
 	}
 
-	// acos
+	acosR(out, y) {
+		const ay = this.clone(y);
+		this.abs(ay, y);
+		if (ay.raw > this.ONE.raw) {
+			out.raw = 0n;
+			return out;
+		}
+		this.aSinRNoCheck(out, y);
+		this.sub(out, this.HALFPI, out);
+		return out;
+	}
 
 	// remez
 	atanR(out, m) {

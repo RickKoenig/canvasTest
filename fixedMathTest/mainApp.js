@@ -18,6 +18,16 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
+		{
+			console.log("test poly");
+			const polya = new polynomial([3, 4]);
+			const polyb = new polynomial([5, 6, 7]);
+			const polyc = polya.add(polyb);
+			polya.print("polya");
+			polyb.print("polyb");
+			polyc.print("polyc");
+		}
+
 		this.doChebyshev = true;
 
 		this.funs = [
@@ -26,13 +36,6 @@ class MainApp {
 				xRange: [0, Math.PI / 2],
 				tayCoef: [1, -1 / 6, 1 / 120, -1 / 5040],
 				name: "sin"
-			},
-			{
-				fun: Math.cos,
-				altFun: Math.sin,
-				xRange: [0, Math.PI / 2],
-				tayCoef: [1, -1 / 6, 1 / 120, -1 / 5040],
-				name: "cos"
 			},
 			{
 				fun: Math.tan,
