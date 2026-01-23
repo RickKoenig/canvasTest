@@ -18,14 +18,22 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
+		// play with polynomials
 		{
 			console.log("test poly");
 			const polya = new polynomial([3, 4]);
 			const polyb = new polynomial([5, 6, 7]);
-			const polyc = polya.add(polyb);
+			//const polyc = new polynomial(polya.coefs);
+			const polyc = new polynomial(polya);
+			//const polyc = new polynomial();
+			polyc.mul(polyb);
 			polya.print("polya");
+			console.log("degree polya = " + polya.degree());
 			polyb.print("polyb");
+			console.log("degree polyb = " + polyb.degree());
+			polyc.scale(2);
 			polyc.print("polyc");
+			console.log("degree polyc = " + polyc.degree());
 		}
 
 		this.doChebyshev = true;
