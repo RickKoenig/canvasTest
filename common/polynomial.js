@@ -3,7 +3,7 @@
 class polynomial {
     // coefs[0] + coefs[1] * x + coefs[2] * x^2 etc.
     constructor(p) {
-        const coefs = p.coefs ? p.coefs : p; // polynomial or array
+        const coefs = p?.coefs ? p.coefs : p; // polynomial or array
         if (coefs) {
             this.coefs = coefs.slice();
         } else { // default
@@ -20,6 +20,39 @@ class polynomial {
         console.log(label + ": coefs = [" + this.coefs + "]");
     }
 
+    // (x + offset) ^ exp
+    // return new polynomial
+    //if offset == 5 and exp == 2 then return [25, 10, 1]
+    static power(offset, exp) {
+        const base = new polynomial([offset, 1]);
+        const ret = new polynomial([1]);
+        for (let i = 0; i < exp; ++i) {
+            ret.mul(base);
+        }
+        return ret;
+    }
+
+    // return new polynomial p(x + offset)
+    shift(p, offset) {
+        const backup = new polynomial(p);
+        this.prune();
+    }
+
+    // return p(x)
+    calc(x) {
+        const coefs = this.coefs;
+        if (!this.coefs.length) {
+            return 0;
+        }
+        let i = coefs.length - 1;
+        let ret = coefs[i];
+        while(i--) {
+            ret *= x;
+            ret += coefs[i];
+        }
+        return ret;
+    }
+    
     // all these functions are MUTABLE
     // remove highest degrees with value of 0 
     prune() {
@@ -32,11 +65,6 @@ class polynomial {
         }
     }
 
-    // return p(x)
-    calc(x) {
-        return 0;
-    }
-    
     // just these two, additive
     add(rhs) {
         this.binOp(rhs, (a, b) => a + b);
@@ -48,6 +76,10 @@ class polynomial {
 
     // scale
     scale(scl) {
+        if (!scl) {
+            this.coefs.length = 0;
+            return;
+        }
         for (let i = 0; i < this.coefs.length; ++i) {
             this.coefs[i] *= scl;
         }
@@ -79,6 +111,7 @@ class polynomial {
         }
     }
 
+    // add and sub
     binOp(rhs, op) {
         const maxIdx = Math.max(this.coefs.length, rhs.coefs.length);
         for (let i = 0; i < maxIdx; ++i) {
@@ -92,16 +125,6 @@ class polynomial {
             }
             this.coefs[i] = op(a, b);
         }
-        this.prune();
-    }
-
-    // (x + a) ^ e
-    power() {
-
-    }
-
-    shift(p, offset) {
-        const backup = new polynomial(p);
         this.prune();
     }
 }

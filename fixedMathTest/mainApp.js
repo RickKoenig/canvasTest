@@ -31,9 +31,18 @@ class MainApp {
 			console.log("degree polya = " + polya.degree());
 			polyb.print("polyb");
 			console.log("degree polyb = " + polyb.degree());
-			polyc.scale(2);
 			polyc.print("polyc");
 			console.log("degree polyc = " + polyc.degree());
+			polyc.scale(10);
+			polyc.print("polyc scl");
+			console.log("degree polyc scl = " + polyc.degree());
+			const c = polyb.calc(10);
+			console.log("calc = " + c);
+			const pow = polynomial.power(-5, 2);
+			pow.print("pow");
+			console.log("degree pow = " + pow.degree());
+
+			console.log("end test poly\n");
 		}
 
 		this.doChebyshev = true;
