@@ -10,10 +10,6 @@ class MainApp {
 		return MainApp.numInstances;
 	}
 
-	mul(a, b) {
-		return a * b;
-	}
-
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
@@ -21,26 +17,59 @@ class MainApp {
 		// play with polynomials
 		{
 			console.log("test poly");
-			const polya = new polynomial([3, 4]);
-			const polyb = new polynomial([5, 6, 7]);
-			//const polyc = new polynomial(polya.coefs);
-			const polyc = new polynomial(polya);
-			//const polyc = new polynomial();
-			polyc.mul(polyb);
-			polya.print("polya");
-			console.log("degree polya = " + polya.degree());
-			polyb.print("polyb");
-			console.log("degree polyb = " + polyb.degree());
-			polyc.print("polyc");
-			console.log("degree polyc = " + polyc.degree());
-			polyc.scale(10);
-			polyc.print("polyc scl");
-			console.log("degree polyc scl = " + polyc.degree());
-			const c = polyb.calc(10);
-			console.log("calc = " + c);
-			const pow = polynomial.power(-5, 2);
-			pow.print("pow");
-			console.log("degree pow = " + pow.degree());
+			const polyA = new poly([3, 4]);
+			const polyB = new poly([5, 6, 7]);
+			const polyOut = new poly();
+
+			// test add, sub, mul
+			poly.print(polyA, "polyA");
+			poly.print(polyB, "polyB");
+			poly.print(polyOut ,"polyOut");
+
+			poly.add(polyOut, polyA, polyB);
+			poly.print(polyOut ,"polyOutAdd");
+			poly.sub(polyOut, polyA, polyB);
+			poly.print(polyOut ,"polyOutSub");
+			poly.mul(polyOut, polyA, polyB);
+			poly.print(polyOut ,"polyOutMul");
+			const polyC = new poly(polyOut);
+			const pm = new poly([2, 3]);
+			poly.mul(pm, pm, pm);
+			poly.print(pm, "test aliasing1");
+			poly.mul(pm, pm, pm);
+			poly.print(pm, "test aliasing2");
+
+			// test scale
+			const polyCScale = new poly();
+			poly.scale(polyCScale, polyC, 10);
+			poly.print(polyCScale, "polyc scl");
+
+			// test calc
+			let c = poly.calc(polyA, 10);
+			console.log("calca = " + c);
+			c = poly.calc(polyB, 10);
+			console.log("calcb = " + c);
+			c = poly.calc(polyC, 1000);
+			console.log("calcc = " + c);
+
+			// test compose
+			const polyf = new poly([5, 3, 2]);
+			poly.print(polyf, "polyf");
+			const polyg = new poly([3, 4]);
+			poly.print(polyg, "polyg");
+			const polyh = new poly();
+			poly.compose(polyh, polyf, polyg);
+			poly.print(polyh, "polyh compose f and g");
+
+			// test power
+			const polyPower = new poly();
+			poly.power(polyPower, 2, 3);
+			poly.print(polyPower, "polyPower");
+
+			// test shift
+			const polyfShift = new poly();
+			poly.shift(polyfShift, polyf, 10);
+			poly.print(polyfShift, "polyfShift");
 
 			console.log("end test poly\n");
 		}
@@ -75,8 +104,8 @@ class MainApp {
 		];
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
-		//unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
-		unitTest(4, 12, 7, false, this.doChebyshev, this.funs);
+		// //unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
+		//unitTest(4, 12, 7, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
