@@ -162,7 +162,7 @@ class MainApp {
 			const start = this.startLineStep;
 			const step = 1;
 			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineStep = v});
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,  (v) => {this.lineStep = v});
 			// end lineStep UI
 		}
 
@@ -177,7 +177,7 @@ class MainApp {
 			const start = 0;
 			const step = this.stepPhase;
 			const precision = 2;
-			this.phaseCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.phase = v});
+			this.phaseCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, (v) => {this.phase = v});
 			// end phase UI
 		}
 
@@ -191,7 +191,7 @@ class MainApp {
 			const start = 0;
 			const step = this.stepFreq;
 			const precision = 2;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 			// end freq UI
 		}
 

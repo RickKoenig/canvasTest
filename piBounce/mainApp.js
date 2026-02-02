@@ -85,7 +85,7 @@ class MainApp {
 			const start = 0;
 			const step = .0625;
 			const precision = 3;
-			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.speedCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.playSpeed = outVal;
 				}
@@ -128,7 +128,7 @@ class MainApp {
 			const start = 0;
 			const step = .5;
 			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.phyObjs[1].mass = outVal;
 					this.#physicsReset();

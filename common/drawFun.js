@@ -40,7 +40,7 @@ class DrawFun {
 			try { // drawFunction might be defined, but if you run it, it might generate an error
 				x = this.functionF(t);
 			} catch (err) {
-				//console.error("Error drawing function: <<< " + err + " >>>");
+				console.error("Error drawing function: <<< " + err + " >>>");
 			}
 			let y;
 			try { // drawFunction might be defined, but if you run it, it might generate an error

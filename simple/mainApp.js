@@ -427,7 +427,7 @@ class MainApp {
 			const step = 3;
 			const precision = 4;
 			const callback = null;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, callback);
 		}
 		makeEle(this.vp, "hr");
 		makeEle(this.vp, "span", null, "marg", "Add remove points");

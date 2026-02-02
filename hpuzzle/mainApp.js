@@ -498,7 +498,7 @@ class MainApp {
 				const start = 40;
 				const step = 1;
 				const precision = 0;
-				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+				new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 					(v) => {
 						this.iterations = v;
 						this.dirty = true;
@@ -513,7 +513,7 @@ class MainApp {
 				const start = .10;
 				const step = .01;
 				const precision = 2;
-				new makeEleCombo(this.vp, label, min, max, start, step, precision,
+				new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 					(v) => {
 						this.stepRat = v;
 						this.dirty = true;

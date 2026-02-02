@@ -74,7 +74,7 @@ class MainApp {
 			const max = this.numColorsMax;
 			const start = this.numColorsStart;
 			const callback = (v) => {this.numColors = v};
-			new makeEleCombo(this.vp, label, min, max, start, 0, 0, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, 0, 0, callback);
 		}
 		// reset sim
 		makeEle(this.vp, "button", null, null, "Restart Sim",this.#restartSim.bind(this));
@@ -87,7 +87,7 @@ class MainApp {
 			const start = .125;
 			const prec = 3;
 			const callback = (v) => {this.simSpeed = v};
-			new makeEleCombo(this.vp, label, min, max, start, step, prec, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, prec, callback);
 		}
 	}
 

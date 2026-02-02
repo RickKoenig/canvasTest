@@ -357,7 +357,7 @@ class QBox1D {
 			const start = 0;
 			const step = this.animStep;
 			const precision = this.animPrecision;
-			this.eles.animCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
+			this.eles.animCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, (v) => {
 				if (this.animX) {
 					this.animPos = v;
 				} else {
@@ -375,7 +375,7 @@ class QBox1D {
 			const start = 0;
 			const step = this.freqStep;
 			const precision = this.freqPrecision;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, (v) => {this.freq = v});
 		}
 		
 		makeEle(this.vp, "hr");
@@ -420,7 +420,7 @@ class QBox1D {
 			const start = 1;
 			const step = 1;
 			const precision = 0;
-			this.eles.qNumSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, (v) => {
+			this.eles.qNumSliderDOM = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, (v) => {
 				this.#updateQnumScroll(v - 1);
 				this.updateEnergyList(); // UI
 			}, null, false);
@@ -433,7 +433,7 @@ class QBox1D {
 			const start = 0;
 			const step = .5;
 			const precision = 1;
-			this.eles.ampSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+			this.eles.ampSliderDOM = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
 		// phase slider combo
 		{
@@ -443,7 +443,7 @@ class QBox1D {
 			const start = 0;
 			const step = .5;
 			const precision = 1;
-			this.eles.phaseSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+			this.eles.phaseSliderDOM = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
 		// spread slider combo
 		{
@@ -453,7 +453,7 @@ class QBox1D {
 			const start = 0;
 			const step = 1;
 			const precision = 0;
-			this.eles.spreadSliderDOM = new makeEleCombo(this.vp, label, min, max, start, step, precision, null, null, false);
+			this.eles.spreadSliderDOM = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision, null, null, false);
 		}
 		makeEle(this.vp, "button", null, "lessWidth", "Replace", () => {
 			this.#addReplaceEnergy(false);

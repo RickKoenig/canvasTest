@@ -1,10 +1,5 @@
 'use strict';
 
-function taylorCoef(x) { // 1, 3, 5, 7
-    const s = x * x;
-    return x * (1 - s * (1 / 3 - s * (1 /5  - s / 7)));
-}
-
 function chebyToRawCoefs(coefs) {
     const a1 = coefs[0] - 3 * coefs[1] + 5 * coefs[2] - 7 * coefs[3];
     const b1 = 4 * coefs[1] - 20 * coefs[2] + 56 * coefs[3];

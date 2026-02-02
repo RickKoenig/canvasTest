@@ -39,13 +39,45 @@ class poly {
     }
 
     static print(p, label) {
-        console.log(label + ": coefs = [" + p.coefs + "], degree = " + (p.coefs.length - 1));
+        let str = "";
+        const fix = 6;
+        const pad = 10;
+        const vertical = true;
+        str += label;
+        str += ": coefs = [";
+        if (vertical) {
+            str += '\n';
+        }
+        for (let i = 0; i < p.coefs.length; ++i) {
+            if (vertical) {
+                str += "   ";
+            }
+            const c = p.coefs[i];
+            let s;
+            if (Number.isInteger(c)) {
+                s = c.toFixed(0);
+            } else {
+                s = c.toFixed(fix);
+            }
+            s = s.padStart(10);
+            str += s;
+            if (i != p.coefs.length - 1) {
+                str += ", ";
+            }
+            if (vertical) {
+                str += '\n';
+            }
+        }
+        str += "], degree = ";
+        str += p.coefs.length - 1;
+        console.log(str);
+        //console.log(label + ": coefs = [" + p.coefs + "], degree = " + (p.coefs.length - 1));
     }
 
     // return p(x)
     static calc(p, x) {
-        const coefs = p.coefs;
-        if (!p.coefs.length) {
+        const coefs = p?.coefs ? p.coefs : p; // polynomial or array or nothing
+        if (!coefs.length) {
             return 0;
         }
         let i = coefs.length - 1;
@@ -156,10 +188,10 @@ class poly {
     }
 
     // return new polynomial p(x + offset)
-    static shift(out, f, offset) {
+    static shift(out, p, offset) {
         // make base
         const g = new poly([offset, 1]);
-        poly.compose(out, f, g);
+        poly.compose(out, p, g);
         return out;
     }
 }

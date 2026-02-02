@@ -150,7 +150,7 @@ class MainApp {
 			const start = this.startQNum + 1;
 			const step = 1;
 			const precision = 0;
-			new makeEleCombo(this.vp, label, min, max, start, step, precision,
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 				(v) => {
 					this.curQnum = v - 1;
 					this.dirty = true;

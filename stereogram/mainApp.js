@@ -79,7 +79,7 @@ class MainApp {
 			const start = this.startSep;
 			const step = 1;
 			const callback = (v) => {this.separation = v};
-			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
 		// depth
 		{
@@ -89,7 +89,7 @@ class MainApp {
 			const start = this.startDepthMul;
 			const step = 1;
 			const callback = (v) => {this.depthMul = v};
-			new makeEleCombo(this.vp, label, min, max, start, step, 0, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, 0, callback);
 		}
 		// show depth map checkbox
 		const ele = makeEle(this.vp, "span", "marg", null, "Show depth map");
@@ -103,7 +103,7 @@ class MainApp {
 			const start = .25;
 			const step = .25;
 			const callback = (v) => {this.animSpeed = v};
-			new makeEleCombo(this.vp, label, min, max, start, step, 2, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, 2, callback);
 		}
 	}
 

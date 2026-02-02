@@ -90,7 +90,7 @@ function makeSelect(parent, options, clickfunc) {
 }
 
 // text, slider and a reset button
-class makeEleCombo {
+class makeEleSliderCombo {
 	constructor(parent, labelStr, min, max, start, step, precision
 		, outerCallback, conversionCallback, resetButton = true) {
 		// pre/span

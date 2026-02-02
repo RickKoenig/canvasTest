@@ -192,7 +192,7 @@ class MainApp {
 			const start = this.numElements;
 			const step = 1;
 			const precision = 0;
-			this.roiCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.roiCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.roiLevel = outVal;
 				}
@@ -207,7 +207,7 @@ class MainApp {
 			const start = this.numElements;
 			const step = 1;
 			const precision = 0;
-			this.depthCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.depthCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.depth = outVal;
 					this.doUpdateDataComplex = true;
@@ -233,7 +233,7 @@ class MainApp {
 			const start = -2;
 			const step = .0625;
 			const precision = 4;
-			this.speedCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.speedCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.playSpeed = outVal;
 				}

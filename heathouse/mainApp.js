@@ -73,7 +73,7 @@ class MainApp {
 			const start = 10;
 			const prec = 3;
 			const callback = (v) => {this.simSpeed = v};
-			new makeEleCombo(this.vp, label, min, max, start, step, prec, callback);
+			new makeEleSliderCombo(this.vp, label, min, max, start, step, prec, callback);
 		}
 	}
 

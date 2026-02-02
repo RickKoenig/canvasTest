@@ -172,6 +172,13 @@ class MainApp {
 		this.Err = 0;
 		this.res = 32;
 		this.sliderMul = 1024;
+
+		// test poly shift
+		this.sinCoefs = new poly([0, 1, 0, -1 / 6, 0, 1 / 120, 0, -1 / 5040]);
+		poly.print(this.sinCoefs, "sinCoefs");
+		this.cosCoefs = new poly();
+		poly.shift(this.cosCoefs, this.sinCoefs, Math.PI / 2);
+		poly.print(this.cosCoefs, "cosCoefs");
 	}
 
 	#userBuildUI() {
@@ -188,6 +195,7 @@ class MainApp {
 			convertCoefs(this.coefs, xRange[0], xRange[1]);
 		});
 		makeEle(this.vp, "hr");
+		makeEle(this.vp, "pre", null, null, "Chebyshev coefs");
 		for (let i = 0; i < 4; ++i) {
 			const label = "C" + (1 + 2 * i);
 			const min = -2;
@@ -195,7 +203,7 @@ class MainApp {
 			const start = 0;
 			const step = 1 / (this.res * this.sliderMul);
 			const precision = 5;
-			this.eles[label] = new makeEleCombo(this.vp, label, min, max, start, step, precision,
+			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 				(v) => {
 					this.dirty = true;
 					this.cbCoefs[i] = v;
@@ -249,12 +257,13 @@ class MainApp {
 	}
 
 	#userDraw() {
+		// draw range of remez sample
 		const xRange = this.curFun.xRange;
 		this.drawPrim.drawLine([xRange[0], -2], [xRange[0], 2], .02, "brown");
 		this.drawPrim.drawLine([xRange[1], -2], [xRange[1], 2], .02, "brown");
 
-
 		// find symmetries, for trig and other functions
+		// triangle wave
 		function normAngOneSin(a) {
 			let neg = a < 0;
 			let na = neg ? -a : a;
@@ -270,19 +279,25 @@ class MainApp {
 			return na;
 		}
 		this.drawFun.changeFunctionG(normAngOneSin);
-		this.drawFun.draw(false, 500, 0, "darkmagenta", .0045);
-
+		this.drawFun.draw(false, 500, 0, "darkmagenta", .004);
 
 		// draw current function
 		this.drawFun.changeFunctionG((x) => this.curFun.fun(x));
-		this.drawFun.draw(false, 400, 0, "red", .004);
+		this.drawFun.draw(false, 400, 0, "red", .002);
+		
 		// draw function (Remez)
 		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, false));
-		this.drawFun.draw(false, 400, 0, "green", .0014);
+		this.drawFun.draw(false, 400, 0, "green", .0015);
+		
 		// draw 4 coords as 2 circles in 2 dimensions
 		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
 		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
-    //drawLine(p0, p1, lineWidth = .01, color = "black", ndcScale = false) {
+		
+		// test poly shift with sin to cos
+		this.drawFun.changeFunctionG(x => poly.calc(this.sinCoefs, x));
+		this.drawFun.draw(false,400, 0, "blue", .001);
+		this.drawFun.changeFunctionG(x => poly.calc(this.cosCoefs, x));
+		this.drawFun.draw(false,400, 0, "purple", .0005);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

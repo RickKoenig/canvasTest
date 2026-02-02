@@ -307,7 +307,7 @@ class MainApp {
 			const start = this.numElements;
 			const step = 1;
 			const precision = 0;
-			this.eles.depthCombo = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.eles.depthCombo = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.depth = outVal;
 				}
@@ -348,7 +348,7 @@ class MainApp {
 			const start = this.curSlot;
 			const step = 1;
 			const precision = 0;
-			this.eles.curSlot = new makeEleCombo(this.vp, label, min, max, start, step, precision
+			this.eles.curSlot = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
 				, (outVal) => {
 					this.#changSlot(outVal);
 				}, null, false
