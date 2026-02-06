@@ -16,7 +16,7 @@ class MainApp {
 
 		this.funs = [
 			{
-				tayCoef: [-10, 1, 2, 1 / 3, 0, 0, 0, 0],
+				tayCoef: [-10, 1, 2, 1 / 3, 0, 0, 0, 0], // not really taylor, just the coefs of the polynomial
 				fun: null, // set later
 				xRange: [-1, 3],
 				name: "testPoly"
@@ -26,6 +26,12 @@ class MainApp {
 				xRange: [0, Math.PI / 2],
 				tayCoef: [0, 1, 0, -1 / 6, 0, 1 / 120, 0, -1 / 5040],
 				name: "sin"
+			},
+			{
+				fun: Math.cos,
+				xRange: [0, Math.PI / 2],
+				tayCoef: [1, 0, -1 / 2, 0, 1 / 24, 0, -1 / 720, 0],
+				name: "cos"
 			},
 			{
 				fun: Math.tan,
@@ -44,6 +50,18 @@ class MainApp {
 				xRange: [0, 1],
 				tayCoef: [0, 1, 0, -1 / 3, 0, 1 / 5, 0, -1 / 7],
 				name: "atan"
+			},
+			{
+				fun: Math.exp,
+				xRange: [0, 1],
+				tayCoef: [1, 1, 1 / 2, 1 / 6, 1 / 24, 1 / 120, 1 / 720, 1 / 5040],
+				name: "exp"
+			},
+			{
+				fun: Math.log2,
+				xRange: [1, 2],
+				tayCoef: [0, 0, 0, 0, 0, 0, 0, 0],
+				name: "log2"
 			}
 		];
 		// bind some functions
@@ -99,52 +117,120 @@ class MainApp {
 	}
 
 	#calcCoefsTaylor() {
-		this.coefs = this.curFun.tayCoef.slice();
+		this.coefs = this.curFun.tayCoef.slice(0, this.numCoefs);
+	}
+
+	#genChebyCoefs() {
+		this.chPolys = []; // complete list of Chebyshev polynomials
+		this.chPolys.push(new poly([1]));
+		this.chPolys.push(new poly([0, 1]));
+		const twoX = new poly([0, 2]);
+		for (let i = 2; i < this.maxCoefs; ++i) {
+			const cb = new poly();
+			poly.mul(cb, twoX, this.chPolys[i - 1]);
+			poly.sub(cb, cb, this.chPolys[i - 2]);
+			this.chPolys.push(cb);
+		}
+		//console.log("hi");
+	}
+
+	#chebyCoefsToRawCoefs(chebCoefs) {
+		const ret = new poly();
+		const scl = new poly();
+		for (let i = 0; i < chebCoefs.coefs.length; ++i) {
+			poly.scale(scl, this.chPolys[i], chebCoefs.coefs[i]);
+			poly.add(ret, ret, scl);
+		}
+		poly.prune(ret);
+		return ret;
+	}
+
+	#changeRange(from, to) {
+		const m = (to[1] - to[0]) / (from[1] - from[0]);
+		const b = to[0] - m * from[0];
+		return new poly([b, m]);
 	}
 
 	// we'll see ...
-	#calcCoefsCheb() {
-		this.coefs = [.1, .2, .3, .4, .5, .6, .7, .8];
+	#calcCoefsCheb(fun, xRange, numNodes, numCoefs) {
+		this.coefs = new Array(this.maxCoefs).fill(0);
+		// calc nodes 'u'
+		const N = numNodes;
+		console.log("");
+		const us = [];
+		for (let i = 0; i < N; ++i) {
+			const u = -Math.cos((i + 1 / 2) / N * Math.PI);
+			us.push(u);
+		}
+		// move from 'u' to 'x'
+		const xs = [];
+		const uToX = this.#changeRange([-1, 1], xRange);
+		for (let i = 0; i < N; ++i) {
+			const u = us[i];
+			const x = poly.calc(uToX, u);
+			xs.push(x);
+		}
+		// calc 'y'
+		const ys = [];
+		for (let i = 0; i < N; ++i) {
+			const x = xs[i];
+			const y = fun(x);
+			ys.push(y);
+		}
+		// calc 'c', integrate
+		const cArr = new Array(this.maxCoefs).fill(0);
+		for (let i = 0; i < N; ++i) {
+			const y = ys[i];
+			const u = us[i];
+			for (let j = 0; j < numCoefs; ++j) {
+				cArr[j] += y * poly.calc(this.chPolys[j], u);
+			}
+		}
+		// average
+		cArr[0] /= N;
+		for (let i = 1; i < numCoefs; ++i) {
+			cArr[i] /= N;
+			cArr[i] *= 2;
+		}
+		console.log("us = " + us);
+		console.log("xs = " + xs);
+		console.log("ys = " + ys);
+		console.log("cArr = " + cArr);
+		// convert to raw
+		const rawArr = this.#chebyCoefsToRawCoefs(new poly(cArr));
+		// shift scale compose from u to x
+		console.log("rawArr 1 = " + rawArr.coefs);
+		const xToU = this.#changeRange(xRange, [-1, 1]); // 'x' to 'u'
+		poly.compose(rawArr, rawArr, xToU);
+		console.log("rawArr 2 = " + rawArr.coefs);
+		this.coefs = rawArr.coefs;
+		if (this.coefs.length < this.maxCoefs) {
+			const cat = new Array(this.maxCoefs - this.coefs.length).fill(0);
+			this.coefs.push(...cat);
+		}
 	}
 
 	#testCheby() {
 		console.log("test cheby");
-		const testFun = this.funs[0].fun
-		const x = 1;
-		const y = testFun(x);
-		console.log("x = " + x + ", y = " + y);
-		// calc nodes
-		const N = 5;
-		console.log("");
-		const us = [];
-		for (let i = 0; i < N; ++i) {
-			const u = -Math.cos((i + 1 / 2)/ N * Math.PI);
-			us.push(u);
-		}
-		const xs = [];
-		const xRange = this.funs[0].xRange;
-		for (let i = 0; i < N; ++i) {
-			const u = us[i];
-			// go from u = [-1, 1], to xRange
-			const x = (xRange[1] - xRange[0]) / 2 * u
-				+ (xRange[0] + xRange[1]) / 2;
-			xs.push(x);
-		}
-		const ys = [];
-		for (let i = 0; i < N; ++i) {
-			const x = xs[i];
-			const y = testFun(x);
-			ys.push(y);
-		}
+		this.#calcCoefsCheb(this.funs[0].fun, this.funs[0].xRange, this.numNodes, this.numCoefs);
+	}
 
-		console.log("us = " + us);
-		console.log("xs = " + xs);
-		console.log("ys = " + ys);
+	#getMaxErr(coefs, fun, xRange) {
+		const samples = 200;
+		let maxE = 0;
+		for (let x = xRange[0] + 1 / samples; x < xRange[1]; x += 1 / samples) {
+			const math = fun(x);
+			const calc = poly.calc(coefs, x);
+			const E = Math.abs(calc - math);
+			if (E > maxE) {
+				maxE = E;
+			}
+		}
+		return maxE;
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
-		this.#testCheby();
 		// user init section
 		// measure frame rate
 		this.fps;
@@ -157,8 +243,12 @@ class MainApp {
 		this.startZoom = .125;
 
 		// init coefs
-		this.numCoefs = 8;
-		this.coefs = Array(this.numCoefs).fill(0);
+		this.maxCoefs = 8;
+		this.numNodes = 5;
+		this.numCoefs = 3;
+		this.#genChebyCoefs();
+		this.#testCheby();
+		this.coefs = Array(this.maxCoefs).fill(0);
 		this.Err = 0;
 		this.sliderMul = 32768;
 	}
@@ -175,7 +265,7 @@ class MainApp {
 		});
 		makeEle(this.vp, "button", null, null, "Calc coefs cheb", v => 
 		{
-			this.#calcCoefsCheb();
+			this.#calcCoefsCheb(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Reset coefs", v => 
@@ -183,8 +273,28 @@ class MainApp {
 			this.coefs.fill(0);
 			this.#updateSliders();
 		});
+		{
+			const label = "Num Nodes";
+			const min = 1;
+			const max = 10;
+			const start = 5;
+			const step = 1;
+			const precision = 0;
+			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
+				(v) => this.numNodes = v, null, false);
+		}
+		{
+			const label = "Num Coefs";
+			const min = 1;
+			const max = this.maxCoefs;
+			const start = 3;
+			const step = 1;
+			const precision = 0;
+			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
+				(v) => this.numCoefs = v, null, false);
+		}
 		makeEle(this.vp, "hr");
-		for (let i = 0; i < this.numCoefs; ++i) {
+		for (let i = 0; i < this.maxCoefs; ++i) {
 			const label = "C" + i;
 			const min = -20;
 			const max = 20;
@@ -214,7 +324,7 @@ class MainApp {
 	}	
 	
 	#updateSliders() {
-		for (let i = 0; i < this.numCoefs; ++i) {
+		for (let i = 0; i < this.maxCoefs; ++i) {
 			const label = "C" + i;
 			this.eles[label].setValue(this.coefs[i]);
 		}
@@ -243,19 +353,26 @@ class MainApp {
 		this.drawPrim.drawLine([xRange[0], -200], [xRange[0], 200], .02, "brown");
 		this.drawPrim.drawLine([xRange[1], -200], [xRange[1], 200], .02, "brown");
 
-		// draw taylor
+		// draw coefs
 		this.drawFun.changeFunctionG(x => poly.calc(this.coefs, x));
-		this.drawFun.draw(false, 400, 0, "green", .04);
+		this.drawFun.draw(false, 400, 0, "green", .01);
 
 		// draw current function
 		this.drawFun.changeFunctionG(x => this.curFun.fun(x));
-		this.drawFun.draw(false, 400, 0, "red", .02);
+		this.drawFun.draw(false, 400, 0, "red", .005);
+
+		// draw delta
+		this.drawFun.changeFunctionG(x => (this.curFun.fun(x) - poly.calc(this.coefs, x)));
+		this.drawFun.draw(false, 400, 0, "blue", .005);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
+
+		this.Err = this.#getMaxErr(this.coefs, this.curFun.fun, this.curFun.xRange);
+
 		infoStr += "\nError = " + this.Err.toFixed(6);
 		this.eles.textInfoLog.innerText = infoStr;
 	}

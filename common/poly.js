@@ -162,12 +162,13 @@ class poly {
 
     // f(g))
     static compose(out, f, g) {
+        const fCoefs = f.coefs;
         out.coefs = [];
         const gPow = new poly([1]); // multiplicative identity
         const term = new poly();
-        for (let i = 0; i < f.coefs.length; ++i) {
+        for (let i = 0; i < fCoefs.length; ++i) {
             poly.copy(term, gPow);
-            poly.scale(term, term, f.coefs[i]);
+            poly.scale(term, term, fCoefs[i]);
             poly.add(out, out, term);
             poly.mul(gPow, gPow, g);
         }
