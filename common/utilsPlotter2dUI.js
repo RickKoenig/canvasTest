@@ -64,7 +64,7 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 	return ele;
 }
 
-function makeSelect(parent, options, clickfunc) {
+function makeSelect(parent, options, clickfunc, idx) {
 	var ele = document.createElement('select');
 	//const typ = ele.type;
 	//console.log("type = " + typ);
@@ -72,12 +72,6 @@ function makeSelect(parent, options, clickfunc) {
 	ele.onchange = (ele) => {
 		clickfunc(ele.target.value);
 	}
-	clickfunc(0); // fire callback once on init
-	if (parent) {
-		parent.appendChild(ele);
-	}
-	//ele.name = "hi";//curname;
-	//ele.onclicknotthis = clickfunc;
 	if (options) {
 		for (let i=0; i < options.length; ++i) {
 			var op = document.createElement('option');
@@ -85,6 +79,14 @@ function makeSelect(parent, options, clickfunc) {
 			op.value = i;
 			ele.add(op, null);
 		}
+	}
+	if (!idx) {
+		idx = 0;
+	}
+	clickfunc(idx);
+	ele.selectedIndex = idx;
+	if (parent) {
+		parent.appendChild(ele);
 	}
 	return ele;
 }

@@ -195,4 +195,33 @@ class poly {
         poly.compose(out, p, g);
         return out;
     }
+
+    static derivative(out, p) {
+        for (let i = 1; i < p.coefs.length; ++i) {
+            out.coefs[i] = i * p.coefs[i];
+        }
+        out.coefs.shift();
+        return out;
+    }
+
+    // only roots that cross the line
+    // only roots that have non zero derivative, can't change direction at y = 0, no duplicate roots
+    static findRoots(fun, xRange) {
+        const roots = [];
+        const step = 12;
+        const iStep = 1 / step;
+        let lastX = xRange[0];
+        let lastPositive = fun(lastX) >= 0;
+        let x = xRange[0] + iStep;
+        for (; x <= xRange[1]; x += iStep) {
+            const positive = fun(x) >= 0;
+            if (positive != lastPositive) {
+                roots.push(lastX);
+                roots.push(x);
+            }
+            lastPositive = positive;
+            lastX = x;       
+        }
+        return roots;
+    }
 }
