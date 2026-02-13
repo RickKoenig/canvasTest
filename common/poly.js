@@ -204,6 +204,31 @@ class poly {
         return out;
     }
 
+    // find just one root using bisection method
+    // assumes a root can be found inside xRange and xRange is of opposite signs
+    static #findRoot(fun, xRange) {
+        let numSteps = 20;
+        let xLeft = xRange[0];
+        let xRight = xRange[1];
+        let yLeft = fun(xLeft);
+        let yLeftPositive = yLeft >= 0;
+        while(--numSteps >= 0) {
+            const xMid = (xLeft + xRight) * .5;
+            const yMid = fun(xMid);
+            const yMidPositive = yMid >= 0;
+            if (yMidPositive == yLeftPositive) {
+                // move in from the left
+                xLeft = xMid;
+            } else {
+                // move in from the right
+                xRight = xMid;
+
+            }
+        }
+        let xMiddle = (xLeft + xRight) * .5;
+        return xMiddle;
+    }
+
     // only roots that cross the line
     // only roots that have non zero derivative, can't change direction at y = 0, no duplicate roots
     static findRoots(fun, xRange) {
@@ -216,8 +241,8 @@ class poly {
         for (; x <= xRange[1]; x += iStep) {
             const positive = fun(x) >= 0;
             if (positive != lastPositive) {
-                roots.push(lastX);
-                roots.push(x);
+                const root = poly.#findRoot(fun, [lastX, x]);
+                roots.push(root);
             }
             lastPositive = positive;
             lastX = x;       

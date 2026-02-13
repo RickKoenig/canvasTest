@@ -26,7 +26,6 @@ class MainApp {
 			{
 				fun: Math.sin,
 				dFun: Math.cos,
-				ddFun: x => -Math.sin(x),
 				xRange: [0, Math.PI / 2],
 				tayCoef: [0, 1, 0, -1 / 6, 0, 1 / 120, 0, -1 / 5040],
 				tayShift: 0,
@@ -35,7 +34,6 @@ class MainApp {
 			{
 				fun: Math.cos,
 				dFun: x => -Math.sin(x),
-				ddFun: x => -Math.cos(x),
 				xRange: [0, Math.PI / 2],
 				tayCoef: [1, 0, -1 / 2, 0, 1 / 24, 0, -1 / 720, 0],
 				tayShift: 0,
@@ -51,7 +49,6 @@ class MainApp {
 			{
 				fun: Math.asin,
 				dFun: x => 1 / Math.sqrt(1 - x * x),
-				ddFun: x => x / Math.pow(1 - x * x, 1.5),
 				xRange: [0, 1],
 				tayCoef: [0, 1, 0, 1 / 6, 0, 3 / 40, 0, 5 / 112],
 				tayShift: 0,
@@ -67,7 +64,6 @@ class MainApp {
 			{
 				fun: Math.exp,
 				dFun: Math.exp,
-				ddFun: Math.exp,
 				xRange: [-1, 1],
 				tayCoef: [1, 1, 1 / 2, 1 / 6, 1 / 24, 1 / 120, 1 / 720, 1 / 5040],
 				tayShift: 0,
@@ -76,7 +72,6 @@ class MainApp {
 			{
 				fun: Math.exp,
 				dFun: Math.exp,
-				ddFun: Math.exp,
 				xRange: [0, 1],
 				tayCoef: [1, 1, 1 / 2, 1 / 6, 1 / 24, 1 / 120, 1 / 720, 1 / 5040],
 				tayShift: 0,
@@ -85,7 +80,6 @@ class MainApp {
 			{
 				fun: Math.log2,
 				dFun: x => 1 / (x * Math.LN2),
-				ddFun: x => -1 / (x * x * Math.LN2),
 				xRange: [1, 2],
 				tayCoef: null,
 				tayShift: -1,
@@ -98,39 +92,29 @@ class MainApp {
 			this.funNames.push(name);
 
 		}
-		// bind some functions
 
+		// bind some functions
 		// test poly
 		let fun = this.funs[this.funNames.indexOf("testPoly")];
 		const y = new poly(fun.tayCoef);
 		const dy = new poly();
-		const ddy = new poly();
 		poly.derivative(dy, y);
-		poly.derivative(ddy, dy);
 		fun.fun = poly.calc.bind(null, y);
 		fun.dFun = poly.calc.bind(null, dy);
-		fun.ddFun = poly.calc.bind(null, ddy);
 
+		
 		// tan
 		fun = this.funs[this.funNames.indexOf("tan")];
 		fun.dFun = function(x) {
 			const sec = 1 / Math.cos(x);
 			return sec * sec;
 		}
-		fun.ddFun = function(x) {
-			const c = Math.cos(x);
-			const c3 = c * c * c;
-			return 2 * Math.sin(x) / c3;
-		}
+
 		// atan
 		fun = this.funs[this.funNames.indexOf("atan")];
 		fun.dFun = function(x) {
 			return 1 / (1 + x * x);
 		}
-		fun.ddFun = function(x) {
-			const sq = 1 + x * x;
-			return (-2 * x) / (sq * sq);
-		};
 		
 		// log2
 		fun = this.funs[this.funNames.indexOf("log2")];
@@ -228,7 +212,6 @@ class MainApp {
 		return new poly([b, m]);
 	}
 
-	// we'll see ...
 	#calcCoefsCheb(fun, xRange, numNodes, numCoefs) {
 		this.coefs = new Array(this.maxCoefs).fill(0);
 		// calc nodes 'u'
@@ -287,6 +270,10 @@ class MainApp {
 		}
 	}
 
+	#calcCoefsRemez(fun, xRange, numNodes, numCoefs) {
+		this.#calcCoefsCheb(fun, xRange, numNodes, numCoefs);
+	}
+
 	#testCheby() {
 		console.log("test cheby");
 		let fun = this.funs[this.funNames.indexOf("testPoly")];
@@ -326,6 +313,7 @@ class MainApp {
 		this.#genChebyCoefs();
 		this.#testCheby();
 		this.coefs = Array(this.maxCoefs).fill(0);
+		this.roots = [-.25, 0, .25]; // extrema
 		this.Err = 0;
 		this.errMag = 10;
 		this.sliderMul = 32768;
@@ -344,6 +332,11 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Calc coefs cheb", v => 
 		{
 			this.#calcCoefsCheb(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#updateSliders();
+		});
+		makeEle(this.vp, "button", null, null, "Calc coefs remez", v => 
+		{
+			this.#calcCoefsRemez(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Reset coefs", v => 
@@ -398,7 +391,7 @@ class MainApp {
 		{
 			const label = "Err Mag";
 			const min = 1;
-			const max = 200;
+			const max = 2000;
 			const start = 1;
 			const step = 1;
 			const precision = 0;
@@ -441,28 +434,24 @@ class MainApp {
 		this.drawFun.changeFunctionG(x => poly.calc(this.coefs, x));
 		this.drawFun.draw(false, 400, 0, "green", .01);
 
-		// draw current function and 1st and 2nd derivatives
+		// draw current function
 		this.drawFun.changeFunctionG(x => this.curFun.fun(x));
 		this.drawFun.draw(false, 400, 0, "red", .005);
-		const dCoefs = new poly();
-		const ddCoefs = new poly();
-		poly.derivative(dCoefs, new poly(this.coefs));
-		poly.derivative(ddCoefs, new poly(dCoefs));
 
-		// draw delta
+		// calc derivative
+		const dCoefs = new poly();
+		poly.derivative(dCoefs, new poly(this.coefs));
+
+		// draw deltas
 		const deltaFun = x => this.errMag * (this.curFun.fun(x) - poly.calc(this.coefs, x)); // extrema
 		const dDeltaFun = x => this.errMag * (this.curFun.dFun(x) - poly.calc(dCoefs, x)); // D roots
-		const ddDeltaFun = x => this.errMag * (this.curFun.ddFun(x) - poly.calc(ddCoefs, x)); // DD for newton's method
-		
-		//this.drawFun.changeFunctionG(ddDeltaFun);
-		//this.drawFun.draw(false, 400, 0, "#88f", .025);
 		this.drawFun.changeFunctionG(dDeltaFun);
 		this.drawFun.draw(false, 400, 0, "#44f", .015); 
 		this.drawFun.changeFunctionG(deltaFun);
 		this.drawFun.draw(false, 400, 0, "#00f", .005);
 
-		const x = this.plotter2d.userMouse[0];
 		// draw tangent lines
+		const x = this.plotter2d.userMouse[0];
 		let p = [x, deltaFun(x)];
 		let slope = dDeltaFun(x);
 		let left = [p[0] - .5, p[1] - .5 * slope];
@@ -470,27 +459,13 @@ class MainApp {
 		this.drawPrim.drawCircle(p, .025, "green");
 		this.drawPrim.drawLine(left, right, .00625, "blue");
 
-		p = [x, dDeltaFun(x)];
-		slope = ddDeltaFun(x);
-		left = [p[0] - .5, p[1] - .5 * slope];
-		right = [p[0] + .5, p[1] + .5 * slope];
-		this.drawPrim.drawCircle(p, .025, "green");
-		this.drawPrim.drawLine(left, right, .00625, "blue");
-		
-		const roots = poly.findRoots(dDeltaFun, xRange);
+		// draw extrema
+		//const roots = poly.findRoots(dDeltaFun, xRange);
+		const roots = this.roots;
 		for (const root of roots) {
 			this.drawPrim.drawCircleO([root, dDeltaFun(root)], .025, .01, "green");
 			this.drawPrim.drawCircleO([root, deltaFun(root)], .025, .01, "green");
 		}
-		/*
-		// draw extrema
-		const conv = this.#changeRange([-1, 1], xRange);
-		for (let i = 0; i <= this.numCoefs; ++i) {
-			const cs = -Math.cos(i / this.numCoefs * Math.PI); // -1 to 1
-			const rcs = poly.calc(conv, cs);
-			this.drawPrim.drawCircle([rcs, 0], .03, "black");
-		}
-		*/
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
