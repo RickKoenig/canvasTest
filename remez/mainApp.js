@@ -90,18 +90,16 @@ class MainApp {
 		for (const fun of this.funs) {
 			const name = fun.name;
 			this.funNames.push(name);
-
 		}
 
 		// bind some functions
-		// test poly
+		// testPoly
 		let fun = this.funs[this.funNames.indexOf("testPoly")];
 		const y = new poly(fun.tayCoef);
 		const dy = new poly();
 		poly.derivative(dy, y);
 		fun.fun = poly.calc.bind(null, y);
 		fun.dFun = poly.calc.bind(null, dy);
-
 		
 		// tan
 		fun = this.funs[this.funNames.indexOf("tan")];
@@ -125,6 +123,7 @@ class MainApp {
 			sign = -sign;
 		}
 		fun.tayCoef = log2Coefs;
+		// done bind some functions
 
 		// current function
 		this.curFunIdx = this.funNames.indexOf("exp, -1 to 1");
@@ -175,11 +174,24 @@ class MainApp {
 		this.vp.style.background = `rgb(${r}, ${g}, ${b}`;
 	}
 
+	// calc new fun, deltaFun etc.
+	#updateFuns() {
+		// calc derivative
+		this.dCoefs = new poly();
+		poly.derivative(this.dCoefs, new poly(this.coefs));
+
+		// draw deltas */
+		this.polyFun = x => poly.calc(this.coefs, x);
+		this.deltaFun = x => (this.curFun.fun(x) - this.polyFun(x)); // extrema
+		this.dDeltaFun = x => (this.curFun.dFun(x) - poly.calc(this.dCoefs, x)); // for D roots
+	}
+
 	#calcCoefsTaylor() {
 		const p = new poly(this.curFun.tayCoef.slice(0, this.numCoefs));
 		const ps = new poly();
 		poly.shift(ps, p, this.curFun.tayShift);
 		this.coefs = ps.coefs;
+		this.#updateFuns();
 	}
 
 	#genChebyCoefs() {
@@ -268,16 +280,13 @@ class MainApp {
 			const cat = new Array(this.maxCoefs - this.coefs.length).fill(0);
 			this.coefs.push(...cat);
 		}
+		this.#updateFuns();
 	}
 
 	#calcCoefsRemez(fun, xRange, numNodes, numCoefs) {
-		this.#calcCoefsCheb(fun, xRange, numNodes, numCoefs);
-	}
+		//this.#calcCoefsCheb(fun, xRange, numNodes, numCoefs);
+		this.roots = poly.findRoots(this.dDeltaFun, xRange);
 
-	#testCheby() {
-		console.log("test cheby");
-		let fun = this.funs[this.funNames.indexOf("testPoly")];
-		this.#calcCoefsCheb(fun.fun, fun.xRange, this.numNodes, this.numCoefs);
 	}
 
 	#getMaxErr(coefs, fun, xRange) {
@@ -311,9 +320,8 @@ class MainApp {
 		this.numNodes = 5;
 		this.numCoefs = 4;
 		this.#genChebyCoefs();
-		this.#testCheby();
 		this.coefs = Array(this.maxCoefs).fill(0);
-		this.roots = [-.25, 0, .25]; // extrema
+		this.roots = []; // extrema
 		this.Err = 0;
 		this.errMag = 10;
 		this.sliderMul = 32768;
@@ -343,6 +351,7 @@ class MainApp {
 		{
 			this.coefs.fill(0);
 			this.#updateSliders();
+			this.#updateFuns();
 		});
 		{
 			const label = "Num Nodes";
@@ -376,6 +385,7 @@ class MainApp {
 				(v) => {
 					this.dirty = true;
 					this.coefs[i] = v;
+					this.#updateFuns();
 				}, null, false
 			);
 			makeEle(this.vp, "hr");
@@ -391,7 +401,7 @@ class MainApp {
 		{
 			const label = "Err Mag";
 			const min = 1;
-			const max = 2000;
+			const max = 1000;
 			const start = 1;
 			const step = 1;
 			const precision = 0;
@@ -431,40 +441,38 @@ class MainApp {
 		this.drawPrim.drawLine([xRange[1], -200], [xRange[1], 200], .02, "brown");
 
 		// draw coefs
-		this.drawFun.changeFunctionG(x => poly.calc(this.coefs, x));
-		this.drawFun.draw(false, 400, 0, "green", .01);
+		if (this.polyFun) {
+			this.drawFun.changeFunctionG(this.polyFun);
+			this.drawFun.draw(false, 400, 0, "green", .01);
+		}
 
 		// draw current function
 		this.drawFun.changeFunctionG(x => this.curFun.fun(x));
 		this.drawFun.draw(false, 400, 0, "red", .005);
 
-		// calc derivative
-		const dCoefs = new poly();
-		poly.derivative(dCoefs, new poly(this.coefs));
-
-		// draw deltas
-		const deltaFun = x => this.errMag * (this.curFun.fun(x) - poly.calc(this.coefs, x)); // extrema
-		const dDeltaFun = x => this.errMag * (this.curFun.dFun(x) - poly.calc(dCoefs, x)); // D roots
-		this.drawFun.changeFunctionG(dDeltaFun);
-		this.drawFun.draw(false, 400, 0, "#44f", .015); 
-		this.drawFun.changeFunctionG(deltaFun);
-		this.drawFun.draw(false, 400, 0, "#00f", .005);
+		if (this.dDeltaFun) {
+			this.drawFun.changeFunctionG(x => this.dDeltaFun(x) * this.errMag);
+			this.drawFun.draw(false, 400, 0, "#44f", .015);
+		}
+		if (this.deltaFun) {
+			this.drawFun.changeFunctionG(x => this.deltaFun(x) * this.errMag);
+			this.drawFun.draw(false, 400, 0, "#00f", .005);
+		}
 
 		// draw tangent lines
 		const x = this.plotter2d.userMouse[0];
-		let p = [x, deltaFun(x)];
-		let slope = dDeltaFun(x);
+		let p = [x, this.deltaFun(x) * this.errMag];
+		let slope = this.dDeltaFun(x) * this.errMag;
 		let left = [p[0] - .5, p[1] - .5 * slope];
 		let right = [p[0] + .5, p[1] + .5 * slope];
 		this.drawPrim.drawCircle(p, .025, "green");
 		this.drawPrim.drawLine(left, right, .00625, "blue");
 
 		// draw extrema
-		//const roots = poly.findRoots(dDeltaFun, xRange);
 		const roots = this.roots;
 		for (const root of roots) {
-			this.drawPrim.drawCircleO([root, dDeltaFun(root)], .025, .01, "green");
-			this.drawPrim.drawCircleO([root, deltaFun(root)], .025, .01, "green");
+			this.drawPrim.drawCircleO([root, this.dDeltaFun(root) * this.errMag], .025, .01, "green");
+			this.drawPrim.drawCircleO([root, this.deltaFun(root) * this.errMag], .025, .01, "green");
 		}
 	}
 
