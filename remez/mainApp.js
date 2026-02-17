@@ -191,6 +191,7 @@ class MainApp {
 		const ps = new poly();
 		poly.shift(ps, p, this.curFun.tayShift);
 		this.coefs = ps.coefs;
+		this.roots = [];
 		this.#updateFuns();
 	}
 
@@ -283,10 +284,60 @@ class MainApp {
 		this.#updateFuns();
 	}
 
-	#calcCoefsRemez(fun, xRange, numNodes, numCoefs) {
-		//this.#calcCoefsCheb(fun, xRange, numNodes, numCoefs);
+	#calcCoefsRemezExtrema(fun, xRange, numNodes, numCoefs) {
 		this.roots = poly.findRoots(this.dDeltaFun, xRange);
+		this.roots.unshift(xRange[0]);
+		this.roots.push(xRange[1]);
+	}
 
+	#calcCoefsRemezSolvePoly(fun, roots, numCoefs) {
+		console.log("solve poly");
+		if (roots.length != numCoefs + 1) {
+			console.log("mismatch roots and numCoefs");
+			return;
+		}
+
+		// A * X = Y, solve for X
+		//const A = [[2, -5, 4,   1, -1], [1, -2, 1,   -1, 1], [1, -4, 6,   2, -1]];
+		//const Y = [-3, 5, 10];
+
+		const A = [];
+		const Y = [];
+
+		// build up the augmented matrix
+		let e = -1;
+		for (let j = 0; j < roots.length; ++j) {
+			const aRow = [];
+			let v = 1;
+			for (let i = 0; i < roots.length - 1; ++i) {
+				aRow.push(v);
+				v *= roots[j];
+			}
+			aRow.push(e);
+			e *= -1;
+			A.push(aRow);
+			Y.push(fun(roots[j]));
+		}
+
+		//const A = [[0, 1], [1, 0]];
+		//const Y = [10, 100];
+
+		const X = solveBackward(A, Y);
+		console.log("ret linear = " + JSON.stringify(X));
+
+		if (X === null) {
+			console.log("wrong dimensions !!!");
+		} else if (Number.isNaN(X[0][0])) {
+			console.log("no solutions !!!");
+		} else  if (X.length > 1) {
+			console.log("many solutions !!!");
+		} else if (X.length == 1) {
+			console.log("one solution !!!");
+			this.coefs = X[0];
+			this.coefs.pop();
+		} else {
+			console.log("what happened !!!");
+		}
 	}
 
 	#getMaxErr(coefs, fun, xRange) {
@@ -323,7 +374,7 @@ class MainApp {
 		this.coefs = Array(this.maxCoefs).fill(0);
 		this.roots = []; // extrema
 		this.Err = 0;
-		this.errMag = 10;
+		this.errMag = 7;
 		this.sliderMul = 32768;
 	}
 
@@ -335,21 +386,30 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Calc coefs taylor", v => 
 		{
 			this.#calcCoefsTaylor();
+			this.roots = [];
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Calc coefs cheb", v => 
 		{
 			this.#calcCoefsCheb(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.roots = [];
 			this.#updateSliders();
 		});
-		makeEle(this.vp, "button", null, null, "Calc coefs remez", v => 
+		makeEle(this.vp, "button", null, null, "Calc remez, extrema", v => 
 		{
-			this.#calcCoefsRemez(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#calcCoefsRemezExtrema(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#updateSliders();
+		});
+		makeEle(this.vp, "button", null, null, "Calc remez coefs, solve poly", v => 
+		{
+			this.#calcCoefsRemezSolvePoly(this.curFun.fun, this.roots, this.numCoefs);
+			//this.roots = [];
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Reset coefs", v => 
 		{
 			this.coefs.fill(0);
+			this.roots = [];
 			this.#updateSliders();
 			this.#updateFuns();
 		});
@@ -399,10 +459,10 @@ class MainApp {
 			this.#updateSliders();
 		}, this.curFunIdx);
 		{
-			const label = "Err Mag";
+			const label = "Error Magnification";
 			const min = 1;
-			const max = 1000;
-			const start = 1;
+			const max = 200;
+			const start = this.errMag;
 			const step = 1;
 			const precision = 0;
 			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
@@ -450,10 +510,6 @@ class MainApp {
 		this.drawFun.changeFunctionG(x => this.curFun.fun(x));
 		this.drawFun.draw(false, 400, 0, "red", .005);
 
-		if (this.dDeltaFun) {
-			this.drawFun.changeFunctionG(x => this.dDeltaFun(x) * this.errMag);
-			this.drawFun.draw(false, 400, 0, "#44f", .015);
-		}
 		if (this.deltaFun) {
 			this.drawFun.changeFunctionG(x => this.deltaFun(x) * this.errMag);
 			this.drawFun.draw(false, 400, 0, "#00f", .005);
@@ -469,10 +525,13 @@ class MainApp {
 		this.drawPrim.drawLine(left, right, .00625, "blue");
 
 		// draw extrema
-		const roots = this.roots;
-		for (const root of roots) {
-			this.drawPrim.drawCircleO([root, this.dDeltaFun(root) * this.errMag], .025, .01, "green");
-			this.drawPrim.drawCircleO([root, this.deltaFun(root) * this.errMag], .025, .01, "green");
+		for (const root of this.roots) {
+			const y = this.deltaFun(root) * this.errMag;
+			const spread = .75;
+			this.drawPrim.drawCircleO([root, y], .025, .01, "green");
+			this.drawPrim.drawLine([root - spread, y], [root + spread, y], .006, "darkgreen");
+			this.drawPrim.drawLine([root, y - spread], [root, y + spread], .006, "darkred");
+			this.drawPrim.drawCircle([root, 0], .02, "red");
 		}
 	}
 
