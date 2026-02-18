@@ -290,6 +290,15 @@ class MainApp {
 		this.roots.push(xRange[1]);
 	}
 
+	#guessCoefsRemezExtrema(fun, xRange, numNodes, numCoefs) {
+		this.roots = [];
+		const m = xRange[1] - xRange[0];
+		for (let i = 0; i <= numCoefs; ++i) {
+			this.roots.push(xRange[0] + m * (i + .5)/ (numCoefs + 1));
+
+		}
+	}
+
 	#calcCoefsRemezSolvePoly(fun, roots, numCoefs) {
 		console.log("solve poly");
 		if (roots.length != numCoefs + 1) {
@@ -400,6 +409,11 @@ class MainApp {
 			this.#calcCoefsRemezExtrema(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
 			this.#updateSliders();
 		});
+		makeEle(this.vp, "button", null, null, "Guess remez, extrema", v => 
+		{
+			this.#guessCoefsRemezExtrema(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#updateSliders();
+		});
 		makeEle(this.vp, "button", null, null, "Calc remez coefs, solve poly", v => 
 		{
 			this.#calcCoefsRemezSolvePoly(this.curFun.fun, this.roots, this.numCoefs);
@@ -461,7 +475,7 @@ class MainApp {
 		{
 			const label = "Error Magnification";
 			const min = 1;
-			const max = 200;
+			const max = 20000;
 			const start = this.errMag;
 			const step = 1;
 			const precision = 0;
