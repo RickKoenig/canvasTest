@@ -14,8 +14,9 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
+		const playWithPolys = false;
 		// play with polynomials
-		{
+		if (playWithPolys) {
 			console.log("test poly");
 			const polyA = new poly([3, 4]);
 			const polyB = new poly([5, 6, 7]);
@@ -70,7 +71,6 @@ class MainApp {
 			const polyfShift = new poly();
 			poly.shift(polyfShift, polyf, 10);
 			poly.print(polyfShift, "polyfShift");
-
 			console.log("end test poly\n");
 		}
 
@@ -105,7 +105,7 @@ class MainApp {
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
 		// //unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
-		//unitTest(4, 12, 7, false, this.doChebyshev, this.funs);
+		unitTest(3, 12, 5, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -172,13 +172,6 @@ class MainApp {
 		this.Err = 0;
 		this.res = 32;
 		this.sliderMul = 1024;
-
-		// test poly shift
-		this.sinCoefs = new poly([0, 1, 0, -1 / 6, 0, 1 / 120, 0, -1 / 5040]);
-		poly.print(this.sinCoefs, "sinCoefs");
-		this.cosCoefs = new poly();
-		poly.shift(this.cosCoefs, this.sinCoefs, Math.PI / 2);
-		poly.print(this.cosCoefs, "cosCoefs");
 	}
 
 	#userBuildUI() {
@@ -288,16 +281,6 @@ class MainApp {
 		// draw function (Remez)
 		this.drawFun.changeFunctionG(calcCoef.bind(this, this.coefs, false));
 		this.drawFun.draw(false, 400, 0, "green", .0015);
-		
-		// draw 4 coords as 2 circles in 2 dimensions
-		this.drawPrim.drawCircleO([this.coefs[2], this.coefs[3]], 1.5 / this.res, .125 / this.res, "green"); // cursor
-		this.drawPrim.drawCircleO(this.coefs, 1.5 / this.res, .125 / this.res, "red"); // cursor
-		
-		// test poly shift with sin to cos
-		this.drawFun.changeFunctionG(x => poly.calc(this.sinCoefs, x));
-		this.drawFun.draw(false,400, 0, "blue", .001);
-		this.drawFun.changeFunctionG(x => poly.calc(this.cosCoefs, x));
-		this.drawFun.draw(false,400, 0, "purple", .0005);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

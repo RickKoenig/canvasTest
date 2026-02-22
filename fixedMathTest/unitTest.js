@@ -121,7 +121,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const testMinMax = false;
     const doVerbose = true;
     const testConstants = false;
-    const doPrecUnary = false;
+    const doPrecUnary = true;
     const doPrecBinary = false;
 
     if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions, in floating point
@@ -193,7 +193,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
 
             {	name: "asinR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asinR.bind(FMathInst),	errRatio: 150},
             {	name: "acosR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acosR.bind(FMathInst),	errRatio: 150},
-            {	name: "atanR",	op: (n) => Math.atan(n),fOp : FMathInst.atanR.bind(FMathInst),	errRatio: 15},
+            {	name: "atanR",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
             // exponents, logarithms
             /*
             {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},

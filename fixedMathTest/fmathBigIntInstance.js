@@ -362,7 +362,7 @@ class FMathBigIntInstance {
 	}
 
 	// coefs
-	calcCoefFix(out, x, c1, c3, c5, c7) {
+	calcCoefFixOdd(out, x, c1, c3, c5, c7) {
 		const x2 = this.create();
 		this.mul(x2, x, x);
 		this.mul(out, c7, x2);
@@ -493,7 +493,7 @@ class FMathBigIntInstance {
 
 	// remez
 	sinRNoNorm(out, a) {
-		this.calcCoefFix(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
+		this.calcCoefFixOdd(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
 		return out;
 	}
 
@@ -550,7 +550,7 @@ class FMathBigIntInstance {
 
 	// remez
 	tanRNoNorm(out, a) {
-		this.calcCoefFix(out, a, this.TAN_1r, this.TAN_3r, this.TAN_5r, this.TAN_7r);
+		this.calcCoefFixOdd(out, a, this.TAN_1r, this.TAN_3r, this.TAN_5r, this.TAN_7r);
 	}
 
 	tanR(out, a) {
@@ -575,7 +575,7 @@ class FMathBigIntInstance {
 
 	// remez
 	aSinRNoCheck(out, y) {
-		this.calcCoefFix(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
+		this.calcCoefFixOdd(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
 		return out;
 	}
 
@@ -603,11 +603,11 @@ class FMathBigIntInstance {
 	}
 
 	// remez
-	atanR(out, m) {
-		return this.atan2R(out, m, this.ONE);
+	atan(out, m) {
+		return this.atan2(out, m, this.ONE);
 	}
 
-	atan2R(out, y, x) {
+	atan2(out, y, x) {
 		const xa = this.create();
 		const ya = this.create();
 		const num = this.create();
@@ -623,7 +623,7 @@ class FMathBigIntInstance {
 			return out;
 		}
 		this.div(a, num, den); // 0 to 1
-		this.calcCoefFix(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
+		this.calcCoefFixOdd(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}
