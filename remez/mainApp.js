@@ -190,7 +190,7 @@ class MainApp {
 		const p = new poly(this.curFun.tayCoef.slice(0, this.numCoefs));
 		const ps = new poly();
 		poly.shift(ps, p, this.curFun.tayShift);
-		this.coefs = ps.coefs;
+		this.coefs = ps;
 		this.roots = [];
 		this.#updateFuns();
 	}
@@ -211,8 +211,8 @@ class MainApp {
 	#chebyCoefsToRawCoefs(chebCoefs) {
 		const ret = new poly();
 		const scl = new poly();
-		for (let i = 0; i < chebCoefs.coefs.length; ++i) {
-			poly.scale(scl, this.chPolys[i], chebCoefs.coefs[i]);
+		for (let i = 0; i < chebCoefs.length; ++i) {
+			poly.scale(scl, this.chPolys[i], chebCoefs[i]);
 			poly.add(ret, ret, scl);
 		}
 		poly.prune(ret);
@@ -270,13 +270,13 @@ class MainApp {
 		console.log("ys = " + ys);
 		console.log("cArr = " + cArr);
 		// convert to raw
-		const rawArr = this.#chebyCoefsToRawCoefs(new poly(cArr));
+		const rawArr = this.#chebyCoefsToRawCoefs(cArr);
 		// shift scale compose from u to x
-		console.log("rawArr 1 = " + rawArr.coefs);
+		console.log("rawArr 1 = " + rawArr);
 		const xToU = this.#changeRange(xRange, [-1, 1]); // 'x' to 'u'
 		poly.compose(rawArr, rawArr, xToU);
 		console.log("rawArr 2 = " + rawArr.coefs);
-		this.coefs = rawArr.coefs;
+		this.coefs = rawArr;
 		if (this.coefs.length < this.maxCoefs) {
 			const cat = new Array(this.maxCoefs - this.coefs.length).fill(0);
 			this.coefs.push(...cat);

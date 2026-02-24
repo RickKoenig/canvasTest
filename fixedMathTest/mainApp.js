@@ -14,7 +14,7 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		const playWithPolys = false;
+		const playWithPolys = true;
 		// play with polynomials
 		if (playWithPolys) {
 			console.log("test poly");
@@ -105,7 +105,7 @@ class MainApp {
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
 		// //unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
-		unitTest(3, 12, 5, false, this.doChebyshev, this.funs);
+		unitTest(3, 8, 2, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");

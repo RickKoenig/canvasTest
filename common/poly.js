@@ -1,41 +1,57 @@
 'use strict';
 
 class poly {
+    // TODO: switch from object with coefs member to just an array of coefs
     // coefs[0] + coefs[1] * x + coefs[2] * x^2 etc.
     constructor(p) {
+        // constructors should only return objects, (like arrays)
+        return poly.create(p);
+        /*
+        return new Number(34);
+        return [3, 4, 5];
         const coefs = p?.coefs ? p.coefs : p; // polynomial or array or nothing
         if (coefs) {
             this.coefs = coefs.slice();
             poly.prune(this);
         } else { // default
             this.coefs = [];
-        }
+        }*/
     }
 
+    static create(p) {
+        let ret;
+        if (p) {
+            ret = p.slice();
+            poly.prune(ret);
+        } else { // default
+            ret = [];
+        }
+        return ret;
+    }
+
+
     static copy(out, p) {
-        const coefs = p?.coefs ? p.coefs : p; // polynomial or array or nothing
-        if (coefs) {
-            out.coefs = coefs.slice();
+        if (p) {
+            out.splice(0, p.length, ...p);
         } else {
-            out.coefs = [];
+            out.length = 0;
         }
         return out;
     }
 
     // remove highest degrees with value of 0 
     static prune(p) {
-        const a = p.coefs;
-        while(a.length) {
-            if (a.at(-1)) { // check last element for 0
+        while(p.length) {
+            if (p.at(-1)) { // check last element for 0
                 break;
             }
-            a.pop();
+            p.pop();
         }
         return p;
     }
 
     static degree(p) {
-        return p.coefs.length - 1;
+        return p.length - 1;
     }
 
     static print(p, label) {
@@ -48,11 +64,11 @@ class poly {
         if (vertical) {
             str += '\n';
         }
-        for (let i = 0; i < p.coefs.length; ++i) {
+        for (let i = 0; i < p.length; ++i) {
             if (vertical) {
                 str += "   ";
             }
-            const c = p.coefs[i];
+            const c = p[i];
             let s;
             if (Number.isInteger(c)) {
                 s = c.toFixed(0);
@@ -61,7 +77,7 @@ class poly {
             }
             s = s.padStart(10);
             str += s;
-            if (i != p.coefs.length - 1) {
+            if (i != p.length - 1) {
                 str += ", ";
             }
             if (vertical) {
@@ -69,7 +85,7 @@ class poly {
             }
         }
         str += "], degree = ";
-        str += p.coefs.length - 1;
+        str += p.length - 1;
         console.log(str);
         //console.log(label + ": coefs = [" + p.coefs + "], degree = " + (p.coefs.length - 1));
     }
@@ -90,11 +106,11 @@ class poly {
     }
 
     // add and sub
-    static binOp(out, p0, p1, op) {
-        const p0c = p0.coefs;
-        const p1c = p1.coefs;
+    static binOp(out, p0c, p1c, op) {
+        p0c = p0c.slice();
+        p1c = p1c.slice();
         const maxIdx = Math.max(p0c.length, p1c.length);
-        out.coefs = []; // clear out
+        out.length = 0; // clear out
         for (let i = 0; i < maxIdx; ++i) {
             let a = p0c[i];
             if (!a) {
@@ -104,7 +120,8 @@ class poly {
             if (!b) {
                 b = 0;
             }
-            out.coefs[i] = op(a, b);
+            const c = op(a, b);
+            out.push(c);
         }
         poly.prune(out);
         return out;
@@ -122,10 +139,10 @@ class poly {
     }
 
     // no pruning necessary
-    static mul(out, p0, p1) {
-        const p0c = p0.coefs;
-        const p1c = p1.coefs;
-        out.coefs = [];
+    static mul(out, p0c, p1c) {
+        p0c = p0c.slice();
+        p1c = p1c.slice();
+        out.length = 0;
         for (let j = 0; j < p0c.length; ++j) {
             let b = p0c[j];
             if (!b) {
@@ -137,12 +154,12 @@ class poly {
                     a = 0;
                 }
                 const k = i + j;
-                let c = out.coefs[k];
+                let c = out[k];
                 if (!c) {
                     c = 0;
                 }
                 c += a * b;
-                out.coefs[k] = c;
+                out[k] = c;
             }
         }
         return out;
@@ -151,24 +168,25 @@ class poly {
     // scale
     static scale(out, p, scl) {
         if (!scl) {
-            out.coefs = [];
+            out.length = 0;
             return out;
         }
-        for (let i = 0; i < p.coefs.length; ++i) {
-            out.coefs[i] = scl * p.coefs[i];
+        for (let i = 0; i < p.length; ++i) {
+            out[i] = scl * p[i];
         }
         return out;
     }
 
     // f(g))
     static compose(out, f, g) {
-        const fCoefs = f.coefs;
-        out.coefs = [];
+        f = f.slice();
+        g = g.slice();
+        out.length = 0;
         const gPow = new poly([1]); // multiplicative identity
         const term = new poly();
-        for (let i = 0; i < fCoefs.length; ++i) {
+        for (let i = 0; i < f.length; ++i) {
             poly.copy(term, gPow);
-            poly.scale(term, term, fCoefs[i]);
+            poly.scale(term, term, f[i]);
             poly.add(out, out, term);
             poly.mul(gPow, gPow, g);
         }
@@ -197,10 +215,10 @@ class poly {
     }
 
     static derivative(out, p) {
-        for (let i = 1; i < p.coefs.length; ++i) {
-            out.coefs[i] = i * p.coefs[i];
+        for (let i = 1; i < p.length; ++i) {
+            out[i] = i * p[i];
         }
-        out.coefs.shift();
+        out.shift();
         return out;
     }
 

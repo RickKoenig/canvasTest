@@ -121,7 +121,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const testMinMax = false;
     const doVerbose = true;
     const testConstants = false;
-    const doPrecUnary = true;
+    const doPrecUnary = false;
     const doPrecBinary = false;
 
     if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions, in floating point
