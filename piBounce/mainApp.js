@@ -136,7 +136,7 @@ class MainApp {
 					this.eles.playStopButton.innerHTML = "PLAY";
 				}
 				// conversion from internal 'in' value to an external 'out' value
-				, (val) => Math.floor(Math.pow(10, val))
+				, val => Math.floor(Math.pow(10, val))
 			);
 		}
 	}

@@ -14,7 +14,7 @@ class MainApp {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-		const playWithPolys = true;
+		const playWithPolys = false;
 		// play with polynomials
 		if (playWithPolys) {
 			console.log("test poly");
@@ -72,6 +72,18 @@ class MainApp {
 			poly.shift(polyfShift, polyf, 10);
 			poly.print(polyfShift, "polyfShift");
 			console.log("end test poly\n");
+
+			// test derivatives
+			const polyD = new poly([2, 3, 4]);
+			poly.print(polyD, "poly");
+			poly.derivative(polyD, polyD);
+			poly.print(polyD, "polyD");
+			poly.derivative(polyD, polyD);
+			poly.print(polyD, "polyD2");
+			poly.derivative(polyD, polyD);
+			poly.print(polyD, "polyD3");
+			poly.derivative(polyD, polyD);
+			poly.print(polyD, "polyD4");
 		}
 
 		this.doChebyshev = true;
@@ -104,8 +116,8 @@ class MainApp {
 		];
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
-		// //unitTest(4, 12, 4, false, this.doChebyshev, this.funs);
-		unitTest(3, 8, 2, false, this.doChebyshev, this.funs);
+		unitTest(3, 12, 4, false, this.doChebyshev, this.funs);
+		// unitTest(3, 8, 2, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -170,8 +182,7 @@ class MainApp {
 		this.coefs = [0, 0, 0, 0];
 		this.cbCoefs = [0, 0, 0, 0];
 		this.Err = 0;
-		this.res = 32;
-		this.sliderMul = 1024;
+		this.sliderStep = 1 / 128;
 	}
 
 	#userBuildUI() {
@@ -194,7 +205,7 @@ class MainApp {
 			const min = -2;
 			const max = 2;
 			const start = 0;
-			const step = 1 / (this.res * this.sliderMul);
+			const step = this.sliderStep;
 			const precision = 5;
 			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 				(v) => {
@@ -227,7 +238,7 @@ class MainApp {
 	#updateSliders() {
 		for (let i = 0; i < 4; ++i) {
 			const label = "C" + (1 + 2 * i);
-			this.eles[label].setValue(this.cbCoefs[i]);
+			this.eles[label].setValue(this.cbCoefs[i], false); // just update label
 		}
 	}
 	

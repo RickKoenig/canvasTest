@@ -121,11 +121,12 @@ class makeEleSliderCombo {
 		this.#callbackSlider();
 	}
 
-	#callbackSlider() {
-		const inVal = parseFloat(this.slider.value);
+	#callbackSlider(val, doSliderCallback = true) {
+		// use true value if not doing callback
+		const inVal = doSliderCallback ? parseFloat(this.slider.value) : val;
 		const outVal = this.conversionCallback ? this.conversionCallback(inVal) : inVal;
 		this.label.innerText = this.labelStr + " = " + outVal.toFixed(this.precision);
-		if (this.outerCallback) {
+		if (this.outerCallback && doSliderCallback) {
 			this.outerCallback(outVal);
 		}
 	}
@@ -134,13 +135,12 @@ class makeEleSliderCombo {
 		return this.slider.value;
 	}
 
-	setValue(val) {
+	setValue(val, doSliderCallback) {
 		this.slider.value = val;
-		this.#callbackSlider();
+		this.#callbackSlider(val, doSliderCallback);
 	}
 
-	resetValue() {
-		this.setValue(this.start);
+	resetValue(doSliderCallback) {
+		this.setValue(this.start, doSliderCallback);
 	}
-	
 }

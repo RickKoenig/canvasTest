@@ -786,7 +786,6 @@ class FMathBigIntInstance {
 	// acosh
 
 	atanh(out, a) {
-		
 		const na = this.clone(a);
         // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
 		this.abs(na, na);

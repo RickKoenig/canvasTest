@@ -126,7 +126,8 @@ class MainApp {
 		// done bind some functions
 
 		// current function
-		this.curFunIdx = this.funNames.indexOf("exp, -1 to 1");
+		//this.curFunIdx = this.funNames.indexOf("exp, -1 to 1");
+		this.curFunIdx = this.funNames.indexOf("sin");
 		this.curFun = this.funs[this.curFunIdx];
 
 		// vertical panel UI
@@ -185,12 +186,18 @@ class MainApp {
 		this.deltaFun = x => (this.curFun.fun(x) - this.polyFun(x)); // extrema
 		this.dDeltaFun = x => (this.curFun.dFun(x) - poly.calc(this.dCoefs, x)); // for D roots
 	}
+	#padCoefs() {
+		while (this.coefs.length < this.maxCoefs) {
+			this.coefs.push(0);
+		}
+	}
 
 	#calcCoefsTaylor() {
 		const p = new poly(this.curFun.tayCoef.slice(0, this.numCoefs));
 		const ps = new poly();
 		poly.shift(ps, p, this.curFun.tayShift);
 		this.coefs = ps;
+		this.#padCoefs();
 		this.roots = [];
 		this.#updateFuns();
 	}
@@ -275,7 +282,7 @@ class MainApp {
 		console.log("rawArr 1 = " + rawArr);
 		const xToU = this.#changeRange(xRange, [-1, 1]); // 'x' to 'u'
 		poly.compose(rawArr, rawArr, xToU);
-		console.log("rawArr 2 = " + rawArr.coefs);
+		console.log("rawArr 2 = " + rawArr);
 		this.coefs = rawArr;
 		if (this.coefs.length < this.maxCoefs) {
 			const cat = new Array(this.maxCoefs - this.coefs.length).fill(0);
@@ -284,13 +291,13 @@ class MainApp {
 		this.#updateFuns();
 	}
 
-	#calcCoefsRemezExtrema(fun, xRange, numNodes, numCoefs) {
+	#calcCoefsRemezExtrema(xRange) {
 		this.roots = poly.findRoots(this.dDeltaFun, xRange);
 		this.roots.unshift(xRange[0]);
 		this.roots.push(xRange[1]);
 	}
 
-	#guessCoefsRemezExtrema(fun, xRange, numNodes, numCoefs) {
+	#guessCoefsRemezExtrema(xRange, numCoefs) {
 		this.roots = [];
 		const m = xRange[1] - xRange[0];
 		for (let i = 0; i <= numCoefs; ++i) {
@@ -302,7 +309,8 @@ class MainApp {
 	#calcCoefsRemezSolvePoly(fun, roots, numCoefs) {
 		console.log("solve poly");
 		if (roots.length != numCoefs + 1) {
-			console.log("mismatch roots and numCoefs");
+			console.error("mismatch roots and numCoefs");
+			//this.coefs = Array(this.maxCoefs).fill(0);
 			return;
 		}
 
@@ -314,7 +322,7 @@ class MainApp {
 		const Y = [];
 
 		// build up the augmented matrix
-		let e = -1;
+		let err = -1;
 		for (let j = 0; j < roots.length; ++j) {
 			const aRow = [];
 			let v = 1;
@@ -322,8 +330,8 @@ class MainApp {
 				aRow.push(v);
 				v *= roots[j];
 			}
-			aRow.push(e);
-			e *= -1;
+			aRow.push(err);
+			err *= -1;
 			A.push(aRow);
 			Y.push(fun(roots[j]));
 		}
@@ -335,7 +343,7 @@ class MainApp {
 		console.log("ret linear = " + JSON.stringify(X));
 
 		if (X === null) {
-			console.log("wrong dimensions !!!");
+			console.error("wrong dimensions !!!");
 		} else if (Number.isNaN(X[0][0])) {
 			console.log("no solutions !!!");
 		} else  if (X.length > 1) {
@@ -344,9 +352,11 @@ class MainApp {
 			console.log("one solution !!!");
 			this.coefs = X[0];
 			this.coefs.pop();
+			//throw("hi");
 		} else {
-			console.log("what happened !!!");
+			console.error("what happened !!!");
 		}
+		this.#padCoefs();
 	}
 
 	#getMaxErr(coefs, fun, xRange) {
@@ -377,14 +387,14 @@ class MainApp {
 		this.startZoom = .25;
 
 		// init coefs
-		this.numNodes = 5;
-		this.numCoefs = 4;
+		this.numNodes = 10;
+		this.numCoefs = 8;
 		this.#genChebyCoefs();
 		this.coefs = Array(this.maxCoefs).fill(0);
 		this.roots = []; // extrema
 		this.Err = 0;
-		this.errMag = 7;
-		this.sliderMul = 32768;
+		this.errMag = 0;
+		this.sliderStep = 1 / 256;
 	}
 
 	#userBuildUI() {
@@ -406,12 +416,12 @@ class MainApp {
 		});
 		makeEle(this.vp, "button", null, null, "Calc remez, extrema", v => 
 		{
-			this.#calcCoefsRemezExtrema(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#calcCoefsRemezExtrema(this.curFun.xRange);
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Guess remez, extrema", v => 
 		{
-			this.#guessCoefsRemezExtrema(this.curFun.fun, this.curFun.xRange, this.numNodes, this.numCoefs);
+			this.#guessCoefsRemezExtrema(this.curFun.xRange, this.numCoefs);
 			this.#updateSliders();
 		});
 		makeEle(this.vp, "button", null, null, "Calc remez coefs, solve poly", v => 
@@ -428,20 +438,23 @@ class MainApp {
 			this.#updateFuns();
 		});
 		{
-			const label = "Num Nodes";
+			const label = "NumNodes";
 			const min = 1;
 			const max = 10;
-			const start = 5;
+			const start = this.numNodes;
 			const step = 1;
 			const precision = 0;
 			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
-				(v) => this.numNodes = v, null, false);
+				(v) => {
+					this.numNodes = v;
+					console.log("callback val = " + v);
+				}, null, false);
 		}
 		{
-			const label = "Num Coefs";
+			const label = "NumCoefs";
 			const min = 1;
 			const max = this.maxCoefs;
-			const start = 3;
+			const start = this.numCoefs;
 			const step = 1;
 			const precision = 0;
 			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
@@ -453,7 +466,7 @@ class MainApp {
 			const min = -20;
 			const max = 20;
 			const start = 0;
-			const step = 1 / this.sliderMul;
+			const step = this.sliderStep;
 			const precision = 5;
 			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
 				(v) => {
@@ -473,21 +486,28 @@ class MainApp {
 			this.#updateSliders();
 		}, this.curFunIdx);
 		{
-			const label = "Error Magnification";
-			const min = 1;
-			const max = 20000;
+			const label = "ErrorMagnification";
+			const min = 0;
+			const max = 24;
 			const start = this.errMag;
-			const step = 1;
-			const precision = 0;
-			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
-				(v) => this.errMag = v, null, false);
+			const step = .05;
+			const precision = 2;
+			this.eles[label] = new makeEleSliderCombo(this.vp, label, min, max, start, step, precision
+				, v => this.errMag = v // update
+				, val => Math.pow(2, val) // conversion
+				, false
+			);
 		}
+		makeEle(this.vp, "button", null, null, "num nodes = 7", () => {
+			this.numNodes = 7.2;
+			this.eles.NumNodes.setValue(7.2, false);
+		});
 	}	
 	
 	#updateSliders() {
 		for (let i = 0; i < this.maxCoefs; ++i) {
 			const label = "C" + i;
-			this.eles[label].setValue(this.coefs[i]);
+			this.eles[label].setValue(this.coefs[i], false);
 		}
 	}
 	
@@ -528,6 +548,10 @@ class MainApp {
 			this.drawFun.changeFunctionG(x => this.deltaFun(x) * this.errMag);
 			this.drawFun.draw(false, 400, 0, "#00f", .005);
 		}
+		if (this.dDeltaFun) {
+			this.drawFun.changeFunctionG(x => this.dDeltaFun(x) * this.errMag);
+			this.drawFun.draw(false, 400, 0, "#080", .005);
+		}
 
 		// draw tangent lines
 		const x = this.plotter2d.userMouse[0];
@@ -556,7 +580,7 @@ class MainApp {
 
 		this.Err = this.#getMaxErr(this.coefs, this.curFun.fun, this.curFun.xRange);
 
-		infoStr += "\nMax Error = " + this.Err.toFixed(6);
+		infoStr += "\nMax Error = " + this.Err.toFixed(9);
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 

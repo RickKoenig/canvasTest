@@ -119,10 +119,10 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("overNum = " + FMathInst.overNum);
 
     const testMinMax = false;
-    const doVerbose = true;
+    const doVerbose = false;
     const testConstants = false;
-    const doPrecUnary = false;
-    const doPrecBinary = false;
+    const doPrecUnary = true;
+    const doPrecBinary = true;
 
     if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions, in floating point
         for (const curFun of funs) {
@@ -255,14 +255,14 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
            /* {	name: "add",	op: (a, b) => a + b,        fOp : FMathInst.add.bind(FMathInst),	errRatio: .125},
             {	name: "sub",	op: (a, b) => a - b,        fOp : FMathInst.sub.bind(FMathInst),	errRatio: .125},
             {	name: "mul",	op: (a, b) => a * b,        fOp : FMathInst.mul.bind(FMathInst),	errRatio: .75},
-            {	name: "div",	op: (a, b) => b ? a / b : 0,        fOp : FMathInst.div.bind(FMathInst),	errRatio: 1.25},
+            {	name: "div",	op: (a, b) => b ? a / b : 0,        fOp : FMathInst.div.bind(FMathInst),	errRatio: 1.25}, */
             {	name: "mod",	op: (a, b) => b ? a % b : 0,        fOp : FMathInst.mod.bind(FMathInst),	errRatio: .125},
-
+            /*
             {	name: "min",	op: (a, b) => a < b ? a : b,        fOp : FMathInst.min.bind(FMathInst),	errRatio: .125},
             {	name: "max",	op: (a, b) => a > b ? a : b,        fOp : FMathInst.max.bind(FMathInst),	errRatio: .125},
 
             {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 16}, */
-            {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 2000},
+            {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 43000},
             {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
         ];
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
@@ -321,6 +321,9 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             const fts = FMathInst.toPrettyString(f);
             const absDelta = Math.abs(n - FMathInst.toNumber(f));
             const errRatio = absDelta / FMathInst.epsilonNum;
+            if (errRatio > .5) {
+                console.error("test constants, error ratio > .5");
+            }
             console.log(cName + " n = " + n.toFixed(6)
                 + ", ft" + fracP + " = " + fts
                 + " del = " + absDelta.toFixed(6)

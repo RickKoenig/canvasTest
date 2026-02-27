@@ -1,21 +1,9 @@
 'use strict';
 
 class poly {
-    // TODO: switch from object with coefs member to just an array of coefs
-    // coefs[0] + coefs[1] * x + coefs[2] * x^2 etc.
     constructor(p) {
         // constructors should only return objects, (like arrays)
         return poly.create(p);
-        /*
-        return new Number(34);
-        return [3, 4, 5];
-        const coefs = p?.coefs ? p.coefs : p; // polynomial or array or nothing
-        if (coefs) {
-            this.coefs = coefs.slice();
-            poly.prune(this);
-        } else { // default
-            this.coefs = [];
-        }*/
     }
 
     static create(p) {
@@ -28,7 +16,6 @@ class poly {
         }
         return ret;
     }
-
 
     static copy(out, p) {
         if (p) {
@@ -222,6 +209,7 @@ class poly {
         return out;
     }
 
+    // HELPER
     // find just one root using bisection method
     // assumes a root can be found inside xRange and xRange is of opposite signs
     static #findRoot(fun, xRange) {
@@ -240,7 +228,6 @@ class poly {
             } else {
                 // move in from the right
                 xRight = xMid;
-
             }
         }
         let xMiddle = (xLeft + xRight) * .5;
@@ -251,7 +238,7 @@ class poly {
     // only roots that have non zero derivative, can't change direction at y = 0, no duplicate roots
     static findRoots(fun, xRange) {
         const roots = [];
-        const step = 12;
+        const step = 100;
         const iStep = 1 / step;
         let lastX = xRange[0];
         let lastPositive = fun(lastX) >= 0;
