@@ -483,6 +483,7 @@ class MainApp {
 			this.curFunIdx = v; 
 			this.curFun = this.funs[this.curFunIdx];
 			this.coefs.fill(0);
+			this.roots = [];
 			this.#updateSliders();
 		}, this.curFunIdx);
 		{

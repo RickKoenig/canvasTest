@@ -6,6 +6,8 @@
 
 class FMathBigIntInstance {
 	static masterFrac = 32; // master of high precision constants, 32 bit fraction
+	static guardFrac = 32;
+	static guard = new FMathBigIntInstance(0, this.guardFrac);
 	constructor(intPart, fracPart) { // intPart is for overflow if needed
 		this.version = 200; // integer
 		// BigInts
@@ -198,8 +200,9 @@ class FMathBigIntInstance {
 
 	// conversion between different bit sizes, BigInt
 	static convert(n, from, to) {
-		n += 1n << BigInt(from - to - 1); // round
-		const out = n >> BigInt(from - to);
+		const rShift = BigInt(from - to);
+		n += 1n << BigInt(rShift - 1n); // round
+		const out = n >> BigInt(rShift);
 		return out;
 	}
 
@@ -241,8 +244,24 @@ class FMathBigIntInstance {
 		return this.numberToPrettyString(n);
 	}
 
-	// basic
 	// unary operators
+	// test
+	pow4a(out, x) {
+		this.mul(out, x, x);
+		this.mul(out, out, x);
+		this.mul(out, out, x);
+		return out;
+	}
+	
+	pow4b(out, x) {
+		this.copy(out, x);
+		for (let i = 0; i < 3; ++i) {
+			this.mul(out, x, out);
+		}
+		return out;
+	}
+
+	// basic
 	neg(out, a) {
 		out.raw = -a.raw;
 		return out;
@@ -361,7 +380,8 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// coefs
+	// coefs for odd functions, TODO: remove
+	/*
 	calcCoefFixOdd(out, x, c1, c3, c5, c7) {
 		const x2 = this.create();
 		this.mul(x2, x, x);
@@ -373,6 +393,38 @@ class FMathBigIntInstance {
 		this.add(out, out, c1);
 		this.mul(out, out, x);
 		//let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
+		return out;
+	}
+	*/
+	calcCoefFixOdd(out, x, c1, c3, c5, c7) {
+		const x2 = this.create();
+		this.mul(x2, x, x);
+		this.mul(out, c7, x2);
+		//this.mul(out, c7, x);
+		this.add(out, out, c5);
+		this.mul(out, out, x2);
+		//this.mul(out, out, x);
+		this.add(out, out, c3);
+		this.mul(out, out, x2);
+		//this.mul(out, out, x);
+		this.add(out, out, c1);
+		this.mul(out, out, x);
+		//let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
+		return out;
+	}
+	
+	calcCoefFix(out, x, cs) {
+		if (!cs.length) {
+			this.copy(out, this.ZERO);
+			return out;
+		}
+		// horner's method
+		const t = this.clone(cs[cs.length - 1]);
+		for (let i = cs.length - 2; i >= 0; --i ) {
+			this.mul(t, t, x); // TODO: not needed on last iteration
+			this.add(t, t, cs[i]);
+		}
+		this.copy(out, t);
 		return out;
 	}
 
@@ -491,9 +543,38 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	sinG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.sin(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	sinRG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.sinR(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
 	// remez
 	sinRNoNorm(out, a) {
 		this.calcCoefFixOdd(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
+		/*const allCoefs = [
+			this.ZERO,
+			this.SIN_1r,
+			this.ZERO,
+			this.SIN_3r,
+			this.ZERO,
+			this.SIN_5r,
+			this.ZERO,
+			this.SIN_7r
+		];
+		this.calcCoefFix(out, a, allCoefs);*/
 		return out;
 	}
 
@@ -501,6 +582,11 @@ class FMathBigIntInstance {
 		const na = this.create();
 		const neg = this.normAngRadSin(na, a);
 		this.sinRNoNorm(out, na);
+		if (out.raw > this.ONE.raw) {
+			out.raw = this.ONE.raw;
+		} else if (out.raw < -this.ONE.raw) {
+			out.raw = -this.ONE.raw;
+		}
 		if (neg) {
 			this.neg(out, out);
 		}
@@ -817,9 +903,10 @@ class FMathBigIntInstance {
 	}
 
 	// miscellaneous
+	/*
 	random(out) {
 		const n = Math.random();
 		this.setNumber(out, n);
 		return out;
-	}
+	}*/
 }
