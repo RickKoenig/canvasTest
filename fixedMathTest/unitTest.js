@@ -108,6 +108,22 @@ function makeCalcCoefsRemez(coefs, doChebyshev, fun, start, finish) { // 1, 3, 5
     }
 }
 
+function calcErrRatio(c, absDelta, epsilon) {
+    let ac = Math.abs(c);
+    // absolute when ac < 1
+    // relative when ac >= 1
+    let shift = 0;
+    
+    while(ac >= 1) {
+        ac /= 10;
+        absDelta /= 10;
+        ++shift;
+    }
+    
+    let rat = absDelta / epsilon;
+    return {rat: rat, shift: shift};
+}
+
 function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     let skipP;
     skipP = intP + fracP - displayP;
@@ -123,11 +139,11 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("begin testFMath");
     console.log(`intBits = ${FMathInst.intBits}, fracBits = ${FMathInst.fracBits}, version = ${FMathInst.version}`);
     console.log("epsilonNum = " + FMathInst.epsilonNum);
-    console.log("overNum = " + FMathInst.overNum);
+    console.log("overNum = -" + FMathInst.overNum + " to " + FMathInst.overNum);
 
     const testCalcCoefFix = false;
     const testMinMax = false;
-    const doVerbose = false;
+    const doVerbose = true;
     const testConstants = false;
     const doPrecUnary = true;
     const doPrecBinary = false;
@@ -223,17 +239,13 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             */
             // trigonometric
             
-            {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 80},
-            {	name: "sinR",	op: (n) => Math.sin(n),fOp : FMathInst.sinR.bind(FMathInst),errRatio: 80},
-            {	name: "sinG",	op: (n) => Math.sin(n),fOp : FMathInst.sinG.bind(FMathInst),	errRatio: 80},
-            {	name: "sinRG",	op: (n) => Math.sin(n),fOp : FMathInst.sinRG.bind(FMathInst), errRatio: 80},
-            //{	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 8},
-            //{	name: "cosR",	op: (n) => Math.cos(n),fOp : FMathInst.cosR.bind(FMathInst),	errRatio: 4},
-            //{	name: "tanR",	op: (n) => Math.tan(n),fOp : FMathInst.tanR.bind(FMathInst),	errRatio: 250}, // remez
+            //{	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 5},
+            //{	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 5},
+            //{	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 25}, // remez
 
-            //{	name: "asinR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asinR.bind(FMathInst),	errRatio: 150},
+            {	name: "asin",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asin.bind(FMathInst),	errRatio: 1000},
             //{	name: "acosR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acosR.bind(FMathInst),	errRatio: 150},
-            //{	name: "atanR",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
+            //{	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
             
             // exponents, logarithms
             /*
@@ -248,8 +260,8 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 40},
             {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 25},
             
-            //asinh
-            //acosh
+            //asinh NYI
+            //acosh NYI
             //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
             // //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
             */
@@ -260,30 +272,57 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
             console.log("\n======== do prec " + parm.name);
-            let maxAbsDelta = 0;
+            let maxErrRat = 0;
             let maxStr = "100% ACCURATE !!";
-            const errRatio = parm.errRatio; // get to the best number
+            let minX = Number.NaN;
+            let minVal = Number.MAX_VALUE;
+            let maxX = Number.NaN;
+            let maxVal = -Number.MAX_VALUE;
+            let zeroVal = Number.NaN;
+            let firstval = Number.NaN;
+            let lastVal = Number.NaN;
             const fc = FMathInst.create();
             const startA = positiveOnly ? 0 : -FMathInst.overNum;
-            for (let a = startA; a <= FMathInst.overNum; a += stepP) {
+            const endA = FMathInst.overNum;
+            const timeLoopStart = performance.now();
+            for (let a = startA; a <= endA; a += stepP) {
                 const fa = FMathInst.create(a);
                 //const c = a ? parm.op(a) : 0;
-                const c = parm.op(a);
-                parm.fOp(fc, fa);
+                const c = parm.op(a); // float
+                parm.fOp(fc, fa); // fixed
                 const nfc = FMathInst.toNumber(fc);
-                const delta = c - nfc
+                if (a == startA) {
+                    firstval = nfc;
+                }
+                if (a == endA) {
+                    lastVal = nfc;
+                }
+                if (a == 0) {
+                    zeroVal = nfc;
+                }
+                if (nfc < minVal) {
+                    minVal = nfc;
+                    minX = a;
+                }
+                if (nfc > maxVal) {
+                    maxVal = nfc;
+                    maxX = a;
+                }
+                const delta = c - nfc;
                 const absDelta = Math.abs(delta);
+                const {rat: errRat, shift} = calcErrRatio(c, absDelta, FMathInst.epsilonNum);
+                //const errRat = absDelta / FMathInst.epsilonNum;
                 let str = "check absDelta " + parm.name + "(" + FMathInst.toPrettyString(fa)
                         + ") = " + FMathInst.toPrettyString(fc) + ", n = " + c.toFixed(5)
                         + ", delta = " + delta.toFixed(5) 
-                        + ", errorRatio = " + (absDelta / FMathInst.epsilonNum).toFixed(5)
+                        + ", errorRatio" + shift + " = " + errRat.toFixed(5)
                         + ", errorThreshold = " + parm.errRatio.toFixed(5);
-                if (absDelta > maxAbsDelta) {
-                    maxAbsDelta = absDelta;
+                if (errRat > maxErrRat) {
+                    maxErrRat = errRat;
                     maxStr = str;
                 }
                 // half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
-                if (absDelta > errRatio * FMathInst.epsilonNum) {
+                if (errRat > parm.errRatio) {
                     console.error(str);
                 } else {
                     if (doVerbose) {
@@ -291,7 +330,11 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
                     }
                 }
             }
+            const timeLoopEnd = performance.now();
             console.log("  max error: " + maxStr);
+            console.log("    min val(" + minX + ") = " + minVal + ", max val(" + maxX + ") = " + maxVal + ", zero val(0) = " + zeroVal
+                + ", first val(" + startA + ") = " + firstval + ", last val(" + endA + ") = " + lastVal);
+            console.log("time in seconds = " + (timeLoopEnd - timeLoopStart) / 1000);
         }
     }
     if (doPrecBinary) {
@@ -313,9 +356,8 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
             console.log("======== do prec " + parm.name);
-            let maxAbsDelta = 0;
+            let maxErrRat = 0;
             let maxStr = "100% ACCURATE !!";
-            const errRatio = parm.errRatio; // get to the best number
             const fc = FMathInst.create();
             for (let b = -FMathInst.overNum; b <= FMathInst.overNum; b += stepP) {
                 //if (b == 0) {
@@ -324,23 +366,25 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
                 const fb = FMathInst.create(b);
                 for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += stepP) {
                     const fa = FMathInst.create(a);
-                    const c = parm.op(a, b);
-                    parm.fOp(fc, fa, fb);
+                    const c = parm.op(a, b); // float
+                    parm.fOp(fc, fa, fb); // fixed
                     const nfc = FMathInst.toNumber(fc);
                     const delta = c - nfc
                     const absDelta = Math.abs(delta);
+                    //const errRat = absDelta / FMathInst.epsilonNum;
+                    const {rat: errRat, shift} = calcErrRatio(c, absDelta, FMathInst.epsilonNum);
                     let str = "check absDelta " + parm.name + "(" + FMathInst.toPrettyString(fa)
                             + ", " + FMathInst.toPrettyString(fb)
                             + ") = " + FMathInst.toPrettyString(fc) + ", n = " + c.toFixed(5)
                             + ", delta = " + delta.toFixed(5) 
-                            + ", errorRatio = " + (absDelta / FMathInst.epsilonNum).toFixed(5)
+                            + ", errorRat = " + errRat.toFixed(5)
                             + ", errorThreshold = " + parm.errRatio.toFixed(5);
-                    if (absDelta > maxAbsDelta) {
-                        maxAbsDelta = absDelta;
-                        maxStr = str;
-                    }
+                if (errRat > maxErrRat) {
+                    maxErrRat = errRat;
+                    maxStr = str;
+                }
                     // half an epsilon is good (errRatio == .5) // lower is better, more than 1 is worse
-                    if (absDelta > errRatio * FMathInst.epsilonNum) {
+                if (errRat > parm.errRatio) {
                         console.error(str);
                     } else {
                         if (doVerbose) {

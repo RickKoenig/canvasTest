@@ -109,25 +109,25 @@ class FMathBigIntInstance {
 			QUARTERPI: 3373259426n, // 0.7853981633974483
 			THREEHALFPI: 20239556557n, // 4.71238898038469	
 
-			// remez atan
+			// remez atan odd
 			ATAN_1: 4291559424n, // 0.99920654296875
 			ATAN_3: -1379926016n, // -0.3212890625
 			ATAN_5: 629145600n, // 0.146484375
 			ATAN_7: -167772160n, // -0.0390625
 			
-			// remez sin
+			// remez sin odd
 			SIN_1r: 4294645704n, // 0.9999251234196375
 			SIN_3r: -715186976n, // -0.16651744389484935
 			SIN_5r: 35306641n, // 0.008220467914556176
 			SIN_7r: -711018n, // -0.00016554684008878345
 
-			// remez asin
+			// remez asin odd
 			ASIN_1r: 3200122880n, // 0.745086669921875
 			ASIN_3r: 10556538880n, // 2.4578857421875
 			ASIN_5r: -21887975424n, // -5.09619140625
 			ASIN_7r: 14730395648n, // 3.4296875
 
-			// remez tan
+			// remez tan odd
 			TAN_1r: 4293477501n, // 0.9996531301086894
 			TAN_3r: 1458781227n, // 0.3396489719996322
 			TAN_5r: 442100546n, // 0.10293455475618167
@@ -510,8 +510,8 @@ class FMathBigIntInstance {
 	}
 
 	// taylor N steps
-	sinNoNorm(out, a) {
-		const steps = 6;
+	#sinTNoNorm(out, a) {
+		const steps = 8;
 		const sum = this.create();
 		const term = this.create();
 		const n = this.clone(a);
@@ -536,33 +536,15 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	sin(out, a) {
+	sinT(out, a) {
 		const na = this.create();
 		this.normAngRad(na, a);
-		this.sinNoNorm(out, na);
-		return out;
-	}
-
-	sinG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.sin(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
-		a.raw = aSave;
-		return out;
-	}
-
-	sinRG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.sinR(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
-		a.raw = aSave;
+		this.#sinTNoNorm(out, na);
 		return out;
 	}
 
 	// remez
-	sinRNoNorm(out, a) {
+	#sinRNoNorm(out, a) {
 		this.calcCoefFixOdd(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
 		/*const allCoefs = [
 			this.ZERO,
@@ -581,7 +563,7 @@ class FMathBigIntInstance {
 	sinR(out, a) {
 		const na = this.create();
 		const neg = this.normAngRadSin(na, a);
-		this.sinRNoNorm(out, na);
+		this.#sinRNoNorm(out, na);
 		if (out.raw > this.ONE.raw) {
 			out.raw = this.ONE.raw;
 		} else if (out.raw < -this.ONE.raw) {
@@ -593,8 +575,32 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	sinTG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.sinT(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	sinRG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.sinR(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate sin
+	//sin = this.sinT;
+	//sin = this.sinTG;
+	//sin = this.sinR;
+	sin = this.sinRG;
+
 	// taylor N steps
-	cosNoNorm(out, a) {
+	#cosTNoNorm(out, a) {
 		const steps = 6;
 		const sum = this.create();
 		const term = this.create();
@@ -620,10 +626,10 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	cos(out, a) {
+	cosT(out, a) {
 		const na = this.create();
 		this.normAngRad(na, a);
-		this.cosNoNorm(out, na);
+		this.#cosTNoNorm(out, na);
 		return out;
 	}
 
@@ -633,6 +639,30 @@ class FMathBigIntInstance {
 		this.sinR(out, na);
 		return out;
 	}
+
+	cosTG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.cosT(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+	
+	cosRG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.cosR(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate cos
+	//cos = this.cosT;
+	//cos = this.cosTG;
+	//cos = this.cosR;
+	cos = this.cosRG;
 
 	// remez
 	tanRNoNorm(out, a) {
@@ -659,13 +689,26 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	tanRG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.tanR(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate tan
+	tan = this.tanRG;
+	//tan = this.tanRG;
+
 	// remez
 	aSinRNoCheck(out, y) {
 		this.calcCoefFixOdd(out, y, this.ASIN_1r, this.ASIN_3r, this.ASIN_5r, this.ASIN_7r);
 		return out;
 	}
 
-	asinR(out, y) {
+	aSinR(out, y) {
 		const ay = this.clone(y);
 		this.abs(ay, y);
 		if (ay.raw > this.ONE.raw) {
@@ -675,6 +718,19 @@ class FMathBigIntInstance {
 		this.aSinRNoCheck(out, y);
 		return out;
 	}
+
+	aSinRG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.aSinR(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate asin
+	asin = this.aSinRG;
+
 
 	acosR(out, y) {
 		const ay = this.clone(y);
@@ -688,12 +744,13 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// remez
+	// promote to atan2
 	atan(out, m) {
 		return this.atan2(out, m, this.ONE);
 	}
 
-	atan2(out, y, x) {
+	// remez
+	atan2R(out, y, x) {
 		const xa = this.create();
 		const ya = this.create();
 		const num = this.create();
@@ -722,6 +779,23 @@ class FMathBigIntInstance {
 		out.raw = r.raw;
 		return out;
 	}
+
+	atan2RG(out, y, x) {
+		const xSave = x.raw;
+		const ySave = y.raw;
+		x.raw = FMathBigIntInstance.convert(x.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		y.raw = FMathBigIntInstance.convert(y.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.atan2R(out, y, x);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		x.raw = xSave;
+		y.raw = ySave;
+		return out;
+	}
+
+	// candidate atan2
+	//atan2 = this.atan2R;
+	atan2 = this.atan2RG;
+
 
 	// exponents
 	exp(out, a) {

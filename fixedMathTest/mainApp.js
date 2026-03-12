@@ -117,8 +117,7 @@ class MainApp {
 		];
 		this.curFunIdx = 0;
 		this.curFun = this.funs[this.curFunIdx];
-		unitTest(2, 16, 0, false, this.doChebyshev, this.funs);
-		// unitTest(3, 8, 2, false, this.doChebyshev, this.funs);
+		unitTest(1, 16, 6, false, this.doChebyshev, this.funs);
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
