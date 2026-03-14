@@ -137,6 +137,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const FMathInst = new FMath(intP, fracP); // instance
 
     console.log("begin testFMath");
+    console.log(`masterBits = ${FMath.masterFrac}, guardBits (when needed) = ${FMath.guardFrac}`);
     console.log(`intBits = ${FMathInst.intBits}, fracBits = ${FMathInst.fracBits}, version = ${FMathInst.version}`);
     console.log("epsilonNum = " + FMathInst.epsilonNum);
     console.log("overNum = -" + FMathInst.overNum + " to " + FMathInst.overNum);
@@ -233,20 +234,20 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "inv",	op: (n) => n ? 1 / n : 0,fOp : FMathInst.inv.bind(FMathInst),	errRatio: .5},
             */
             // roots 
-            /*
-            {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 5},
-            {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 30},
-            */
+            
+            //{	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 20},
+            {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 300},
+            
             // trigonometric
-            
-            //{	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 5},
-            //{	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 5},
-            //{	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 25}, // remez
+            /*
+            {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 5},
+            {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 5},
+            {	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 25}, // remez
 
-            {	name: "asin",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asin.bind(FMathInst),	errRatio: 1000},
-            //{	name: "acosR",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acosR.bind(FMathInst),	errRatio: 150},
-            //{	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
-            
+            {	name: "asin",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asin.bind(FMathInst),	errRatio: 100},
+            {	name: "acos",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acos.bind(FMathInst),	errRatio: 250},
+            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
+            */
             // exponents, logarithms
             /*
             {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},

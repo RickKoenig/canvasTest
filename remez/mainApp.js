@@ -429,6 +429,7 @@ class MainApp {
 			this.#calcCoefsRemezSolvePoly(this.curFun.fun, this.roots, this.numCoefs);
 			//this.roots = [];
 			this.#updateSliders();
+			this.#updateFuns();
 		});
 		makeEle(this.vp, "button", null, null, "Reset coefs", v => 
 		{
@@ -551,7 +552,7 @@ class MainApp {
 		}
 		if (this.dDeltaFun) {
 			this.drawFun.changeFunctionG(x => this.dDeltaFun(x) * this.errMag);
-			this.drawFun.draw(false, 400, 0, "#080", .005);
+			this.drawFun.draw(false, 400, 0, "#888", .005);
 		}
 
 		// draw tangent lines

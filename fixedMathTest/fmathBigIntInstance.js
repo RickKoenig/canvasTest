@@ -48,25 +48,34 @@ class FMathBigIntInstance {
 			QUARTERPI: Math.PI / 4,
 			THREEHALFPI: 3 * Math.PI / 2,
 
-			// remez atan
-			ATAN_1 : 0.99920654296875,
-			ATAN_3 : -0.3212890625,
-			ATAN_5 : 0.146484375,
-			ATAN_7 : -0.0390625,
+			// remez atan odd
+			ATAN_1r : 0.99920654296875,
+			ATAN_3r : -0.3212890625,
+			ATAN_5r : 0.146484375,
+			ATAN_7r : -0.0390625,
 
-			// remez sin
+			// remez sin odd
 			SIN_1r: 0.9999251234196375,
 			SIN_3r: -0.16651744389484935,
 			SIN_5r: 0.008220467914556176,
 			SIN_7r: -0.00016554684008878345,
 
-			// remez asin
-			 ASIN_1r: 0.745086669921875,
-			 ASIN_3r: 2.4578857421875,
-			 ASIN_5r: -5.09619140625,
-			 ASIN_7r: 3.4296875,
+			// remez asin odd
+			ASIN_1r: 0.9678828,
+			ASIN_3r: 0.8698691,
+			ASIN_5r: -2.166373,
+			ASIN_7r: 1.848968,
+
+			// taylor asin odd
+			ASIN_1t: 1,
+			ASIN_3t: 1 / 6,
+			ASIN_5t: 3 / 40,
+			ASIN_7t: 5 / 112,
+			ASIN_9t: 35 / 1152,
+
+			// taylor asin
 			
-			// remez tan
+			// remez tan odd
 			TAN_1r: 0.9996531301086894,
 			TAN_3r: 0.3396489719996322,
 			TAN_5r: 0.10293455475618167,
@@ -110,10 +119,10 @@ class FMathBigIntInstance {
 			THREEHALFPI: 20239556557n, // 4.71238898038469	
 
 			// remez atan odd
-			ATAN_1: 4291559424n, // 0.99920654296875
-			ATAN_3: -1379926016n, // -0.3212890625
-			ATAN_5: 629145600n, // 0.146484375
-			ATAN_7: -167772160n, // -0.0390625
+			ATAN_1r: 4291559424n, // 0.99920654296875
+			ATAN_3r: -1379926016n, // -0.3212890625
+			ATAN_5r: 629145600n, // 0.146484375
+			ATAN_7r: -167772160n, // -0.0390625
 			
 			// remez sin odd
 			SIN_1r: 4294645704n, // 0.9999251234196375
@@ -122,10 +131,17 @@ class FMathBigIntInstance {
 			SIN_7r: -711018n, // -0.00016554684008878345
 
 			// remez asin odd
-			ASIN_1r: 3200122880n, // 0.745086669921875
-			ASIN_3r: 10556538880n, // 2.4578857421875
-			ASIN_5r: -21887975424n, // -5.09619140625
-			ASIN_7r: 14730395648n, // 3.4296875
+			ASIN_1r: 4157024972n, // 0.9678828
+			ASIN_3r: 3736059336n, // 0.8698691
+			ASIN_5r: -9304501186n, // -2.166373
+			ASIN_7r: 7941257091n, // 1.848968
+
+			// taylor asin odd
+			ASIN_1t: 4294967296n, // 1
+			ASIN_3t: 715827883n, // 0.16666666666666666
+			ASIN_5t: 322122547n, // 0.075
+			ASIN_7t: 191739611n, // 0.044642857142857144
+			ASIN_9t: 130489458n, // 0.030381944444444444
 
 			// remez tan odd
 			TAN_1r: 4293477501n, // 0.9996531301086894
@@ -380,36 +396,20 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// coefs for odd functions, TODO: remove
-	/*
-	calcCoefFixOdd(out, x, c1, c3, c5, c7) {
+	// coefs 0 is 1, 1 is 3, 2 is 5, 3 is 7, etc.
+	calcCoefFixOdd(out, x, ...coefs) {
 		const x2 = this.create();
 		this.mul(x2, x, x);
-		this.mul(out, c7, x2);
-		this.add(out, out, c5);
-		this.mul(out, out, x2);
-		this.add(out, out, c3);
-		this.mul(out, out, x2);
-		this.add(out, out, c1);
+		const nCoefs = coefs.length;
+		this.copy(out, coefs[nCoefs - 1]);
+		for (let i = nCoefs - 2; i >= 0; --i) {
+			this.mul(out, out, x2); // c7
+			this.add(out, out, coefs[i]); // c5
+		}
 		this.mul(out, out, x);
-		//let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
-		return out;
-	}
-	*/
-	calcCoefFixOdd(out, x, c1, c3, c5, c7) {
-		const x2 = this.create();
-		this.mul(x2, x, x);
-		this.mul(out, c7, x2);
-		//this.mul(out, c7, x);
-		this.add(out, out, c5);
-		this.mul(out, out, x2);
-		//this.mul(out, out, x);
-		this.add(out, out, c3);
-		this.mul(out, out, x2);
-		//this.mul(out, out, x);
-		this.add(out, out, c1);
-		this.mul(out, out, x);
-		//let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
+		// for nCoefs = 4: 
+		// const x2 = x * x;
+		// let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
 		return out;
 	}
 	
@@ -430,9 +430,9 @@ class FMathBigIntInstance {
 
 	// roots
 	sqrt(out, a) {
-		const steps = 8;
+		const steps = 10;
 		if (a.raw <= 0n) {
-			out.raw = 0;
+			out.raw = 0n;
 			return out;
 		}
 		const guess = this.clone(this.TWO); // r = 2;
@@ -446,7 +446,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	cbrt(out, a) {
+	cbrtA(out, a) {
 		const aa = this.clone(a);
 		let neg = false;
 		if (a.raw < 0) {
@@ -459,6 +459,19 @@ class FMathBigIntInstance {
 		}
 		return out;
 	}
+
+	cbrtAG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.cbrtA(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate cbrt
+	//cbrt = this.cbrtA;
+	cbrt = this.cbrtAG;
 
 	hypot(out, a, b) {
 		const a2 = this.create();
@@ -546,17 +559,6 @@ class FMathBigIntInstance {
 	// remez
 	#sinRNoNorm(out, a) {
 		this.calcCoefFixOdd(out, a, this.SIN_1r, this.SIN_3r, this.SIN_5r, this.SIN_7r);
-		/*const allCoefs = [
-			this.ZERO,
-			this.SIN_1r,
-			this.ZERO,
-			this.SIN_3r,
-			this.ZERO,
-			this.SIN_5r,
-			this.ZERO,
-			this.SIN_7r
-		];
-		this.calcCoefFix(out, a, allCoefs);*/
 		return out;
 	}
 
@@ -728,21 +730,79 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// candidate asin
-	asin = this.aSinRG;
+	// taylor
+	aSinTNoCheck(out, y) {
+		const ya = this.create();
+		this.abs(ya, y);
+		if (ya.raw >= this.SQRT1_2.raw) {
+			const my = this.clone(y);
+			this.mul(my, my, my);
+			this.sub(my, this.ONE, my);
+			this.sqrt(my, my);
+			const acos = this.create();
+			this.calcCoefFixOdd(out, my, this.ASIN_1t, this.ASIN_3t, this.ASIN_5t, this.ASIN_7t, this.ASIN_9t);
+			this.sub(out, this.HALFPI, out);
+			if (y.raw < 0n) {
+				this.neg(out, out);
+			}
+			return out;
+		}
+		this.calcCoefFixOdd(out, y, this.ASIN_1t, this.ASIN_3t, this.ASIN_5t, this.ASIN_7t, this.ASIN_9t);
+		return out;
+	}
 
-
-	acosR(out, y) {
+	aSinT(out, y) {
 		const ay = this.clone(y);
 		this.abs(ay, y);
 		if (ay.raw > this.ONE.raw) {
 			out.raw = 0n;
 			return out;
 		}
-		this.aSinRNoCheck(out, y);
+		this.aSinTNoCheck(out, y);
+		return out;
+	}
+
+	aSinTG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.aSinT(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate asin
+	//asin = this.aSinR;
+	asin = this.aSinT;
+	//asin = this.aSinRG;
+	//asin = this.aSinTG;
+
+	aCosT(out, y) {
+		const ay = this.clone(y);
+		this.abs(ay, y);
+		if (ay.raw > this.ONE.raw) {
+			out.raw = 0n;
+			return out;
+		}
+		this.aSinTNoCheck(out, y);
 		this.sub(out, this.HALFPI, out);
 		return out;
 	}
+
+	aCosTG(out, a) {
+		const aSave = a.raw;
+		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		FMathBigIntInstance.guard.aCosT(out, a);
+		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = aSave;
+		return out;
+	}
+
+	// candidate acos
+	//acos = this.aCosR;
+	acos = this.aCosT;
+	//acos = this.aCosRG;
+	//acos = this.aCosTG;
 
 	// promote to atan2
 	atan(out, m) {
@@ -766,7 +826,7 @@ class FMathBigIntInstance {
 			return out;
 		}
 		this.div(a, num, den); // 0 to 1
-		this.calcCoefFixOdd(r, a, this.ATAN_1, this.ATAN_3, this.ATAN_5, this.ATAN_7);
+		this.calcCoefFixOdd(r, a, this.ATAN_1r, this.ATAN_3r, this.ATAN_5r, this.ATAN_7r);
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}
