@@ -113,6 +113,9 @@ function calcErrRatio(c, absDelta, epsilon) {
     // absolute when ac < 1
     // relative when ac >= 1
     let shift = 0;
+    if (!isFinite(c)) {
+        console.log("is infinite !!!");
+    }
     
     while(ac >= 1) {
         ac /= 10;
@@ -124,15 +127,24 @@ function calcErrRatio(c, absDelta, epsilon) {
     return {rat: rat, shift: shift};
 }
 
+function logtest2(x) {
+    let d = 1;
+    --x;
+    let n = x;
+    const steps = 10;
+    let y = 0;
+    y += n / d;
+    //console.log("n = " + n + ", d = " + d);
+    for (let i = 1; i < steps; ++i) {
+        n *= -x;
+        ++d;
+        y += n / d;
+        //console.log("n = " + n + ", d = " + d);
+    }
+    return y;
+}
+
 function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
-    let skipP;
-    skipP = intP + fracP - displayP;
-    if (skipP < 0) {
-        skipP = 0; // full display
-    }
-    if (displayP <=0) { // full display
-        skipP = 0;
-    }
     const FMath = FMathBigIntInstance; // static, uses BigInt, interface
     const FMathInst = new FMath(intP, fracP); // instance
 
@@ -143,15 +155,10 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("overNum = -" + FMathInst.overNum + " to " + FMathInst.overNum);
 
     const testCalcCoefFix = false;
-    const testMinMax = false;
-    const doVerbose = true;
+    const doVerbose = false;
     const testConstants = false;
-    const doPrecUnary = true;
+    const doPrecUnary = false;
     const doPrecBinary = false;
-    const playWithConvert = true;
-	if (playWithConvert) {
-		console.log("test convert");
-	}
 
     if (testCalcCoefFix) {
         const poly = [
@@ -170,106 +177,65 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
         console.log(FMathInst.toPrettyString(y));
     }
 
-    if (testMinMax) { // Remez algorithm, try atan, sin, then try more functions, in floating point
-        for (const curFun of funs) {
-            console.log("\nTest MIN MAX unary '" + curFun.name + "'");
-            let maxEtaylor = 0;
-            let maxEXtaylor = 0;
-            let maxEremez = 0;
-            let maxEXremez = 0;
-            const coefsRemezCheby = [];
-            const xRange = curFun.xRange;
-            const start = xRange[0];
-            const finish = xRange[1];
-            makeCalcCoefsRemez(coefsRemezCheby, doChebyshev, curFun.altFun ? curFun.altFun : curFun.fun, start, finish);
-            const coefsRemez = chebyToRawCoefs(coefsRemezCheby);
-            convertCoefs(coefsRemez, start, finish);
-            const fixed = 6;
-            for (let x = 0; x <= finish; x += 2 ** (1 - displayP)) { //} / 32) { // 64
-                const math = curFun.fun(x);
-                // deltas
-                // Taylor
-                const taylor = calcCoef(curFun.tayCoef, false, x);
-                const Etaylor = Math.abs(taylor - math);
-                if (Etaylor > maxEtaylor) {
-                    maxEtaylor = Etaylor;
-                    maxEXtaylor = x;
-                }
-                // Remez
-                const remez = calcCoef(coefsRemez, false, x);
-                const Eremez = Math.abs(remez - math);
-                if (Eremez > maxEremez) {
-                    maxEremez = Eremez;
-                    maxEXremez = x;
-                }
-                console.log("x = " + x.toFixed(fixed) + ", " + curFun.name + " = " + math.toFixed(fixed)
-                    + ", [taylor = " + taylor.toFixed(fixed) + ", E = " + Etaylor.toFixed(fixed) + "]"
-                    + ", [remez = " + remez.toFixed(fixed) + ", E = " + Eremez.toFixed(fixed) + "]");
-            }
-            console.log("maxEtaylorX = " + maxEXtaylor.toFixed(fixed) + ", maxEtaylor = " + maxEtaylor.toFixed(fixed));
-            console.log("maxEremezX = " + maxEXremez.toFixed(fixed) + ", maxEremez = " + maxEremez.toFixed(fixed)
-                + ", calcCoefsRemez = " + coefsRemez
-            );
-        }
-    }
-
     if (doPrecUnary) {
         console.log("\nUNARY FUNCTIONS");
         const parms = [
 
             // basic
-            // test
-            //{	name: "pow4a",	op: (n) => n * n * n * n,fOp : FMathInst.pow4a.bind(FMathInst),	errRatio: 4},
-            //{	name: "pow4b",	op: (n) => n * n * n * n,fOp : FMathInst.pow4b.bind(FMathInst),	errRatio: 4},
-            //{	name: "pow8a",	op: (n) => n ** 8,		fOp : FMathInst.pow8a.bind(FMathInst),	errRatio: 4},
-            //{	name: "pow8b",	op: (n) => n ** 8,		fOp : FMathInst.pow8b.bind(FMathInst),	errRatio: 4},
-            /*
-            {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: .5},
-            {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMathInst.abs.bind(FMathInst),	errRatio: .5},
-            {	name: "sign",	op: (n) => Math.sign(n),fOp : FMathInst.sign.bind(FMathInst),	errRatio: .5},
-            {	name: "trunc",	op: (n) => Math.trunc(n),fOp : FMathInst.trunc.bind(FMathInst),	errRatio: .5},
-            {	name: "floor",	op: (n) => Math.floor(n),fOp : FMathInst.floor.bind(FMathInst),	errRatio: .5},
-            {	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMathInst.ceil.bind(FMathInst),	errRatio: .5},
-            {	name: "round",	op: (n) => Math.round(n),fOp : FMathInst.round.bind(FMathInst),	errRatio: .5},
+            
+            {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: 0},
+            {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMathInst.abs.bind(FMathInst),	errRatio: 0},
+            {	name: "sign",	op: (n) => Math.sign(n),fOp : FMathInst.sign.bind(FMathInst),	errRatio: 0},
+            {	name: "trunc",	op: (n) => Math.trunc(n),fOp : FMathInst.trunc.bind(FMathInst),	errRatio: 0},
+            {	name: "floor",	op: (n) => Math.floor(n),fOp : FMathInst.floor.bind(FMathInst),	errRatio: 0},
+            {	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMathInst.ceil.bind(FMathInst),	errRatio: 0},
+            {	name: "round",	op: (n) => Math.round(n),fOp : FMathInst.round.bind(FMathInst),	errRatio: 0},
             {	name: "inv",	op: (n) => n ? 1 / n : 0,fOp : FMathInst.inv.bind(FMathInst),	errRatio: .5},
-            */
+            
             // roots 
             
-            //{	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 20},
-            {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 300},
+            {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 2},
+            {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 2},
             
             // trigonometric
-            /*
+            
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 5},
             {	name: "cos",	op: (n) => Math.cos(n),fOp : FMathInst.cos.bind(FMathInst),	errRatio: 5},
-            {	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 25}, // remez
+            {	name: "tan",	op: (n) => Math.tan(n),fOp : FMathInst.tan.bind(FMathInst),	errRatio: 100}, // remez
 
             {	name: "asin",	op: (n) => Math.abs(n) > 1 ? 0 : Math.asin(n),fOp : FMathInst.asin.bind(FMathInst),	errRatio: 100},
-            {	name: "acos",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acos.bind(FMathInst),	errRatio: 250},
-            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 15},
-            */
-            // exponents, logarithms
-            /*
-            {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 25},
-            {	name: "log",	op: (n) => n > 3 / 32 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 40},
-            {	name: "log10",	op: (n) => n > 3 / 32 ? Math.log10(n) : 0, fOp : FMathInst.log10.bind(FMathInst),	errRatio: 40},
-            {	name: "log2",	op: (n) => n > 3 / 32 ? Math.log2(n) : 0, fOp : FMathInst.log2.bind(FMathInst),	errRatio: 40},
-            */
-            // hyperbolic
-            /*
-            {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 40},
-            {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 40},
-            {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 25},
+            {	name: "acos",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acos.bind(FMathInst),	errRatio: 100},
+            {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 10},
             
+            // exponents, logarithms
+            
+            {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 5},
+            {	name: "log",	op: (n) => n > 1 / 16 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 2},
+            {	name: "log10",	op: (n) => n > 1 / 16 ? Math.log10(n) : 0, fOp : FMathInst.log10.bind(FMathInst),	errRatio: 2},
+            {	name: "log2",	op: (n) => n > 1 / 16 ? Math.log2(n) : 0, fOp : FMathInst.log2.bind(FMathInst),	errRatio: 2},
+            
+            // hyperbolic
+            
+            {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 10},
+            {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 10},
+            {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 5},
+            
+
             //asinh NYI
             //acosh NYI
-            //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0,fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
-            // //{	name: "atanh",	op: (n) => Math.atanh(n), fOp: FMathInst.atanh.bind(FMathInst),	errRatio: 25},
-            */
+            {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
-            // misc
-            //{	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000},
+            // misc NYI
+            //{	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000}, // placeholder
         ];
+
+        let skipP = intP + fracP - displayP;
+        if (skipP < 0) {
+            skipP = 0; // full display
+        }
+        if (displayP <=0) { // full display
+            skipP = 0;
+        }
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
         for (const parm of parms) {
             console.log("\n======== do prec " + parm.name);
@@ -286,7 +252,10 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             const startA = positiveOnly ? 0 : -FMathInst.overNum;
             const endA = FMathInst.overNum;
             const timeLoopStart = performance.now();
+            let count = 0;
+            //let a = 1.5; {
             for (let a = startA; a <= endA; a += stepP) {
+                ++count;
                 const fa = FMathInst.create(a);
                 //const c = a ? parm.op(a) : 0;
                 const c = parm.op(a); // float
@@ -335,37 +304,57 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             console.log("  max error: " + maxStr);
             console.log("    min val(" + minX + ") = " + minVal + ", max val(" + maxX + ") = " + maxVal + ", zero val(0) = " + zeroVal
                 + ", first val(" + startA + ") = " + firstval + ", last val(" + endA + ") = " + lastVal);
-            console.log("time in seconds = " + (timeLoopEnd - timeLoopStart) / 1000);
+            const usTime = 1000 * (timeLoopEnd - timeLoopStart) / count;
+            console.log("time in microSeconds each function call = " +  usTime + ", call count = " + count
+                + ", total time in seconds = " + (usTime * count) / 1000000);
         }
     }
     if (doPrecBinary) {
-        console.log("BINARY FUNCTIONS");
+        console.log("\nBINARY FUNCTIONS");
         const parms = [
-            //{	name: "add",	op: (a, b) => a + b,        fOp : FMathInst.add.bind(FMathInst),	errRatio: .125},
-            //{	name: "sub",	op: (a, b) => a - b,        fOp : FMathInst.sub.bind(FMathInst),	errRatio: .125},
-            //{	name: "mul",	op: (a, b) => a * b,        fOp : FMathInst.mul.bind(FMathInst),	errRatio: .75},
+            /*
+            {	name: "add",	op: (a, b) => a + b,        fOp : FMathInst.add.bind(FMathInst),	errRatio: .125},
+            {	name: "sub",	op: (a, b) => a - b,        fOp : FMathInst.sub.bind(FMathInst),	errRatio: .125},
+            {	name: "mul",	op: (a, b) => a * b,        fOp : FMathInst.mul.bind(FMathInst),	errRatio: .75},
             {	name: "div",	op: (a, b) => b ? a / b : 0,        fOp : FMathInst.div.bind(FMathInst),	errRatio: 1.25},
             {	name: "mod",	op: (a, b) => b ? a % b : 0,        fOp : FMathInst.mod.bind(FMathInst),	errRatio: .125},
-            /*
+            
             {	name: "min",	op: (a, b) => a < b ? a : b,        fOp : FMathInst.min.bind(FMathInst),	errRatio: .125},
             {	name: "max",	op: (a, b) => a > b ? a : b,        fOp : FMathInst.max.bind(FMathInst),	errRatio: .125},
-
-            {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 16}, */
-            //{	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 43000},
-            //{	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 2},
+            */
+            
+            {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 40},
+            {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 30},
+            {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 10},
+            
         ];
+        if (displayP > 1) {
+            displayP >>= 1;
+        }
+        let skipP = intP + fracP - displayP;
+        if (skipP < 0) {
+            skipP = 0; // full display
+        }
+        if (displayP <=0) { // full display
+            skipP = 0;
+        }
         const stepP = FMathInst.epsilonNum * 2 ** skipP;
+        //const stepP2 = stepP * stepP;
         for (const parm of parms) {
             console.log("======== do prec " + parm.name);
             let maxErrRat = 0;
             let maxStr = "100% ACCURATE !!";
             const fc = FMathInst.create();
+            const timeLoopStart = performance.now();
+            let count = 0;
             for (let b = -FMathInst.overNum; b <= FMathInst.overNum; b += stepP) {
+                //console.log("b = " + b);
                 //if (b == 0) {
                 //    continue;
                 //}
                 const fb = FMathInst.create(b);
                 for (let a = -FMathInst.overNum; a <= FMathInst.overNum; a += stepP) {
+                    ++count;
                     const fa = FMathInst.create(a);
                     const c = parm.op(a, b); // float
                     parm.fOp(fc, fa, fb); // fixed
@@ -394,7 +383,11 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
                     }
                 }
             }
+            const timeLoopEnd = performance.now();
             console.log("  max error: " + maxStr);
+            const usTime = 1000 * (timeLoopEnd - timeLoopStart) / count;
+            console.log("time in microSeconds each function call = " +  usTime + ", call count = " + count
+                + ", total time in seconds = " + (usTime * count) / 1000000);
         }
     }
     if (testConstants) {
