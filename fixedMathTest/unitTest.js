@@ -157,7 +157,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const testCalcCoefFix = false;
     const doVerbose = false;
     const testConstants = false;
-    const doPrecUnary = false;
+    const doPrecUnary = true;
     const doPrecBinary = false;
 
     if (testCalcCoefFix) {
@@ -180,7 +180,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     if (doPrecUnary) {
         console.log("\nUNARY FUNCTIONS");
         const parms = [
-
+            /*
             // basic
             
             {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: 0},
@@ -219,14 +219,14 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 10},
             {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 10},
             {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 5},
-            
+            */
 
             //asinh NYI
             //acosh NYI
-            {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
+            //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
             // misc NYI
-            //{	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 60000}, // placeholder
+            {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 100000}, // placeholder
         ];
 
         let skipP = intP + fracP - displayP;

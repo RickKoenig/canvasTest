@@ -244,8 +244,14 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	setNumber(out, n) {
-		const toInt = Math.round(n * this.mulFracFactor);
+	setNumber(out, n, round = true) {
+		let toInt;
+		const v = n * this.mulFracFactor;
+		if (round) {
+			toInt = Math.round(v);
+		} else {
+			toInt = Math.floor(v);
+		}
 		out.raw = BigInt(toInt);
 		return out;
 	}
@@ -1113,10 +1119,10 @@ class FMathBigIntInstance {
 	//atanh = this.atanhAG;
 
 	// miscellaneous
-	/*
-	random(out) { // placeholder NYI
+	
+	random(out, a) { // placeholder NYI
 		const n = Math.random();
-		this.setNumber(out, n);
+		this.setNumber(out, n, false);
 		return out;
-	}*/
+	}
 }
