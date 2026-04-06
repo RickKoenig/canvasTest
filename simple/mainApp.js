@@ -3,6 +3,7 @@
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javascript tests!");
+	castleCraftMerge();
 	/*
 	inheritanceTests();
 	const codeWord = rudolphSim();
