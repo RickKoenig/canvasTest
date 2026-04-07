@@ -222,7 +222,7 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	// create
+	// create from number
 	create = function(n) {
 		let raw = 0n;
 		const out = {raw: 0n};
