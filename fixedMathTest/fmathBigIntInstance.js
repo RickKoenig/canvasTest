@@ -341,6 +341,18 @@ class FMathBigIntInstance {
 		return out;
 	}
 
+	// keep b within range of 'a' and 'c'
+	range(out, a, b, c) {
+		if (b.raw < a.raw) {
+			out.raw = a.raw;
+		} else if (b.raw > c.raw) {
+			out.raw = c.raw;
+		} else {
+			out.raw = b.raw;
+		}
+		return out;
+	}
+
 	add(out, a, b) {
 		out.raw = a.raw + b.raw;
 		return out;
