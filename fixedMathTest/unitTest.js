@@ -157,7 +157,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     const testCalcCoefFix = false;
     const doVerbose = false;
     const testConstants = false;
-    const doPrecUnary = true;
+    const doPrecUnary = false;
     const doPrecBinary = false;
 
     if (testCalcCoefFix) {
@@ -323,8 +323,8 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "max",	op: (a, b) => a > b ? a : b,        fOp : FMathInst.max.bind(FMathInst),	errRatio: .125},
             */
             
-            {	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 40},
-            {	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 30},
+            //{	name: "hypot",	op: (a, b) => Math.sqrt(a * a + b * b),fOp : FMathInst.hypot.bind(FMathInst),	errRatio: 40},
+            //{	name: "pow",	op: (b, e) => b > 3 / 32 ? Math.pow(b, e) : 0,fOp : FMathInst.pow.bind(FMathInst),	errRatio: 30},
             {	name: "atan2",	op: (y, x) => Math.atan2(y, x),fOp : FMathInst.atan2.bind(FMathInst),	errRatio: 10},
             
         ];

@@ -887,8 +887,9 @@ class FMathBigIntInstance {
 	atan2RG(out, y, x) {
 		const xSave = x.raw;
 		const ySave = y.raw;
-		x.raw = FMathBigIntInstance.convert(x.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		y.raw = FMathBigIntInstance.convert(y.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		// don't need to convert, it's a ratio
+		//x.raw = FMathBigIntInstance.convert(x.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		//y.raw = FMathBigIntInstance.convert(y.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
 		FMathBigIntInstance.guard.atan2R(out, y, x);
 		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		x.raw = xSave;
