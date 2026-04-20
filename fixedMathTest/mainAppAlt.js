@@ -11,7 +11,7 @@ class MainApp {
 	}
 
 	constructor() {
-		console.log("\n############# creating instance of MainApp");
+		console.log("\n############# creating instance of MainApp ALT");
 		++MainApp.numInstances;
 
 

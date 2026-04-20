@@ -3,12 +3,13 @@
 // do a consistent fixed point system in javascript
 // using BigInt
 // create a static like class with 2 parameters
-// just use an object with a raw member, refactoring to primitive BigInt
+// just use primitive BigInt
 
-class FMathBigIntInstance {
+class FMathBigIntInstanceALT {
+	
 	static masterFrac = 32; // master of high precision constants, 32 bit fraction
 	static guardFrac = 32;
-	static guard = new FMathBigIntInstance(0, this.guardFrac);
+	static guard = new FMathBigIntInstanceALT(0, this.guardFrac);
 	constructor(intPart, fracPart) { // intPart is for overflow if needed
 		this.version = 200; // integer
 		// BigInts
@@ -48,6 +49,8 @@ class FMathBigIntInstance {
 			HALFPI: Math.PI / 2,
 			QUARTERPI: Math.PI / 4,
 			THREEHALFPI: 3 * Math.PI / 2,
+
+			PHI: (Math.sqrt(5) + 1) / 2,
 
 			// remez atan odd
 			ATAN_1r : 0.99920654296875,
@@ -119,6 +122,8 @@ class FMathBigIntInstance {
 			QUARTERPI: 3373259426n, // 0.7853981633974483
 			THREEHALFPI: 20239556557n, // 4.71238898038469	
 
+			PHI: 6949403065n, // 1.618033988749895
+			
 			// remez atan odd
 			ATAN_1r: 4291559424n, // 0.99920654296875
 			ATAN_3r: -1379926016n, // -0.3212890625
@@ -195,13 +200,13 @@ class FMathBigIntInstance {
 		}
 		// setup constants into instance
 		for (const cName of this.constNames) {
-			let raw = this.generated32[cName];
-			if (raw === undefined) {
-				raw = 0n;
+			let fix = this.generated32[cName];
+			if (fix === undefined) {
+				fix = 0n;
 			}
 			const ft = this.create(); // tFrac
-			ft.raw = FMathBigIntInstance.convert(raw, FMathBigIntInstance.masterFrac, fracPart);
-			this[cName] = ft;
+			fix = FMathBigIntInstanceALT.convert(fix, FMathBigIntInstanceALT.masterFrac, fracPart);
+			this[cName] = fix;
 		}
 	}
 
@@ -225,27 +230,16 @@ class FMathBigIntInstance {
 
 	// create from number
 	create = function(n) {
-		let raw = 0n;
-		const out = {raw: 0n};
+		let fix = 0n;
 		if (n) {
-			this.setNumber(out, n);
+			fix = this.setNumber(n);
 		}
-		return out;
+		return fix;
 	}
 
-	clone(f) {
-		const out = this.create();
-		out.raw = f.raw;
-		return out;
-	}
+	// these are now primitives, no need for clone or copy
 
-	// replace
-	copy(out, f) {
-		out.raw = f.raw;
-		return out;
-	}
-
-	setNumber(out, n, round = true) {
+	setNumber(n, round = true) {
 		let toInt;
 		const v = n * this.mulFracFactor;
 		if (round) {
@@ -253,97 +247,88 @@ class FMathBigIntInstance {
 		} else {
 			toInt = Math.floor(v);
 		}
-		out.raw = BigInt(toInt);
-		return out;
+		const fix = BigInt(toInt);
+		return fix;
 	}
 
 	// output
 	toNumber(f) {
-		return Number(f.raw) / this.mulFracFactor;
+		return Number(f) / this.mulFracFactor;
 	}
 
 	toPrettyString(f) {
 		const n = this.toNumber(f);
 		return this.numberToPrettyString(n);
 	}
-
+/*
 	// unary operators
-
+*/
 	// basic
-	neg(out, a) {
-		out.raw = -a.raw;
-		return out;
+	neg(a) {
+		return -a;
 	}
 
-	abs(out, a) {
-		out.raw = a.raw < 0n ? -a.raw : a.raw;
-		return out;
+	abs(a) {
+		return a < 0n ? -a : a;
 	}
 
-	sign(out, a) {
+	sign(a) {
 		let s;
-		if (a.raw > 0n) {
+		if (a > 0n) {
 			s = this.mulFracFactor;
-		} else if (a.raw < 0n) {
+		} else if (a < 0n) {
 			s = -this.mulFracFactor;
 		} else {
 			s = 0n;
 		}
-		out.raw = s;
-		return out;
+		return s;
 	}
 	
-	trunc(out, a) {
-		if (a.raw >= 0) {
-			out.raw = a.raw >> this.fracBits << this.fracBits;
+	trunc(a) {
+		if (a >= 0) {
+			return a >> this.fracBits << this.fracBits;
 		} else {
-			out.raw = -(-(a.raw) >> this.fracBits << this.fracBits);
+			return -(-(a) >> this.fracBits << this.fracBits);
 		}
-		return out;
 	}
 
-	floor(out, a) {
-		out.raw = a.raw >> this.fracBits << this.fracBits;
-		return out;
+	floor(a) {
+		return a >> this.fracBits << this.fracBits;
 	}
 
-	ceil(out, a) {
-		this.neg(out, a);
-		this.floor(out, out);
-		this.neg(out, out);
-		return out;
+	ceil(a) {
+		a = this.neg(a);
+		a = this.floor(a);
+		a = this.neg(a);
+		return a;
 	}
 
-	round(out, a) {
-		out.raw = a.raw + this.addRound;
-		this.floor(out, out);
-		return out;
+	round(a) {
+		a += this.addRound;
+		return this.floor(a);
 	}
-	
-	inv(out, a) {
+
+	inv(a) {
 		// don't do divide by zero
-		if (a.raw == 0n) {
-			out.raw = 0;
-			return out;
+		if (a == 0n) {
+			return 0n;
 		}
-		return this.div(out, this.ONE, a);
+		return this.div(this.ONE, a);
 	}
 
-	// TODO: add comparison operators, or just do a.raw < b.raw etc. ...
+	// comparisons between fixed numbers work fine with bigint
 
 	// basic binary operators
 	min(out, a, b) {
-		out.raw = a.raw < b.raw ? a.raw : b.raw;
-		return out;
+		return a < b ? a : b;
 	}
 
 	max(out, a, b) {
-		out.raw = a.raw > b.raw ? a.raw : b.raw;
-		return out;
+		return a > b ? a : b;
 	}
 
 	// keep b within range of 'a' and 'c'
-	range(out, a, b, c) {
+	range(a, b, c) {
 		if (b.raw < a.raw) {
 			out.raw = a.raw;
 		} else if (b.raw > c.raw) {
@@ -354,52 +339,43 @@ class FMathBigIntInstance {
 		return out;
 	}
 
-	add(out, a, b) {
-		out.raw = a.raw + b.raw;
+	add(a, b) {
+		return a + b;
+	}
+
+	sub(a, b) {
+		return a - b;
+	}
+
+	mul(a, b) {
+		let out = a * b;
+		out += this.addRound;
+		out >>= this.fracBits;
 		return out;
 	}
 
-	sub(out, a, b) {
-		out.raw = a.raw - b.raw;
-		return out;
-	}
-
-	mul(out, a, b) {
-		out.raw = a.raw * b.raw;
-		out.raw += this.addRound;
-		out.raw >>= this.fracBits;
-		return out;
-	}
-
-	div(out, a, b) {
-		if (b.raw == 0n) {
-			out.raw = 0n;
-			return out;
+	div(a, b) {
+		if (b == 0n) {
+			return 0n;
 		}
-		let aRaw = a.raw;
-		let bRaw = b.raw;
-		aRaw <<= this.fracBits;
-		let bRawH = bRaw / 2n;
-		if (aRaw < 0 != bRaw < 0) { // XOR
-			bRawH = -bRawH;
+		a <<= this.fracBits;
+		let bH = b / 2n;
+		if (a < 0 != b < 0) { // XOR
+			bH = -bH;
 		}
-		aRaw += bRawH;
-		out.raw = aRaw / bRaw;
-		return out;
+		a += bH;
+		return a / b;
 	}
 
-	mod(out, a, b) {
-		if (b.raw == 0n) {
-			out.raw = 0n;
-			return out;
+	mod(a, b) {
+		if (b == 0n) {
+			return 0n;
 		}
-		let q = a.raw / b.raw; // div with trunc, a straight BigInt
-		let btq = b.raw * q; // back to FMath
-		btq = a.raw - btq;
-		out.raw = btq;
-		return out;
+		let q = a / b; // div with trunc, a straight BigInt
+		let btq = b * q; // back to FMath
+		return a - btq;
 	}
-
+/*
 	// coefs 0 is 1, 1 is 3, 2 is 5, 3 is 7, etc.
 	calcCoefFixOdd(out, x, ...coefs) {
 		const x2 = this.create();
@@ -431,89 +407,76 @@ class FMathBigIntInstance {
 		this.copy(out, t);
 		return out;
 	}
-
+*/
 	// roots
-	sqrtA(out, a) {
+	sqrtA(a) {
+		if (a <= 0) {
+			return this.ZERO;
+		}
 		const steps = 20;
-		if (a.raw <= 0n) {
-			out.raw = 0n;
-			return out;
-		}
-		const guess = this.clone(this.TWO); // r = 2;
-		const newGuess = this.create(); // newGuess;
+		let guess = this.TWO; // r = 2;
+		let newGuess = 0;
 		for (let i = 0; i < steps; ++i) {
-			this.div(newGuess, a, guess); // newGuess = a / guess;
-			this.add(guess, newGuess, guess); // guess = (newGuess + guess) / 2;
-			this.mul(guess, guess, this.HALF);
+			newGuess = this.div(a, guess); // newGuess = a / guess;
+			guess = this.add(newGuess, guess); // guess = (newGuess + guess) / 2;
+			guess = this.mul(guess, this.HALF);
 		}
-		out.raw = guess.raw;
-		return out;
+		return guess;
 	}
 
 	// candidate sqrt
 	sqrt = this.sqrtA;
 
-
-	cbrtN(out, a) {
-		if (a.raw == 0n) {
-			out.raw = 0n;
-			return out;
+	cbrtN(a) {
+		if (a == 0n) {
+			return 0n;
 		}
 		// newton's method
 		// gn = 1 / 3 * (a / (g * g) + 2 * g);
 		// gn = (a / 3) / (g * g) + 2 / 3 * g;
 		// best guess near 1 is g = (a + 2) / 3
-		const aOver3 = this.create();
-		this.div(aOver3, a, this.THREE);
-		const twoOver3 = this.create();
-		this.div(twoOver3, this.TWO, this.THREE);
+		const aOver3 = this.div(a, this.THREE);
+		const twoOver3 = this.div(this.TWO, this.THREE);
 		// calc first guess
-		const g = this.clone(a);
-		if (a.raw < 0n) {
-			this.neg(g, g);
+		let g = a;
+		if (a < 0n) {
+			g = this.neg(g);
 		}
-		this.add(g, g, this.TWO);
-		this.div(g, g, this.THREE);
-		if (a.raw < 0n) {
-			this.neg(g, g);
+		g = this.add(g, this.TWO);
+		g = this.div(g, this.THREE);
+		if (a < 0n) {
+			g = this.neg(g);
 		}
-		const term1 = this.create();
-		const term2 = this.create();
 		const numSteps = 20;
-		const g2 = this.create();
 		// step
 		for (let i = 0; i < numSteps; ++i) {
-			this.mul(g2, g, g);
-			this.div(term1, aOver3, g2);
-			this.mul(term2, twoOver3, g);
-			this.add(g, term1, term2);
+			const g2 = this.mul(g, g);
+			const term1 = this.div(aOver3, g2);
+			const term2 = this.mul(twoOver3, g);
+			g = this.add(term1, term2);
 		}
-		out.raw = g.raw;
-		return out;
+		return g;
 	}
 
-	cbrtP(out, a) {
+	cbrtP(a) {
 		// power log method
-		const aa = this.clone(a);
 		let neg = false;
-		if (a.raw < 0) {
+		if (a < 0) {
 			neg = true;
-			this.neg(aa, aa);
+			a = this.neg(a);
 		}
-		this.pow(out, aa, this.THIRD);
+		let ret = this.pow(a, this.THIRD);
 		if (neg) {
-			this.neg(out, out);
+			ret = this.neg(ret);
 		}
-		return out;
+		return ret;
 	}
 
-	cbrtNG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.cbrtN(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
-		a.raw = aSave;
-		return out;
+	cbrtNG(a) {
+		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		a = FMathBigIntInstanceALT.guard.cbrtN(a);
+		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		return a;
 	}
 
 	// candidate cbrt
@@ -521,12 +484,10 @@ class FMathBigIntInstance {
 	//cbrt = this.cbrtN;
 	cbrt = this.cbrtNG;
 
-	hypot(out, a, b) {
-		const a2 = this.create();
-		const b2 = this.create();
-		return this.sqrt(out, this.add(out, this.mul(a2, a, a), this.mul(b2, b, b)));
+	hypot(a, b) {
+		return this.sqrt(this.add(this.mul(a, a), this.mul(b, b)));
 	}
-
+/*
 	// more advanced functions
 
 	// trigonometric
@@ -626,18 +587,18 @@ class FMathBigIntInstance {
 
 	sinTG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.sinT(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.sinT(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
 
 	sinRG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.sinR(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.sinR(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -691,18 +652,18 @@ class FMathBigIntInstance {
 
 	cosTG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.cosT(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.cosT(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
 	
 	cosRG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.cosR(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.cosR(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -739,9 +700,9 @@ class FMathBigIntInstance {
 
 	tanRG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.tanR(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.tanR(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -769,9 +730,9 @@ class FMathBigIntInstance {
 
 	aSinRG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.aSinR(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.aSinR(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -809,9 +770,9 @@ class FMathBigIntInstance {
 
 	aSinTG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.aSinT(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.aSinT(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -836,9 +797,9 @@ class FMathBigIntInstance {
 
 	aCosTG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.aCosT(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.aCosT(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -889,10 +850,10 @@ class FMathBigIntInstance {
 		const xSave = x.raw;
 		const ySave = y.raw;
 		// don't need to convert, it's a ratio
-		//x.raw = FMathBigIntInstance.convert(x.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		//y.raw = FMathBigIntInstance.convert(y.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.atan2R(out, y, x);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		//x.raw = FMathBigIntInstanceALT.convert(x.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		//y.raw = FMathBigIntInstanceALT.convert(y.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.atan2R(out, y, x);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		x.raw = xSave;
 		y.raw = ySave;
 		return out;
@@ -901,149 +862,132 @@ class FMathBigIntInstance {
 	// candidate atan2
 	//atan2 = this.atan2R;
 	atan2 = this.atan2RG;
-
+*/
 	// exponents
-	expA(out, a) {
-		const neg = a.raw < 0n; // do inverse at end if neg exp
-		const aa = this.clone(a);
+	expA(a) {
+		const neg = a < 0n; // do inverse at end if neg exp
+		let aa = a;
 		if (neg) {
-			this.neg(aa, aa);
+			aa = this.neg(aa);
 		}
 		const steps = 20;
-		const sum = this.create();
-		const term = this.create();
-		const n = this.clone(this.ONE);
-		const d = this.clone(this.ONE);
-		const m = this.create();
+		let sum = this.create();
+		let term;
+		let n = this.ONE;
+		let d = this.ONE;
+		let m = this.create(); // or = this.ZERO
 		let i = 0;
 		while(true) {
-			this.div(term, n, d);
-			this.add(sum, sum, term);
+			term = this.div(n, d);
+			sum = this.add(sum, term);
 			if (++i == steps) {
 				break;
 			}
-			this.mul(n, n, aa);
-			this.add(m, m, this.ONE);
-			this.mul(d, d, m);
+			n = this.mul(n, aa);
+			m = this.add(m, this.ONE);
+			d = this.mul(d, m);
 		}
-		this.div(term, n, d);
-		this.add(sum, sum, term);
-		this.copy(out, sum);
+		term = this.div(n, d);
+		sum = this.add(sum, term);
 		if (neg) {
-			this.inv(out, out);
+			sum = this.inv(sum);
 		}
-		return out;
+		return sum;
 	}
 
-	expAG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.expA(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
-		a.raw = aSave;
-		return out;
+	expAG(a) {
+		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		a = FMathBigIntInstanceALT.guard.expA(a);
+		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		return a;
 	}
+
 	// candidate exp
 	exp = this.expA;
 	//exp = this.expAG;
 
-	pow(out, b, e) {
+	pow(b, e) {
 		const low = this.create(3 / 32);
-		if (b.raw <= low.raw) {
-			out.raw = 0n;
-			return out;
+		if (b <= low) {
+			return 0n;
 		}
-		const lb = this.create();
-		this.log(lb, b);
-		this.mul(lb, lb, e);
-		this.exp(out, lb);
-		return out;
+		let lb = this.log(b);
+		lb = this.mul(lb, e);
+		return this.exp(lb);
 	}
 
 	// logarithms
-	logA(out, ox) {
+	logA(mx) {
 		const low = this.create(1 / 16);
-		if (ox.raw <= low.raw) {
-			out.raw = 0n;
-			return out;
+		if (mx <= low) {
+			return this.create(); // or 0n, or this.ZERO
 		}
-		/*
-		if (ox.raw <= this.ZERO.raw) {
-			out.raw = 0n;
-			return out;
-		}*/
-		const mx = this.clone(ox);
 		
 		// move arg close to 1 for better results
-		const offset = this.create();
+		let offset = this.ZERO;
 		let watch = 20;
 		
-		while (mx.raw >= this.E_1_4.raw && watch > 0) {
-			this.add(offset, offset, this.FOURTH);
-			this.mul(mx, mx, this.E_M1_4);
+		while (mx >= this.E_1_4 && watch > 0) {
+			offset = this.add(offset, this.FOURTH);
+			mx = this.mul(mx, this.E_M1_4);
 			--watch;
 		}
 
-		while (mx.raw < this.E_M1_2.raw && watch > 0) {
-			this.sub(offset, offset, this.HALF);
-			this.mul(mx, mx, this.E_1_2);
+		while (mx < this.E_M1_2 && watch > 0) {
+			offset = this.sub(offset, this.HALF);
+			mx = this.mul(mx, this.E_1_2);
 			--watch;
 		}
 
 		if (!watch) {
 			console.error("watch hit!!!");
-			out.raw = 0n;
-			return out;
+			return this.ZERO;
 		}
 
-		const d = this.clone(this.ONE);
-		this.sub(mx, mx, this.ONE);
-		const n = this.clone(mx);
-		this.neg(mx, mx);
+		let d = this.ONE;
+		mx = this.sub(mx, this.ONE);
+		let n = mx;
+		mx = this.neg(mx);
 		const steps = 10;
-		const y = this.create();
-		const term = this.create();
-		this.div(term, n, d);
-		this.add(y, y, term);
+		let y = 0n; // or this.create(), or this.ZERO
+		let term = this.div(n, d);
+		y = this.add(y, term);
         //console.log("n = " + this.toPrettyString(n)
 		//	+ ", d = " + this.toPrettyString(d));
 		for (let i = 1; i < steps; ++i) {
-			this.mul(n, n, mx);
-			this.add(d, d, this.ONE);
-			this.div(term, n, d);
-			this.add(y, y, term);
+			n = this.mul(n, mx);
+			d = this.add(d, this.ONE);
+			term = this.div(n, d);
+			y = this.add(y, term);
 	        //console.log("n = " + this.toPrettyString(n)
 			//	+ ", d = " + this.toPrettyString(d));
 		}
-		this.add(y, y, offset);
-		this.copy(out, y);
-		return out;
+		y = this.add(y, offset);
+		return y;
 	}
 
-	logAG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.logA(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
-		a.raw = aSave;
-		return out;
+	logAG(a) {
+		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		a = FMathBigIntInstanceALT.guard.logA(a);
+		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		return a;
 	}
 	// candidate log
 	//log = this.logA;
 	log = this.logAG;
 
-	log10(out, oy) {
-		this.log(out, oy);
-		this.mul(out, out, this.LOG10E);
-		return out;
+	log10(y) {
+		let ret = this.log(y);
+		ret = this.mul(ret, this.LOG10E);
+		return ret;
 	}
 
-	log2(out, oy) {
-		this.log(out, oy);
-		this.mul(out, out, this.LOG2E);
-		return out;
+	log2(y) {
+		let ret = this.log(y);
+		ret = this.mul(ret, this.LOG2E);
+		return ret;
 	}
-
+/*
 	// hyperbolic
 	sinh(out, a) {
 		const e = this.create();
@@ -1122,9 +1066,9 @@ class FMathBigIntInstance {
 
 	atanhAG(out, a) {
 		const aSave = a.raw;
-		a.raw = FMathBigIntInstance.convert(a.raw, this.fracBits, FMathBigIntInstance.guard.fracBits);
-		FMathBigIntInstance.guard.atanhA(out, a);
-		out.raw = FMathBigIntInstance.convert(out.raw, FMathBigIntInstance.guard.fracBits, this.fracBits);
+		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		FMathBigIntInstanceALT.guard.atanhA(out, a);
+		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
 		a.raw = aSave;
 		return out;
 	}
@@ -1133,10 +1077,10 @@ class FMathBigIntInstance {
 	//atanh = this.atanhAG;
 
 	// miscellaneous
-	
-	random(out, a) { // placeholder NYI
+	*/
+	random(a) { // placeholder NYI
 		const n = Math.random();
-		this.setNumber(out, n, false);
-		return out;
-	}
+		const fix = this.setNumber(n, false);
+		return fix;
+	} 
 }

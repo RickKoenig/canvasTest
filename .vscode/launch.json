@@ -57,6 +57,13 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, fixed math test ALT",
+            "url": "http://localhost:88/plotter2d/fixedMathTest/indexAlt.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, remez algorithm",
             "url": "http://localhost:88/plotter2d/remez/index.html",
             "webRoot": "${workspaceFolder}"
