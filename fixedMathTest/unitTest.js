@@ -10,27 +10,30 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     console.log("epsilonNum = " + FMathInst.epsilonNum);
     console.log("overNum = -" + FMathInst.overNum + " to " + FMathInst.overNum);
 
-    const testCalcCoefFix = false;
+    const testCalcCoefFix = true;
     const doVerbose = false;
     const testConstants = true;
     const doPrecUnary = true;
     const doPrecBinary = true;
 
     if (testCalcCoefFix) {
+        console.log("\nTEST CALC COEF FIX");
         const poly = [
             // 2x^2 + 3x + 5
             FMathInst.create(5),
             FMathInst.create(3),
             FMathInst.create(2)
         ];
-        const x = FMathInst.create(1);
+        const x = FMathInst.create(10);
         console.log(FMathInst.toPrettyString(x));
         const y = FMathInst.create();
         FMathInst.mul(y, x, FMathInst.THREE);
         console.log(FMathInst.toPrettyString(y));
         FMathInst.calcCoefFix(y, x, poly);
+        console.log(FMathInst.toPrettyString(y));
         FMathInst.calcCoefFix(y, y, poly);
         console.log(FMathInst.toPrettyString(y));
+        console.log("should be 10, 30, 235, 111160");
     }
 
     if (doPrecUnary) {
@@ -77,12 +80,12 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             
             {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 10},
             {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 10},
-            {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 5},
             */
+            {	name: "tanh",	op: (n) => Math.tanh(n),fOp : FMathInst.tanh.bind(FMathInst),	errRatio: 5},
 
             //asinh NYI
             //acosh NYI
-            //{	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
+            {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
 
             // misc NYI
             {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 100000}, // placeholder

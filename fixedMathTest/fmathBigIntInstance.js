@@ -417,16 +417,16 @@ class FMathBigIntInstance {
 		return out;
 	}
 	
-	calcCoefFix(out, x, cs) {
-		if (!cs.length) {
+	calcCoefFix(out, x, coefs) {
+		if (!coefs.length) {
 			this.copy(out, this.ZERO);
 			return out;
 		}
 		// horner's method
-		const t = this.clone(cs[cs.length - 1]);
-		for (let i = cs.length - 2; i >= 0; --i ) {
-			this.mul(t, t, x); // TODO: not needed on last iteration
-			this.add(t, t, cs[i]);
+		const t = this.clone(coefs[coefs.length - 1]);
+		for (let i = coefs.length - 2; i >= 0; --i ) {
+			this.mul(t, t, x);
+			this.add(t, t, coefs[i]);
 		}
 		this.copy(out, t);
 		return out;
@@ -1077,11 +1077,9 @@ class FMathBigIntInstance {
 
 		const topTerms = this.create();
 		this.sub(topTerms, e, inve);
-		this.mul(topTerms, topTerms, this.HALF);
 
 		const botTerms = this.create();
 		this.add(botTerms, e, inve);
-		this.mul(botTerms, botTerms, this.HALF);
 
 		this.div(out, topTerms, botTerms);
 		return out;
@@ -1092,7 +1090,6 @@ class FMathBigIntInstance {
 
 	atanhA(out, a) {
 		const na = this.clone(a);
-        // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
 		this.abs(na, na);
 		const compare = this.create(15 / 16);
 		//if (true) {

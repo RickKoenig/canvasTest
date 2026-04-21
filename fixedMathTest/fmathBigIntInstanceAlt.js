@@ -392,22 +392,20 @@ class FMathBigIntInstanceALT {
 		// let out = (((c7 * x2 + c5) * x2 + c3) * x2 + c1) * x;
 		return out;
 	}
-	
-	calcCoefFix(out, x, cs) {
-		if (!cs.length) {
-			this.copy(out, this.ZERO);
-			return out;
+*/
+	calcCoefFix(x, coefs) {
+		if (!coefs.length) {
+			return 0n;
 		}
 		// horner's method
-		const t = this.clone(cs[cs.length - 1]);
-		for (let i = cs.length - 2; i >= 0; --i ) {
-			this.mul(t, t, x); // TODO: not needed on last iteration
-			this.add(t, t, cs[i]);
+		let t = coefs[coefs.length - 1];
+		for (let i = coefs.length - 2; i >= 0; --i ) {
+			t = this.mul(t, x); // TODO: not needed on last iteration
+			t = this.add(t, coefs[i]);
 		}
-		this.copy(out, t);
-		return out;
+		return t;
 	}
-*/
+
 	// roots
 	sqrtA(a) {
 		if (a <= 0) {
@@ -987,97 +985,73 @@ class FMathBigIntInstanceALT {
 		ret = this.mul(ret, this.LOG2E);
 		return ret;
 	}
-/*
+
 	// hyperbolic
-	sinh(out, a) {
-		const e = this.create();
-		this.exp(e, a);
-		const inve = this.create();
-		this.inv(inve, e);
-		const terms = this.create();
-		this.sub(terms, e, inve);
-		this.mul(terms, terms, this.HALF);
-		out.raw = terms.raw;
-		return out;
+	sinh(a) {
+		const e = this.exp(a);
+		const inve = this.inv(e);
+		let terms = this.sub(e, inve);
+		terms = this.mul(terms, this.HALF);
+		return terms;
 	}
 
-	cosh(out, a) {
-		const e = this.create();
-		this.exp(e, a);
-		const inve = this.create();
-		this.inv(inve, e);
-		const terms = this.create();
-		this.add(terms, e, inve);
-		this.mul(terms, terms, this.HALF);
-		out.raw = terms.raw;
-		return out;
+	cosh(a) {
+		const e = this.exp(a);
+		const inve = this.inv(e);
+		let terms = this.add(e, inve);
+		terms = this.mul(terms, this.HALF);
+		return terms;
 	}
 
-	tanh(out, a) {
-		const e = this.create();
-		this.exp(e, a);
-		const inve = this.create();
-		this.inv(inve, e);
-
-		const topTerms = this.create();
-		this.sub(topTerms, e, inve);
-		this.mul(topTerms, topTerms, this.HALF);
-
-		const botTerms = this.create();
-		this.add(botTerms, e, inve);
-		this.mul(botTerms, botTerms, this.HALF);
-
-		this.div(out, topTerms, botTerms);
-		return out;
+	tanh(a) {
+		const e = this.exp(a);
+		const inve = this.inv(e);
+		const topTerms = this.sub(e, inve);
+		const botTerms = this.add(e, inve);
+		const ret = this.div(topTerms, botTerms);
+		return ret;
 	}
 
 	// asinh NYI
 	// acosh NYI
 
-	atanhA(out, a) {
-		const na = this.clone(a);
-        // Math.abs(n) + Math.PI / 2) % Math.PI - Math.PI / 2 <= 7 / 8 * Math.PI / 2 ? Math.tan(n) : 0
-		this.abs(na, na);
+	atanhA(a) {
+		const na = this.abs(a);
 		const compare = this.create(15 / 16);
 		//if (true) {
-		if (na.raw >= compare.raw) {
-			out.raw = 0n;
-			return out;
+		if (na >= compare) {
+			return 0n;
 		}
 		const steps = 30;
-		const sum = this.create();
-		const term = this.create();
-		const n = this.clone(a);
-		const d = this.clone(this.ONE);
+		let sum = 0n;
+		let term = this.create();
+		let n = a;
+		let d = this.ONE;
 		let i = 0;
 		while(true) {
-			this.div(term, n, d);
-			this.add(sum, sum, term);
+			term = this.div(n, d);
+			sum = this.add(sum, term);
 			if (++i == steps) {
 				break;
 			}
-			this.add(d, d, this.TWO);
-			this.mul(n, n, a);
-			this.mul(n, n, a);
+			d = this.add(d, this.TWO);
+			n = this.mul(n, a);
+			n = this.mul(n, a);
 		}
-		out.raw = sum.raw;
-		return out;
+		return sum;
 	}
 
-	atanhAG(out, a) {
-		const aSave = a.raw;
-		a.raw = FMathBigIntInstanceALT.convert(a.raw, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		FMathBigIntInstanceALT.guard.atanhA(out, a);
-		out.raw = FMathBigIntInstanceALT.convert(out.raw, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
-		a.raw = aSave;
-		return out;
+	atanhAG(a) {
+		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
+		a = FMathBigIntInstanceALT.guard.atanhA(a);
+		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		return a;
 	}
 	// candidate atanh
 	atanh = this.atanhA;
 	//atanh = this.atanhAG;
 
 	// miscellaneous
-	*/
 	random(a) { // placeholder NYI
 		const n = Math.random();
 		const fix = this.setNumber(n, false);
