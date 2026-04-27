@@ -593,6 +593,7 @@ class FMathBigIntInstance {
 			this.mul(d, d, m);
 		}
 		out.raw = sum.raw;
+		//console.log("in = " + this.toPrettyString(a) + "out = " + this.toPrettyString(out));
 		return out;
 	}
 
@@ -711,7 +712,7 @@ class FMathBigIntInstance {
 	//cos = this.cosT;
 	//cos = this.cosTG;
 	//cos = this.cosR;
-	cos = this.cosRG;
+	cos = this.cosRG; // this one
 
 	// remez
 	tanRNoNorm(out, a) {
@@ -747,8 +748,8 @@ class FMathBigIntInstance {
 	}
 
 	// candidate tan
+	//tan = this.tanR;
 	tan = this.tanRG;
-	//tan = this.tanRG;
 
 	// remez
 	aSinRNoCheck(out, y) {
@@ -817,10 +818,10 @@ class FMathBigIntInstance {
 	}
 
 	// candidate asin
-	//asin = this.aSinR;
 	asin = this.aSinT;
-	//asin = this.aSinRG;
 	//asin = this.aSinTG;
+	//asin = this.aSinR;
+	//asin = this.aSinRG;
 
 	aCosT(out, y) {
 		const ay = this.clone(y);
@@ -844,9 +845,7 @@ class FMathBigIntInstance {
 	}
 
 	// candidate acos
-	//acos = this.aCosR;
 	acos = this.aCosT;
-	//acos = this.aCosRG;
 	//acos = this.aCosTG;
 
 	// promote to atan2
@@ -860,7 +859,7 @@ class FMathBigIntInstance {
 		const ya = this.create();
 		const num = this.create();
 		const den = this.create();
-		const a = this.create();
+		const m = this.create();
 		const r = this.create();
 		this.abs(xa, x);
 		this.abs(ya, y);
@@ -870,8 +869,8 @@ class FMathBigIntInstance {
 			out.raw = 0n; // avoid division by zero
 			return out;
 		}
-		this.div(a, num, den); // 0 to 1
-		this.calcCoefFixOdd(r, a, this.ATAN_1r, this.ATAN_3r, this.ATAN_5r, this.ATAN_7r);
+		this.div(m, num, den); // 0 to 1
+		this.calcCoefFixOdd(r, m, this.ATAN_1r, this.ATAN_3r, this.ATAN_5r, this.ATAN_7r);
 		if (ya.raw > xa.raw) {
 			this.sub(r, this.HALFPI, r);
 		}
@@ -899,8 +898,8 @@ class FMathBigIntInstance {
 	}
 
 	// candidate atan2
-	//atan2 = this.atan2R;
-	atan2 = this.atan2RG;
+	atan2 = this.atan2R;
+	//atan2 = this.atan2RG;
 
 	// exponents
 	expA(out, a) {
