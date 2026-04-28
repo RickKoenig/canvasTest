@@ -228,10 +228,10 @@ class FMathBigIntInstanceALT {
 	}
 
 	// create from number
-	create = function(n) {
+	create = function(n, round = true) {
 		let fix = 0n;
 		if (n) {
-			fix = this.setNumber(n);
+			fix = this.setNumber(n, round);
 		}
 		return fix;
 	}
