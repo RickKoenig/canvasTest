@@ -5,10 +5,10 @@
 // create a static like class with 2 parameters
 // just use primitive BigInt
 
-class FMathBigIntInstanceALT {
+class FMathBigIntInstance {
 	static masterFrac = 32; // master of high precision constants, 32 bit fraction
 	static guardFrac = 32;
-	static guard = new FMathBigIntInstanceALT(0, this.guardFrac);
+	static guard = new FMathBigIntInstance(0, this.guardFrac);
 	constructor(intPart, fracPart) { // intPart is for overflow if needed
 		this.version = 200; // integer
 		// BigInts
@@ -204,7 +204,7 @@ class FMathBigIntInstanceALT {
 				fix = 0n;
 			}
 			const ft = this.create(); // tFrac
-			fix = FMathBigIntInstanceALT.convert(fix, FMathBigIntInstanceALT.masterFrac, fracPart);
+			fix = FMathBigIntInstance.convert(fix, FMathBigIntInstance.masterFrac, fracPart);
 			this[cName] = fix;
 		}
 	}
@@ -470,9 +470,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	cbrtNG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.cbrtN(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.cbrtN(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -581,16 +581,16 @@ class FMathBigIntInstanceALT {
 	}
 
 	sinTG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.sinT(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.sinT(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
 	sinRG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.sinR(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.sinR(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -639,16 +639,16 @@ class FMathBigIntInstanceALT {
 	}
 
 	cosTG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.cosT(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.cosT(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 	
 	cosRG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.cosR(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.cosR(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -684,9 +684,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	tanRG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.tanR(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.tanR(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -710,9 +710,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	aSinRG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.aSinR(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.aSinR(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -744,9 +744,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	aSinTG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.aSinT(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.aSinT(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -767,9 +767,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	aCosTG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.aCosT(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.aCosT(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -808,10 +808,10 @@ class FMathBigIntInstanceALT {
 
 	atan2RG(y, x) {
 		// don't need to convert, it's a ratio
-		//x = FMathBigIntInstanceALT.convert(x, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		//y = FMathBigIntInstanceALT.convert(y, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		let ret = FMathBigIntInstanceALT.guard.atan2R(y, x);
-		ret = FMathBigIntInstanceALT.convert(ret, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		//x = FMathBigIntInstance.convert(x, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		//y = FMathBigIntInstance.convert(y, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		let ret = FMathBigIntInstance.guard.atan2R(y, x);
+		ret = FMathBigIntInstance.convert(ret, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return ret;
 	}
 
@@ -852,9 +852,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	expAG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.expA(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.expA(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 
@@ -923,9 +923,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	logAG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.logA(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.logA(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 	// candidate log
@@ -1011,9 +1011,9 @@ class FMathBigIntInstanceALT {
 	}
 
 	atanhAG(a) {
-		a = FMathBigIntInstanceALT.convert(a, this.fracBits, FMathBigIntInstanceALT.guard.fracBits);
-		a = FMathBigIntInstanceALT.guard.atanhA(a);
-		a = FMathBigIntInstanceALT.convert(a, FMathBigIntInstanceALT.guard.fracBits, this.fracBits);
+		a = FMathBigIntInstance.convert(a, this.fracBits, FMathBigIntInstance.guard.fracBits);
+		a = FMathBigIntInstance.guard.atanhA(a);
+		a = FMathBigIntInstance.convert(a, FMathBigIntInstance.guard.fracBits, this.fracBits);
 		return a;
 	}
 	// candidate atanh

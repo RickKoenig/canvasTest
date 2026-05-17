@@ -1,7 +1,7 @@
 'use strict';
 
 function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
-    const FMath = FMathBigIntInstanceALT; // static, uses BigInt, interface
+    const FMath = FMathBigIntInstance; // static, uses BigInt, interface
     const FMathInst = new FMath(intP, fracP); // instance
 
     console.log("begin testFMath");
