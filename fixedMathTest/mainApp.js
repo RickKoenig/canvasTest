@@ -10,11 +10,38 @@ class MainApp {
 		return MainApp.numInstances;
 	}
 
+	// find and list floating point inconsistencies here between firefox and chrome
+	testFloat = function() {
+		let ang = 4 * 2 * Math.PI / 6; // doesn't matter which library
+		ang = normalangrad(ang);
+		{
+			console.log("\nUsing Math library, standard math library");
+			const sinAng = Math.sin(ang);
+			console.log("TEST FLOAT: ang = " + ang + ", sinAng = " + sinAng);
+			let bi = fromFloat(ang);
+			console.log("ang to bi = " + bi.toString(16));
+			bi = fromFloat(sinAng);
+			console.log("sinAng to bi = " + bi.toString(16) + "\n");
+		}
+		{
+			CMath.enable();
+			console.log("Using CMath library, consistent math library");
+			const sinAng = CMath.sin(ang);
+			console.log("TEST FLOAT: ang = " + ang + ", sinAng = " + sinAng);
+			let bi = fromFloat(ang);
+			console.log("ang to bi = " + bi.toString(16));
+			bi = fromFloat(sinAng);
+			console.log("sinAng to bi = " + bi.toString(16) + "\n");
+			CMath.disable();
+		}
+	}
+
 	constructor() {
 		console.log("\n############# creating instance of MainApp");
 		++MainApp.numInstances;
 
-
+		//this.testFloat();
+		
 		const playWithPolys = false;
 		// play with polynomials
 		if (playWithPolys) {

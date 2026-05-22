@@ -1,9 +1,81 @@
 'use strict';
 
+function toDigits(n) {
+	const nd = 4;
+	const arr = [];
+	for (let i = 0; i < nd; ++i) {
+		arr.push(n % 10);
+		n = Math.floor(n / 10);
+	}
+	return arr;
+}
+
+function fromDigits(arr) {
+	let ret = 0;
+	for (const d of arr) {
+		ret *= 10;
+		ret += d;
+	}
+	return ret;
+}
+
+function sortNumber(n) {
+	const arr = toDigits(n);
+	arr.sort((a, b) => a - b);
+	const ret = fromDigits(arr);
+	return ret;
+}
+
+function stepNumber(n) {
+	const arr = toDigits(n);
+	arr.sort((a, b) => a - b);
+	const small = fromDigits(arr);
+	arr.reverse();
+	const big = fromDigits(arr);
+	return big - small;
+}
+
+//let maxIters = 0;
+function stepNumberIter(n) {
+	const origN = n;
+	const iter = 10;
+	//console.log("num = " + n);
+	for (let i = 0; i < iter; ++i) {
+		const next = stepNumber(n);
+		//console.log("next = " + next);
+
+		if (next == n) {
+			++i;
+			/*if (i == 8) {
+				console.log("iters = " + i + ", at " + origN);
+			}
+			if (i > maxIters) {
+				maxIters = i;
+			}*/
+			break;
+		}
+		n = next;
+	}
+	return n;
+}
+
+function testBlackHoleNumbers() {
+	console.log("-------------- black hole numbers ----------------");
+	//maxIters = 0;
+	for (let n = 0; n < 10000; ++n) {
+	//let n = 14; {
+		const sn = stepNumberIter(n);
+		if (sn != 6174) {
+			console.log("num = " + n.toString().padStart(4) + ", step iter num = " + sn);
+		}
+	}
+}
+
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javascript tests!");
-	castleCraftMerge();
+	//testBlackHoleNumbers();
+	//castleCraftMerge();
 	/*
 	inheritanceTests();
 	const codeWord = rudolphSim();
