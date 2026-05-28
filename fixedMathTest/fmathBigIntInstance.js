@@ -19,7 +19,7 @@ class FMathBigIntInstance {
 		// Numbers
 		this.mulFracFactor = Number(2n ** this.fracBits);
 		this.epsilonNum = 1 / this.mulFracFactor;
-		this.overNum = Number(1n << (this.intBits- 1n));
+		this.overNum = Number(1n << (this.intBits - 1n));
 
 		// constants
         this.constNamesMath = [
@@ -751,8 +751,8 @@ class FMathBigIntInstance {
 	}
 
 	// candidate asin
-	asin = this.aSinT;
-	//asin = this.aSinTG;
+	//asin = this.aSinT;
+	asin = this.aSinTG;
 	//asin = this.aSinR;
 	//asin = this.aSinRG;
 

@@ -1,10 +1,10 @@
 'use strict';
 
-function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
+function unitTest(intP, fracP, displayP, positiveOnly) {
     const FMath = FMathBigIntInstance; // static, uses BigInt, interface
     const FMathInst = new FMath(intP, fracP); // instance
 
-    console.log("begin testFMath");
+    console.log("\n\nbegin testFMath FIXED");
     console.log(`masterBits = ${FMath.masterFrac}, guardBits (when needed) = ${FMath.guardFrac}`);
     console.log(`intBits = ${FMathInst.intBits}, fracBits = ${FMathInst.fracBits}, version = ${FMathInst.version}`);
     console.log("epsilonNum = " + FMathInst.epsilonNum);
@@ -38,7 +38,7 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
     if (doPrecUnary) {
         console.log("\nUNARY FUNCTIONS");
         const parms = [
-
+            
             // basic
             {	name: "neg",	op: (n) => -n,			fOp : FMathInst.neg.bind(FMathInst),	errRatio: 0},
             {	name: "abs",	op: (n) => Math.abs(n),	fOp : FMathInst.abs.bind(FMathInst),	errRatio: 0},
@@ -48,12 +48,12 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "ceil",	op: (n) => Math.ceil(n),fOp : FMathInst.ceil.bind(FMathInst),	errRatio: 0},
             {	name: "round",	op: (n) => Math.round(n),fOp : FMathInst.round.bind(FMathInst),	errRatio: 0},
             {	name: "inv",	op: (n) => n ? 1 / n : 0,fOp : FMathInst.inv.bind(FMathInst),	errRatio: .5},
-
-      
+            
+            
             // roots 
             {	name: "sqrt",	op: (n) => n > 0 ? Math.sqrt(n) : 0,fOp : FMathInst.sqrt.bind(FMathInst),	errRatio: 2},
             {	name: "cbrt",	op: (n) => Math.cbrt(n),fOp : FMathInst.cbrt.bind(FMathInst),	errRatio: 2},
-
+            
          
             // trigonometric
             {	name: "sin",	op: (n) => Math.sin(n),fOp : FMathInst.sin.bind(FMathInst),	errRatio: 5},
@@ -64,14 +64,14 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             {	name: "acos",	op: (n) => Math.abs(n) > 1 ? 0 : Math.acos(n),fOp : FMathInst.acos.bind(FMathInst),	errRatio: 100},
             {	name: "atan",	op: (n) => Math.atan(n),fOp : FMathInst.atan.bind(FMathInst),	errRatio: 10},
 
-          
+            
             // exponents, logarithms
             {	name: "exp",	op: (n) => Math.exp(n),fOp : FMathInst.exp.bind(FMathInst),	errRatio: 5},
             {	name: "log",	op: (n) => n > 1 / 16 ? Math.log(n) : 0, fOp : FMathInst.log.bind(FMathInst),	errRatio: 2},
             {	name: "log10",	op: (n) => n > 1 / 16 ? Math.log10(n) : 0, fOp : FMathInst.log10.bind(FMathInst),	errRatio: 2},
             {	name: "log2",	op: (n) => n > 1 / 16 ? Math.log2(n) : 0, fOp : FMathInst.log2.bind(FMathInst),	errRatio: 2},
-
-
+            
+            
             // hyperbolic
             {	name: "sinh",	op: (n) => Math.sinh(n),fOp : FMathInst.sinh.bind(FMathInst),	errRatio: 10},
             {	name: "cosh",	op: (n) => Math.cosh(n),fOp : FMathInst.cosh.bind(FMathInst),	errRatio: 10},
@@ -80,9 +80,11 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             //asinh NYI
             //acosh NYI
             {	name: "atanh",	op: (n) => Math.abs(n) < 15 / 16 ? Math.atanh(n): 0, fOp : FMathInst.atanh.bind(FMathInst),	errRatio: 25},
-
+            
+            
             // misc NYI, maybe some partial implementation
             {	name: "random",	op: (n) => Math.random(), fOp : FMathInst.random.bind(FMathInst),	errRatio: 100000}, // placeholder
+            
         ];
 
         let skipP = intP + fracP - displayP;
@@ -108,11 +110,9 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
             const endA = FMathInst.overNum;
             const timeLoopStart = performance.now();
             let count = 0;
-            //let a = -4; {
             for (let a = startA; a <= endA; a += stepP) {
                 ++count;
                 const fa = FMathInst.create(a);
-                //const c = a ? parm.op(a) : 0;
                 const c = parm.op(a); // float
                 const fc = parm.fOp(fa); // fixed
                 const nfc = FMathInst.toNumber(fc);
@@ -136,7 +136,6 @@ function unitTest(intP, fracP, displayP, positiveOnly, doChebyshev, funs) {
                 const delta = c - nfc;
                 const absDelta = Math.abs(delta);
                 const {rat: errRat, shift} = calcErrRatio(c, absDelta, FMathInst.epsilonNum);
-                //const errRat = absDelta / FMathInst.epsilonNum;
                 let str = "check absDelta " + parm.name + "(" + FMathInst.toPrettyString(fa)
                         + ") = " + FMathInst.toPrettyString(fc) + ", n = " + c.toFixed(5)
                         + ", delta = " + delta.toFixed(5) 
