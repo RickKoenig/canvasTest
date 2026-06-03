@@ -1,7 +1,9 @@
 'use strict';
 
 // running average class
-if (!window.Runavg) {
+if (true) {
+	console.log("hhhhhhhhhhhhhhhhhhhhhiiiiiiiiiiiiiiiiiiii");
+//if (!window.Runavg) {
 	class Runavg {
 		constructor(nele) {
 			this.nele = nele;
@@ -28,6 +30,10 @@ if (!window.Runavg) {
 			return this.sum/this.arr.length;
 		}
 	}
+	console.log("done make Runavg");
+	let ra = new Runavg(50);
+	// Attach the class to the global scope
+	globalThis.Runavg = Runavg;
 }
 
 // convert float number to css percent
