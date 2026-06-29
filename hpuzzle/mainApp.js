@@ -261,6 +261,7 @@ class MainApp {
 		//populateElementIds(this.vp, this.eles);
 
 		// setup 2D drawing environment
+		this.plotter2dBody = document.getElementById("body");
 		this.plotter2dDiv = document.getElementById("plotter2dDiv");
 		this.plotter2dCanvas = document.getElementById("plotter2dCanvas");
 		this.ctx = this.plotter2dCanvas.getContext("2d");
@@ -636,14 +637,52 @@ class MainApp {
 		  	  , "You Win !!"
 		  	  , "black", "#0002");
 		}
+		const testDim = true;
+		if (testDim) {
+			const bodyWid = this.plotter2dBody.clientWidth;
+			const bodyHit = this.plotter2dBody.clientHeight;
+			const divWid = this.plotter2dDiv.clientWidth;
+			const divHit = this.plotter2dDiv.clientHeight;
+			const canWid = this.plotter2dCanvas.clientWidth;
+			const canHit = this.plotter2dCanvas.clientHeight;
+			const bufWid = this.plotter2dCanvas.width;
+			const bufHit = this.plotter2dCanvas.height;
+			this.drawPrim.drawText([0, 2.8], [1.82, .14]
+			  , "body dim = " + bodyWid + ", " + bodyHit
+		  	  , "white", "#000a");
+			this.drawPrim.drawText([0, 2.3], [1.82, .14]
+			  , "div dim = " + divWid + ", " + divHit
+		  	  , "white", "#000a");
+			this.drawPrim.drawText([0, 1.8], [1.82, .14]
+			  , "can dim = " + canWid + ", " + canHit
+		  	  , "white", "#000a");
+			this.drawPrim.drawText([0, 1.3], [1.82, .14]
+			  , "buf dim = " + bufWid + ", " + bufHit
+		  	  , "white", "#000a");
+		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let infoStr = "\nInfo";
-		//infoStr += "\ncur board = " + this.curBoard;
-		infoStr += "\nfps = " + this.avgFps.toFixed(3) + "\n\n";
 		if (this.eles.textInfoLog) {
+			let infoStr = "\nInfo";
+			const bodyWid = this.plotter2dBody.clientWidth;
+			const bodyHit = this.plotter2dBody.clientHeight;
+			const divWid = this.plotter2dDiv.clientWidth;
+			const divHit = this.plotter2dDiv.clientHeight;
+			const canWid = this.plotter2dCanvas.clientWidth;
+			const canHit = this.plotter2dCanvas.clientHeight;
+			const bufWid = this.plotter2dCanvas.width;
+			const bufHit = this.plotter2dCanvas.height;
+			//const bufWid = window.innerWidth;
+			//const bufHit = window.innerHeight;
+			//infoStr += "\ncur board = " + this.curBoard;
+			infoStr += "\nfps = " + this.avgFps.toFixed(3) 
+				+ "\nbody dim = " + bodyWid + ", " + bodyHit
+				+ "\ndiv dim = " + divWid + ", " + divHit
+				+ "\ncan dim = " + canWid + ", " + canHit
+				+ "\nbuf dim = " + bufWid + ", " + bufHit
+				+ "\n\n";
 			this.eles.textInfoLog.innerHTML = infoStr;
 		}
 	}

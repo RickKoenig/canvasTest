@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+
         
     
 
@@ -18,6 +19,13 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, H puzzle MOBILE",
             "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, H puzzle MOBILE, no PANEL",
+            "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile.html?panelWidthRatio=0",
             "webRoot": "${workspaceFolder}"
         },
         {

@@ -13,6 +13,7 @@ body{
 	margin:0;
 	background: darkgray;
 	overflow: hidden;
+	height: 300px;
 	height: 100%;
 	display: flex;
 	justify-content: space-around;
@@ -73,7 +74,7 @@ button:hover{
 }
 
 #verticalPanel{
-	background: #ca8c;
+	background: #ca8;
 	width: 18%;
 	display: inline-block;
 	text-align: center;

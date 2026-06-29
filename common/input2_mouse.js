@@ -199,6 +199,7 @@ class Mouse {
 	btouchend(e) {
 		this.mbutcur[0] = 0;
 		this.mbuthold[0] = 0;
+		++this.mclickhold[Mouse.LEFT];
 		if (e.preventDefault)
 			e.preventDefault();
 	}

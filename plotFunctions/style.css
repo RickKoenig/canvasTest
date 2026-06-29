@@ -45,7 +45,7 @@ span{
 
 div{
 	outline: none;
-	padding: none;
+	padding: 0;
 	position: relative;
 	background-color: rgba(0,0,0,0);
 }

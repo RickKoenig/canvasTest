@@ -2,7 +2,7 @@
 
 // running average class
 if (true) {
-	console.log("hhhhhhhhhhhhhhhhhhhhhiiiiiiiiiiiiiiiiiiii");
+	//console.log("hhhhhhhhhhhhhhhhhhhhhiiiiiiiiiiiiiiiiiiii");
 //if (!window.Runavg) {
 	class Runavg {
 		constructor(nele) {
@@ -38,6 +38,9 @@ if (true) {
 
 // convert float number to css percent
 function floatToCSSPercent(f) {
+	if (f < 0) {
+		f = 0;
+	}
 	f *= 100;
 	const fs = f.toString();
 	const str = fs + "%";
