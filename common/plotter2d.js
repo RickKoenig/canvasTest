@@ -42,6 +42,9 @@ class Plotter2d {
         this.lastUserMouse = vec2.create();
         this.deltaUserMouse = vec2.create();
         this.coordReset = false;
+
+        const params = doURLParams();
+        this.panelWidthRatio = params.panelWidthRatio ? +params.panelWidthRatio : .2;
     
         // screen space dimensions of <canvas> / <div>
         this.W = vec2.create();
@@ -175,7 +178,7 @@ class Plotter2d {
 	#calcCanvasSize(vp) {
         if (window.isMobile) {
             const slightMargin = .005; // keep things from wrapping
-            const canvasWidth = vp ? 1 - window.panelWidthRatio : 1; // .80
+            const canvasWidth = 1 - this.panelWidthRatio; //.80;//vp ? 1 - window.panelWidthRatio : 1; // .80
             //const oldWidth = this.canvas.width;
             //const oldHeight = this.canvas.height;
             //.80;
@@ -184,7 +187,7 @@ class Plotter2d {
             //.18;
             //.vp.style.width = "18%";
             if (vp) {
-                vp.style.width = floatToCSSPercent(window.panelWidthRatio - slightMargin);
+                vp.style.width = floatToCSSPercent(this.panelWidthRatio - slightMargin);
                 this.canvas.width = window.innerWidth * canvasWidth;
             }
             const canvasHeight = this.canvas.offsetHeight;

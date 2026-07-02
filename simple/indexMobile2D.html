@@ -3,31 +3,30 @@
 
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-	<title>next puzzle undecided</title>
+	<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=0
+	  ,minimum-scale=1, maximum-scale=1">
+	<title>Simple MOBILE plotter2d</title>
 	<link rel="stylesheet" href="styleMobile.css">
 </head>
 
 <body>
+	<!-- graphics -->
+	
 	<!-- UI is added to verticalPanel -->
 	<div id="verticalPanel">
-		<p>Go back to <br><a href="../../index.html#2dplot"> The Main page.</a></p>
+		<p>Go back to <a href="../../index.html#2dplot"><br>The Main page.</a></p>
 		<br>
-		<pre>2D car physics</pre>
+		<pre>SIMPLE MOBILE</pre>
 		<br>
 	</div>
 
-	<!-- graphics -->
-	<div class="centerg" id="plotter2dDiv" tabindex='0'>
+	<div class="divCanvas" id="plotter2dDiv" tabindex='0'>
 		<canvas class="inside" id="plotter2dCanvas"></canvas>
 	</div>
-
+	
 	<!-- scripts -->
 	<script src="../common/utilsMisc.js"></script>
-	<script>
-		var isMobile = true;
-		var params = doURLParams();
-		var panelWidthRatio = params.panelWidthRatio ? +params.panelWidthRatio : .2;
-	</script>
+	<script src="../../engw/common/engw/isMobile.js"></script>
 	<script src="../common/glmatrix/common.js"></script>
 	<script src="../common/glmatrix/vec2.js"></script>
 
@@ -48,6 +47,16 @@
 
 	<script src='../common/bitmap32p.js'></script> <!-- for color conversions -->
 
+	<script src='inheritance.js'></script>
+	<script src='rudolph.js'></script>
+	<script src='castleCraft.js'></script>
+	<script src='scratch.js'></script>
+	
+	<script src='../fourier/svgPath_8thNote.js'></script>
+	<script src='heyawake.js'></script>
+	<script src='ladybug.js'></script>
+	<script src='posits.js'></script>
+	<script src='benford.js'></script>
 	<script src='mainApp.js'></script>
 </body>
 

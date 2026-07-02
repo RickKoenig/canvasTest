@@ -275,7 +275,7 @@ class MainApp {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		this.plotter2d = new Plotter2d(
-			this.plotter2dCanvas, this.ctx, /*this.vp*/null
+			this.plotter2dCanvas, this.ctx, this.vp /* null */
 			, this.startCenter, this.startZoom,  null, extraWidth, extraHeight);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
