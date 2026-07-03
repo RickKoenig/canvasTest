@@ -66,9 +66,6 @@ function makeEle(parent, kind, id, className, text, callback, type) {
 
 function makeSelect(parent, options, clickfunc, idx) {
 	var ele = document.createElement('select');
-	//const typ = ele.type;
-	//console.log("type = " + typ);
-	//ele.type = 'foo select-one';
 	ele.onchange = (ele) => {
 		clickfunc(ele.target.value);
 	}

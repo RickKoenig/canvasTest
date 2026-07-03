@@ -178,25 +178,15 @@ class Plotter2d {
 	#calcCanvasSize(vp) {
         if (window.isMobile) {
             const slightMargin = .005; // keep things from wrapping
-            const canvasWidth = 1 - this.panelWidthRatio; //.80;//vp ? 1 - window.panelWidthRatio : 1; // .80
-            //const oldWidth = this.canvas.width;
-            //const oldHeight = this.canvas.height;
-            //.80;
-            //this.canvas.parentElement.style.width = "80%";
+            const canvasWidth = 1 - this.panelWidthRatio;
             this.canvas.parentElement.style.width = floatToCSSPercent(canvasWidth);
-            //.18;
-            //.vp.style.width = "18%";
             if (vp) {
                 vp.style.width = floatToCSSPercent(this.panelWidthRatio - slightMargin);
                 this.canvas.width = window.innerWidth * canvasWidth;
             }
             const canvasHeight = this.canvas.offsetHeight;
             this.canvas.height = canvasHeight;//300;//window.innerHeight;
-            //this.canvas.height = this.canvas.style.height;
-            //if (this.canvas.width != oldWidth || this.canvas.height != oldHeight) {
-                return true;
-            //}
-            //return false;
+            return true;
         } else { // not mobile
             let wid;
             let hit;

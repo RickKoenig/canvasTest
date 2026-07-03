@@ -492,40 +492,6 @@ class MainApp {
 			this.stepRat = .10;
 			this.iterations = 40;
 			makeEle(this.vp, "hr");
-/*			{
-				const label = "iterations";
-				const min = 1;
-				const max = 100;
-				const start = 40;
-				const step = 1;
-				const precision = 0;
-				new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
-					(v) => {
-						this.iterations = v;
-						this.dirty = true;
-					}
-				);
-			}
-			makeEle(this.vp, "hr");
-			{
-				const label = "step ratio";
-				const min = .01;
-				const max = .99;
-				const start = .10;
-				const step = .01;
-				const precision = 2;
-				new makeEleSliderCombo(this.vp, label, min, max, start, step, precision,
-					(v) => {
-						this.stepRat = v;
-						this.dirty = true;
-					}
-				);
-			}
-			makeEle(this.vp, "br");
-			makeEle(this.vp, "br");
-			makeEle(this.vp, "button", null, null, "next board", this.#nextBoard.bind(this));
-			makeEle(this.vp, "button", null, null, "prev board", this.#prevBoard.bind(this));
-*/
 		}
 	}
 
@@ -637,51 +603,13 @@ class MainApp {
 		  	  , "You Win !!"
 		  	  , "black", "#0002");
 		}
-		const testDim = true;
-		if (testDim) {
-			const bodyWid = this.plotter2dBody.clientWidth;
-			const bodyHit = this.plotter2dBody.clientHeight;
-			const divWid = this.plotter2dDiv.clientWidth;
-			const divHit = this.plotter2dDiv.clientHeight;
-			const canWid = this.plotter2dCanvas.clientWidth;
-			const canHit = this.plotter2dCanvas.clientHeight;
-			const bufWid = this.plotter2dCanvas.width;
-			const bufHit = this.plotter2dCanvas.height;
-			this.drawPrim.drawText([0, 2.8], [1.82, .14]
-			  , "body dim = " + bodyWid + ", " + bodyHit
-		  	  , "white", "#000a");
-			this.drawPrim.drawText([0, 2.3], [1.82, .14]
-			  , "div dim = " + divWid + ", " + divHit
-		  	  , "white", "#000a");
-			this.drawPrim.drawText([0, 1.8], [1.82, .14]
-			  , "can dim = " + canWid + ", " + canHit
-		  	  , "white", "#000a");
-			this.drawPrim.drawText([0, 1.3], [1.82, .14]
-			  , "buf dim = " + bufWid + ", " + bufHit
-		  	  , "white", "#000a");
-		}
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		if (this.eles.textInfoLog) {
-			let infoStr = "\nInfo";
-			const bodyWid = this.plotter2dBody.clientWidth;
-			const bodyHit = this.plotter2dBody.clientHeight;
-			const divWid = this.plotter2dDiv.clientWidth;
-			const divHit = this.plotter2dDiv.clientHeight;
-			const canWid = this.plotter2dCanvas.clientWidth;
-			const canHit = this.plotter2dCanvas.clientHeight;
-			const bufWid = this.plotter2dCanvas.width;
-			const bufHit = this.plotter2dCanvas.height;
-			//const bufWid = window.innerWidth;
-			//const bufHit = window.innerHeight;
-			//infoStr += "\ncur board = " + this.curBoard;
-			infoStr += "\nfps = " + this.avgFps.toFixed(3) 
-				+ "\nbody dim = " + bodyWid + ", " + bodyHit
-				+ "\ndiv dim = " + divWid + ", " + divHit
-				+ "\ncan dim = " + canWid + ", " + canHit
-				+ "\nbuf dim = " + bufWid + ", " + bufHit
+			let infoStr = "\nInfo"
+				+ "\nfps = " + this.avgFps.toFixed(3) 
 				+ "\n\n";
 			this.eles.textInfoLog.innerHTML = infoStr;
 		}
@@ -709,9 +637,7 @@ class MainApp {
 			this.#userDraw(); //draw
 		}
 		// update UI, text
-		//if (!window.isMobile) {
-			this.#userUpdateInfo();
-		//}
+		this.#userUpdateInfo();
 
 		if (this.dirty) {
 			this.dirtyCount = 100;
