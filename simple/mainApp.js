@@ -1,5 +1,6 @@
 'use strict';
 
+// testBlackHoleNumbers
 function toDigits(n) {
 	const nd = 4;
 	const arr = [];
@@ -42,16 +43,8 @@ function stepNumberIter(n) {
 	//console.log("num = " + n);
 	for (let i = 0; i < iter; ++i) {
 		const next = stepNumber(n);
-		//console.log("next = " + next);
-
 		if (next == n) {
 			++i;
-			/*if (i == 8) {
-				console.log("iters = " + i + ", at " + origN);
-			}
-			if (i > maxIters) {
-				maxIters = i;
-			}*/
 			break;
 		}
 		n = next;
@@ -61,20 +54,40 @@ function stepNumberIter(n) {
 
 function testBlackHoleNumbers() {
 	console.log("-------------- black hole numbers ----------------");
-	//maxIters = 0;
 	for (let n = 0; n < 10000; ++n) {
-	//let n = 14; {
 		const sn = stepNumberIter(n);
 		if (sn != 6174) {
 			console.log("num = " + n.toString().padStart(4) + ", step iter num = " + sn);
 		}
 	}
 }
+// end testBlackHoleNumbers
+
+// simultaneous equations 
+	function testSimultaneousEquations() {
+		console.log("test simultaneous equations");
+		const mat = [1, 3, 2, 4];
+		const vecIn = [5, 6];
+		console.log("in = " + vecIn);
+
+		const vecOut = vec2.create();
+		vec2.transformMat2(vecOut, vecIn, mat);
+		console.log("out = " + vecOut);
+
+		const matInv = mat2.create();
+		mat2.invert(matInv, mat);
+
+		const vecIn2 = vec2.create();
+		vec2.transformMat2(vecIn2, vecOut, matInv);
+		console.log("in2 = " + vecIn2);
+	}
+// end simultaneous equations 
 
 function javaScriptTests() {
 	// test out features of javascript here
 	console.log("START javascript tests!");
 	//testBlackHoleNumbers();
+	testSimultaneousEquations();
 	//castleCraftMerge();
 	/*
 	inheritanceTests();
@@ -111,7 +124,7 @@ class SimpleShape1 extends Shape {
 	static drawLevel(drawPrim, id) {
 		// don't rotate the text
 		const radius = .025;
-		drawPrim.drawCircle([0,0], radius, "brown", ); // center
+		drawPrim.drawCircle([0,0], radius, "brown", null); // center
 		const size = radius * 2;
 		drawPrim.drawText([0, 0], [size, size], id, "white");
 	}
@@ -134,7 +147,7 @@ class SimpleShape2 extends Shape {
 
 	// very custom draw
 	static draw(drawPrim, id, doHilit = false) {
-		const ctx = drawPrim.ctx;
+		//const ctx = drawPrim.ctx;
 		const colAdjust = doHilit ? .3 : 0;
 		const colHilit = Bitmap32p.colorAdd("gray", colAdjust);
 		drawPrim.drawPoly(this.polyPnts, .025, colHilit, "blue");
@@ -181,8 +194,9 @@ class MainApp {
 
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
-		const extraWidth = 1; // show more left and right
-		const extraHeight = 1;
+		const safe = 0;
+		const extraWidth = 4/3 + safe; // show more left and right
+		const extraHeight = 1 + safe;
 		this.plotter2d = new Plotter2d(
 			//this.plotter2dCanvas, this.ctx, window.isMobile ? null : this.vp
 			this.plotter2dCanvas, this.ctx, this.vp
@@ -369,6 +383,62 @@ class MainApp {
 		this.vp.style.background = `rgb(${r}, ${g}, ${b}`;
 	}
 
+	#calcLinReg() {
+		const pnts = this.editPnts2.pnts;
+		if (!pnts.length) {
+			return {
+				start: [-.125, -.125], 
+				end: [.125, .125], 
+				mean: [0, 0]
+			};
+		}
+		let minX = pnts[0][0];
+		let maxX = minX;
+		for (let i = 1; i < pnts.length; ++i) {
+			const pX = pnts[i][0];
+			if (minX < pX) minX = pX;
+			if (maxX > pX) maxX = pX;
+		}
+		// average of endpoints
+		const centerX = (minX + maxX) / 2;
+		// delta
+		const further = 1.25;
+		let radX = (maxX - minX) * .5 * further;
+		// do start and end
+		const startX = centerX - radX;
+		const endX = centerX + radX;
+		// calc average of all points
+		const meanP = vec2.create();
+		for (let i = 0; i < pnts.length; ++i) {
+			vec2.add(meanP, meanP, pnts[i]);
+		}
+		vec2.scale(meanP, meanP, 1 / pnts.length);
+		// calc m and b from pnts
+		let sx = 0;
+		let sy = 0;
+		let sxx = 0;
+		let sxy = 0;
+		for (let i = 0; i < pnts.length; ++i) {
+			const p = pnts[i];
+			sx += p[0];
+			sy += p[1];
+			sxy += p[0] * p[1];
+			sxx += p[0] * p[0];
+		}
+		const mat = [sxx, sx, sx, pnts.length];
+		mat2.invert(mat, mat);
+		const vIn = [sxy, sy];
+		const vOut = vec2.create();
+		vec2.transformMat2(vOut, vIn, mat);
+		let m = vOut[0];
+		let b = vOut[1];
+		const startY = startX * m + b;
+		const endY = endX * m + b;
+
+		const result = {start: [startX, startY], end: [endX, endY], mean: meanP};
+		return result;
+	}
+
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
@@ -393,22 +463,22 @@ class MainApp {
 		this.pntRad2 = .05; // size of point
 		const pnts2 = createArray(numPnts2, 2); // array of 'two' dimensional points
 		for (let i = 0; i < numPnts2; ++i) {
-			pnts2[i] = [.25 + .5 * i, 2.5 + .25 * i - .375 * (i % 2)];
+			pnts2[i] = [-5 + .75 * i, -3.5 + .25 * i - .5 * (i % 2)];
 		}
-		const minPnts2 = 4;
+		const minPnts2 = 0;
 		const maxPnts2 = 8;
-		const startAddRemovePoints2 = false;
+		const startAddRemovePoints2 = true;
 		this.editPnts2 = new EditPnts(pnts2, this.pntRad2, startAddRemovePoints2, minPnts2, maxPnts2);
 
 		// tiles, test simple tiles
 		this.tiles = [];
 		
-		this.tiles.push(new Tile(SimpleShape1, [0, 0], degToRad(0)));
-		this.tiles.push(new Tile(SimpleShape1, [0, .375], degToRad(30)));
-		this.tiles.push(new Tile(SimpleShape1, [0, .75], degToRad(45)));
-		this.tiles.push(new Tile(SimpleShape2, [1, 0], degToRad(0)));
-		this.tiles.push(new Tile(SimpleShape2, [1, .375], degToRad(30)));
-		this.tiles.push(new Tile(SimpleShape2, [1, .75], degToRad(45))); 
+		this.tiles.push(new Tile(SimpleShape1, [-4, 0], degToRad(0)));
+		this.tiles.push(new Tile(SimpleShape1, [-4, .375], degToRad(30)));
+		this.tiles.push(new Tile(SimpleShape1, [-4, .75], degToRad(45)));
+		this.tiles.push(new Tile(SimpleShape2, [4, 0], degToRad(0)));
+		this.tiles.push(new Tile(SimpleShape2, [4, .375], degToRad(30)));
+		this.tiles.push(new Tile(SimpleShape2, [4, .75], degToRad(45))); 
 		this.editTiles = new EditTiles(this.tiles);
 
 		// pnts 3, test inside outside stuff, first start with a line
@@ -467,10 +537,8 @@ class MainApp {
 		}
 
 		// before firing up Plotter2d
-		//this.startCenter = [.21, 1.52];
-		//this.startZoom = .37;
 		this.startCenter = [0, 0];
-		this.startZoom = 1;
+		this.startZoom = .2;
 	}
 
 	#userBuildUI() {
@@ -480,7 +548,6 @@ class MainApp {
 		}
 		makeEle(this.vp, "br");
 		makeEle(this.vp, "pre", null, null, "Use middle mouse button");
-		//makeEle(this.vp, "br");
 		makeEle(this.vp, "pre", null, null, "to add and remove points");
 
 		makeEle(this.vp, "hr");
@@ -594,11 +661,6 @@ class MainApp {
 		this.drawPrim.drawLinesParametric(this.pnts5, .0125, .02
 			//,undefined, undefined, undefined, undefined, true); // ndcscale = true
 		);
-		//);
-/*		drawLinesParametric(pnts, lineWidth = .01, circleSize = 0, close = false
-			, lineColor = "black", circleColor = "green", offset = [0, 0], ndcScale = false) {*/
-			
-
 		if (this.testPntsGrid) {
 			// test point grid with last tile
 			const tile = this.editTiles.tiles[this.editTiles.tiles.length - 1];
@@ -609,9 +671,12 @@ class MainApp {
 		}
 		if (this.input.mouse.mbut[Mouse.LEFT]) {
 			let pnt = this.plotter2d.userMouse;
-			//let pnt = this.plotter2d.userMouse;
 			this.drawPrim.drawCircleO(pnt, .3, .05, "blue"); // test touch
 		}
+		// do linear regression
+		const result = this.#calcLinReg();
+		this.drawPrim.drawLine(result.start, result.end, .02, "red");
+		this.drawPrim.drawCircleO(result.mean, .05, .01, "blue");
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
@@ -640,7 +705,6 @@ class MainApp {
 			this.plotter2d.clearCanvas();
 			// interact with mouse, calc all spaces
 			// goto user/cam space
-			//this.plotter2d.setSpace(Plotter2d.spaces.NDC);
 			this.plotter2d.setSpace(Plotter2d.spaces.USER);
 			// now in user/cam space
 			this.graphPaper.draw("X", "Y");
