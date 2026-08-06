@@ -1,6 +1,7 @@
 'use strict';
 
 // 'O' means outline
+// corner is always lower right (mathematical)
 
 class DrawPrimitives {
     constructor(plotter2d) {
@@ -260,6 +261,24 @@ class DrawPrimitives {
         this.ctx.restore();
     }
 
+    static loadImage(src) {
+		const bm = new Image();
+		//this.bm.onload = () => this.bmLoaded = true;
+		bm.onerror = function(e) {
+        	console.error("Error loading bm image '" + src + "' !!!");
+			console.log(e);
+    	};
+		bm.src = src;
+        return bm;
+    }
+
+    // make new members in dest for list of name, url pairs
+    static loadImages(dest, list) {
+        for (const entry of list) {
+            dest[entry[0]] = this.loadImage(entry[1]);
+        }
+    }
+
     // assume USER or NDC space for now
     drawImage(img, corner, size, flipx = false, flipy = false) {
         this.ctx.save();
@@ -280,13 +299,5 @@ class DrawPrimitives {
 		this.ctx.scale(sx, sy);
         this.ctx.drawImage(img, cx, cy, wx, wy);
         this.ctx.restore();
-        /*			
-			this.ctx.drawImage(this.svg, 0, 0, 1, -1);
-			this.ctx.drawImage(this.svg, 2, -1, 1, -1);
-			this.ctx.drawImage(this.svg, 1.5, -1, .5, -.5);
-			this.drawPrim.drawImage(this.svg, 4, 4, 1, 1);
-			 */
-
-
     }
 }

@@ -450,11 +450,11 @@ class MainApp {
 		this.avgFpsObj = new Runavg(500);
 
 		// pnts, some custom drawing
-		const numPnts = 5;
+		const numPnts = 4;
 		this.pntRad = .15; // size of point
 		this.pnts = createArray(numPnts, 2); // array of 'two' dimensional points
 		for (let i = 0; i < numPnts; ++i) { // simple parabola curve
-			this.pnts[i] = [.25 + .5 * i, 3.5 - .25 * i + .1 * i * i];
+			this.pnts[i] = [.25 + .5 * i, 3.5 + 1 * i - .5 * i * i];
 		}
 		this.editPnts = new EditPnts(this.pnts, this.pntRad); // defaults, no add remove points
 
@@ -611,15 +611,18 @@ class MainApp {
 		// pnts
 		this.editPnts.draw(this.drawPrim, this.plotter2d.userMouse);
 		// draw some extra stuff like midpoints
-		const mid = vec2.create();
+		const mids = [];
 		for (let i = 0; i < this.pnts.length; ++i) {
 			const p0 = this.pnts[i];
 			const p1 = this.pnts[(i + 1) % this.pnts.length];
+			const mid = vec2.create();
 			//const p1 = this.pnts[i + 1];
 			this.drawPrim.drawLine(p0, p1, .03, "darkgray");
 			midPnt(mid, p0, p1);
+			mids.push(mid);
 			this.drawPrim.drawCircleO(mid, .05, undefined, "magenta");
 		}
+    	this.drawPrim.drawLinesParametric(mids, .01, 0, close = true);
 
 		// pnts 2, test add remove points
 		this.editPnts2.draw(this.drawPrim, this.plotter2d.userMouse);

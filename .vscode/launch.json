@@ -1,10 +1,6 @@
 {
     "version": "0.2.0",
     "configurations": [
-
-        
-    
-
         {
             "name": "Launch Program",
             "program": "${workspaceFolder}/app.js",
@@ -17,15 +13,22 @@
         {
             "type": "chrome",
             "request": "launch",
+            "name": "Launch Chrome against localhost, next puzzle",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile2D.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
             "name": "Launch Chrome against localhost, H puzzle MOBILE",
-            "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile2D.html",
+            "url": "http://localhost:88/plotter2d/hPuzzle/indexMobile2D.html",
             "webRoot": "${workspaceFolder}"
         },
         {
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost, H puzzle MOBILE, no PANEL",
-            "url": "http://localhost:88/plotter2d/hpuzzle/indexMobile2D.html?panelWidthRatio=0",
+            "url": "http://localhost:88/plotter2d/hPuzzle/indexMobile2D.html?panelWidthRatio=0",
             "webRoot": "${workspaceFolder}"
         },
         {
@@ -33,6 +36,13 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, 🐸 \uD83D\uDC38 puzzle MOBILE",
             "url": "http://localhost:88/plotter2d/frogPuzzle/indexMobile2D.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, simple MOBILE",
+            "url": "http://localhost:88/plotter2d/simple/indexMobile2D.html",
             "webRoot": "${workspaceFolder}"
         },
         {
@@ -82,13 +92,6 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, 2d car physics",
             "url": "http://localhost:88/plotter2d/physicsCar2D/indexMobile2D.html",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost, simple MOBILE",
-            "url": "http://localhost:88/plotter2d/simple/indexMobile2D.html",
             "webRoot": "${workspaceFolder}"
         },
         {

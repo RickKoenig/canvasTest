@@ -224,10 +224,9 @@ class PieceContainer {
 }
 
 class Board {
-	constructor(user, lineSegments, pieceRad) {
+	constructor(user, lineSegments) {
 		this.user = user;
 		this.lineSegments = lineSegments;
-		this.pieceRad = pieceRad;
 	}
 
 	draw() {
@@ -269,13 +268,7 @@ class MainApp {
 		this.#loadSvgs("frog", "../fourier/frog");
 
 		// load a badge bitmap
-		this.bm = new Image();
-		//this.bm.onload = () => this.bmLoaded = true;
-		this.bm.onerror = function(e) {
-        	console.error('Error loading bm image!');
-			console.log(e);
-    	};		
-		this.bm.src = '../../engw/common/sptpics/wonMedal.png';
+		this.bm = DrawPrimitives.loadImage('../../engw/common/sptpics/wonMedal.png');
 
 		// USER before UI built
 		this.#userInit();
@@ -313,14 +306,8 @@ class MainApp {
 	}
 
 	#load1Svg(svg, name) {
-		const img = new Image();
+		const img = DrawPrimitives.loadImage(name);
 		this[svg] = img;
-		img.onerror = function(e) {
-        	console.error('Error loading ' + svg +  ' image!');
-			console.log(e);
-    	};		
-		img.src = name;
-
 	}
 
 	#randomColor() {
@@ -332,23 +319,14 @@ class MainApp {
 
 	#initBoard() {
 		// frog puzzle
-		const pointsFrog = [
+		const pointsFrogBoard = [
 			[-9, -1],
 			[-9, 1],
 			[9, 1],
 			[9, -1],
 			[-9, -1]
 		];
-
-		this.boards = [
-			{
-				lineSegments: pointsFrog,
-			}
-		];
-
-		this.curBoard = 0;
-		const board = this.boards[this.curBoard];
-		this.board = new Board(this, board.lineSegments, this.pieceRad);
+		this.board = new Board(this, pointsFrogBoard);
 	}
 
 	#initPieces() {
@@ -379,33 +357,6 @@ class MainApp {
 				leftFace: true
 			}, { 
 				pos: [8, 0],
-				leftFace: true
-			}
-		];
-		const pieceDataArrTest = [
-			{ 
-				pos: [-4, 0],
-				leftFace: false
-			}, {
-				pos: [4, 0],
-				leftFace: false
-			}, {
-				pos: [6, 0],
-				leftFace: false
-			}, { 
-				pos: [8, 0],
-				leftFace: false
-			}, { 
-				pos: [-8, 0],
-				leftFace: true
-			}, {
-				pos: [-6, 0],
-				leftFace: true
-			}, { 
-				pos: [-2, 0],
-				leftFace: true
-			}, { 
-				pos: [2, 0],
 				leftFace: true
 			}
 		];
