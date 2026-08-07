@@ -107,15 +107,19 @@ class PieceContainer {
 				this.startPos = vec2.clone(curPiece.pos);
 				//const result = curPiece.pos;
 				// avoid other pieces
-				this.user.penInfo = this.#avoidPiece(this.startPos, this.endPos, this.user.avoidLoc); // set this in mainApp
-				curPiece.pos = this.user.penInfo.resultP;//vec2.add(curPiece.pos, curPiece.pos, this.user.penInfo.penVec);
+				const solveSpeed = 5;
+				for (let i = 0; i < solveSpeed; ++i ){
+					this.user.penInfo = this.#avoidPiece(this.startPos, this.endPos, this.user.avoidLoc); // set this in mainApp
+					curPiece.pos = this.user.penInfo.resultP;//vec2.add(curPiece.pos, curPiece.pos, this.user.penInfo.penVec);
+					this.startPos = vec2.clone(curPiece.pos);
+				}
 				break;
 		}
 		return 1;
 	}
 	
 	#avoidPiece(startP, endP, avoid) {
-		const moveSteps = 5; // move slowly
+		const moveSteps = 10; // move slowly
 		let pen = Number.MAX_VALUE;
 		let penDir = -1;
 		let penVec = vec2.create();
@@ -136,27 +140,39 @@ class PieceContainer {
 			[0, 1] // up
 		];
 
+		const penSteps = [];
+		for (let i = 0; i < moveSteps; ++i) {
+			const t = i / (moveSteps - 1);
+			const ps = vec2.create();
+			vec2.sub(ps, endP, startP);
+			vec2.scale(ps, ps, t);
+			vec2.add(ps, ps, startP);
+			penSteps.push(ps);
+		}
+		//const checkP = endP;
+		const checkP = penSteps[1];
+
 		// get smallest positive pen > 0
 		// left
-		const pLeft = endP[0] - avoidX + 1;
+		const pLeft = checkP[0] - avoidX + 1;
 		if (pLeft < pen) {
 			pen = pLeft;
 			penDir = 0;
 		}
 		// right
-		const pRight = avoidX - endP[0] + 1;
+		const pRight = avoidX - checkP[0] + 1;
 		if (pRight < pen) {
 			pen = pRight;
 			penDir = 1;
 		}
 		// bottom
-		const pBottom = endP[1] - avoidY + 1;
+		const pBottom = checkP[1] - avoidY + 1;
 		if (pBottom < pen) {
 			pen = pBottom;
 			penDir = 2;
 		}
 		// top
-		const pTop = avoidY - endP[1] + 1;
+		const pTop = avoidY - checkP[1] + 1;
 		if (pTop < pen) {
 			pen = pTop;
 			penDir = 3;
@@ -169,16 +185,7 @@ class PieceContainer {
 		if (penDir >= 0) {
 			vec2.scale(penVec, dirVecs[penDir], pen);
 		}
-		vec2.add(resultP, endP, penVec);
-		const penSteps = [];
-		for (let i = 0; i < moveSteps; ++i) {
-			const t = i / (moveSteps - 1);
-			const ps = vec2.create();
-			vec2.sub(ps, endP, startP);
-			vec2.scale(ps, ps, t);
-			vec2.add(ps, ps, startP);
-			penSteps.push(ps);
-		}
+		vec2.add(resultP, checkP, penVec);
 		return {pen: pen, penDir: penDir, penVec: penVec, resultP: resultP, penSteps: penSteps};
 	}
 
@@ -391,7 +398,7 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const bigCursor = false; // true for mobile
+		const bigCursor = true; // true for mobile
 		this.board.draw();
 		this.pieceContainer.draw();
 		const lineWid = .02;
