@@ -25,7 +25,7 @@ class PieceContainer {
 		this.idx = -1; // which object in container is being dragged
 		this.min = -8;
 		this.max = 8;
-		this.step = 1;
+		//this.step = 1;
 		this.bothDir = false;
 	}
 
@@ -52,16 +52,14 @@ class PieceContainer {
 		return false;
 	}
 
-	proc() {
-		const mbut = this.user.input.mouse.mbut[Mouse.LEFT];
-		const lmbut = this.user.input.mouse.lmbut[Mouse.LEFT];
+	proc(mbut, lmbut, fmxy) {
 		// change states
 		switch(this.state) {
 			case this.statesEnum.IDLE:
 				if (mbut && !lmbut) {
 					// PICK up piece if within range
 					for (let i = 0; i < this.container.length; ++i) {
-						const userMouse = this.user.plotter2d.userMouse;
+						const userMouse = fmxy;
 						const curPiece = this.container[i];
 						const curObjPos = curPiece.pos;
 						const dist = vec2.dist(userMouse, curObjPos);
@@ -88,9 +86,6 @@ class PieceContainer {
 					console.log("switch to IDLE");
 					this.startPos = null;
 					this.endPos = null;
-					if (this.user.penInfo) {
-						this.user.penInfo.penSteps = null;
-					}
 				}
 				break;
 		}
@@ -99,40 +94,35 @@ class PieceContainer {
 			// MOVE piece
 			case this.statesEnum.DRAGGING:
 				const curPiece = this.container[this.idx];
-				const mousePos = this.user.plotter2d.userMouse;
+				let mousePos = fmxy;
+				if (this.user.holdMouseBut) {
+					//console.log("hold");
+				}
 				this.endPos = vec2.clone(mousePos);
 				// keep within bounds of the board
+				this.startPos = vec2.clone(curPiece.pos);
 				this.endPos[0] = range(0, this.endPos[0], this.boardX - 1);
 				this.endPos[1] = range(0, this.endPos[1], this.boardY - 1);
-				this.startPos = vec2.clone(curPiece.pos);
-				//const result = curPiece.pos;
-				// avoid other pieces
-				const solveSpeed = 5;
-				for (let i = 0; i < solveSpeed; ++i ){
-					this.user.penInfo = this.#avoidPiece(this.startPos, this.endPos, this.user.avoidLoc); // set this in mainApp
-					curPiece.pos = this.user.penInfo.resultP;//vec2.add(curPiece.pos, curPiece.pos, this.user.penInfo.penVec);
-					this.startPos = vec2.clone(curPiece.pos);
+				vec2.copy(curPiece.pos, this.endPos); // default, if no collisions
+				const solveSpeed = 1;
+				for (let i = 0; i < solveSpeed; ++i) {
+					for (let j = 0; j < this.container.length; ++j) {
+						const avoidLocs = this.container.toSpliced(this.idx, 1);
+						this.user.penInfo = this.#avoidPieces(this.startPos, this.endPos, avoidLocs); // set this in mainApp
+						curPiece.pos = this.user.penInfo.resultP;
+						this.startPos = vec2.clone(curPiece.pos);
+					}
 				}
 				break;
 		}
-		return 1;
 	}
 	
-	#avoidPiece(startP, endP, avoid) {
-		const moveSteps = 10; // move slowly
-		let pen = Number.MAX_VALUE;
+	#avoid1Piece(startP, endP, avoidP) {
+		const slowFactor = 10; // move slowly, 2 minimum
 		let penDir = -1;
 		let penVec = vec2.create();
 		let resultP = vec2.create();
-		//let pen = Number.MAX_VALUE;
-		//let penDir = -1;
-		//let penVec = vec2.create();
-
-		//return {pen: pen, penDir: penDir, penVec: penVec};
 		
-		
-		const avoidX = avoid[0];
-		const avoidY = avoid[1];
 		const dirVecs = [
 			[-1, 0], // left
 			[1, 0], // right
@@ -140,53 +130,96 @@ class PieceContainer {
 			[0, 1] // up
 		];
 
-		const penSteps = [];
-		for (let i = 0; i < moveSteps; ++i) {
-			const t = i / (moveSteps - 1);
-			const ps = vec2.create();
-			vec2.sub(ps, endP, startP);
-			vec2.scale(ps, ps, t);
-			vec2.add(ps, ps, startP);
-			penSteps.push(ps);
-		}
-		//const checkP = endP;
-		const checkP = penSteps[1];
+		const checkP = vec2.create();
+		const t = 1 / (slowFactor - 1);
+		vec2.sub(checkP, endP, startP);
+		vec2.scale(checkP, checkP, t);
+		vec2.add(checkP, checkP, startP);
+		resultP = checkP;
+
+		const pieceSize = 1;//.75;
+
+		let pen = Number.MAX_VALUE;
+
+		const avoidX = avoidP[0];
+		const avoidY = avoidP[1];
 
 		// get smallest positive pen > 0
 		// left
-		const pLeft = checkP[0] - avoidX + 1;
+		const pLeft = checkP[0] - avoidX + pieceSize;
 		if (pLeft < pen) {
 			pen = pLeft;
 			penDir = 0;
 		}
 		// right
-		const pRight = avoidX - checkP[0] + 1;
+		const pRight = avoidX - checkP[0] + pieceSize;
 		if (pRight < pen) {
 			pen = pRight;
 			penDir = 1;
 		}
 		// bottom
-		const pBottom = checkP[1] - avoidY + 1;
+		const pBottom = checkP[1] - avoidY + pieceSize;
 		if (pBottom < pen) {
 			pen = pBottom;
 			penDir = 2;
 		}
 		// top
-		const pTop = avoidY - checkP[1] + 1;
+		const pTop = avoidY - checkP[1] + pieceSize;
 		if (pTop < pen) {
 			pen = pTop;
 			penDir = 3;
 		}
+
 		// the rest
 		if (pen <= 0) {
 			pen = 0; // no positive pens found, set to 0
 			penDir = -1;
 		}
-		if (penDir >= 0) {
+		if (penDir >= 0) { // found penetration, adjust
 			vec2.scale(penVec, dirVecs[penDir], pen);
+			vec2.add(resultP, checkP, penVec);
 		}
-		vec2.add(resultP, checkP, penVec);
-		return {pen: pen, penDir: penDir, penVec: penVec, resultP: resultP, penSteps: penSteps};
+		//return {resultP: endP, pen: 0, penDir: [-1], penVec: [0, 0]};
+		//return {pen: pen, penDir: penDir, penVec: penVec, resultP: resultP};
+		return {resultP: resultP};
+	}
+
+	#avoidPieces(startP, endP, avoidPs) {
+		let penDir = -1;
+		let penVec = vec2.create();
+		let resultP = vec2.create();
+
+		const resultsP = [];
+		for (let i = 0; i < avoidPs.length; ++i) {
+			const avoidP = avoidPs[i].pos;
+			//if (i == 0) {
+				resultP = this.#avoid1Piece(startP, endP, avoidP);
+				resultsP.push(resultP.resultP);
+			//}
+		}
+		
+		// best dist
+		let bestDist2 = -Number.MAX_VALUE;
+		let bestIdx = -1;
+		// find best index
+		for (let i = 0; i < resultsP.length; ++i) {
+			const dist2 = vec2.sqrDist(endP, resultsP[i]);
+			if (dist2 > bestDist2) {
+				bestDist2 = dist2;
+				bestIdx = i;
+			}
+		}
+		return{resultP: resultsP[bestIdx]};
+		
+		/*
+		// average
+		const avg = vec2.create();
+		for (let i = 0; i < resultsP.length; ++i) {
+			vec2.add(avg, avg, resultsP[i]);
+		}
+		vec2.scale(avg, avg, 1 / resultsP.length);
+		return {resultP: avg};
+		*/
 	}
 
 	draw() {
@@ -229,7 +262,7 @@ class Board {
 				this.user.drawPrim.drawRectangleCenter([cornerX - .5, cornerY - .5], [.8, .8], "#0003");
 			}
 		}
-		this.user.drawPrim.drawRectangleCenter(this.user.avoidLoc,[1,1],"#f004");
+		//this.user.drawPrim.drawRectangleCenter(this.user.avoidLoc,[1,1],"#f004");
 	}
 }
 
@@ -246,7 +279,7 @@ class MainApp {
 		++MainApp.numInstances;
 		this.boardX = 8;
 		this.boardY = 6;
-		this.avoidLoc = [5, 3];
+		//this.avoidLoc = [5, 3];
 		this.penInfo = {pen: 0, penDir: -1, penVec: [0, 0]};
 
 		// vertical panel UI
@@ -317,22 +350,23 @@ class MainApp {
 		const dist = this.pieceDist;
 		const safe = .95; // select more inside circle radius
 		const pieceDataArr = [
+			/*
 			{ 
-				pos: [0, 5],
+				pos: [3, 3],
 			}, {
-				pos: [1, 1],
+				pos: [3, 2],
 			}, {
-				pos: [0, 0],
+				pos: [5, 2],
 			}, { 
-				pos: [1, 0],
+				pos: [6, 2],
 			}, { 
-				pos: [3, 0],
-			}, {
+				pos: [5, 1],
+			}, */{
 				pos: [7, 0],
 			}, { 
-				pos: [1, 3],
+				pos: [5, 4],
 			}, { 
-				pos: [7, 5],
+				pos: [1, 1],
 			}
 		];
 		this.pieceContainer = new PieceContainer(this, this.boardX, this.boardY);
@@ -347,6 +381,8 @@ class MainApp {
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
+		this.pieceHoldSave = [0, 0];
+		this.holdMouseBut = false;
 		this.winCount = 0; // frame counter
 		// measure frame rate
 		this.fps;
@@ -381,7 +417,19 @@ class MainApp {
 		}
 		this.AvgFps = this.AvgFpsObj.add(this.fps);
 
-		this.pieceContainer.proc();
+		if (this.input.mouse.mclick[Mouse.RIGHT]) {
+			this.holdMouseBut = !this.holdMouseBut;
+			if (this.holdMouseBut) {
+				this.pieceHoldSave = vec2.clone(this.plotter2d.userMouse);
+			}
+		}
+		if (!this.holdMouseBut) {
+				this.pieceHoldSave = vec2.clone(this.plotter2d.userMouse);
+		}
+		let mbut = this.input.mouse.mbut[Mouse.LEFT];
+		mbut |= this.holdMouseBut;
+		const lmbut = this.input.mouse.lmbut[Mouse.LEFT];
+		this.pieceContainer.proc(mbut, lmbut, this.pieceHoldSave);
 		this.winner |= this.pieceContainer.getWinner();
 		if (this.winner) {
 			this.loser = false;
@@ -398,13 +446,15 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const bigCursor = true; // true for mobile
+		const bigCursor = false; // true for mobile
 		this.board.draw();
 		this.pieceContainer.draw();
 		const lineWid = .02;
 		// draw cursor, when pressed / touched
 		if (this.input.mouse.mbut[Mouse.LEFT]) {
-			const pntM = vec2.clone(this.plotter2d.userMouse);
+			const pntM = this.holdMouseBut ?
+				vec2.clone(this.pieceHoldSave)
+				: vec2.clone(this.plotter2d.userMouse);
 			const isDragging = this.pieceContainer.isDragging();
 			if (isDragging) {
 				// touch selected
@@ -435,10 +485,11 @@ class MainApp {
 		if (this.winCount > 0) {
 			this.drawPrim.drawImage(this.bm, [offset, 1.5 + offset], [scale, scale]);
 		}
+		/*
 		if (this.penInfo && this.penInfo.penSteps) {
 			for (const penPnt of this.penInfo.penSteps) {
 				this.drawPrim.drawCircle(penPnt, .05, "blue");			}
-		}
+		}*/
 		/*
 		if (this.pieceContainer.startPos) {
 			this.drawPrim.drawCircle(this.pieceContainer.startPos, .05, "red");
@@ -452,10 +503,12 @@ class MainApp {
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\npen = " + this.penInfo.pen.toFixed(2);
-		infoStr += "\npenDir = " + this.penInfo.penDir;
-		infoStr += "\npenX = " + this.penInfo.penVec[0].toFixed(2);
-		infoStr += "\npenY = " + this.penInfo.penVec[1].toFixed(2);
+		//infoStr += "\npen = " + this.penInfo.pen.toFixed(2);
+		//infoStr += "\npenDir = " + this.penInfo.penDir;
+		//infoStr += "\npenX = " + this.penInfo.penVec[0].toFixed(2);
+		//infoStr += "\npenY = " + this.penInfo.penVec[1].toFixed(2);
+		infoStr += "\nholdBut = " + this.holdMouseBut;
+		infoStr += "\nholdSave = " + this.pieceHoldSave[0].toFixed(2) + " " + this.pieceHoldSave[1].toFixed(2);
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
