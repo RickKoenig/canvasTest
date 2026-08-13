@@ -4,10 +4,15 @@ class Piece {
 		this.pos = vec2.clone(pos);
 	}
 
-	draw(user, rad) {
+	draw(user, rad, drag, sel) {
+		if (sel) {
+			rad *= .25;
+		} else if (drag) {
+			rad *= 2;
+		}
 		const pos = [this.pos[0] - rad, this.pos[1] - rad];
 		const scale = [2 * rad, 2 * rad];
-		user.drawPrim.drawRectangle(pos, scale, "peru");
+		if (!drag) user.drawPrim.drawRectangle(pos, scale, "peru");
 		user.drawPrim.drawRectangleO(pos, scale, .05, "black");
 	}
 }
@@ -86,6 +91,7 @@ class PieceContainer {
 					console.log("switch to IDLE");
 					this.startPos = null;
 					this.endPos = null;
+					this.idx = -1;
 				}
 				break;
 		}
@@ -197,7 +203,7 @@ class PieceContainer {
 				resultsP.push(resultP.resultP);
 			//}
 		}
-		
+		/*
 		// best dist
 		let bestDist2 = -Number.MAX_VALUE;
 		let bestIdx = -1;
@@ -210,8 +216,8 @@ class PieceContainer {
 			}
 		}
 		return{resultP: resultsP[bestIdx]};
+		*/
 		
-		/*
 		// average
 		const avg = vec2.create();
 		for (let i = 0; i < resultsP.length; ++i) {
@@ -219,14 +225,14 @@ class PieceContainer {
 		}
 		vec2.scale(avg, avg, 1 / resultsP.length);
 		return {resultP: avg};
-		*/
+		
 	}
 
 	draw() {
 		// reverse order
 		for (let i = this.container.length - 1; i >= 0; --i) {
 			const so = this.container[i];
-			so.draw(this.user, this.selectDist);
+			so.draw(this.user, this.selectDist, this.state, i == this.idx);
 		}
 	}
 
@@ -359,9 +365,9 @@ class MainApp {
 				pos: [5, 2],
 			}, { 
 				pos: [6, 2],
-			}, { 
+			}, */{ 
 				pos: [5, 1],
-			}, */{
+			}, {
 				pos: [7, 0],
 			}, { 
 				pos: [5, 4],
@@ -451,7 +457,7 @@ class MainApp {
 		this.pieceContainer.draw();
 		const lineWid = .02;
 		// draw cursor, when pressed / touched
-		if (this.input.mouse.mbut[Mouse.LEFT]) {
+		if (this.input.mouse.mbut[Mouse.LEFT] || this.holdMouseBut) {
 			const pntM = this.holdMouseBut ?
 				vec2.clone(this.pieceHoldSave)
 				: vec2.clone(this.plotter2d.userMouse);
@@ -509,6 +515,7 @@ class MainApp {
 		//infoStr += "\npenY = " + this.penInfo.penVec[1].toFixed(2);
 		infoStr += "\nholdBut = " + this.holdMouseBut;
 		infoStr += "\nholdSave = " + this.pieceHoldSave[0].toFixed(2) + " " + this.pieceHoldSave[1].toFixed(2);
+		infoStr += "\nstate = " + this.pieceContainer.state;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
