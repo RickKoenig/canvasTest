@@ -11,6 +11,15 @@ function range(a, b, c) {
 	return b;
 }
 
+// snap to nearest 2 ^ -f
+function snap(x, f = 0) {
+	const mul = 1 << f;
+	x *= mul;
+	x = Math.round(x);
+	x /= mul;
+	return x;
+}
+
 function lerp(a, b, t) {
 	return a + t * (b - a);
 }

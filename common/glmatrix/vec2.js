@@ -194,6 +194,13 @@ vec2.max = function(out, a, b) {
     return out;
 };
 
+// snap to nearest 2 ^ -f
+vec2.snap = function(out, a, f) {
+    out[0] = snap(a[0], f);
+    out[1] = snap(a[1], f);
+    return out;
+}
+
 /**
  * Scales a vec2 by a scalar number
  *
