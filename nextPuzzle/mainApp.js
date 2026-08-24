@@ -317,7 +317,7 @@ class MainApp {
 		const middle = this.input.mouse.mbut[Mouse.MIDDLE];
 		const right = this.input.mouse.mbut[Mouse.RIGHT];
 
-		const prec = 5;
+		const prec = 4;
 		if (right) {
 			this.holdStart = vec2.clone(this.plotter2d.userMouse);
 			vec2.snap(this.holdStart, this.holdStart, prec);
@@ -397,11 +397,11 @@ class MainApp {
 		}
 		// draw hold
 		this.drawPrim.drawLine(this.holdStart, this.holdEnd, .025, "black", true);
-		this.drawPrim.drawCircle(this.holdStart, .095, "red", true);
-		this.drawPrim.drawCircle(this.holdEnd, .095, "green",true);
-		this.drawPrim.drawCircle(this.holdResult, .125, "blue", true);
-		this.drawPrim.drawCircle(this.holdResultEnter, .05, "#80f", true);
-		this.drawPrim.drawCircle(this.holdResultExit, .05, "#08f", true);
+		this.drawPrim.drawCircle(this.holdStart, .125, "red", true);
+		this.drawPrim.drawCircle(this.holdEnd, .125, "#0c4", true);
+		this.drawPrim.drawCircle(this.holdResult, .04, "blue", true);
+		this.drawPrim.drawCircle(this.holdResultEnter, .05, "darkred", true);
+		this.drawPrim.drawCircle(this.holdResultExit, .05, "green", true);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML

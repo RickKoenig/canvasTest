@@ -95,9 +95,9 @@ const slabCalc = function(startP, endP, avoidP) {
     let invDirX = big;
     let invDirY = big;
     const dir = vec2.create();
-    vec2.sub(dir, startP, endP);
-    const pEnter = vec2.create();
-    const pExit = vec2.create();
+    vec2.sub(dir, endP, startP);
+    const pEnter = vec2.fromValues(-1, -1);
+    const pExit = vec2.fromValues(-.5, -.5);
     if (Math.abs(dir[0]) >= epsilon) { // too close to divide by 0
         invDirX = 1 / dir[0];
     }
@@ -107,24 +107,29 @@ const slabCalc = function(startP, endP, avoidP) {
 // bot
     const botY = avoidP[1] - 1;
     const tBot = (botY - startP[1]) * invDirY;
-    const botX = startP[0] + tBot * dir[0];
 // top
     const topY = avoidP[1] + 1;
     const tTop = (topY - startP[1]) * invDirY;
-    const topX = startP[0] + tTop * dir[0];
 
-// right
+    const tYmin = Math.min(tBot, tTop);
+    const tYmax = Math.max(tBot, tTop);
+
+// left
     const leftX = avoidP[0] - 1;
     const tLeft = (leftX - startP[0]) * invDirX;
-    const leftY = startP[1] + tLeft * dir[1];
-// left
+// right
     const rightX = avoidP[0] + 1;
-    const tRight = (topY - startP[0]) * invDirX;
-    const rightY = startP[1] + tRight * dir[1];
+    const tRight = (rightX - startP[0]) * invDirX;
 
-    //vec2.set(pEnter, botX, botY);
-    //vec2.set(pExit, topX, topY);
-    vec2.set(pEnter, leftX, leftY);
-    vec2.set(pExit, rightX, rightY);
+    const tXmin = Math.min(tLeft, tRight);
+    const tXmax = Math.max(tLeft, tRight);
+
+    const tMin = Math.max(tXmin, tYmin);
+    const tMax = Math.min(tXmax, tYmax);
+
+    if (tMin > 0 && tMin < 1 && tMin < tMax) {
+        vec2.lerp(pEnter, startP, endP, tMin);
+        vec2.lerp(pExit, startP, endP, tMax);
+    }
     return {pEnter, pExit};
 };
