@@ -1,16 +1,16 @@
 'use strict';
 
+const dirVecs = [
+    [-1, 0], // left
+    [1, 0], // right
+    [0, -1], // down
+    [0, 1] // up
+];
+
 const avoid1Piece = function(startP, endP, avoidP) {
     let penDir = -1;
     let penVec = vec2.create();
     
-    const dirVecs = [
-        [-1, 0], // left
-        [1, 0], // right
-        [0, -1], // down
-        [0, 1] // up
-    ];
-
     const checkP = vec2.clone(endP);
     const newPos = vec2.clone(endP);
 
@@ -86,3 +86,12 @@ const avoidPieces = function(startP, endP, avoidPs) {
         return endP;
     }	
 };
+
+// stub/mock
+const slabCalc = function(startP, endP, avoidP) {
+    const pEnter = [-2, -3];
+    const pExit = [-4, -5];
+    const tMin = 3.14;
+    const dir = 1.5;
+    return {pEnter, pExit, tMin, dir};
+}

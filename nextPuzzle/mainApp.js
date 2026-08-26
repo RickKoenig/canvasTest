@@ -328,9 +328,7 @@ class MainApp {
 		}
 
 		this.holdResult = avoidPieces(this.holdStart, this.holdEnd, this.pieceContainer.container);
-		const slabResult = slabCalc(this.holdStart, this.holdEnd, this.pieceContainer.container[0]);
-		this.holdResultEnter = slabResult.pEnter;
-		this.holdResultExit = slabResult.pExit;
+		this.slabResult = slabCalc(this.holdStart, this.holdEnd, this.pieceContainer.container[0]);
 		this.winner |= this.pieceContainer.getWinner();
 		if (this.winner) {
 			this.loser = false;
@@ -399,21 +397,21 @@ class MainApp {
 		this.drawPrim.drawLine(this.holdStart, this.holdEnd, .025, "black", true);
 		this.drawPrim.drawCircle(this.holdStart, .125, "red", true);
 		this.drawPrim.drawCircle(this.holdEnd, .125, "#0c4", true);
-		this.drawPrim.drawCircle(this.holdResult, .04, "blue", true);
-		this.drawPrim.drawCircle(this.holdResultEnter, .05, "darkred", true);
-		this.drawPrim.drawCircle(this.holdResultExit, .05, "green", true);
+		this.drawPrim.drawCircle(this.holdResult, .07, "blue", true);
+		this.drawPrim.drawCircle(this.slabResult.pEnter, .05, "darkred", true);
+		this.drawPrim.drawCircle(this.slabResult.pExit, .05, "green", true);
+		this.drawPrim.drawCircleO(this.slabResult.newPos, .005, .5, "brown", true);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		//infoStr += "\npen = " + this.penInfo.pen.toFixed(2);
-		//infoStr += "\npenDir = " + this.penInfo.penDir;
-		//infoStr += "\npenX = " + this.penInfo.penVec[0].toFixed(2);
-		//infoStr += "\npenY = " + this.penInfo.penVec[1].toFixed(2);
-		//infoStr += "\nholdBut = " + this.holdMouseBut;
-		//infoStr += "\nholdSave = " + this.pieceHoldSave[0].toFixed(2) + " " + this.pieceHoldSave[1].toFixed(2);
+		infoStr += "\npenter = " + this.slabResult.pEnter[0].toFixed(2) + " " + this.slabResult.pEnter[1].toFixed(2);
+		infoStr += "\npexit = " + this.slabResult.pExit[0].toFixed(2) + " " + this.slabResult.pExit[1].toFixed(2);
+		infoStr += "\ntime = " + this.slabResult.tMin.toFixed(2);
+		infoStr += "\ndir = " + this.slabResult.dir;
+		infoStr += "\npen = " + this.slabResult.pen.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;

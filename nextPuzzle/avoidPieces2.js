@@ -1,16 +1,16 @@
 'use strict';
 
+const dirVecs = [
+    [-1, 0], // left
+    [1, 0], // right
+    [0, -1], // down
+    [0, 1] // up
+];
+
 const avoid1Piece = function(startP, endP, avoidP) {
     let penDir = -1;
     let penVec = vec2.create();
     
-    const dirVecs = [
-        [-1, 0], // left
-        [1, 0], // right
-        [0, -1], // down
-        [0, 1] // up
-    ];
-
     const checkP = vec2.clone(endP);
     const newPos = vec2.clone(endP);
 
@@ -94,25 +94,20 @@ const slabCalc = function(startP, endP, avoidP) {
     const big = 100;
     let invDirX = big;
     let invDirY = big;
-    const dir = vec2.create();
-    vec2.sub(dir, endP, startP);
+
+    const dirV = vec2.create();
+    let dir = -1;
+    let wDir = -1;
+    let pen = 0;
+    vec2.sub(dirV, endP, startP);
     const pEnter = vec2.fromValues(-1, -1);
     const pExit = vec2.fromValues(-.5, -.5);
-    if (Math.abs(dir[0]) >= epsilon) { // too close to divide by 0
-        invDirX = 1 / dir[0];
+    if (Math.abs(dirV[0]) >= epsilon) { // too close to divide by 0
+        invDirX = 1 / dirV[0];
     }
-    if (Math.abs(dir[1]) >= epsilon) { // too close to divide by 0
-        invDirY = 1 / dir[1];
-    }
-// bot
-    const botY = avoidP[1] - 1;
-    const tBot = (botY - startP[1]) * invDirY;
-// top
-    const topY = avoidP[1] + 1;
-    const tTop = (topY - startP[1]) * invDirY;
-
-    const tYmin = Math.min(tBot, tTop);
-    const tYmax = Math.max(tBot, tTop);
+    if (Math.abs(dirV[1]) >= epsilon) { // too close to divide by 0
+        invDirY = 1 / dirV[1];
+    }    
 
 // left
     const leftX = avoidP[0] - 1;
@@ -121,15 +116,66 @@ const slabCalc = function(startP, endP, avoidP) {
     const rightX = avoidP[0] + 1;
     const tRight = (rightX - startP[0]) * invDirX;
 
-    const tXmin = Math.min(tLeft, tRight);
-    const tXmax = Math.max(tLeft, tRight);
+    let tXmin, tXmax;
+    let dirX;
+    if (tLeft < tRight) {
+        dirX = 0;
+        tXmin = tLeft;
+        tXmax = tRight;
+    } else {
+        dirX = 1;
+        tXmin = tRight;
+        tXmax = tLeft;
+    }
 
-    const tMin = Math.max(tXmin, tYmin);
-    const tMax = Math.min(tXmax, tYmax);
+// bot
+    const botY = avoidP[1] - 1;
+    const tBot = (botY - startP[1]) * invDirY;
+// top
+    const topY = avoidP[1] + 1;
+    const tTop = (topY - startP[1]) * invDirY;
+
+    let tYmin, tYmax;
+    let dirY;
+    if (tBot < tTop) {
+        dirY = 2;
+        tYmin = tBot;
+        tYmax = tTop;
+    } else {
+        dirY = 3;
+        tYmin = tTop;
+        tYmax = tBot;
+    }
+
+// all, max of min, min of max
+    let tMin, tMax;
+    if (tXmin > tYmin) {
+        wDir = dirX;
+        tMin = tXmin;
+    } else {
+        wDir = dirY;
+        tMin = tYmin;
+    }
+    if (tXmax < tYmax) {
+        tMax = tXmax;
+    } else {
+        tMax = tYmax;
+    }
+
+    const newPos = vec2.clone(endP);
 
     if (tMin > 0 && tMin < 1 && tMin < tMax) {
+        dir = wDir;
         vec2.lerp(pEnter, startP, endP, tMin);
         vec2.lerp(pExit, startP, endP, tMax);
+
+        const penV = vec2.create();
+        vec2.sub(penV, pEnter, endP);
+        const dv = vec2.clone(dirVecs[dir]);
+        pen = vec2.dot(penV, dv);
+
+        vec2.scale(dv, dv, pen);
+        vec2.add(newPos, dv, endP);
     }
-    return {pEnter, pExit};
+    return {pEnter, pExit, tMin, dir, pen, newPos};
 };
