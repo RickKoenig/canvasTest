@@ -59,25 +59,28 @@ const avoid1Piece = function(startP, endP, avoidP) {
 };
 
 const avoidPieces = function(startP, endP, avoidPs) {
-    //const ret = vec2.clone(endP);
-    //return ret;
     const resultsP = [];
     for (let i = 0; i < avoidPs.length; ++i) {
         const avoidP = avoidPs[i];
-        let result = avoid1Piece(startP, endP, avoidP);
+        //let result = avoid1Piece(startP, endP, avoidP);
+        let result = slabCalc(startP, endP, avoidP);
         resultsP.push(result);
     }
     
     let bestIdx = -1;
     // best min dist
     // find best index
-    // best min pen > 0
-    let bestPen = Number.MAX_VALUE;
+    // best min time with a valid direction > 0
+    let bestTime = Number.MAX_VALUE;
     for (let i = 0; i < resultsP.length; ++i) {
-        const pen = resultsP[i].pen;
-        if (pen < bestPen && pen > 0) {
-            bestPen = pen;
-            bestIdx = i;
+        const result = resultsP[i];
+        const dir = result.dir;
+        if (dir >= 0) {
+            const t = result.tMin;
+            if (t < bestTime) {
+                bestTime = t;
+                bestIdx = i;
+            }
         }
     }
     if (bestIdx >= 0) {

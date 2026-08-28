@@ -125,7 +125,7 @@ class PieceContainer {
 				this.endPos[0] = range(0, this.endPos[0], this.boardX - 1);
 				this.endPos[1] = range(0, this.endPos[1], this.boardY - 1);
 				vec2.copy(curPiece, this.endPos); // default, if no collisions
-				const avoidLocs = this.container.toSpliced(this.idx, 1);
+				const avoidLocs = this.container.toSpliced(this.idx, 1); // remove self
 				for (let i = 0; i < this.user.solveSpeed; ++i) {
 					for (let j = 0; j < this.container.length; ++j) {
 						const tweenPos = vec2.create();
@@ -289,8 +289,7 @@ class MainApp {
 		this.#initPieces();
 		this.winCount = 0; // frame counter
 		this.solveSpeed = 1;
-		this.slow = 10;
-
+		this.slow = 1;
 
 		// measure frame rate
 		this.fps;
