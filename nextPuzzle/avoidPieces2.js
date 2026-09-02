@@ -58,12 +58,12 @@ const avoid1Piece = function(startP, endP, avoidP) {
     return {newPos, pen};
 };
 
-const avoidPieces = function(startP, endP, avoidPs) {
+const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
     const resultsP = [];
     for (let i = 0; i < avoidPs.length; ++i) {
         const avoidP = avoidPs[i];
         //let result = avoid1Piece(startP, endP, avoidP);
-        let result = slabCalc(startP, endP, avoidP);
+        let result = slabCalc(startP, endP, avoidP, pieceSize);
         resultsP.push(result);
     }
     
@@ -92,7 +92,7 @@ const avoidPieces = function(startP, endP, avoidPs) {
 
 // intersect line with 2 by 2 square at avoidP
 // return start and end intersections or -1, -1 to -.5, -.5 if none
-const slabCalc = function(startP, endP, avoidP) {
+const slabCalc = function(startP, endP, avoidP, pieceSize) {
     const epsilon = .1;
     const big = 100;
     let invDirX = big;
@@ -113,10 +113,10 @@ const slabCalc = function(startP, endP, avoidP) {
     }    
 
 // left
-    const leftX = avoidP[0] - 1;
+    const leftX = avoidP[0] - pieceSize;
     const tLeft = (leftX - startP[0]) * invDirX;
 // right
-    const rightX = avoidP[0] + 1;
+    const rightX = avoidP[0] + pieceSize;
     const tRight = (rightX - startP[0]) * invDirX;
 
     let tXmin, tXmax;
@@ -132,10 +132,10 @@ const slabCalc = function(startP, endP, avoidP) {
     }
 
 // bot
-    const botY = avoidP[1] - 1;
+    const botY = avoidP[1] - pieceSize;
     const tBot = (botY - startP[1]) * invDirY;
 // top
-    const topY = avoidP[1] + 1;
+    const topY = avoidP[1] + pieceSize;
     const tTop = (topY - startP[1]) * invDirY;
 
     let tYmin, tYmax;
@@ -166,6 +166,7 @@ const slabCalc = function(startP, endP, avoidP) {
     }
 
     const newPos = vec2.clone(endP);
+    const negT = -.025;
 
     if (tMin > 0 && tMin < 1 && tMin < tMax) {
         dir = wDir;
@@ -177,7 +178,7 @@ const slabCalc = function(startP, endP, avoidP) {
         const dv = vec2.clone(dirVecs[dir]);
         pen = vec2.dot(penV, dv);
 
-        vec2.scale(dv, dv, pen);
+        vec2.scale(dv, dv, pen - negT);
         vec2.add(newPos, dv, endP);
     }
     return {pEnter, pExit, tMin, dir, pen, newPos};

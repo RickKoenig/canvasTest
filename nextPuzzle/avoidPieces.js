@@ -7,14 +7,12 @@ const dirVecs = [
     [0, 1] // up
 ];
 
-const avoid1Piece = function(startP, endP, avoidP) {
+const avoid1Piece = function(startP, endP, avoidP, pieceSize) {
     let penDir = -1;
     let penVec = vec2.create();
     
     const checkP = vec2.clone(endP);
     const newPos = vec2.clone(endP);
-
-    const pieceSize = 1;//.75;
 
     let pen = Number.MAX_VALUE;
 
@@ -58,13 +56,13 @@ const avoid1Piece = function(startP, endP, avoidP) {
     return {newPos, pen};
 };
 
-const avoidPieces = function(startP, endP, avoidPs) {
+const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
     //const ret = vec2.clone(endP);
-    //return ret;
+    //return {pos: ret};
     const resultsP = [];
     for (let i = 0; i < avoidPs.length; ++i) {
         const avoidP = avoidPs[i];
-        let result = avoid1Piece(startP, endP, avoidP);
+        let result = avoid1Piece(startP, endP, avoidP, pieceSize);
         resultsP.push(result);
     }
     
@@ -81,17 +79,19 @@ const avoidPieces = function(startP, endP, avoidPs) {
         }
     }
     if (bestIdx >= 0) {
-        return resultsP[bestIdx].newPos;
+        return {pos: resultsP[bestIdx].newPos, pen: bestPen};
     } else {
-        return endP;
+        return {pos: endP, pen: 0};
     }	
 };
 
-// stub/mock
-const slabCalc = function(startP, endP, avoidP) {
+// stub, mock
+const slabCalc = function(startP, endP, avoidP, pieceSize) {
     const pEnter = [-2, -3];
     const pExit = [-4, -5];
     const tMin = 3.14;
     const dir = 1.5;
-    return {pEnter, pExit, tMin, dir};
+    const newPos = [-3, -3];
+    const pen = 2.718;
+    return {pEnter, pExit, tMin, dir, newPos, pen};
 }

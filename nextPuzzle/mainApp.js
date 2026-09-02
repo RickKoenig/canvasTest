@@ -1,16 +1,16 @@
 'use strict';
 
 class Piece {
-	static draw(user, pos, drag, sel) {
+	static draw(user, pos, drag, sel, pieceSize) {
 		//drag = false;
 		//sel = false;
-		const rad = [1, 1];
-		const smaller = .85;
+		//const rad = [1, 1];
+		const smaller = pieceSize;
 		let smallerRad = [smaller, smaller];
-		let biggerRad = [2, 2];
+		let biggerRad = [2 * smaller, 2 * smaller];
 		let cpos = vec2.clone(pos);
 		//cpos = vec2.sub(cpos, cpos, [rad, rad]);
-		const scale = [2 * rad, 2 * rad];
+		//const scale = [2 * rad, 2 * rad];
 		const smalWidth = .015;
 		const bigWidth = .08;
 		const lightCol = "#fff6";
@@ -40,12 +40,13 @@ class PieceContainer {
 		all: 2
 	}
 	// pieces are on even 'x' numbers from -8 to +8
-	constructor(user, boardX, boardY) {
+	constructor(user, boardX, boardY, pieceSize) {
+		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
 		this.boardX = boardX;
 		this.boardY = boardY;
 		this.user = user;
-		const smaller = .85;
+		const smaller = pieceSize;
 		this.selectDist = smaller * .5;
 		this.container = [];
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
@@ -76,6 +77,81 @@ class PieceContainer {
 		return false;
 	}
 
+	solvePath(startPos, endPos, avoidLocs, pieceSize, slowA, solveSpeed) {
+		let newPiece;
+		for (let i = 0; i < this.user.solveSpeed; ++i) {
+			const curPos = vec2.create();
+			vec2.lerp(curPos, this.startPos, endPos, 1 / this.user.slow);
+			if (this.user.input.keyboard.key == 'b'.charCodeAt(0)) {
+				console.log("b key hit!!");
+			}
+			newPiece = avoidPieces(startPos, curPos, avoidLocs, pieceSize).pos; // set this in mainApp
+		}
+		return newPiece;
+	}
+
+	solvePath2(startPos, endPos, avoidLocs, pieceSize, slowA, solveSpeedA) {
+		if (this.user.input.keyboard.key == 'b'.charCodeAt(0)) {
+			console.log("b key hit!!");
+		}
+		const slow = 1 / slowA;
+		const slow2 = slow * slow;
+		const moveV = vec2.create();
+		const curPos = vec2.clone(startPos);
+		for (let i = 0; i < solveSpeedA; ++i) {
+			const dist2 = vec2.sqrDist(curPos, endPos) * 4; // add a little move dist to settle down
+			if (slow2 > dist2) { // already arrived, close enough
+				return curPos;
+			}
+			vec2.sub(moveV, endPos, curPos);
+			vec2.normalize(moveV, moveV);
+			vec2.scale(moveV, moveV, slow);
+			const oldPos = vec2.clone(curPos);
+			vec2.add(curPos, curPos, moveV); // see if this new curPos penetrates
+			let result = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+			if (result.pen > 0) {
+				// penetrated, restrict movements, find a new direction
+				vec2.copy(curPos, oldPos); // go back to before penetration
+				const signX = Math.sign(endPos[0] - curPos[0]);
+				const signY = Math.sign(endPos[1] - curPos[1]);
+				// see if penetrates right left
+				curPos[0] += slow * signX; // move left right
+				result = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+				if (result.pen > 0) {
+					// yes, restrict to up and down
+					vec2.copy(curPos, oldPos); // go back to before penetration
+					if (Math.abs(endPos[1] - curPos[1]) * 2 > slow) { // far enough away
+						curPos[1] += slow * signY;
+						result = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+						if (result.pen > 0) {
+							// totally blocked
+							vec2.copy(curPos, oldPos); // go back to before penetration
+						}
+					}
+				} else {
+					// no left right penetration, check up down penetration
+					vec2.copy(curPos, oldPos); // go back to before penetration
+					// see if penetrates up down
+					curPos[1] += slow * signY; // move up down
+					result = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+					if (result.pen > 0) {
+						vec2.copy(curPos, oldPos); // go back to before penetration
+						// yes, restrict to left and right
+						if (Math.abs(endPos[0] - curPos[0]) * 2 > slow) { // far enough away
+							curPos[0] += slow * signX;
+							result = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+							if (result.pen > 0) {
+								// totally blocked
+								vec2.copy(curPos, oldPos); // go back to before penetration
+							}
+						}
+					}
+				}
+			}
+		}
+		return curPos;
+	}
+
 	proc(mbut, lmbut, fmxy) {
 		// change states
 		switch(this.state) {
@@ -89,7 +165,7 @@ class PieceContainer {
 						if (dist < this.selectDist) {
 							this.state = this.statesEnum.DRAGGING;
 							this.idx = i;
-							console.log("switch to DRAG");
+							//console.log("switch to DRAG");
 							break;
 						}
 					}
@@ -106,7 +182,7 @@ class PieceContainer {
 					y = Math.round(y);
 					curObjPos[0] = x;
 					curObjPos[1] = y;
-					console.log("switch to IDLE");
+					//console.log("switch to IDLE");
 					this.startPos = null;
 					this.endPos = null;
 					this.idx = -1;
@@ -126,15 +202,9 @@ class PieceContainer {
 				this.endPos[1] = range(0, this.endPos[1], this.boardY - 1);
 				vec2.copy(curPiece, this.endPos); // default, if no collisions
 				const avoidLocs = this.container.toSpliced(this.idx, 1); // remove self
-				for (let i = 0; i < this.user.solveSpeed; ++i) {
-					for (let j = 0; j < this.container.length; ++j) {
-						const tweenPos = vec2.create();
-						vec2.lerp(tweenPos, this.startPos, this.endPos, 1 / this.user.slow);
-						const newPiece = avoidPieces(curPiece, tweenPos, avoidLocs); // set this in mainApp
-						vec2.copy(curPiece, newPiece); // update container with curPiece REFERENCE
-						this.startPos = vec2.clone(curPiece);
-					}
-				}
+				const newPos = this.solvePath2(
+					this.startPos, this.endPos, avoidLocs, this.user.pieceSize, this.user.slow, this.user.solveSpeed);
+				vec2.copy(curPiece, newPos); // update container with curPiece REFERENCE
 				break;
 		}
 	}
@@ -143,7 +213,7 @@ class PieceContainer {
 		// reverse order
 		for (let i = this.container.length - 1; i >= 0; --i) {
 			const so = this.container[i];
-			Piece.draw(this.user, so, this.state, i == this.idx);
+			Piece.draw(this.user, so, this.state, i == this.idx, this.pieceSize);
 		}
 	}
 
@@ -253,21 +323,22 @@ class MainApp {
 	#initPieces() {
 		this.winCount = 0;
 		// slide objects and container
-		const dist = this.pieceDist;
-		const safe = .95; // select more inside circle radius
+		//const dist = this.pieceDist;
+		//const safe = .95; // select more inside circle radius
+		this.pieceSize = .875;
 		const pieceDataArr = [
-			/*
+			
 				[3, 3],
 				[3, 2],
 				[5, 2],
 				[6, 2],
 				[5, 1],
 				[7, 0],
-			*/
+			
 				[4, 4],
 				[1, 1],
 		];
-		this.pieceContainer = new PieceContainer(this, this.boardX, this.boardY);
+		this.pieceContainer = new PieceContainer(this, this.boardX, this.boardY, this.pieceSize);
 		for (const pieceData of pieceDataArr) {
 			let slideObj = vec2.clone(pieceData);
 			this.pieceContainer.add(slideObj);
@@ -288,8 +359,8 @@ class MainApp {
 		this.#initBoard();
 		this.#initPieces();
 		this.winCount = 0; // frame counter
-		this.solveSpeed = 1;
-		this.slow = 1;
+		this.solveSpeed = 10;
+		this.slow = 20;
 
 		// measure frame rate
 		this.fps;
@@ -316,7 +387,7 @@ class MainApp {
 		const middle = this.input.mouse.mbut[Mouse.MIDDLE];
 		const right = this.input.mouse.mbut[Mouse.RIGHT];
 
-		const prec = 4;
+		const prec = 6;
 		if (right) {
 			this.holdStart = vec2.clone(this.plotter2d.userMouse);
 			vec2.snap(this.holdStart, this.holdStart, prec);
@@ -326,8 +397,10 @@ class MainApp {
 			vec2.snap(this.holdEnd, this.holdEnd, prec);
 		}
 
-		this.holdResult = avoidPieces(this.holdStart, this.holdEnd, this.pieceContainer.container);
-		this.slabResult = slabCalc(this.holdStart, this.holdEnd, this.pieceContainer.container[0]);
+		//this.holdResult = avoidPieces(this.holdStart, this.holdEnd, this.pieceContainer.container, this.pieceSize).pos;
+		this.holdResult = this.pieceContainer.solvePath2(
+			this.holdStart, this.holdEnd, this.pieceContainer.container, this.pieceSize, 4, 1);
+		//this.slabResult = slabCalc(this.holdStart, this.holdEnd, this.pieceContainer.container[0], this.pieceSize);
 		this.winner |= this.pieceContainer.getWinner();
 		if (this.winner) {
 			this.loser = false;
@@ -397,20 +470,20 @@ class MainApp {
 		this.drawPrim.drawCircle(this.holdStart, .125, "red", true);
 		this.drawPrim.drawCircle(this.holdEnd, .125, "#0c4", true);
 		this.drawPrim.drawCircle(this.holdResult, .07, "blue", true);
-		this.drawPrim.drawCircle(this.slabResult.pEnter, .05, "darkred", true);
-		this.drawPrim.drawCircle(this.slabResult.pExit, .05, "green", true);
-		this.drawPrim.drawCircleO(this.slabResult.newPos, .005, .5, "brown", true);
+		//this.drawPrim.drawCircle(this.slabResult.pEnter, .05, "darkred", true);
+		//this.drawPrim.drawCircle(this.slabResult.pExit, .05, "green", true);
+		//this.drawPrim.drawCircleO(this.slabResult.newPos, .005, .5, "brown", true);
 	}
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\npenter = " + this.slabResult.pEnter[0].toFixed(2) + " " + this.slabResult.pEnter[1].toFixed(2);
-		infoStr += "\npexit = " + this.slabResult.pExit[0].toFixed(2) + " " + this.slabResult.pExit[1].toFixed(2);
-		infoStr += "\ntime = " + this.slabResult.tMin.toFixed(2);
-		infoStr += "\ndir = " + this.slabResult.dir;
-		infoStr += "\npen = " + this.slabResult.pen.toFixed(2);
+		//infoStr += "\npenter = " + this.slabResult.pEnter[0].toFixed(2) + " " + this.slabResult.pEnter[1].toFixed(2);
+		//infoStr += "\npexit = " + this.slabResult.pExit[0].toFixed(2) + " " + this.slabResult.pExit[1].toFixed(2);
+		//infoStr += "\ntime = " + this.slabResult.tMin.toFixed(2);
+		//infoStr += "\ndir = " + this.slabResult.dir;
+		//infoStr += "\npen = " + this.slabResult.pen.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
@@ -421,7 +494,8 @@ class MainApp {
 		// proc
 		// update input system
 		this.input.proc();
-		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, null) || this.dirty; // don't use any mouse buttons to move user space
+ // don't use any mouse buttons to move user space
+ 		this.dirty = this.plotter2d.proc(this.vp, this.input.mouse, null) || this.dirty;
 		// USER: do USER stuff
 		this.#userProc(); // proc
 
