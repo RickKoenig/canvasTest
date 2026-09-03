@@ -8,90 +8,110 @@ const dirVecs = [
 ];
 
 const avoid1Piece = function(startP, endP, avoidP, pieceSize) {
-    let penDir = -1;
-    let penVec = vec2.create();
-    
     const checkP = vec2.clone(endP);
-    const newPos = vec2.clone(endP);
-
     let pen = Number.MAX_VALUE;
-
     const avoidX = avoidP[0];
     const avoidY = avoidP[1];
     let pLeft, pRight, pBottom, pTop;
-
 // left
     pLeft = checkP[0] - avoidX + pieceSize;
     if (pLeft < pen) {
         pen = pLeft;
-        penDir = 0;
     }
     // right
     pRight = avoidX - checkP[0] + pieceSize;
     if (pRight < pen) {
         pen = pRight;
-        penDir = 1;
     }
     // bottom
     pBottom = checkP[1] - avoidY + pieceSize;
     if (pBottom < pen) {
         pen = pBottom;
-        penDir = 2;
     }
     // top
     pTop = avoidY - checkP[1] + pieceSize;
     if (pTop < pen) {
         pen = pTop;
-        penDir = 3;
     }
     // the rest
     if (pen <= 0) {
         pen = 0; // no positive pens found, set to 0
-        penDir = -1;
     }
-    if (penDir >= 0) { // found penetration, adjust
-        vec2.scale(penVec, dirVecs[penDir], pen);
-        vec2.add(newPos, checkP, penVec);
-    }
-    return {newPos, pen};
+    return pen;
 };
 
 const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
-    //const ret = vec2.clone(endP);
-    //return {pos: ret};
-    const resultsP = [];
     for (let i = 0; i < avoidPs.length; ++i) {
         const avoidP = avoidPs[i];
         let result = avoid1Piece(startP, endP, avoidP, pieceSize);
-        resultsP.push(result);
-    }
-    
-    let bestIdx = -1;
-    // best min dist
-    // find best index
-    // best min pen > 0
-    let bestPen = Number.MAX_VALUE;
-    for (let i = 0; i < resultsP.length; ++i) {
-        const pen = resultsP[i].pen;
-        if (pen < bestPen && pen > 0) {
-            bestPen = pen;
-            bestIdx = i;
+        if (result > 0) {
+            return result;
         }
     }
-    if (bestIdx >= 0) {
-        return {pos: resultsP[bestIdx].newPos, pen: bestPen};
-    } else {
-        return {pos: endP, pen: 0};
-    }	
+    return 0;
 };
 
-// stub, mock
-const slabCalc = function(startP, endP, avoidP, pieceSize) {
-    const pEnter = [-2, -3];
-    const pExit = [-4, -5];
-    const tMin = 3.14;
-    const dir = 1.5;
-    const newPos = [-3, -3];
-    const pen = 2.718;
-    return {pEnter, pExit, tMin, dir, newPos, pen};
-}
+const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveSpeedA) {
+    const slow = 1 / slowA;
+    const slow2 = slow * slow;
+    const moveV = vec2.create();
+    const curPos = vec2.clone(startPos);
+    for (let i = 0; i < solveSpeedA; ++i) {
+        const dist2 = vec2.sqrDist(curPos, endPos) * 4; // add a little move dist to settle down
+        if (slow2 > dist2) { // already arrived, close enough
+            return curPos;
+        }
+        vec2.sub(moveV, endPos, curPos);
+        vec2.normalize(moveV, moveV);
+        vec2.scale(moveV, moveV, slow);
+        const oldPos = vec2.clone(curPos);
+        vec2.add(curPos, curPos, moveV); // see if this new curPos penetrates
+        let pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        if (!pen) {
+            continue; // move freely
+        }
+        // penetrated, restrict movements, find a new direction
+        vec2.copy(curPos, oldPos); // go back to before penetration
+        const signX = Math.sign(endPos[0] - curPos[0]);
+        const signY = Math.sign(endPos[1] - curPos[1]);
+        // see if penetrates right left
+        curPos[0] += slow * signX; // move left right
+        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        if (pen) {
+            // yes left right blocked, restrict to up and down
+            vec2.copy(curPos, oldPos); // go back to before penetration
+            if (Math.abs(endPos[1] - curPos[1]) * 2 <= slow) { // too close to move
+                return curPos;
+            }
+            curPos[1] += slow * signY;
+            pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+            if (pen) {
+                // totally blocked
+                vec2.copy(curPos, oldPos); // go back to before penetration
+                return curPos;
+            }
+            continue; // move up and down
+        }
+        // no left right penetration, check up down penetration
+        vec2.copy(curPos, oldPos); // go back to before penetration
+        // see if penetrates up down
+        curPos[1] += slow * signY; // move up down
+        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        if (!pen) {
+            continue;
+        }
+        vec2.copy(curPos, oldPos); // go back to before penetration
+        // yes, restrict to left and right
+        if (Math.abs(endPos[0] - curPos[0]) * 2 <= slow) { // too close to move
+            return curPos;
+        }
+        curPos[0] += slow * signX;
+        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        if (pen) {
+            // totally blocked
+            vec2.copy(curPos, oldPos); // go back to before penetration
+            return curPos;
+        }
+    }
+    return curPos;
+};
