@@ -13,8 +13,15 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, next puzzle",
+            "name": "Launch Chrome against localhost, next puzzle undecided",
             "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile2D.html",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Launch Chrome against localhost, next puzzle undecided 2",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile2D2.html",
             "webRoot": "${workspaceFolder}"
         },
         {
@@ -78,13 +85,6 @@
             "request": "launch",
             "name": "Launch Chrome against localhost, remez algorithm",
             "url": "http://localhost:88/plotter2d/remez/index.html",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Launch Chrome against localhost, undecided",
-            "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile2D.html",
             "webRoot": "${workspaceFolder}"
         },
         {

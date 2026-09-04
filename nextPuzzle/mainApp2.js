@@ -1,7 +1,7 @@
 'use strict';
 
 class Piece {
-	static draw(user, pos, hilit, pieceSize) {
+	static draw(user, pos, type, hilit, pieceSize) {
 		const smaller = pieceSize;
 		let smallerRad = [smaller, smaller];
 		const smalWidth = .015;
@@ -16,7 +16,7 @@ class Piece {
 
 class PieceContainer {
 	// pieces are on even 'x' numbers from -8 to +8
-	constructor(user, boardX, boardY, pieceSize) {
+	constructor(user, pieceData, boardX, boardY, pieceSize) {
 		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
 		this.boardX = boardX;
@@ -24,14 +24,10 @@ class PieceContainer {
 		this.user = user;
 		const smaller = pieceSize;
 		this.selectDist = smaller * .5;
-		this.container = [];
+		this.container = pieceData;
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
-	}
-
-	add(so) {
-		this.container.push(so);
 	}
 
 	isDragging() {
@@ -104,7 +100,7 @@ class PieceContainer {
 		// reverse order
 		for (let i = this.container.length - 1; i >= 0; --i) {
 			const so = this.container[i];
-			Piece.draw(this.user, so, this.state == this.statesEnum.DRAGGING && i == this.idx, this.pieceSize);
+			Piece.draw(this.user, so, 0, this.state == this.statesEnum.DRAGGING && i == this.idx, this.pieceSize);
 		}
 	}
 }
@@ -212,18 +208,14 @@ class MainApp {
 		// slide objects and container
 		this.pieceSize = .875;
 		// build board
-		const pieceDataArr = [];
-		// add 3 columns of pieces to board
-		for (let j = 0; j < this.boardY; ++j) {
-			for (let i = 0; i < 3; ++i) {
-				pieceDataArr.push([i, j]);
-			}
-		}
-		this.pieceContainer = new PieceContainer(this, this.boardX, this.boardY, this.pieceSize);
-		for (const pieceData of pieceDataArr) {
-			let slideObj = vec2.clone(pieceData);
-			this.pieceContainer.add(slideObj);
-		}
+		const pieceDataArr = [
+			[2, 1],
+			[4, 2],
+			[6, 1],
+			[2, 4],
+			[6, 4],
+		];
+		this.pieceContainer = new PieceContainer(this, pieceDataArr, this.boardX, this.boardY, this.pieceSize);
 		this.winner = false;
 		this.loser = false;
 	}
