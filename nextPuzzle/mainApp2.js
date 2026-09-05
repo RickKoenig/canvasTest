@@ -1,16 +1,21 @@
 'use strict';
 
 class Piece {
-	static draw(user, pos, type, hilit, pieceSize) {
-		const smaller = pieceSize;
-		let smallerRad = [smaller, smaller];
-		const smalWidth = .015;
+	// TODO: add piece type/shape
+	constructor(o, pieceSize) {
+		this.pos = o.pos;
+		this.color = o.color;
+		this.pieceSize = pieceSize;
+	}
+
+	draw(user, hilit) {
+		const smallerRad = [this.pieceSize, this.pieceSize];
+		const smallWidth = .015;
 		const bigWidth = .08;
-		const darkCol = "#0006";
-		const col = hilit ? "yellow" : "peru";
-		user.drawPrim.drawRectangleCenter(pos, smallerRad, col);
-		user.drawPrim.drawRectangleCenterO(pos, smallerRad, bigWidth, darkCol);
-		user.drawPrim.drawRectangleCenterO(pos, smallerRad, smalWidth, "white");
+		const darkCol = "#0004";
+		user.drawPrim.drawRectangleCenter(this.pos, smallerRad, this.color);
+		user.drawPrim.drawRectangleCenterO(this.pos, smallerRad, bigWidth, hilit ? "black" : darkCol);
+		user.drawPrim.drawRectangleCenterO(this.pos, smallerRad, smallWidth, "white");
 	}
 }
 
@@ -24,7 +29,13 @@ class PieceContainer {
 		this.user = user;
 		const smaller = pieceSize;
 		this.selectDist = smaller * .5;
-		this.container = pieceData;
+
+		this.container = [];
+		for (const po of pieceData) {
+			const p = new Piece(po, pieceSize);
+			this.container.push(p);
+		}
+
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
@@ -42,6 +53,19 @@ class PieceContainer {
 		return false;
 	}
 
+	// take piece container and make arr of points without idx
+	#makeAvoidPieces() {
+		const avoidLocs = [];
+		for (let i = 0; i < this.container.length; ++i) {
+			if (i == this.idx) {
+				continue;
+			}
+			const po = this.container[i];
+			avoidLocs.push(po.pos);
+		}
+		return avoidLocs;
+	}
+
 	proc(mbut, lmbut, fmxy) {
 		// change states
 		switch(this.state) {
@@ -50,7 +74,7 @@ class PieceContainer {
 					// PICK up piece if within range
 					for (let i = 0; i < this.container.length; ++i) {
 						const userMouse = fmxy;
-						const curPiece = this.container[i];
+						const curPiece = this.container[i].pos;
 						const dist = vec2.dist(userMouse, curPiece);
 						if (dist < this.selectDist) {
 							this.state = this.statesEnum.DRAGGING;
@@ -65,13 +89,8 @@ class PieceContainer {
 				if (!mbut && lmbut) {
 					// DROP piece
 					this.state = this.statesEnum.IDLE;
-					const curObjPos = this.container[this.idx];
-					let x = curObjPos[0];
-					let y = curObjPos[1];
-					x = Math.round(x);
-					y = Math.round(y);
-					curObjPos[0] = x;
-					curObjPos[1] = y;
+					const curObjPos = this.container[this.idx].pos;
+					vec2.snap(curObjPos, curObjPos, 0);
 					//console.log("switch to IDLE");
 				}
 				break;
@@ -80,7 +99,7 @@ class PieceContainer {
 		switch(this.state) {
 			// MOVE piece
 			case this.statesEnum.DRAGGING:
-				const curPiece = this.container[this.idx];
+				const curPiece = this.container[this.idx].pos;
 				let mousePos = fmxy;
 				this.endPos = vec2.clone(mousePos);
 				// keep within bounds of the board
@@ -88,19 +107,19 @@ class PieceContainer {
 				this.endPos[0] = range(0, this.endPos[0], this.boardX - 1);
 				this.endPos[1] = range(0, this.endPos[1], this.boardY - 1);
 				vec2.copy(curPiece, this.endPos); // default, if no collisions
-				const avoidLocs = this.container.toSpliced(this.idx, 1); // remove self
+				const avoidLocs = this.#makeAvoidPieces(); // take container of pieces and remove self and just make arr of pos
 				const newPos = solvePath(
-					this.startPos, this.endPos, avoidLocs, this.user.pieceSize, this.user.slow, this.user.solveSpeed);
+					this.startPos, this.endPos, avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPiece, newPos); // update container with curPiece REFERENCE
 				break;
 		}
 	}
 	
 	draw() {
-		// reverse order
+		// reverse order, for UI
 		for (let i = this.container.length - 1; i >= 0; --i) {
 			const so = this.container[i];
-			Piece.draw(this.user, so, 0, this.state == this.statesEnum.DRAGGING && i == this.idx, this.pieceSize);
+			so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx);
 		}
 	}
 }
@@ -127,15 +146,15 @@ class Board {
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
-class MainApp {
+class MainApp2 {
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return MainApp.numInstances;
+		return MainApp2.numInstances;
 	}
 
 	constructor() {
-		console.log("\n############# creating instance of MainApp");
-		++MainApp.numInstances;
+		console.log("\n############# creating instance of MainApp2");
+		++MainApp2.numInstances;
 		this.boardX = 8;
 		this.boardY = 6;
 
@@ -209,11 +228,11 @@ class MainApp {
 		this.pieceSize = .875;
 		// build board
 		const pieceDataArr = [
-			[2, 1],
-			[4, 2],
-			[6, 1],
-			[2, 4],
-			[6, 4],
+			{pos: [2, 1], color: "red"},
+			{pos: [4, 2], color: "green"},
+			{pos: [6, 1], color: "blue"},
+			{pos: [2, 4], color: "yellow"},
+			{pos: [6, 4], color: "peru"},
 		];
 		this.pieceContainer = new PieceContainer(this, pieceDataArr, this.boardX, this.boardY, this.pieceSize);
 		this.winner = false;
@@ -282,7 +301,7 @@ class MainApp {
 	}
 
 	#userDraw() {
-		const bigCursor = false; // true for mobile
+		const bigCursor = true; // true for mobile
 		this.board.draw();
 		this.pieceContainer.draw();
 		// draw cursor, when pressed / touched
@@ -291,10 +310,10 @@ class MainApp {
 			const isDragging = this.pieceContainer.isDragging();
 			if (bigCursor) {
 				if (isDragging) {
-					this.drawPrim.drawCircleO(pntM, 2, .25, "black");
-					this.drawPrim.drawCircleO(pntM, 2, .05, "white");
+					this.drawPrim.drawCircleO(pntM, 2, .25, "#0001");
+					this.drawPrim.drawCircleO(pntM, 2, .05, "#fff1");
 				} else {
-					this.drawPrim.drawCircleO(pntM, 2, .0375, "gray");
+					this.drawPrim.drawCircleO(pntM, 2, .07, "#8884");
 				}
 			}
 			// show line where we would like to go
@@ -367,5 +386,5 @@ class MainApp {
 	}
 }
 
-const mainApp = new MainApp();
-console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods
+const mainApp = new MainApp2();
+console.log("Num instances of MainApp2 = " + MainApp2.getNumInstances()); // and test static methods

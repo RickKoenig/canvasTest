@@ -4,13 +4,13 @@ class Piece {
 	static draw(user, pos, hilit, pieceSize) {
 		const smaller = pieceSize;
 		let smallerRad = [smaller, smaller];
-		const smalWidth = .015;
+		const smallWidth = .015;
 		const bigWidth = .08;
 		const darkCol = "#0006";
 		const col = hilit ? "yellow" : "peru";
 		user.drawPrim.drawRectangleCenter(pos, smallerRad, col);
 		user.drawPrim.drawRectangleCenterO(pos, smallerRad, bigWidth, darkCol);
-		user.drawPrim.drawRectangleCenterO(pos, smallerRad, smalWidth, "white");
+		user.drawPrim.drawRectangleCenterO(pos, smallerRad, smallWidth, "white");
 	}
 }
 
@@ -70,12 +70,7 @@ class PieceContainer {
 					// DROP piece
 					this.state = this.statesEnum.IDLE;
 					const curObjPos = this.container[this.idx];
-					let x = curObjPos[0];
-					let y = curObjPos[1];
-					x = Math.round(x);
-					y = Math.round(y);
-					curObjPos[0] = x;
-					curObjPos[1] = y;
+					vec2.snap(curObjPos, curObjPos, 0);
 					//console.log("switch to IDLE");
 				}
 				break;
@@ -94,7 +89,7 @@ class PieceContainer {
 				vec2.copy(curPiece, this.endPos); // default, if no collisions
 				const avoidLocs = this.container.toSpliced(this.idx, 1); // remove self
 				const newPos = solvePath(
-					this.startPos, this.endPos, avoidLocs, this.user.pieceSize, this.user.slow, this.user.solveSpeed);
+					this.startPos, this.endPos, avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPiece, newPos); // update container with curPiece REFERENCE
 				break;
 		}
