@@ -1,7 +1,6 @@
 'use strict';
 
 class Piece {
-	// TODO: add piece type/shape
 	constructor(o, pieceSize, shapeData) {
 		this.pos = o.pos;
 		this.color = o.color;
@@ -79,12 +78,21 @@ class PieceContainer {
 	// take piece container and make arr of points without idx
 	#makeAvoidPieces() {
 		const avoidLocs = [];
+		const po1 = this.container[this.idx]; // current piece
 		for (let i = 0; i < this.container.length; ++i) {
 			if (i == this.idx) {
 				continue;
 			}
-			const po = this.container[i];
-			avoidLocs.push(po.pos);
+			const po2 = this.container[i]; // other pieces
+			// do a convolution
+			for (const sq2 of po2.shapeData) {
+				for (const sq1 of po1.shapeData) {
+					const offset = vec2.create();
+					vec2.add(offset, sq2, po2.pos);
+					vec2.sub(offset, offset, sq1);
+					avoidLocs.push(offset);
+				}
+			}
 		}
 		return avoidLocs;
 	}
@@ -129,19 +137,28 @@ class PieceContainer {
 				// keep within bounds of the board
 				this.startPos = vec2.clone(curPos);
 				this.endPos = pce.range(this.boardX, this.boardY, this.endPos); // keep the piece on the board
-				const avoidLocs = this.#makeAvoidPieces(); // take container of pieces and remove self and just make arr of pos
+				this.avoidLocs = this.#makeAvoidPieces(); // take container of pieces and remove self and just make arr of pos
 				const newPos = solvePath(
-					this.startPos, this.endPos, avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
+					this.startPos, this.endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPos, newPos); // update container with curPiece REFERENCE
 				break;
 		}
 	}
 	
 	draw() {
-		// reverse order, for UI
-		for (let i = this.container.length - 1; i >= 0; --i) {
-			const so = this.container[i];
-			so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx);
+		// draw the pieces, alt mode shrink when dragging
+		const shrink = false;
+		if (shrink && this.state == this.statesEnum.DRAGGING) {
+			this.user.drawPrim.drawRectangleCenter(this.container[this.idx].pos, [.8, .8], "#f00");
+			for (const al of this.avoidLocs) {
+				this.user.drawPrim.drawRectangleCenter(al, [.8, .8], "#080");
+			}
+		} else {
+			// reverse order, for UI
+			for (let i = this.container.length - 1; i >= 0; --i) {
+				const so = this.container[i];
+				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx);
+			}
 		}
 	}
 }
@@ -283,9 +300,9 @@ class MainApp2 {
 		];
 		const pieceDataArr = [
 			{pos: [2, 1], color: "red", shapeIdx: pieceShapeEnums.sq1},
-			{pos: [4, 2], color: "green", shapeIdx: pieceShapeEnums.sq3},
-			{pos: [6, 1], color: "blue", shapeIdx: pieceShapeEnums.el},
-			{pos: [2, 4], color: "yellow", shapeIdx: pieceShapeEnums.tee},
+			{pos: [6, 1], color: "green", shapeIdx: pieceShapeEnums.sq3},
+			{pos: [3, 2], color: "blue", shapeIdx: pieceShapeEnums.el},
+			{pos: [1, 4], color: "yellow", shapeIdx: pieceShapeEnums.tee},
 			{pos: [6, 4], color: "peru", shapeIdx: pieceShapeEnums.sq1},
 		];
 		this.pieceContainer = new PieceContainer(this, pieceDataArr, pieceShapes, this.boardX, this.boardY, this.pieceSize);
@@ -377,15 +394,14 @@ class MainApp2 {
 				this.drawPrim.drawCircle(pntM, .05, "green");
 			}
 		}
+		// end game winner/loser
 		if (this.loser) {
 			this.drawPrim.drawText([3.5, 2.5], [1, .15]
 			, "OOPS !!"
 			, "darkred", "#0002");
 		}
-
 		const scale = .125 + this.winCount * .035;
 		const offset = -scale / 2;
-
 		if (this.winCount > 0) {
 			this.drawPrim.drawImage(this.bm, [3.5 + offset, 2.5 + offset], [scale, scale]);
 		}
