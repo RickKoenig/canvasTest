@@ -1,8 +1,10 @@
 'use strict';
 
+let curPieces = 0;
+
 class Piece {
 	constructor(o, pieceSize, shapeData) {
-		this.pos = o.pos;
+		this.pos = vec2.clone(o.pos);
 		this.color = o.color;
 		this.shapeData = shapeData;
 		this.pieceSize = pieceSize;
@@ -52,7 +54,7 @@ class PieceContainer {
 		this.selectDist = smaller * .5;
 
 		this.container = [];
-		for (const po of pieceData) {
+		for (const po of pieceData.piecePos) {
 			const shapeData = pieceShapes[po.shapeIdx];
 			const p = new Piece(po, pieceSize, shapeData);
 			this.container.push(p);
@@ -185,17 +187,15 @@ class Board {
 
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
-class MainApp2 {
+class MainApp {
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
-		return MainApp2.numInstances;
+		return MainApp.numInstances;
 	}
 
 	constructor() {
-		console.log("\n############# creating instance of MainApp2");
-		++MainApp2.numInstances;
-		this.boardX = 8;
-		this.boardY = 6;
+		console.log("\n############# creating instance of MainApp");
+		++MainApp.numInstances;
 
 		// vertical panel UI
 		this.vp = document.getElementById("verticalPanel");
@@ -224,7 +224,18 @@ class MainApp2 {
 
 		// USER before UI built
 		this.#userInit();
+		this.#resetGraphics();
 
+		// USER build UI
+		this.#userBuildUI();
+
+		// start it off
+		this.dirty = true; // draw at least once
+		this.dirtyCount = 100;
+		this.#animate();
+	}
+
+	#resetGraphics() {
 		// fire up all instances of the classes that are needed
 		// vp (vertical panel) is for UI trans, scale info, reset and USER
 		const safe = .25;
@@ -240,14 +251,6 @@ class MainApp2 {
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
 		this.graphPaper = new GraphPaper(this.drawPrim);
-
-		// USER build UI
-		this.#userBuildUI();
-
-		// start it off
-		this.dirty = true; // draw at least once
-		this.dirtyCount = 100;
-		this.#animate();
 	}
 
 	#initBoard() {
@@ -255,67 +258,32 @@ class MainApp2 {
 	}
 
 	#initPieces() {
+		console.log("initpieces, curpieces = " + curPieces);
 		// slide objects and container
 		this.pieceSize = .875;
 		// build pieces
-		const pieceShapeEnums = makeEnum(["sq1", "sq2", "sq3", "tee", "el"]);
-		const pieceShapes = [
-			// sq1
-			[
-				[0, 0]
-			],
-			// sq2
-			[
-				[0, 0],
-				[0, 1],
-				[1, 0],
-				[1, 1]
-			],
-			// sq3
-			[
-				[-1, -1],
-				[-1, 0],
-				[-1, 1],
-				[0, -1],
-				[0, 0],
-				[0, 1],
-				[1, -1],
-				[1, 0],
-				[1, 1]
-			],
-			// tee
-			[
-				[-1, 0],
-				[0, 0],
-				[1, 0],
-				[0, -1]
-			],
-			// el
-			[
-				[0, 2],
-				[0, 1],
-				[0, 0],
-				[1, 0]
-			],
-		];
-		const pieceDataArr = [
-			{pos: [2, 1], color: "red", shapeIdx: pieceShapeEnums.sq1},
-			{pos: [6, 1], color: "green", shapeIdx: pieceShapeEnums.sq3},
-			{pos: [3, 2], color: "blue", shapeIdx: pieceShapeEnums.el},
-			{pos: [1, 4], color: "yellow", shapeIdx: pieceShapeEnums.tee},
-			{pos: [6, 4], color: "peru", shapeIdx: pieceShapeEnums.sq1},
-		];
-		this.pieceContainer = new PieceContainer(this, pieceDataArr, pieceShapes, this.boardX, this.boardY, this.pieceSize);
+		this.curPieceData = pieceData.pieceDataArrArr[curPieces];
+		this.boardX = this.curPieceData.boardSize[0];
+		this.boardY = this.curPieceData.boardSize[1];
+	
+		this.pieceContainer = new PieceContainer(this, this.curPieceData
+			, pieceData.shapes, this.boardX, this.boardY, this.pieceSize);
 		this.winner = false;
 		this.loser = false;
+	}
+
+	#nextBoard(dir) {
+		console.log("next board with " + dir);
+		curPieces = moveWrap(curPieces, pieceData.pieceDataArrArr.length, dir);
+		this.#userInit();
+		this.#resetGraphics();
 	}
 
 	// USER: add more members or classes to MainApp
 	#userInit() {
 		// user init section
-
-		this.#initBoard();
 		this.#initPieces();
+		this.#initBoard();
 		this.winCount = 0; // frame counter
 		this.solveSpeed = 10;
 		this.slow = 20;
@@ -325,13 +293,14 @@ class MainApp2 {
 		this.AvgFps = 0;
 		this.oldTime; // for delta time
 		this.AvgFpsObj = new Runavg(500);
-		
 	}
 
 	#userBuildUI() {
 		makeEle(this.vp, "button", null, null, "Reset Pieces", this.#initPieces.bind(this));
 		makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 		makeEle(this.vp, "hr");
+		makeEle(this.vp, "button", null, null, "Next board", this.#nextBoard.bind(this, 1));
+		makeEle(this.vp, "button", null, null, "Prev board", this.#nextBoard.bind(this, -1));
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
 	}		
@@ -412,6 +381,7 @@ class MainApp2 {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
+		infoStr += "\nboard = " + this.curPieceData.name;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
@@ -463,5 +433,5 @@ class MainApp2 {
 	}
 }
 
-const mainApp = new MainApp2();
-console.log("Num instances of MainApp2 = " + MainApp2.getNumInstances()); // and test static methods
+const mainApp = new MainApp();
+console.log("Num instances of MainApp = " + MainApp.getNumInstances()); // and test static methods

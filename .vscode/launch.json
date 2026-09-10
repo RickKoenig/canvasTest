@@ -20,8 +20,8 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost, next puzzle undecided 2",
-            "url": "http://localhost:88/plotter2d/nextPuzzle/indexMobile2D2.html",
+            "name": "Launch Chrome against localhost, SLIDER",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/slider.html",
             "webRoot": "${workspaceFolder}"
         },
         {
