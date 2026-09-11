@@ -6,6 +6,7 @@ class Piece {
 	constructor(o, pieceSize, shapeData) {
 		this.pos = vec2.clone(o.pos);
 		this.color = o.color;
+		this.move = o.move;
 		this.shapeData = shapeData;
 		this.pieceSize = pieceSize;
 		this.minPoint = vec2.clone(shapeData[0]);
@@ -23,22 +24,21 @@ class Piece {
 		return pos;
 	}
 
-	draw(user, hilit) {
-		const smallerRad = [this.pieceSize, this.pieceSize];
-		const smallWidth = .015;
-		const bigWidth = .08;
-		const darkCol = "#0004";
+	draw(user, hilit, idx) {
+		//const smallerRad = [this.pieceSize, this.pieceSize];
+		const smallerRad = [.995, .995];
+		const bigWidth = .02;
 		const sqPos = vec2.create();
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, this.pos);
-			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
-			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : darkCol);
-			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, smallWidth, "white");
+			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "white");
 		}
-		user.drawPrim.drawRectangleCenter(this.pos, [this.pieceSize / 4, this.pieceSize / 4], "white");
-		user.drawPrim.drawRectangleCenterO(this.pos, [this.pieceSize / 4, this.pieceSize / 4], smallWidth, "black");
-		const textSize = .05;
-	    user.drawPrim.drawText(this.pos, [textSize, textSize], "M");
+		for (const offsetPos of this.shapeData) {
+			vec2.add(sqPos, offsetPos, this.pos);
+			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
+		}
+			user.drawPrim.drawText(this.pos, [.1, .1]
+			, idx, "white", "black");
 	}
 }
 
@@ -51,9 +51,11 @@ class PieceContainer {
 		this.boardY = boardY;
 		this.user = user;
 		const smaller = pieceSize;
-		this.selectDist = smaller * .5;
+		//this.selectDist = smaller * .5;
+		//this.selectDist2 = this.selectDist * this.selectDist;
 
 		this.container = [];
+		this.dragOffset = [0, 0];
 		for (const po of pieceData.piecePos) {
 			const shapeData = pieceShapes[po.shapeIdx];
 			const p = new Piece(po, pieceSize, shapeData);
@@ -105,14 +107,27 @@ class PieceContainer {
 			case this.statesEnum.IDLE:
 				if (mbut && !lmbut) {
 					// PICK up piece if within range
+					const roundMouse = [Math.round(fmxy[0]), Math.round(fmxy[1])];
+					const sum = vec2.create();
 					for (let i = 0; i < this.container.length; ++i) {
-						const userMouse = fmxy;
-						const curPiece = this.container[i].pos;
-						const dist = vec2.dist(userMouse, curPiece);
-						if (dist < this.selectDist) {
-							this.state = this.statesEnum.DRAGGING;
-							this.idx = i;
-							//console.log("switch to DRAG");
+						const curPiece = this.container[i];
+						if (!curPiece.move) {
+							continue;
+						}
+						const curPiecePos = curPiece.pos;
+						const curPieceShapeData = curPiece.shapeData;
+						for (const s of curPieceShapeData) {
+							vec2.add(sum, s, curPiecePos);
+							if (sum[0] == roundMouse[0] && sum[1] == roundMouse[1]) {
+								this.state = this.statesEnum.DRAGGING;
+								this.idx = i;
+								this.dragOffset = vec2.create();
+								vec2.sub(this.dragOffset, curPiecePos, roundMouse);
+								//console.log("switch to DRAG");
+								break;
+							}
+						}
+						if (this.state == this.statesEnum.DRAGGING) {
 							break;
 						}
 					}
@@ -124,6 +139,7 @@ class PieceContainer {
 					this.state = this.statesEnum.IDLE;
 					const curObjPos = this.container[this.idx].pos;
 					vec2.snap(curObjPos, curObjPos, 0);
+					this.dragOffset = [0, 0];
 					//console.log("switch to IDLE");
 				}
 				break;
@@ -132,16 +148,18 @@ class PieceContainer {
 		switch(this.state) {
 			// MOVE piece
 			case this.statesEnum.DRAGGING:
+				// adjust stuff for drag offset
 				const pce = this.container[this.idx];
 				const curPos = pce.pos;
 				let mousePos = fmxy;
-				this.endPos = vec2.clone(mousePos);
+				let endPos = vec2.clone(mousePos);
+				vec2.add(endPos, endPos, this.dragOffset);
 				// keep within bounds of the board
 				this.startPos = vec2.clone(curPos);
-				this.endPos = pce.range(this.boardX, this.boardY, this.endPos); // keep the piece on the board
+				endPos = pce.range(this.boardX, this.boardY, endPos); // keep the piece on the board
 				this.avoidLocs = this.#makeAvoidPieces(); // take container of pieces and remove self and just make arr of pos
 				const newPos = solvePath(
-					this.startPos, this.endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
+					this.startPos, endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPos, newPos); // update container with curPiece REFERENCE
 				break;
 		}
@@ -159,7 +177,7 @@ class PieceContainer {
 			// reverse order, for UI
 			for (let i = this.container.length - 1; i >= 0; --i) {
 				const so = this.container[i];
-				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx);
+				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i);
 			}
 		}
 	}
@@ -359,7 +377,9 @@ class MainApp {
 			// show line where we would like to go
 			if (isDragging) {
 				const curPnt = this.pieceContainer.container[this.pieceContainer.idx];
-				this.drawPrim.drawLine(pntM, curPnt.pos, .025, "black");
+				const sum = vec2.create();
+				vec2.sub(sum, curPnt.pos, this.pieceContainer.dragOffset);
+				this.drawPrim.drawLine(pntM, sum, .025, "black");
 				this.drawPrim.drawCircle(pntM, .05, "green");
 			}
 		}
