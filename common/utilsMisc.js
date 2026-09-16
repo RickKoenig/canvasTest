@@ -29,6 +29,7 @@ if (!window.Runavg) {
 			return this.sum/this.arr.length;
 		}
 	}
+	window.Runavg = Runavg;
 }
 
 // convert float number to css percent

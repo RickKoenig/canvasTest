@@ -1,18 +1,16 @@
 'use strict';
 
-let curPieces = 0;
-
 class Piece {
-	constructor(o, pieceSize, shapeData) {
+	constructor(o, pieceSize) {
 		this.pos = vec2.clone(o.pos);
 		this.color = o.color;
-		this.move = o.move;
-		this.shapeData = shapeData;
+		this.id = o.id;
+		this.shapeData = o.shapeData;
 		this.pieceSize = pieceSize;
-		this.minPoint = vec2.clone(shapeData[0]);
-		this.maxPoint = vec2.clone(shapeData[0]);
-		for (let i = 1; i < shapeData.length; ++i) {
-			const sd = shapeData[i];
+		this.minPoint = vec2.clone(this.shapeData[0]);
+		this.maxPoint = vec2.clone(this.shapeData[0]);
+		for (let i = 1; i < this.shapeData.length; ++i) {
+			const sd = this.shapeData[i];
 			vec2.min(this.minPoint, this.minPoint, sd);
 			vec2.max(this.maxPoint, this.maxPoint, sd);
 		}
@@ -27,39 +25,42 @@ class Piece {
 	draw(user, hilit, idx) {
 		//const smallerRad = [this.pieceSize, this.pieceSize];
 		const smallerRad = [.995, .995];
-		const bigWidth = .02;
+		const bigWidth = .06;
 		const sqPos = vec2.create();
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, this.pos);
-			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "white");
+			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "peru");
 		}
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, this.pos);
 			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
 		}
-			user.drawPrim.drawText(this.pos, [.1, .1]
-			, idx, "white", "black");
+		user.drawPrim.drawText(this.pos, [.1, .1]
+		, this.id, "white", "black");
 	}
 }
 
 class PieceContainer {
 	// pieces are on whole numbers 0, 0 to boardX -1, boardY - 1
-	constructor(user, pieceData, pieceShapes, boardX, boardY, pieceSize) {
+	constructor(user, pieceData, boardX, boardY, pieceSize) {
 		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
 		this.boardX = boardX;
 		this.boardY = boardY;
 		this.user = user;
 		const smaller = pieceSize;
-		//this.selectDist = smaller * .5;
-		//this.selectDist2 = this.selectDist * this.selectDist;
 
-		this.container = [];
 		this.dragOffset = [0, 0];
+		this.container = [];
 		for (const po of pieceData.piecePos) {
-			const shapeData = pieceShapes[po.shapeIdx];
-			const p = new Piece(po, pieceSize, shapeData);
+			const p = new Piece(po, pieceSize);
 			this.container.push(p);
+		}
+
+		this.goalContainer = [];
+		for (const go of pieceData.goalPos) {
+			const p = new Piece(go, pieceSize);
+			this.goalContainer.push(p);
 		}
 
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
@@ -111,7 +112,7 @@ class PieceContainer {
 					const sum = vec2.create();
 					for (let i = 0; i < this.container.length; ++i) {
 						const curPiece = this.container[i];
-						if (!curPiece.move) {
+						if (curPiece.id < 0) {
 							continue;
 						}
 						const curPiecePos = curPiece.pos;
@@ -174,10 +175,11 @@ class PieceContainer {
 				this.user.drawPrim.drawRectangleCenter(al, [.8, .8], "#080");
 			}
 		} else {
+			const container = this.user.showGoal ? this.goalContainer : this.container;
 			// reverse order, for UI
-			for (let i = this.container.length - 1; i >= 0; --i) {
-				const so = this.container[i];
-				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i);
+			for (let i = container.length - 1; i >= 0; --i) {
+				const so = container[i];
+				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx);
 			}
 		}
 	}
@@ -241,6 +243,7 @@ class MainApp {
 		DrawPrimitives.loadImages(this, list);
 
 		// USER before UI built
+		this.curPieces = 12;
 		this.#userInit();
 		this.#resetGraphics();
 
@@ -276,23 +279,41 @@ class MainApp {
 	}
 
 	#initPieces() {
-		console.log("initpieces, curpieces = " + curPieces);
+		console.log("initpieces, curpieces = " + this.curPieces);
 		// slide objects and container
 		this.pieceSize = .875;
 		// build pieces
-		this.curPieceData = pieceData.pieceDataArrArr[curPieces];
+		// modify some pieceData
+		const touchUpLevel07 = pieceData.pieceDataArrArr.find(user => user.name === "level07");
+		
+		// add complicated border to level07, towers of hanoi puzzle
+		// top border
+		for (let j = 0; j < 5; ++j) {
+			for (let i = 0; i < 11 - j; ++i) {
+				touchUpLevel07.piecePos.push({pos: [i, j],id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+
+			}
+		}
+		// bottom border
+		for (let j = 9; j >= 6; --j) {
+			for (let i = -j + 13; i < 2 + j; ++i) {
+				touchUpLevel07.piecePos.push({pos: [i, j],id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+			}
+		}
+		
+		this.curPieceData = pieceData.pieceDataArrArr[this.curPieces];
 		this.boardX = this.curPieceData.boardSize[0];
 		this.boardY = this.curPieceData.boardSize[1];
 	
 		this.pieceContainer = new PieceContainer(this, this.curPieceData
-			, pieceData.shapes, this.boardX, this.boardY, this.pieceSize);
+			, this.boardX, this.boardY, this.pieceSize);
 		this.winner = false;
 		this.loser = false;
 	}
 
 	#nextBoard(dir) {
 		console.log("next board with " + dir);
-		curPieces = moveWrap(curPieces, pieceData.pieceDataArrArr.length, dir);
+		this.curPieces = moveWrap(this.curPieces, pieceData.pieceDataArrArr.length, dir);
 		this.#userInit();
 		this.#resetGraphics();
 	}
@@ -321,6 +342,10 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Prev board", this.#nextBoard.bind(this, -1));
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 		makeEle(this.vp, "hr");
+        makeEle(this.vp, "pre", null, null, "Show Goal");
+		this.eles.showGoal = makeEle(this.vp, "input", "showGoal", null, "ho", (val) => {
+			this.showGoal = val;
+		}, "checkbox");
 	}		
 	
 	#userProc() {
@@ -401,7 +426,7 @@ class MainApp {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
-		infoStr += "\nboard = " + this.curPieceData.name;
+		infoStr += "\nboard = " + this.curPieceData.name + "\nidx = " + this.curPieces;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
