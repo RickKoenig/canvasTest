@@ -52,6 +52,8 @@ const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
 };
 
 const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveSpeedA) {
+    const disable = false;
+    if (disable) return vec2.clone(endPos);
     const slow = 1 / slowA;
     const slow2 = slow * slow;
     const moveV = vec2.create();

@@ -279,6 +279,14 @@ class DrawPrimitives {
         }
     }
 
+    drawImageCenter(img, center, size, flipx = false, flipy = false) {
+        const corner = vec2.clone(center);
+        const sizeo2 = vec2.clone(size);
+        vec2.scale(sizeo2, sizeo2, .5);
+        vec2.sub(corner, corner, sizeo2);
+
+        this.drawImage(img, corner, size, flipx, flipy);
+    }
     // assume USER or NDC space for now
     drawImage(img, corner, size, flipx = false, flipy = false) {
         this.ctx.save();

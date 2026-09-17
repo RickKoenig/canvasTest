@@ -72,11 +72,23 @@ class PieceContainer {
 		return this.state == this.statesEnum.DRAGGING;
 	}
 
-	getLoser() {
-		return false;
+	// achieved over total goals
+	getGoalsMet() {
+		let goalsMet = 0;
+		for (const oneGoal of this.goalContainer) {
+			for (const onePiece of this.container) {
+				if (oneGoal.id == onePiece.id 
+					&& oneGoal.pos[0] == onePiece.pos[0] 
+					&& oneGoal.pos[1] == onePiece.pos[1]) {
+						++goalsMet;
+						break;
+				}
+			}
+		}
+		return [goalsMet, this.goalContainer.length];
 	}
 
-	getWinner() {
+	getLoser() {
 		return false;
 	}
 
@@ -279,6 +291,7 @@ class MainApp {
 	}
 
 	#initPieces() {
+		this.winCount = 0;
 		console.log("initpieces, curpieces = " + this.curPieces);
 		// slide objects and container
 		this.pieceSize = .875;
@@ -354,7 +367,14 @@ class MainApp {
 		const lastmbut = this.input.mouse.lmbut[Mouse.LEFT];
 		this.pieceContainer.proc(mbut, lastmbut, this.plotter2d.userMouse);
 
-		this.winner = this.pieceContainer.getWinner();
+		this.goals = this.pieceContainer.getGoalsMet();
+		if (this.goals[1] == 0) {
+			this.winner =  false; // can't win if no goals
+		} else {
+			this.winner = this.goals[0] == this.goals[1];
+		}
+
+
 		if (this.winner) {
 			this.loser = false;
 		} else {
@@ -414,10 +434,12 @@ class MainApp {
 			, "OOPS !!"
 			, "darkred", "#0002");
 		}
-		const scale = .125 + this.winCount * .035;
-		const offset = -scale / 2;
+		const scale = .125 + this.winCount * .008;
+		const offset = -.5;
 		if (this.winCount > 0) {
-			this.drawPrim.drawImage(this.bm, [3.5 + offset, 2.5 + offset], [scale, scale]);
+			this.drawPrim.drawImageCenter(this.bm
+				, [this.boardX / 2 + offset, this.boardY / 2 + offset]
+				, [scale, scale]);
 		}
 	}
 
@@ -427,6 +449,7 @@ class MainApp {
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\nboard = " + this.curPieceData.name + "\nidx = " + this.curPieces;
+		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
