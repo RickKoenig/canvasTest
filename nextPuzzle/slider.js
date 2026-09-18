@@ -23,7 +23,6 @@ class Piece {
 	}
 
 	draw(user, hilit, idx) {
-		//const smallerRad = [this.pieceSize, this.pieceSize];
 		const smallerRad = [.995, .995];
 		const bigWidth = .06;
 		const sqPos = vec2.create();
@@ -48,7 +47,6 @@ class PieceContainer {
 		this.boardX = boardX;
 		this.boardY = boardY;
 		this.user = user;
-		const smaller = pieceSize;
 
 		this.dragOffset = [0, 0];
 		this.container = [];
@@ -66,6 +64,7 @@ class PieceContainer {
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
+		this.user.pIdx = -1;
 	}
 
 	isDragging() {
@@ -129,11 +128,13 @@ class PieceContainer {
 						}
 						const curPiecePos = curPiece.pos;
 						const curPieceShapeData = curPiece.shapeData;
+						this.user.pIdx = -1;
 						for (const s of curPieceShapeData) {
 							vec2.add(sum, s, curPiecePos);
 							if (sum[0] == roundMouse[0] && sum[1] == roundMouse[1]) {
 								this.state = this.statesEnum.DRAGGING;
 								this.idx = i;
+								this.user.pIdx = i;
 								this.dragOffset = vec2.create();
 								vec2.sub(this.dragOffset, curPiecePos, roundMouse);
 								//console.log("switch to DRAG");
@@ -256,6 +257,7 @@ class MainApp {
 
 		// USER before UI built
 		this.curPieces = 12;
+		this.pIdx = -1;
 		this.#userInit();
 		this.#resetGraphics();
 
@@ -448,8 +450,9 @@ class MainApp {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
-		infoStr += "\nboard = " + this.curPieceData.name + "\nidx = " + this.curPieces;
+		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curPieces;
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
+		infoStr += "\npIdx = " + this.pIdx;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
