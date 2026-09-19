@@ -113,6 +113,13 @@ class PieceContainer {
 		return avoidLocs;
 	}
 
+	// move pieces with whole number increments
+	snapMovePiece() {
+		if (this.idx < 0) return;
+		console.log("in snapmovepiece");
+		++this.container[this.idx].pos[1];
+	}
+
 	proc(mbut, lmbut, fmxy) {
 		// change states
 		switch(this.state) {
@@ -170,7 +177,7 @@ class PieceContainer {
 				vec2.add(endPos, endPos, this.dragOffset);
 				// keep within bounds of the board
 				this.startPos = vec2.clone(curPos);
-				endPos = pce.range(this.boardX, this.boardY, endPos); // keep the piece on the board
+				//endPos = pce.range(this.boardX, this.boardY, endPos); // keep the piece on the board
 				this.avoidLocs = this.#makeAvoidPieces(); // take container of pieces and remove self and just make arr of pos
 				const newPos = solvePath(
 					this.startPos, endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
@@ -258,6 +265,7 @@ class MainApp {
 		// USER before UI built
 		this.curPieces = 12;
 		this.pIdx = -1;
+		this.arrowUp = 0;
 		this.#userInit();
 		this.#resetGraphics();
 
@@ -367,6 +375,40 @@ class MainApp {
 		// proc
 		const mbut = this.input.mouse.mbut[Mouse.LEFT];
 		const lastmbut = this.input.mouse.lmbut[Mouse.LEFT];
+		switch(this.input.keyboard.key) {
+			case  "c".charCodeAt(0):
+				console.log("key c hit!!");
+				break;
+			case  "d".charCodeAt(0):
+				console.log("key d hit!!");
+				break;
+			case  keyTable.keyCodes.UP:
+				console.log("key UP hit!!");
+				++this.arrowUp;
+				this.pieceContainer.snapMovePiece();
+				break;
+			case  keyTable.keyCodes.DOWN:
+				console.log("key DOWN hit!!");
+				break;
+		}
+
+/*
+		const key = this.input.keyboard.key;
+		const keyCodes = keyTable.keyCodes;
+		this.editOptions.rotStep = 0;
+		let colorChange = 0;
+		switch(key) {
+		case keyCodes.RIGHT:
+			this.editOptions.rotStep -= MonoShape.snapAmount; // clockwise
+			break;
+		case keyCodes.LEFT:
+			this.editOptions.rotStep += MonoShape.snapAmount; // counter clockwise
+			break;
+*/
+
+
+
+
 		this.pieceContainer.proc(mbut, lastmbut, this.plotter2d.userMouse);
 
 		this.goals = this.pieceContainer.getGoalsMet();
@@ -453,6 +495,7 @@ class MainApp {
 		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curPieces;
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pIdx;
+		infoStr += "\narrow Up = " + this.arrowUp;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
