@@ -7,7 +7,7 @@ const dirVecs = [
     [0, 1] // up
 ];
 
-const avoid1Piece = function(startP, endP, avoidP, pieceSize) {
+const avoid1Piece = function(endP, avoidP, pieceSize) {
     const checkP = vec2.clone(endP);
     let pen = Number.MAX_VALUE;
     const avoidX = avoidP[0];
@@ -40,10 +40,10 @@ const avoid1Piece = function(startP, endP, avoidP, pieceSize) {
     return pen;
 };
 
-const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
+const avoidPieces = function(endP, avoidPs, pieceSize) {
     for (let i = 0; i < avoidPs.length; ++i) {
         const avoidP = avoidPs[i];
-        let result = avoid1Piece(startP, endP, avoidP, pieceSize);
+        let result = avoid1Piece(endP, avoidP, pieceSize);
         if (result > 0) {
             return result;
         }
@@ -52,7 +52,7 @@ const avoidPieces = function(startP, endP, avoidPs, pieceSize) {
 };
 
 const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveSpeedA) {
-    const disable = true;
+    const disable = false;
     if (disable) return vec2.clone(endPos);
     const slow = 1 / slowA;
     const slow2 = slow * slow;
@@ -68,7 +68,7 @@ const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveS
         vec2.scale(moveV, moveV, slow);
         const oldPos = vec2.clone(curPos);
         vec2.add(curPos, curPos, moveV); // see if this new curPos penetrates
-        let pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        let pen = avoidPieces(curPos, avoidLocs, pieceSize);
         if (!pen) {
             continue; // move freely
         }
@@ -78,7 +78,7 @@ const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveS
         const signY = Math.sign(endPos[1] - curPos[1]);
         // see if penetrates right left
         curPos[0] += slow * signX; // move left right
-        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        pen = avoidPieces(curPos, avoidLocs, pieceSize);
         if (pen) {
             // yes left right blocked, restrict to up and down
             vec2.copy(curPos, oldPos); // go back to before penetration
@@ -86,7 +86,7 @@ const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveS
                 return curPos;
             }
             curPos[1] += slow * signY;
-            pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+            pen = avoidPieces(curPos, avoidLocs, pieceSize);
             if (pen) {
                 // totally blocked
                 vec2.copy(curPos, oldPos); // go back to before penetration
@@ -98,7 +98,7 @@ const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveS
         vec2.copy(curPos, oldPos); // go back to before penetration
         // see if penetrates up down
         curPos[1] += slow * signY; // move up down
-        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        pen = avoidPieces(curPos, avoidLocs, pieceSize);
         if (!pen) {
             continue;
         }
@@ -108,7 +108,7 @@ const solvePath = function(startPos, endPos, avoidLocs, pieceSize, slowA, solveS
             return curPos;
         }
         curPos[0] += slow * signX;
-        pen = avoidPieces(oldPos, curPos, avoidLocs, pieceSize);
+        pen = avoidPieces(curPos, avoidLocs, pieceSize);
         if (pen) {
             // totally blocked
             vec2.copy(curPos, oldPos); // go back to before penetration
