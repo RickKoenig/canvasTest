@@ -9,6 +9,7 @@ class Piece {
 		this.pieceSize = pieceSize;
 		this.minPoint = vec2.clone(this.shapeData[0]);
 		this.maxPoint = vec2.clone(this.shapeData[0]);
+		// calc bounding box for shape
 		for (let i = 1; i < this.shapeData.length; ++i) {
 			const sd = this.shapeData[i];
 			vec2.min(this.minPoint, this.minPoint, sd);
@@ -34,8 +35,8 @@ class Piece {
 			vec2.add(sqPos, offsetPos, this.pos);
 			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
 		}
-		//const txt = this.id;
-		const txt = idx;
+		//const txt = this.id; // print id
+		const txt = idx; // print idx
 		user.drawPrim.drawText(this.pos, [.1, .1]
 		, txt, "white", "black");
 	}
@@ -123,6 +124,10 @@ class PieceContainer {
 		const pce = this.container[this.idx];
 		const pos = pce.pos;
 		vec2.add(pos, pos, dir); // move to new location
+		const disable = false;
+		if (disable) {
+			return true;
+		}
 		// check borders
 		if (pos[0] < -pce.minPoint[0]
 			|| pos[1] < -pce.minPoint[1]
@@ -287,7 +292,12 @@ class MainApp {
 		DrawPrimitives.loadImages(this, list);
 
 		// USER before UI built
-		this.curPieces = 12;
+
+		const startLevel = "levelm";
+		this.curPieces = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		this.curPieces = Math.max(0, this.curPieces);
+		console.log("start on level = " + startLevel);
+
 		this.pIdx = -1;
 		this.#userInit();
 		this.#resetGraphics();
