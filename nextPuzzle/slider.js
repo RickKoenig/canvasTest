@@ -1,8 +1,9 @@
 'use strict';
 
+// doesn't need pos
+// pos stored somewhere else for speed in solving
 class Piece {
 	constructor(o, pieceSize) {
-		this.pos = vec2.clone(o.pos);
 		this.color = o.color;
 		this.id = o.id;
 		this.shapeData = o.shapeData;
@@ -23,6 +24,43 @@ class Piece {
 		return pos;
 	}
 
+	draw(user, hilit, idx, pos) {
+		const smallerRad = [.995, .995];
+		const bigWidth = .06;
+		const sqPos = vec2.create();
+		for (const offsetPos of this.shapeData) {
+			vec2.add(sqPos, offsetPos, pos);
+			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "peru");
+		}
+		for (const offsetPos of this.shapeData) {
+			vec2.add(sqPos, offsetPos, pos);
+			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
+		}
+		const txt = this.id; // print id
+		//const txt = idx; // print idx
+		user.drawPrim.drawText(pos, [.1, .1]
+		, txt, "white", "black");
+	}
+}
+
+// needs pos, doen't need to check borders
+class GoalPiece {
+	constructor(o, pieceSize) {
+		this.pos = vec2.clone(o.pos);
+		this.color = o.color;
+		this.id = o.id;
+		this.shapeData = o.shapeData;
+		this.pieceSize = pieceSize;
+		this.minPoint = vec2.clone(this.shapeData[0]);
+		this.maxPoint = vec2.clone(this.shapeData[0]);
+		// calc bounding box for shape
+		for (let i = 1; i < this.shapeData.length; ++i) {
+			const sd = this.shapeData[i];
+			vec2.min(this.minPoint, this.minPoint, sd);
+			vec2.max(this.maxPoint, this.maxPoint, sd);
+		}
+	}
+
 	draw(user, hilit, idx) {
 		const smallerRad = [.995, .995];
 		const bigWidth = .06;
@@ -35,15 +73,15 @@ class Piece {
 			vec2.add(sqPos, offsetPos, this.pos);
 			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
 		}
-		//const txt = this.id; // print id
-		const txt = idx; // print idx
+		const txt = this.id; // print id
+		//const txt = idx; // print idx
 		user.drawPrim.drawText(this.pos, [.1, .1]
 		, txt, "white", "black");
 	}
 }
 
 class PieceContainer {
-	// pieces are on whole numbers 0, 0 to boardX -1, boardY - 1
+	// pieces rest on whole numbers 0, 0 to boardX -1, boardY - 1
 	constructor(user, pieceData, boardX, boardY, pieceSize) {
 		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
@@ -52,15 +90,18 @@ class PieceContainer {
 		this.user = user;
 
 		this.dragOffset = [0, 0];
-		this.container = [];
+		this.container = []; // doesn't have the pos of the piece
+		this.posContainer = []; // just holds the pos of a piece
+		this.posContainers = []; // many configurations of the pieces, NYI
 		for (const po of pieceData.piecePos) {
 			const p = new Piece(po, pieceSize);
 			this.container.push(p);
+			this.posContainer.push(vec2.clone(po.pos));
 		}
 
 		this.goalContainer = [];
 		for (const go of pieceData.goalPos) {
-			const p = new Piece(go, pieceSize);
+			const p = new GoalPiece(go, pieceSize);
 			this.goalContainer.push(p);
 		}
 
@@ -78,10 +119,12 @@ class PieceContainer {
 	getGoalsMet() {
 		let goalsMet = 0;
 		for (const oneGoal of this.goalContainer) {
-			for (const onePiece of this.container) {
+			for (let i = 0; i < this.container.length; ++i) {
+				const piecePos = this.posContainer[i];
+				const onePiece = this.container[i];
 				if (oneGoal.id == onePiece.id 
-					&& oneGoal.pos[0] == onePiece.pos[0] 
-					&& oneGoal.pos[1] == onePiece.pos[1]) {
+					&& oneGoal.pos[0] == piecePos[0] 
+					&& oneGoal.pos[1] == piecePos[1]) {
 						++goalsMet;
 						break;
 				}
@@ -103,11 +146,12 @@ class PieceContainer {
 				continue;
 			}
 			const po2 = container[i]; // other pieces
+			const po2Pos = this.posContainer[i];
 			// do a convolution, some overlap
 			for (const sq2 of po2.shapeData) {
 				for (const sq1 of po1.shapeData) {
 					const offset = vec2.create();
-					vec2.add(offset, sq2, po2.pos);
+					vec2.add(offset, sq2, po2Pos);
 					vec2.sub(offset, offset, sq1);
 					avoidLocs.push(offset);
 				}
@@ -122,7 +166,7 @@ class PieceContainer {
 		if (this.idx < 0) return;
 		console.log("\nin snapmovepiece with " + dir);
 		const pce = this.container[this.idx];
-		const pos = pce.pos;
+		const pos = this.posContainer[this.idx];
 		vec2.add(pos, pos, dir); // move to new location
 		const disable = false;
 		if (disable) {
@@ -162,7 +206,7 @@ class PieceContainer {
 						if (curPiece.id < 0) {
 							continue;
 						}
-						const curPiecePos = curPiece.pos;
+						const curPiecePos = this.posContainer[i];
 						const curPieceShapeData = curPiece.shapeData;
 						this.user.pIdx = -1;
 						for (const s of curPieceShapeData) {
@@ -187,7 +231,7 @@ class PieceContainer {
 				if (!mbut && lmbut) {
 					// DROP piece
 					this.state = this.statesEnum.IDLE;
-					const curObjPos = this.container[this.idx].pos;
+					const curObjPos = this.posContainer[this.idx];
 					vec2.snap(curObjPos, curObjPos, 0);
 					this.dragOffset = [0, 0];
 					//console.log("switch to IDLE");
@@ -200,7 +244,7 @@ class PieceContainer {
 			case this.statesEnum.DRAGGING:
 				// adjust stuff for drag offset
 				const pce = this.container[this.idx];
-				const curPos = pce.pos;
+				const curPos = this.posContainer[this.idx];
 				let mousePos = fmxy;
 				let endPos = vec2.clone(mousePos);
 				vec2.add(endPos, endPos, this.dragOffset);
@@ -228,7 +272,8 @@ class PieceContainer {
 			// reverse order, for UI
 			for (let i = container.length - 1; i >= 0; --i) {
 				const so = container[i];
-				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i);
+				const pos = this.posContainer[i];
+				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i, pos);
 			}
 		}
 	}
@@ -480,9 +525,9 @@ class MainApp {
 			}
 			// show line where we would like to go
 			if (isDragging) {
-				const curPnt = this.pieceContainer.container[this.pieceContainer.idx];
+				const curPntPos = this.pieceContainer.posContainer[this.pieceContainer.idx];
 				const sum = vec2.create();
-				vec2.sub(sum, curPnt.pos, this.pieceContainer.dragOffset);
+				vec2.sub(sum, curPntPos, this.pieceContainer.dragOffset);
 				this.drawPrim.drawLine(pntM, sum, .025, "black");
 				this.drawPrim.drawCircle(pntM, .05, "green");
 			}
