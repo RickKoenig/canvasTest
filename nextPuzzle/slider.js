@@ -36,8 +36,9 @@ class Piece {
 			vec2.add(sqPos, offsetPos, pos);
 			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
 		}
-		const txt = this.id; // print id
+		//const txt = this.id; // print id
 		//const txt = idx; // print idx
+		const txt = "" + idx + "," + this.id;
 		user.drawPrim.drawText(pos, [.1, .1]
 		, txt, "white", "black");
 	}
@@ -83,6 +84,7 @@ class GoalPiece {
 class PieceContainer {
 	// pieces rest on whole numbers 0, 0 to boardX -1, boardY - 1
 	constructor(user, pieceData, boardX, boardY, pieceSize) {
+		this.curConf = 0; // 0 is the main one, others are generated
 		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
 		this.boardX = boardX;
@@ -92,13 +94,30 @@ class PieceContainer {
 		this.dragOffset = [0, 0];
 		this.container = []; // doesn't have the pos of the piece
 		this.posContainer = []; // just holds the pos of a piece
-		this.posContainers = []; // many configurations of the pieces, NYI
+		this.posMasterContainer = []; // just holds the original pos of a piece
 		for (const po of pieceData.piecePos) {
 			const p = new Piece(po, pieceSize);
 			this.container.push(p);
 			this.posContainer.push(vec2.clone(po.pos));
+			this.posMasterContainer.push(vec2.clone(po.pos));
 		}
 
+		// make copies of posContainer
+		this.posContainers = [this.posContainer]; // many configurations of the pieces
+
+
+		// make copies
+		for (let idx = 0; idx < this.posContainer.length; ++idx) {
+			if (this.container[idx].id < 0) continue;
+			for (const dir of dirVecs) {
+				const moveCont = PieceContainer.clonePieces(this.posContainer);
+				const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx, this.boardX, this.boardY);
+				if (result) this.posContainers.push(moveCont);
+			}
+		}
+
+
+		// build goal container
 		this.goalContainer = [];
 		for (const go of pieceData.goalPos) {
 			const p = new GoalPiece(go, pieceSize);
@@ -109,6 +128,32 @@ class PieceContainer {
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
 		this.user.pIdx = -1;
+	}
+
+	static clonePieces(cont) {
+		const retCont = [];
+		for (let i = 0; i < cont.length; ++i) {
+			const retP = vec2.clone(cont[i]);
+			retCont.push(retP);
+		}
+		return retCont;
+	}
+
+	resetPieces() {
+		console.log("in piececontainer resetpieces");
+		//if (this.curConf != 0) return;
+		for (let i = 0; i < this.posContainer.length; ++i) {
+			const pos = this.posContainer[i];
+			const origPos = this.posMasterContainer[i];
+			vec2.copy(pos, origPos);
+		}
+	}
+
+	changeConf(dir) {
+		console.log("change conf to " + dir);
+		this.curConf = moveWrap(this.curConf, this.posContainers.length, dir);
+		this.posContainer = this.posContainers[this.curConf];
+
 	}
 
 	isDragging() {
@@ -133,12 +178,12 @@ class PieceContainer {
 		return [goalsMet, this.goalContainer.length];
 	}
 
-	getLoser() {
+	static getLoser() {
 		return false;
 	}
 
 	// take piece container and make arr of points without idx
-	#makeAvoidPieces(container, idx) {
+	static makeAvoidPieces(container, posContainer, idx) {
 		const avoidLocs = [];
 		const po1 = container[idx]; // current piece
 		for (let i = 0; i < container.length; ++i) {
@@ -146,7 +191,7 @@ class PieceContainer {
 				continue;
 			}
 			const po2 = container[i]; // other pieces
-			const po2Pos = this.posContainer[i];
+			const po2Pos = posContainer[i];
 			// do a convolution, some overlap
 			for (const sq2 of po2.shapeData) {
 				for (const sq1 of po1.shapeData) {
@@ -162,11 +207,14 @@ class PieceContainer {
 
 	// move pieces with whole number increments
 	// return true if move the piece
-	snapMovePiece(dir) {
-		if (this.idx < 0) return;
+	static snapMovePiece(dir, container, posContainer, idx, boardX, boardY) {
+		if (idx < 0) {
+			console.log("snapMovePiece idx < 0");
+			return;
+		}
 		console.log("\nin snapmovepiece with " + dir);
-		const pce = this.container[this.idx];
-		const pos = this.posContainer[this.idx];
+		const pce = container[idx];
+		const pos = posContainer[idx];
 		vec2.add(pos, pos, dir); // move to new location
 		const disable = false;
 		if (disable) {
@@ -175,14 +223,14 @@ class PieceContainer {
 		// check borders
 		if (pos[0] < -pce.minPoint[0]
 			|| pos[1] < -pce.minPoint[1]
-			|| pos[0] >= this.boardX - pce.maxPoint[0]
-			|| pos[1] >= this.boardY - pce.maxPoint[1]) {
+			|| pos[0] >= boardX - pce.maxPoint[0]
+			|| pos[1] >= boardY - pce.maxPoint[1]) {
 			vec2.sub(pos, pos, dir); // put it back
 			console.log("blocked by border");
 			return false;
 		}
 		// check other pieces
-		const avoidLocs = this.#makeAvoidPieces(this.container, this.idx); // take container of pieces and remove self and just make arr of pos
+		const avoidLocs = PieceContainer.makeAvoidPieces(container, posContainer, idx); // take container of pieces and remove self and just make arr of pos
 		const pen = avoidPieces(pos, avoidLocs, pce.pieceSize);
 		if (pen > 0) {
 			vec2.sub(pos, pos, dir); // put it back
@@ -251,7 +299,7 @@ class PieceContainer {
 				// keep within bounds of the board
 				this.startPos = vec2.clone(curPos);
 				endPos = pce.boardRange(this.boardX, this.boardY, endPos); // keep the piece on the board
-				this.avoidLocs = this.#makeAvoidPieces(this.container, this.idx); // take container of pieces and remove self and just make arr of pos
+				this.avoidLocs = PieceContainer.makeAvoidPieces(this.container, this.posContainer, this.idx); // take container of pieces and remove self and just make arr of pos
 				const newPos = solvePath(
 					this.startPos, endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPos, newPos); // update container with curPiece REFERENCE
@@ -339,8 +387,8 @@ class MainApp {
 		// USER before UI built
 
 		const startLevel = "levelm";
-		this.curPieces = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
-		this.curPieces = Math.max(0, this.curPieces);
+		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);
 
 		this.pIdx = -1;
@@ -380,7 +428,7 @@ class MainApp {
 
 	#initPieces() {
 		this.winCount = 0;
-		console.log("initpieces, curpieces = " + this.curPieces);
+		console.log("initpieces, curpieces = " + this.curBoard);
 		// slide objects and container
 		this.pieceSize = .875;
 		// build pieces
@@ -402,7 +450,7 @@ class MainApp {
 			}
 		}
 		
-		this.curPieceData = pieceData.pieceDataArrArr[this.curPieces];
+		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];
 		this.boardY = this.curPieceData.boardSize[1];
 	
@@ -414,9 +462,18 @@ class MainApp {
 
 	#nextBoard(dir) {
 		console.log("next board with " + dir);
-		this.curPieces = moveWrap(this.curPieces, pieceData.pieceDataArrArr.length, dir);
+		this.curBoard = moveWrap(this.curBoard, pieceData.pieceDataArrArr.length, dir);
 		this.#userInit();
 		this.#resetGraphics();
+	}
+
+	#resetPieces() {
+		this.pieceContainer.resetPieces();
+	}
+
+	#nextConf(dir) {
+		console.log("next configuration with " + dir);
+		this.pieceContainer.changeConf(dir);
 	}
 
 	// USER: add more members or classes to MainApp
@@ -436,7 +493,7 @@ class MainApp {
 	}
 
 	#userBuildUI() {
-		makeEle(this.vp, "button", null, null, "Reset Pieces", this.#initPieces.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset Pieces", this.#resetPieces.bind(this));
 		makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 		makeEle(this.vp, "hr");
 		makeEle(this.vp, "button", null, null, "Next board", this.#nextBoard.bind(this, 1));
@@ -447,6 +504,9 @@ class MainApp {
 		this.eles.showGoal = makeEle(this.vp, "input", "showGoal", null, "ho", (val) => {
 			this.showGoal = val;
 		}, "checkbox");
+		makeEle(this.vp, "hr");
+		makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
+		makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
 	}		
 	
 	#userProc() {
@@ -456,16 +516,28 @@ class MainApp {
 		if (!this.pieceContainer.isDragging()) {
 			switch(this.input.keyboard.key) {
 				case  keyTable.keyCodes.LEFT:
-					this.pieceContainer.snapMovePiece([-1, 0]);
+					PieceContainer.snapMovePiece(
+						[-1, 0]
+						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
+						,this.boardX, this.boardY);
 					break;
 				case  keyTable.keyCodes.RIGHT:
-					this.pieceContainer.snapMovePiece([1, 0]);
+					PieceContainer.snapMovePiece(
+						[1, 0]
+						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
+						,this.boardX, this.boardY);
 					break;
 				case  keyTable.keyCodes.DOWN:
-					this.pieceContainer.snapMovePiece([0, -1]);
+					PieceContainer.snapMovePiece(
+						[0, -1]
+						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
+						,this.boardX, this.boardY);
 					break;
 				case  keyTable.keyCodes.UP:
-					this.pieceContainer.snapMovePiece([0, 1]);
+					PieceContainer.snapMovePiece(
+						[0, 1]
+						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
+						,this.boardX, this.boardY);
 					break;
 			}
 		}
@@ -482,7 +554,7 @@ class MainApp {
 		if (this.winner) {
 			this.loser = false;
 		} else {
-			this.loser = this.pieceContainer.getLoser();
+			this.loser = PieceContainer.getLoser();
 		}
 		if (this.winner) {
 			if (this.winCount < 180) {
@@ -552,9 +624,10 @@ class MainApp {
 		let infoStr = "Info";
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
-		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curPieces;
+		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curBoard;
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pIdx;
+		infoStr += "\nconf = " + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
