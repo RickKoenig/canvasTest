@@ -107,14 +107,30 @@ class PieceContainer {
 
 
 		// make copies
-		for (let idx = 0; idx < this.posContainer.length; ++idx) {
-			if (this.container[idx].id < 0) continue;
-			for (const dir of dirVecs) {
-				const moveCont = PieceContainer.clonePieces(this.posContainer);
-				const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx, this.boardX, this.boardY);
-				if (result) this.posContainers.push(moveCont);
+		const maxDepth = 2;
+		for (let j = 0; j < maxDepth; ++j) {
+			const curDepth = this.posContainer.length;
+			for (let idx = 0; idx < this.posContainer.length; ++idx) {
+				if (this.container[idx].id < 0) continue;
+				for (const dir of dirVecs) {
+					const moveCont = PieceContainer.clonePieces(this.posContainer);
+					const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx, this.boardX, this.boardY);
+					if (result) {
+						let i;
+						for (i = 0; i < curDepth; ++i) {
+							const posCont = this.posContainers[i]
+							if (PieceContainer.sameConf(moveCont, this.container, posCont)) {
+								break;
+							}
+						}
+						if (i == curDepth) {
+							this.posContainers.push(moveCont);
+						}
+					}
+				}
 			}
 		}
+
 
 
 		// build goal container
@@ -128,6 +144,11 @@ class PieceContainer {
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
 		this.user.pIdx = -1;
+	}
+
+	// return true if same conf
+	static sameConf(posNew, container, posContainer) {
+		return false;
 	}
 
 	static clonePieces(cont) {
@@ -622,12 +643,12 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
-		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curBoard;
+		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pIdx;
 		infoStr += "\nconf = " + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
+		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
