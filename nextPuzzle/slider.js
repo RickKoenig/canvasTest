@@ -108,31 +108,35 @@ class PieceContainer {
 
 		// make copies
 		const maxDepth = 2;
-		for (let j = 0; j < maxDepth; ++j) {
-			const curDepth = this.posContainer.length;
-			for (let idx = 0; idx < this.posContainer.length; ++idx) {
-				if (this.container[idx].id < 0) continue;
-				for (const dir of dirVecs) {
-					const moveCont = PieceContainer.clonePieces(this.posContainer);
-					const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx, this.boardX, this.boardY);
-					if (result) {
-						let i;
-						for (i = 0; i < curDepth; ++i) {
-							const posCont = this.posContainers[i]
-							if (PieceContainer.sameConf(moveCont, this.container, posCont)) {
-								break;
+		let scanEnd = 0;
+		for (let j = 0; j < maxDepth; ++j) { // how deep to go
+			const scanBegin = scanEnd;
+			scanEnd = this.posContainers.length;
+			for (let np = scanBegin; np < scanEnd; ++np) { // search for new moves
+				for (let idx = 0; idx < this.posContainer.length; ++idx) {
+					if (this.container[idx].id < 0) continue;
+					for (const dir of dirVecs) {
+						const moveCont = PieceContainer.clonePieces(this.posContainers[np]);
+						const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx
+							, this.boardX, this.boardY);
+						if (result) {
+							let i;
+							for (i = 0; i < this.posContainers.length; ++i) { // see if already moved here
+								const posCont = this.posContainers[i]
+								if (PieceContainer.isSameConf(moveCont, this.container, posCont)) {
+									break;
+								}
 							}
-						}
-						if (i == curDepth) {
-							this.posContainers.push(moveCont);
+							if (i == this.posContainers.length) {
+								this.posContainers.push(moveCont); // new position
+							}
 						}
 					}
 				}
 			}
 		}
 
-
-
+		
 		// build goal container
 		this.goalContainer = [];
 		for (const go of pieceData.goalPos) {
@@ -147,7 +151,8 @@ class PieceContainer {
 	}
 
 	// return true if same conf
-	static sameConf(posNew, container, posContainer) {
+	static isSameConf(posNew, container, posContainer) {
+		// for now, assume all pieces have different ids
 		return false;
 	}
 
