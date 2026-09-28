@@ -220,15 +220,15 @@ class pieceData {
             name: "levele",
             boardSize: [7, 5],
             piecePos: [
+                {pos: [0, 1], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 3], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 2], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+                /*{pos: [1, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [1, 1], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [1, 2], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 3], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 3], id: -1, color: "black", shapeData: pieceData.shapes.sq1},*/
                 {pos: [2, 3], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [3, 3], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [4, 3], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
@@ -239,7 +239,7 @@ class pieceData {
                 {pos: [3, 1], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [6, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [4, 2], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
             ],
         },
 
