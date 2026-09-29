@@ -100,7 +100,7 @@ class PieceContainer {
 			this.container.push(p);
 			this.posContainer.push(vec2.clone(po.pos));
 		}
-		this.posContainer = PieceContainer.sortPieces(this.container, this.posContainer); // only sort with same id
+		//this.posContainer = PieceContainer.sortPieces(this.container, this.posContainer); // only sort with same id
 		this.posMasterContainer = PieceContainer.clonePosPieces(this.posContainer);
 
 		// make copies of posContainer
@@ -168,6 +168,7 @@ class PieceContainer {
 
 	// sort by id's then posy, then posx, only modify posCont
 	static sortPieces(cont, posCont) {
+		posCont.sort((a, b) => (a[1] - b[1]));
 		return posCont;
 	}
 
@@ -325,6 +326,7 @@ class PieceContainer {
 								this.user.pIdx = i;
 								this.dragOffset = vec2.create();
 								vec2.sub(this.dragOffset, curPiecePos, roundMouse);
+								//PieceContainer.sortPieces(this.container, this.posContainer);
 								//console.log("switch to DRAG");
 								break;
 							}
@@ -341,6 +343,7 @@ class PieceContainer {
 					this.state = this.statesEnum.IDLE;
 					const curObjPos = this.posContainer[this.idx];
 					vec2.snap(curObjPos, curObjPos, 0);
+					PieceContainer.sortPieces(this.container, this.posContainer);
 					this.dragOffset = [0, 0];
 					//console.log("switch to IDLE");
 				}
