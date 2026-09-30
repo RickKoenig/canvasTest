@@ -43,6 +43,7 @@ class MainApp {
 		const startLevel = "levele";
 		//const startLevel = "smallheart";
 		//const startLevel = "level07";
+		//const startLevel = "verysmall";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
 		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);
@@ -56,21 +57,21 @@ class MainApp {
 		// top border
 		for (let j = 0; j < 5; ++j) {
 			for (let i = 0; i < 11 - j; ++i) {
-				touchUpLevel07.piecePos.push({pos: [i, j],id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+				touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
 
 			}
 		}
 		// bottom border
 		for (let j = 9; j >= 6; --j) {
 			for (let i = -j + 13; i < 2 + j; ++i) {
-				touchUpLevel07.piecePos.push({pos: [i, j],id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+				touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
 			}
 		}
 
 		// sort piecedata by id's and position
 		PieceContainer.sortPieceData();
 
-		this.pIdx = -1;
+		//this.pIdx = -1;
 		this.#userInit();
 		this.#resetGraphics();
 
@@ -174,32 +175,28 @@ class MainApp {
 		// proc
 		const mbut = this.input.mouse.mbut[Mouse.LEFT];
 		const lastmbut = this.input.mouse.lmbut[Mouse.LEFT];
-		if (!this.pieceContainer.isDragging()) {
+		if (!this.pieceContainer.isDragging() && this.pieceContainer.idx != null && this.pieceContainer.idx >= 0) {
+			let dir = null;
 			switch(this.input.keyboard.key) {
 				case  keyTable.keyCodes.LEFT:
-					PieceContainer.snapMovePiece(
-						[-1, 0]
-						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
-						,this.boardX, this.boardY);
+					dir = [-1, 0];
 					break;
 				case  keyTable.keyCodes.RIGHT:
-					PieceContainer.snapMovePiece(
-						[1, 0]
-						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
-						,this.boardX, this.boardY);
+					dir = [1, 0];
 					break;
 				case  keyTable.keyCodes.DOWN:
-					PieceContainer.snapMovePiece(
-						[0, -1]
-						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
-						,this.boardX, this.boardY);
+					dir = [0, -1];
 					break;
 				case  keyTable.keyCodes.UP:
-					PieceContainer.snapMovePiece(
-						[0, 1]
-						, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
-						,this.boardX, this.boardY);
+					dir = [0, 1];
 					break;
+			}
+			if (dir) {
+				const newIdx = PieceContainer.snapMovePiece(
+					dir
+					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
+					,this.boardX, this.boardY);
+				this.pieceContainer.idx = newIdx;
 			}
 		}
 		this.pieceContainer.proc(mbut, lastmbut, this.plotter2d.userMouse);
@@ -286,7 +283,7 @@ class MainApp {
 		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curBoard;
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
-		infoStr += "\npIdx = " + this.pIdx;
+		infoStr += "\npIdx = " + this.pieceContainer.idx;
 		infoStr += "\nconf = " + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\n\n";

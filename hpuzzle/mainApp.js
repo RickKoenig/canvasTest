@@ -554,6 +554,7 @@ class MainApp {
 				++winGood;
 			}
 		}
+		//winGood = 6; // force win
 		if (winGood == 6) {
 			if (this.winCount < 360) {
 			++this.winCount;
@@ -582,22 +583,24 @@ class MainApp {
 			}
 		}
 		const landscape = this.plotter2dCanvas.width > this.plotter2dCanvas.height;
-		this.drawPrim.drawText([0, -1.3], [1.82, .14]
+		const instScale = [4, .35];
+		const orientScale = [4, .35];
+		this.drawPrim.drawText([0, -1.3], instScale
 		  , "Move green circles to the right"
 		  , "black", "#0002");
-		this.drawPrim.drawText([0, -1.8], [1.82, .14]
+		this.drawPrim.drawText([0, -1.8], instScale
 		  , "Move blue circles to the left"
 		  , "black", "#0002");
 		if (!landscape) {
-			this.drawPrim.drawText([0, -2.3], [1.82, .14]
+			this.drawPrim.drawText([0, -2.3], instScale
 			  , "Landscape mode looks better"
 		  	  , "darkred", "#0002");
 		}
-		this.drawPrim.drawText([0, -2.8], [1.2, .14]
+		this.drawPrim.drawText([0, -2.8], orientScale
 		  , landscape ? "Landscape mode" : "Portrait mode"
 		  , "#000c", "#0002");
 		const scaleWinText = [1, .2];
-		vec2.scale(scaleWinText, scaleWinText, .125 + this.winCount * .006);
+		vec2.scale(scaleWinText, scaleWinText, .125 + this.winCount * .015);
 		if (this.winCount > 0) {
 			this.drawPrim.drawText([0, 0],scaleWinText
 		  	  , "You Win !!"

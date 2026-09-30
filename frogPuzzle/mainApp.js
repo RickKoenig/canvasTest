@@ -417,6 +417,7 @@ class MainApp {
 
 		this.pieceContainer.proc();
 		this.winner |= this.pieceContainer.getWinner();
+		//this.winner = true; // force a winner
 		if (this.winner) {
 			this.loser = false;
 		} else {
@@ -452,7 +453,7 @@ class MainApp {
 			}
 		}
 		const landscape = this.plotter2dCanvas.width > this.plotter2dCanvas.height;
-		const textScale = [2, .15];
+		const textScale = [8, .7];
 		const textYStart = -1.5;
 		const textYstep = -.9;
 		this.drawPrim.drawText([0, textYStart], textScale
@@ -470,7 +471,7 @@ class MainApp {
 		  	  , "darkred", "#0002");
 		}
 		if (this.loser) {
-			this.drawPrim.drawText([0, 3], [1, .15]
+			this.drawPrim.drawText([0, 3], textScale
 			, "OOPS !!"
 			, "darkred", "#0002");
 		}

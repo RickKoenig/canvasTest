@@ -5,7 +5,7 @@
 class Piece {
 	constructor(o, pieceSize) {
 		this.color = o.color;
-		this.id = o.id;
+		//this.id = o.id;
 		this.shapeData = o.shapeData;
 		this.pieceSize = pieceSize;
 		this.minPoint = vec2.clone(this.shapeData[0]);
@@ -38,8 +38,9 @@ class Piece {
 		}
 		//const txt = this.id; // print id
 		//const txt = idx; // print idx
-		const txt = "" + idx + "," + this.id;
-		user.drawPrim.drawText(pos, [.07, .07]
+		const txt = "" + idx + "," + pos[2];
+		//const txt = "" + idx + "," + this.id;
+		user.drawPrim.drawText(pos, [.4, .4]
 		, txt, "white", "black");
 	}
 }
@@ -84,6 +85,7 @@ class GoalPiece {
 class PieceContainer {
 	// pieces rest on whole numbers 0, 0 to boardX -1, boardY - 1
 	constructor(user, pieceData, boardX, boardY, pieceSize) {
+		this.idx = -1;
 		this.curConf = 0; // 0 is the main one, others are generated
 		this.pieceSize = pieceSize;
 		this.statesEnumStrs = ["IDLE", "DRAGGING"];
@@ -98,9 +100,8 @@ class PieceContainer {
 		for (const po of pieceData.piecePos) {
 			const p = new Piece(po, pieceSize);
 			this.container.push(p);
-			this.posContainer.push(vec2.clone(po.pos));
+			this.posContainer.push([po.pos[0], po.pos[1], po.id]);
 		}
-		//this.posContainer = PieceContainer.sortPieces(this.container, this.posContainer); // only sort with same id
 		this.posMasterContainer = PieceContainer.clonePosPieces(this.posContainer);
 
 		// make copies of posContainer
@@ -148,7 +149,7 @@ class PieceContainer {
 	    this.statesEnum = makeEnum(this.statesEnumStrs);
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
-		this.user.pIdx = -1;
+		//this.user.pIdx = -1;
 	}
 
 	// return true if same conf
@@ -160,19 +161,47 @@ class PieceContainer {
 	static clonePosPieces(cont) {
 		const retCont = [];
 		for (let i = 0; i < cont.length; ++i) {
-			const retP = vec2.clone(cont[i]);
+			const retP = vec3.clone(cont[i]);
 			retCont.push(retP);
 		}
 		return retCont;
 	}
 
+	static compPieces(a, b) {
+		let aID = a[2];
+		let bID = b[2];
+		const maxID = 10000;
+		if (aID < 0) aID = maxID;
+		if (bID < 0) bID = maxID;
+		const id = aID - bID;
+		if (id) return id;
+		const pos1 =  a[1] - b[1];
+		if (pos1) return pos1;
+		const pos0 =  a[0] - b[0];
+		//if (pos0) return pos0;
+		return pos0;
+	}
+	
 	// sort by id's then posy, then posx, only modify posCont
-	static sortPieces(cont, posCont) {
-		posCont.sort((a, b) => (a[1] - b[1]));
-		return posCont;
+	// return new idx after sorting
+	static sortPieces(posCont, idx) {
+		let curPos;
+		if (idx != null) curPos = posCont[idx];
+		posCont.sort(PieceContainer.compPieces);
+		let newIdx = null;
+		if (idx != null) {
+			for (let i = 0; i < posCont.length; ++i) {
+				const pos = posCont[i];
+				if (pos[0] == curPos[0] && pos[1] == curPos[1]) {
+					newIdx = i;
+					return newIdx;
+				}
+			}
+		}
+		return newIdx;
 	}
 
-	static comp(a, b) {
+	static compPieceData(a, b) {
 		let aID = a.id;
 		let bID = b.id;
 		const maxID = 10000;
@@ -194,7 +223,7 @@ class PieceContainer {
 		for(const level of pieceData.pieceDataArrArr) {
 			const piecePos = level.piecePos;
 			console.log("level " + level.name + " has " + piecePos.length + " pieces");
-			piecePos.sort(PieceContainer.comp);
+			piecePos.sort(PieceContainer.compPieceData);
 		}
 		console.log("---------- END do sortPieceData -------------");
 
@@ -228,7 +257,8 @@ class PieceContainer {
 			for (let i = 0; i < this.container.length; ++i) {
 				const piecePos = this.posContainer[i];
 				const onePiece = this.container[i];
-				if (oneGoal.id == onePiece.id 
+				if (oneGoal.id == piecePos[2]
+				//if (oneGoal.id == onePiece.id 
 					&& oneGoal.pos[0] == piecePos[0] 
 					&& oneGoal.pos[1] == piecePos[1]) {
 						++goalsMet;
@@ -267,11 +297,11 @@ class PieceContainer {
 	}
 
 	// move pieces with whole number increments
-	// return true if move the piece
+	// return newIdx if move the piece, null if not
 	static snapMovePiece(dir, container, posContainer, idx, boardX, boardY) {
 		if (idx < 0) {
 			console.log("snapMovePiece idx < 0");
-			return;
+			return null;
 		}
 		console.log("\nin snapmovepiece with " + dir);
 		const pce = container[idx];
@@ -279,7 +309,8 @@ class PieceContainer {
 		vec2.add(pos, pos, dir); // move to new location
 		const disable = false;
 		if (disable) {
-			return true;
+			const newIdx = PieceContainer.sortPieces(posContainer, idx);
+			return newIdx;
 		}
 		// check borders
 		if (pos[0] < -pce.minPoint[0]
@@ -288,7 +319,7 @@ class PieceContainer {
 			|| pos[1] >= boardY - pce.maxPoint[1]) {
 			vec2.sub(pos, pos, dir); // put it back
 			console.log("blocked by border");
-			return false;
+			return null;
 		}
 		// check other pieces
 		const avoidLocs = PieceContainer.makeAvoidPieces(container, posContainer, idx); // take container of pieces and remove self and just make arr of pos
@@ -296,10 +327,11 @@ class PieceContainer {
 		if (pen > 0) {
 			vec2.sub(pos, pos, dir); // put it back
 			console.log("blocked by other piece");
-			return false;
+			return null;
 		}
 		console.log("move freely");
-		return true; 
+		const newIdx = PieceContainer.sortPieces(posContainer, idx);
+		return newIdx; 
 	}
 
 	proc(mbut, lmbut, fmxy) {
@@ -311,22 +343,23 @@ class PieceContainer {
 					const roundMouse = [Math.round(fmxy[0]), Math.round(fmxy[1])];
 					const sum = vec2.create();
 					for (let i = 0; i < this.container.length; ++i) {
-						const curPiece = this.container[i];
-						if (curPiece.id < 0) {
+						const curPiecePos = this.posContainer[i];
+						if (curPiecePos[2] < 0) {
+						//if (curPiece.id < 0) {
 							continue;
 						}
-						const curPiecePos = this.posContainer[i];
+						const curPiece = this.container[i];
 						const curPieceShapeData = curPiece.shapeData;
-						this.user.pIdx = -1;
+						//this.user.pIdx = -1;
+						this.idx = -1;
 						for (const s of curPieceShapeData) {
 							vec2.add(sum, s, curPiecePos);
 							if (sum[0] == roundMouse[0] && sum[1] == roundMouse[1]) {
 								this.state = this.statesEnum.DRAGGING;
 								this.idx = i;
-								this.user.pIdx = i;
+								//this.user.pIdx = i;
 								this.dragOffset = vec2.create();
 								vec2.sub(this.dragOffset, curPiecePos, roundMouse);
-								//PieceContainer.sortPieces(this.container, this.posContainer);
 								//console.log("switch to DRAG");
 								break;
 							}
@@ -343,7 +376,7 @@ class PieceContainer {
 					this.state = this.statesEnum.IDLE;
 					const curObjPos = this.posContainer[this.idx];
 					vec2.snap(curObjPos, curObjPos, 0);
-					PieceContainer.sortPieces(this.container, this.posContainer);
+					this.idx = PieceContainer.sortPieces(this.posContainer, this.idx);
 					this.dragOffset = [0, 0];
 					//console.log("switch to IDLE");
 				}
