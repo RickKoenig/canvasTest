@@ -109,7 +109,7 @@ class PieceContainer {
 
 
 		// make copies
-		const maxDepth = 0;
+		const maxDepth = 1;
 		let scanEnd = 0;
 		for (let j = 0; j < maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
@@ -121,11 +121,11 @@ class PieceContainer {
 						const moveCont = PieceContainer.clonePosPieces(this.posContainers[np]);
 						const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx
 							, this.boardX, this.boardY);
-						if (result) {
+						if (result != null) {
 							let i;
 							for (i = 0; i < this.posContainers.length; ++i) { // see if already moved here
 								const posCont = this.posContainers[i]
-								if (PieceContainer.isSameConf(moveCont, this.container, posCont)) {
+								if (PieceContainer.isSameConf(moveCont, posCont)) {
 									break;
 								}
 							}
@@ -153,9 +153,16 @@ class PieceContainer {
 	}
 
 	// return true if same conf
-	static isSameConf(posNew, container, posContainer) {
-		// for now, assume all pieces have different ids
+	static isSameConf(posNew, posContainer) {
 		return false;
+		for (let i = 0; i < posContainer.length; ++i) {
+			const pn = posNew[i];
+			const pc = posContainer[i];
+			if (pc.id < 0) return true;;
+			if (pn[0] != pc[0]) return false;
+			if (pn[1] != pc[1]) return false;
+		}
+		return true;
 	}
 
 	static clonePosPieces(cont) {

@@ -196,7 +196,7 @@ class MainApp {
 					dir
 					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
 					,this.boardX, this.boardY);
-				this.pieceContainer.idx = newIdx;
+				if (newIdx != null) this.pieceContainer.idx = newIdx;
 			}
 		}
 		this.pieceContainer.proc(mbut, lastmbut, this.plotter2d.userMouse);
