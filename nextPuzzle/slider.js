@@ -40,10 +40,10 @@ class MainApp {
 		// USER before UI built
 
 		//const startLevel = "levelm";
-		const startLevel = "levele";
+		//const startLevel = "levele";
 		//const startLevel = "smallheart";
 		//const startLevel = "level07";
-		//const startLevel = "verysmall";
+		const startLevel = "verysmall";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
 		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);

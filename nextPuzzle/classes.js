@@ -109,14 +109,14 @@ class PieceContainer {
 
 
 		// make copies
-		const maxDepth = 1;
+		const maxDepth = 2;
 		let scanEnd = 0;
 		for (let j = 0; j < maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
 			scanEnd = this.posContainers.length;
 			for (let np = scanBegin; np < scanEnd; ++np) { // search for new moves
 				for (let idx = 0; idx < this.posContainer.length; ++idx) {
-					if (this.container[idx].id < 0) continue;
+					if (this.posContainer[idx][2] < 0) continue; // id
 					for (const dir of dirVecs) {
 						const moveCont = PieceContainer.clonePosPieces(this.posContainers[np]);
 						const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx
@@ -154,7 +154,7 @@ class PieceContainer {
 
 	// return true if same conf
 	static isSameConf(posNew, posContainer) {
-		return false;
+		//return false;
 		for (let i = 0; i < posContainer.length; ++i) {
 			const pn = posNew[i];
 			const pc = posContainer[i];
