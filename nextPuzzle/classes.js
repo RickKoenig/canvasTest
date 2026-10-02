@@ -63,7 +63,7 @@ class GoalPiece {
 		}
 	}
 
-	draw(user, hilit, idx) {
+	draw(user, hilit) {
 		const smallerRad = [.995, .995];
 		const bigWidth = .06;
 		const sqPos = vec2.create();
@@ -77,14 +77,14 @@ class GoalPiece {
 		}
 		const txt = this.id; // print id
 		//const txt = idx; // print idx
-		user.drawPrim.drawText(this.pos, [.1, .1]
+		user.drawPrim.drawText(this.pos, [.35, .35]
 		, txt, "white", "black");
 	}
 }
 
 class PieceContainer {
 	// pieces rest on whole numbers 0, 0 to boardX -1, boardY - 1
-	constructor(user, pieceData, boardX, boardY, pieceSize) {
+	constructor(user, pieceData, boardX, boardY, pieceSize, maxDepth = 0, maxConf = Number.MAX_SAFE_INTEGER) {
 		this.idx = -1;
 		this.curConf = 0; // 0 is the main one, others are generated
 		this.pieceSize = pieceSize;
@@ -92,26 +92,38 @@ class PieceContainer {
 		this.boardX = boardX;
 		this.boardY = boardY;
 		this.user = user;
+		this.maxDepth = maxDepth;
+		this.maxConf = maxConf;
 
 		this.dragOffset = [0, 0];
 		this.container = []; // doesn't have the pos of the piece
 		this.posContainer = []; // just holds the pos of a piece
 		this.posMasterContainer = []; // just holds the original pos of a piece
-		for (const po of pieceData.piecePos) {
-			const p = new Piece(po, pieceSize);
+		for (const pd of pieceData.piecePos) {
+			const p = new Piece(pd, pieceSize);
 			this.container.push(p);
-			this.posContainer.push([po.pos[0], po.pos[1], po.id]);
+			this.posContainer.push([pd.pos[0], pd.pos[1], pd.id]);
 		}
 		this.posMasterContainer = PieceContainer.clonePosPieces(this.posContainer);
 
 		// make copies of posContainer
 		this.posContainers = [this.posContainer]; // many configurations of the pieces
 
+		// build goal container
+		this.goalContainer = [];
+		for (const go of pieceData.goalPos) {
+			const p = new GoalPiece(go, pieceSize);
+			this.goalContainer.push(p);
+		}
+
+	    this.statesEnum = makeEnum(this.statesEnumStrs);
+		this.state = this.statesEnum.IDLE;
+		this.idx = -1; // which object in container is being dragged
+		//this.user.pIdx = -1;
 
 		// make copies
-		const maxDepth = 2;
 		let scanEnd = 0;
-		for (let j = 0; j < maxDepth; ++j) { // how deep to go
+		for (let j = 0; j < this.maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
 			scanEnd = this.posContainers.length;
 			for (let np = scanBegin; np < scanEnd; ++np) { // search for new moves
@@ -130,26 +142,19 @@ class PieceContainer {
 								}
 							}
 							if (i == this.posContainers.length) {
+								if (this.posContainers.length >= this.maxConf) return;
 								this.posContainers.push(moveCont); // new position
+								// see if goal
+								//return;
+														
+								const goals = this.getGoalsMet(moveCont);
+								if (goals[1] != 0 && goals[0] == goals[1]) return;
 							}
 						}
 					}
 				}
 			}
 		}
-
-		
-		// build goal container
-		this.goalContainer = [];
-		for (const go of pieceData.goalPos) {
-			const p = new GoalPiece(go, pieceSize);
-			this.goalContainer.push(p);
-		}
-
-	    this.statesEnum = makeEnum(this.statesEnumStrs);
-		this.state = this.statesEnum.IDLE;
-		this.idx = -1; // which object in container is being dragged
-		//this.user.pIdx = -1;
 	}
 
 	// return true if same conf
@@ -158,7 +163,7 @@ class PieceContainer {
 		for (let i = 0; i < posContainer.length; ++i) {
 			const pn = posNew[i];
 			const pc = posContainer[i];
-			if (pc.id < 0) return true;;
+			if (pc[2] < 0) return true; // done, hit neg ids at the end
 			if (pn[0] != pc[0]) return false;
 			if (pn[1] != pc[1]) return false;
 		}
@@ -258,12 +263,12 @@ class PieceContainer {
 	}
 
 	// achieved over total goals
-	getGoalsMet() {
+	getGoalsMet(position) {
 		let goalsMet = 0;
 		for (const oneGoal of this.goalContainer) {
-			for (let i = 0; i < this.container.length; ++i) {
-				const piecePos = this.posContainer[i];
-				const onePiece = this.container[i];
+			for (let i = 0; i < position.length; ++i) {
+				const piecePos = position[i];
+				//const onePiece = this.container[i];
 				if (oneGoal.id == piecePos[2]
 				//if (oneGoal.id == onePiece.id 
 					&& oneGoal.pos[0] == piecePos[0] 
@@ -310,7 +315,7 @@ class PieceContainer {
 			console.log("snapMovePiece idx < 0");
 			return null;
 		}
-		console.log("\nin snapmovepiece with " + dir);
+		//console.log("\nin snapmovepiece with " + dir);
 		const pce = container[idx];
 		const pos = posContainer[idx];
 		vec2.add(pos, pos, dir); // move to new location
@@ -325,7 +330,7 @@ class PieceContainer {
 			|| pos[0] >= boardX - pce.maxPoint[0]
 			|| pos[1] >= boardY - pce.maxPoint[1]) {
 			vec2.sub(pos, pos, dir); // put it back
-			console.log("blocked by border");
+			//console.log("blocked by border");
 			return null;
 		}
 		// check other pieces
@@ -333,10 +338,10 @@ class PieceContainer {
 		const pen = avoidPieces(pos, avoidLocs, pce.pieceSize);
 		if (pen > 0) {
 			vec2.sub(pos, pos, dir); // put it back
-			console.log("blocked by other piece");
+			//console.log("blocked by other piece");
 			return null;
 		}
-		console.log("move freely");
+		//console.log("move freely");
 		const newIdx = PieceContainer.sortPieces(posContainer, idx);
 		return newIdx; 
 	}

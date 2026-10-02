@@ -521,12 +521,13 @@ class pieceData {
         // very small test
         {
             name: "verysmall",
-            boardSize: [7, 1],
+            boardSize: [9, 1],
             piecePos: [
-                {pos: [3, 0], id: 1, color: "pink", shapeData: pieceData.shapes.sq1},
-                {pos: [5, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+                {pos: [4, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
+                //{pos: [5, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
+                {pos: [8, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
             ],
         }
     ];

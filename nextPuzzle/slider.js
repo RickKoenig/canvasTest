@@ -111,13 +111,15 @@ class MainApp {
 		console.log("initpieces, curboard = " + this.curBoard);
 		// slide objects and container
 		this.pieceSize = .875;
+		this.maxDepth = 200;
+		this.maxConf = 20000;
 		
 		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];
 		this.boardY = this.curPieceData.boardSize[1];
 	
 		this.pieceContainer = new PieceContainer(this, this.curPieceData
-			, this.boardX, this.boardY, this.pieceSize);
+			, this.boardX, this.boardY, this.pieceSize, this.maxDepth, this.maxConf);
 		this.winner = false;
 		this.loser = false;
 	}
@@ -201,7 +203,7 @@ class MainApp {
 		}
 		this.pieceContainer.proc(mbut, lastmbut, this.plotter2d.userMouse);
 
-		this.goals = this.pieceContainer.getGoalsMet();
+		this.goals = this.pieceContainer.getGoalsMet(this.pieceContainer.posContainer);
 		if (this.goals[1] == 0) {
 			this.winner =  false; // can't win if no goals
 		} else {
@@ -281,6 +283,10 @@ class MainApp {
 	#userUpdateInfo() {
 		let infoStr = "Info";
 		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curBoard;
+		
+		infoStr += "\nmaxDepth = " + this.maxDepth;
+		infoStr += "\nmaxConf = " + this.maxConf;
+		
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pieceContainer.idx;
