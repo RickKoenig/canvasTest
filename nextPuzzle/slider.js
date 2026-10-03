@@ -39,11 +39,12 @@ class MainApp {
 
 		// USER before UI built
 
-		//const startLevel = "levelm";
+		const startLevel = "levelm";
 		//const startLevel = "levele";
 		//const startLevel = "smallheart";
+		//const startLevel = "level05";
 		//const startLevel = "level07";
-		const startLevel = "verysmall";
+		//const startLevel = "verysmall";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
 		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);
@@ -111,8 +112,8 @@ class MainApp {
 		console.log("initpieces, curboard = " + this.curBoard);
 		// slide objects and container
 		this.pieceSize = .875;
-		this.maxDepth = 200;
-		this.maxConf = 20000;
+		this.maxDepth = 150;
+		this.maxConf = 60000;
 		
 		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];

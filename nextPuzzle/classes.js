@@ -123,6 +123,11 @@ class PieceContainer {
 
 		// make copies
 		let scanEnd = 0;
+
+
+		this.t0 = performance.now();
+
+
 		for (let j = 0; j < this.maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
 			scanEnd = this.posContainers.length;
@@ -142,19 +147,34 @@ class PieceContainer {
 								}
 							}
 							if (i == this.posContainers.length) {
-								if (this.posContainers.length >= this.maxConf) return;
+								if (this.posContainers.length >= this.maxConf) {
+									console.log("max configurations met !!!");
+									this.deltaTime();
+									return;
+								}
 								this.posContainers.push(moveCont); // new position
 								// see if goal
 								//return;
 														
 								const goals = this.getGoalsMet(moveCont);
-								if (goals[1] != 0 && goals[0] == goals[1]) return;
+								if (goals[1] != 0 && goals[0] == goals[1]) {
+									console.log("goals met !!!");
+									this.deltaTime();
+									return;
+								}
 							}
 						}
 					}
 				}
 			}
 		}
+		console.log("max depth met !!!");
+		this.deltaTime();
+	}
+
+	deltaTime() {
+		this.t1 = performance.now();
+		console.log("time diff = " + ((this.t1 - this.t0) / 1000).toFixed(3) + " sec");
 	}
 
 	// return true if same conf

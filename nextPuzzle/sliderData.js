@@ -481,15 +481,17 @@ class pieceData {
 
         { 
             name: "levelm",
-            boardSize: [11, 9],
+            boardSize: [8, 7],
             piecePos: [
                 {pos: [5, 5], id: 0, color: "green", shapeData: pieceData.shapes.el90},
                 {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
                 {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [10, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
-                {pos: [6, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [7, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
+                {pos: [3, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [0, 0], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
             ],
         },
         // test
