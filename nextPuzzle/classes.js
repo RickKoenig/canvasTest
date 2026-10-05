@@ -104,9 +104,10 @@ class PieceContainer {
 			this.container.push(p);
 			this.posContainer.push([pd.pos[0], pd.pos[1], pd.id]);
 		}
+		this.hash = PieceContainer.makeHash(this.posContainer);
 		this.posMasterContainer = PieceContainer.clonePosPieces(this.posContainer);
 
-		// make copies of posContainer
+		// make 1 configuration of posContainer at slot 0, this one you can move
 		this.posContainers = [this.posContainer]; // many configurations of the pieces
 
 		// build goal container
@@ -120,14 +121,31 @@ class PieceContainer {
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
 		//this.user.pIdx = -1;
+		return;
+	}
 
+	static makeHash(posCont) {
+		if (posCont.length == 0) return 0;
+		return posCont[0][1];
+	}
+
+	solve() {
 		// make copies
-		let scanEnd = 0;
+		let scanEnd = 1;
+		this.posContainers.length = 1; // reset old settings
+		const first = PieceContainer.clonePosPieces(this.posContainers[0]);
+		this.posContainers.push(first);
+		this.changeConf(0);
 
+		// see if we are already at the goal
+		const goals = this.getGoalsMet(first);
+		if (goals[1] != 0 && goals[0] == goals[1]) {
+			console.log("EARYLY goals met !!!");
+			this.deltaTime();
+			return;
+		}
 
 		this.t0 = performance.now();
-
-
 		for (let j = 0; j < this.maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
 			scanEnd = this.posContainers.length;
@@ -267,15 +285,22 @@ class PieceContainer {
 		for (let i = 0; i < this.posContainer.length; ++i) {
 			const pos = this.posContainer[i];
 			const origPos = this.posMasterContainer[i];
-			vec2.copy(pos, origPos);
+			vec2.copy(pos, origPos); // don't need to copy id, so vec2
 		}
+		this.posContainers.length = 1; // reset old settings
+		this.curConf = 0;
+		this.hash = PieceContainer.makeHash(this.posContainer);
 	}
 
 	changeConf(dir) {
-		console.log("change conf to " + dir);
-		this.curConf = moveWrap(this.curConf, this.posContainers.length, dir);
+		if (dir == 0) {
+			this.curConf = 0;
+		} else {
+			this.curConf = moveWrap(this.curConf, this.posContainers.length, dir);
+		}
 		this.posContainer = this.posContainers[this.curConf];
-
+		this.hash = PieceContainer.makeHash(this.posContainer);
+		console.log("change conf to " + this.curConf);
 	}
 
 	isDragging() {
@@ -370,7 +395,7 @@ class PieceContainer {
 		// change states
 		switch(this.state) {
 			case this.statesEnum.IDLE:
-				if (mbut && !lmbut) {
+				if (mbut && !lmbut && this.curConf == 0) {
 					// PICK up piece if within range
 					const roundMouse = [Math.round(fmxy[0]), Math.round(fmxy[1])];
 					const sum = vec2.create();
@@ -410,6 +435,7 @@ class PieceContainer {
 					vec2.snap(curObjPos, curObjPos, 0);
 					this.idx = PieceContainer.sortPieces(this.posContainer, this.idx);
 					this.dragOffset = [0, 0];
+					this.hash = PieceContainer.makeHash(this.posContainer);
 					//console.log("switch to IDLE");
 				}
 				break;

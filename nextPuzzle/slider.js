@@ -45,6 +45,7 @@ class MainApp {
 		//const startLevel = "level05";
 		//const startLevel = "level07";
 		//const startLevel = "verysmall";
+		//const startLevel = "nullTest";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
 		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);
@@ -112,8 +113,8 @@ class MainApp {
 		console.log("initpieces, curboard = " + this.curBoard);
 		// slide objects and container
 		this.pieceSize = .875;
-		this.maxDepth = 150;
-		this.maxConf = 60000;
+		this.maxDepth = 100;
+		this.maxConf = 20000;
 		
 		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];
@@ -134,6 +135,11 @@ class MainApp {
 
 	#resetPieces() {
 		this.pieceContainer.resetPieces();
+	}
+
+	#solveConf() {
+		console.log("solve");
+		this.pieceContainer.solve();
 	}
 
 	#nextConf(dir) {
@@ -170,8 +176,10 @@ class MainApp {
 			this.showGoal = val;
 		}, "checkbox");
 		makeEle(this.vp, "hr");
+		makeEle(this.vp, "button", null, null, "Solve conf", this.#solveConf.bind(this));
 		makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
 		makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
+		makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
 	}		
 	
 	#userProc() {
@@ -194,11 +202,12 @@ class MainApp {
 					dir = [0, 1];
 					break;
 			}
-			if (dir) {
+			if (dir && this.pieceContainer.curConf == 0) { // only move main pieces
 				const newIdx = PieceContainer.snapMovePiece(
 					dir
 					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
 					,this.boardX, this.boardY);
+				this.pieceContainer.hash = PieceContainer.makeHash(this.pieceContainer.posContainer);
 				if (newIdx != null) this.pieceContainer.idx = newIdx;
 			}
 		}
@@ -289,9 +298,11 @@ class MainApp {
 		infoStr += "\nmaxConf = " + this.maxConf;
 		
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
+		infoStr += "\n" + (this.pieceContainer.curConf ? "VIEW CONF" : "MOVE MAIN");
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pieceContainer.idx;
-		infoStr += "\nconf = " + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
+		infoStr += "\nhash = " + this.pieceContainer.hash;
+		infoStr += "\nconf = " + this.pieceContainer.curConf + "\n / " + this.pieceContainer.posContainers.length;
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
