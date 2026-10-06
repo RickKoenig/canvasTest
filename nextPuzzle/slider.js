@@ -39,11 +39,12 @@ class MainApp {
 
 		// USER before UI built
 
-		const startLevel = "levelm";
+		//const startLevel = "levelm";
 		//const startLevel = "levele";
 		//const startLevel = "smallheart";
 		//const startLevel = "level05";
 		//const startLevel = "level07";
+		const startLevel = "smaller";
 		//const startLevel = "verysmall";
 		//const startLevel = "nullTest";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
@@ -207,7 +208,7 @@ class MainApp {
 					dir
 					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
 					,this.boardX, this.boardY);
-				this.pieceContainer.hash = PieceContainer.makeHash(this.pieceContainer.posContainer);
+				this.pieceContainer.hashes[0] = PieceContainer.makeHash(this.pieceContainer.posContainer);
 				if (newIdx != null) this.pieceContainer.idx = newIdx;
 			}
 		}
@@ -301,7 +302,8 @@ class MainApp {
 		infoStr += "\n" + (this.pieceContainer.curConf ? "VIEW CONF" : "MOVE MAIN");
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pieceContainer.idx;
-		infoStr += "\nhash = " + this.pieceContainer.hash;
+		infoStr += "\nhash = " + this.pieceContainer.hashes[this.pieceContainer.curConf];
+		infoStr += "\ndepth = " + this.pieceContainer.depths[this.pieceContainer.curConf];
 		infoStr += "\nconf = " + this.pieceContainer.curConf + "\n / " + this.pieceContainer.posContainers.length;
 		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\n\n";

@@ -104,7 +104,8 @@ class PieceContainer {
 			this.container.push(p);
 			this.posContainer.push([pd.pos[0], pd.pos[1], pd.id]);
 		}
-		this.hash = PieceContainer.makeHash(this.posContainer);
+		this.hashes = [PieceContainer.makeHash(this.posContainer)]; // keep a hash for all configurations
+		this.depths = [0];
 		this.posMasterContainer = PieceContainer.clonePosPieces(this.posContainer);
 
 		// make 1 configuration of posContainer at slot 0, this one you can move
@@ -132,23 +133,29 @@ class PieceContainer {
 	solve() {
 		// make copies
 		let scanEnd = 1;
-		this.posContainers.length = 1; // reset old settings
-		const first = PieceContainer.clonePosPieces(this.posContainers[0]);
-		this.posContainers.push(first);
-		this.changeConf(0);
+		this.resetSolve();
 
+		this.t0 = performance.now();
 		// see if we are already at the goal
-		const goals = this.getGoalsMet(first);
+		const goals = this.getGoalsMet(this.posContainer);
 		if (goals[1] != 0 && goals[0] == goals[1]) {
-			console.log("EARYLY goals met !!!");
+			console.error("EARYLY goals met !!!");
+			console.log(`depth ${0}/${this.maxDepth}, conf ${1}/${this.maxConf}`);
 			this.deltaTime();
 			return;
 		}
 
-		this.t0 = performance.now();
-		for (let j = 0; j < this.maxDepth; ++j) { // how deep to go
+		for (let j = 1; j < this.maxDepth; ++j) { // how deep to go
 			const scanBegin = scanEnd;
 			scanEnd = this.posContainers.length;
+			console.log("depth = " + j + ", scanBegin = " + scanBegin + ", scanEnd = " + (scanEnd - 1)
+				+ ", numScan = " + (scanEnd - scanBegin));
+			if (scanBegin == scanEnd) {
+				console.error("All moves tried, no goal !!!");
+				console.log(`depth ${j}/${this.maxDepth}, conf ${this.posContainers.length - 1}/${this.maxConf}`);
+				this.deltaTime();
+				return;
+			}
 			for (let np = scanBegin; np < scanEnd; ++np) { // search for new moves
 				for (let idx = 0; idx < this.posContainer.length; ++idx) {
 					if (this.posContainer[idx][2] < 0) continue; // id
@@ -166,17 +173,21 @@ class PieceContainer {
 							}
 							if (i == this.posContainers.length) {
 								if (this.posContainers.length >= this.maxConf) {
-									console.log("max configurations met !!!");
+									console.error("max configurations met !!!");
+									console.log(`depth ${j}/${this.maxDepth}, conf ${this.posContainers.length - 1}/${this.maxConf}`);
 									this.deltaTime();
 									return;
 								}
 								this.posContainers.push(moveCont); // new position
+								this.hashes.push(PieceContainer.makeHash(moveCont));
+								this.depths.push(j);
 								// see if goal
 								//return;
 														
 								const goals = this.getGoalsMet(moveCont);
 								if (goals[1] != 0 && goals[0] == goals[1]) {
-									console.log("goals met !!!");
+									console.error("goals met !!!");
+									console.log(`depth ${j}/${this.maxDepth}, conf ${this.posContainers.length - 1}/${this.maxConf}`);
 									this.deltaTime();
 									return;
 								}
@@ -186,7 +197,8 @@ class PieceContainer {
 				}
 			}
 		}
-		console.log("max depth met !!!");
+		console.error("max depth met !!!");
+		console.log(`depth ${this.maxDepth}/${this.maxDepth}, conf ${this.posContainers.length - 1}/${this.maxConf}`);
 		this.deltaTime();
 	}
 
@@ -279,17 +291,26 @@ class PieceContainer {
 
 	}
 
+	resetSolve() {
+		console.log("in piececontainer resetSolve");
+		this.posContainers.length = 1; // reset old settings
+		this.hashes.length = 1;
+		const first = PieceContainer.clonePosPieces(this.posContainers[0]);
+		this.posContainers.push(first);
+		this.hashes.push(this.hashes[0]);
+		this.depths.push(0);
+		this.changeConf(0);
+	}
+
 	resetPieces() {
 		console.log("in piececontainer resetpieces");
-		//if (this.curConf != 0) return;
+		this.resetSolve();
+		this.posContainer = this.posContainers[0];
 		for (let i = 0; i < this.posContainer.length; ++i) {
 			const pos = this.posContainer[i];
 			const origPos = this.posMasterContainer[i];
 			vec2.copy(pos, origPos); // don't need to copy id, so vec2
 		}
-		this.posContainers.length = 1; // reset old settings
-		this.curConf = 0;
-		this.hash = PieceContainer.makeHash(this.posContainer);
 	}
 
 	changeConf(dir) {
@@ -299,7 +320,7 @@ class PieceContainer {
 			this.curConf = moveWrap(this.curConf, this.posContainers.length, dir);
 		}
 		this.posContainer = this.posContainers[this.curConf];
-		this.hash = PieceContainer.makeHash(this.posContainer);
+		//this.hash = PieceContainer.makeHash(this.posContainer);
 		console.log("change conf to " + this.curConf);
 	}
 
@@ -435,7 +456,7 @@ class PieceContainer {
 					vec2.snap(curObjPos, curObjPos, 0);
 					this.idx = PieceContainer.sortPieces(this.posContainer, this.idx);
 					this.dragOffset = [0, 0];
-					this.hash = PieceContainer.makeHash(this.posContainer);
+					this.hashes[0] = PieceContainer.makeHash(this.posContainer);
 					//console.log("switch to IDLE");
 				}
 				break;
