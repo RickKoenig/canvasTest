@@ -97,8 +97,8 @@ class PieceContainer {
 
 		this.dragOffset = [0, 0];
 		this.container = []; // doesn't have the pos of the piece
-		this.posContainer = []; // just holds the pos of a piece
-		this.posMasterContainer = []; // just holds the original pos of a piece
+		this.posContainer = []; // just holds the pos of a piece, and some constants like ID
+		this.posMasterContainer = []; // just holds the original pos of a piece, and some constants like ID
 		for (const pd of pieceData.piecePos) {
 			const p = new Piece(pd, pieceSize);
 			this.container.push(p);
@@ -122,12 +122,39 @@ class PieceContainer {
 		this.state = this.statesEnum.IDLE;
 		this.idx = -1; // which object in container is being dragged
 		//this.user.pIdx = -1;
-		return;
 	}
 
+	static hashTableSize = 1 << 8; // power of 2
 	static makeHash(posCont) {
+		let hash = 0;
 		if (posCont.length == 0) return 0;
-		return posCont[0][1];
+		let pc = posCont[0];
+		hash += pc[0] + pc[1] * 5;
+		if (posCont.length > 1) {
+			pc = posCont[1];
+			hash *= 25;
+			hash += pc[0] + pc[1] * 5;
+		}
+		return hash & (PieceContainer.hashTableSize - 1);
+	}
+
+	showHashTable() {
+		const showCounts = false;
+		const showEfficiency = true;
+		if (showEfficiency) {
+			let max = 0;
+			for (let i = 0; i < this.hashTable.length; ++i) {
+				max = Math.max(this.hashTable[i].length, max);
+			}
+			const eff = max * this.hashTable.length / (this.posContainers.length - 1);
+			console.error("hash table efficiency = " + eff.toFixed(2) + ", best = 1.0, worst = " + this.hashTable.length + ".0");
+		}
+		if (showCounts) {
+			console.error("hash table counts");
+			for (let i = 0; i < this.hashTable.length; ++i) {
+				console.log("hashTable[" + i + "] =  " + this.hashTable[i].length);
+			}
+		}
 	}
 
 	solve() {
@@ -164,14 +191,16 @@ class PieceContainer {
 						const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx
 							, this.boardX, this.boardY);
 						if (result != null) {
+							const hash = PieceContainer.makeHash(moveCont);
 							let i;
-							for (i = 0; i < this.posContainers.length; ++i) { // see if already moved here
-								const posCont = this.posContainers[i]
+							const hashSlot = this.hashTable[hash];
+							for (i = 0; i < hashSlot.length; ++i) { // see if already moved here
+								const posCont = hashSlot[i];
 								if (PieceContainer.isSameConf(moveCont, posCont)) {
 									break;
 								}
 							}
-							if (i == this.posContainers.length) {
+							if (i == hashSlot.length) {
 								if (this.posContainers.length >= this.maxConf) {
 									console.error("max configurations met !!!");
 									console.log(`depth ${j}/${this.maxDepth}, conf ${this.posContainers.length - 1}/${this.maxConf}`);
@@ -179,11 +208,10 @@ class PieceContainer {
 									return;
 								}
 								this.posContainers.push(moveCont); // new position
-								this.hashes.push(PieceContainer.makeHash(moveCont));
+								this.hashes.push(hash);
 								this.depths.push(j);
+								this.hashTable[hash].push(moveCont);
 								// see if goal
-								//return;
-														
 								const goals = this.getGoalsMet(moveCont);
 								if (goals[1] != 0 && goals[0] == goals[1]) {
 									console.error("goals met !!!");
@@ -293,12 +321,19 @@ class PieceContainer {
 
 	resetSolve() {
 		console.log("in piececontainer resetSolve");
-		this.posContainers.length = 1; // reset old settings
-		this.hashes.length = 1;
+
+		this.hashTable = Array(PieceContainer.hashTableSize); // make an empty hash table
+		for (let i = 0; i < this.hashTable.length; ++i) {
+			this.hashTable[i] = [];
+		}
 		const first = PieceContainer.clonePosPieces(this.posContainers[0]);
+		this.posContainers.length = 1; // reset old settings
 		this.posContainers.push(first);
+		this.hashes.length = 1;
 		this.hashes.push(this.hashes[0]);
-		this.depths.push(0);
+		this.depths.length = 1;
+		this.depths.push(this.depths[0]);
+		this.hashTable[this.hashes[0]].push(first);
 		this.changeConf(0);
 	}
 
@@ -320,7 +355,6 @@ class PieceContainer {
 			this.curConf = moveWrap(this.curConf, this.posContainers.length, dir);
 		}
 		this.posContainer = this.posContainers[this.curConf];
-		//this.hash = PieceContainer.makeHash(this.posContainer);
 		console.log("change conf to " + this.curConf);
 	}
 
@@ -334,9 +368,7 @@ class PieceContainer {
 		for (const oneGoal of this.goalContainer) {
 			for (let i = 0; i < position.length; ++i) {
 				const piecePos = position[i];
-				//const onePiece = this.container[i];
 				if (oneGoal.id == piecePos[2]
-				//if (oneGoal.id == onePiece.id 
 					&& oneGoal.pos[0] == piecePos[0] 
 					&& oneGoal.pos[1] == piecePos[1]) {
 						++goalsMet;
@@ -423,19 +455,16 @@ class PieceContainer {
 					for (let i = 0; i < this.container.length; ++i) {
 						const curPiecePos = this.posContainer[i];
 						if (curPiecePos[2] < 0) {
-						//if (curPiece.id < 0) {
 							continue;
 						}
 						const curPiece = this.container[i];
 						const curPieceShapeData = curPiece.shapeData;
-						//this.user.pIdx = -1;
 						this.idx = -1;
 						for (const s of curPieceShapeData) {
 							vec2.add(sum, s, curPiecePos);
 							if (sum[0] == roundMouse[0] && sum[1] == roundMouse[1]) {
 								this.state = this.statesEnum.DRAGGING;
 								this.idx = i;
-								//this.user.pIdx = i;
 								this.dragOffset = vec2.create();
 								vec2.sub(this.dragOffset, curPiecePos, roundMouse);
 								//console.log("switch to DRAG");
@@ -483,21 +512,13 @@ class PieceContainer {
 	}
 	
 	draw() {
-		// draw the pieces, alt mode shrink when dragging
-		const shrink = false;
-		if (shrink && this.state == this.statesEnum.DRAGGING) {
-			this.user.drawPrim.drawRectangleCenter(this.container[this.idx].pos, [.8, .8], "#f00");
-			for (const al of this.avoidLocs) {
-				this.user.drawPrim.drawRectangleCenter(al, [.8, .8], "#080");
-			}
-		} else {
-			const container = this.user.showGoal ? this.goalContainer : this.container;
-			// reverse order, for UI
-			for (let i = container.length - 1; i >= 0; --i) {
-				const so = container[i];
-				const pos = this.posContainer[i];
-				so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i, pos);
-			}
+		// draw the pieces
+		const container = this.user.showGoal ? this.goalContainer : this.container;
+		// reverse order, for UI
+		for (let i = container.length - 1; i >= 0; --i) {
+			const so = container[i];
+			const pos = this.posContainer[i];
+			so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i, pos);
 		}
 	}
 }

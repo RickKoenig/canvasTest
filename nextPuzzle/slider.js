@@ -40,16 +40,10 @@ class MainApp {
 		// USER before UI built
 
 		//const startLevel = "levelm";
-		//const startLevel = "levele";
-		//const startLevel = "smallheart";
-		//const startLevel = "level05";
-		//const startLevel = "level07";
-		const startLevel = "smaller";
-		//const startLevel = "verysmall";
-		//const startLevel = "nullTest";
-		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
-		this.curBoard = Math.max(0, this.curBoard);
-		console.log("start on level = " + startLevel);
+		//this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		//this.curBoard = Math.max(0, this.curBoard);
+		this.curBoard = 0;
+		//console.log("start on level = " + startLevel);
 
 		// build pieces
 
@@ -58,16 +52,18 @@ class MainApp {
 		const touchUpLevel07 = pieceData.pieceDataArrArr.find(user => user.name === "level07");
 		// add complicated border to level07, towers of hanoi puzzle
 		// top border
-		for (let j = 0; j < 5; ++j) {
-			for (let i = 0; i < 11 - j; ++i) {
-				touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+		if (touchUpLevel07) {
+			for (let j = 0; j < 5; ++j) {
+				for (let i = 0; i < 11 - j; ++i) {
+					touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
 
+				}
 			}
-		}
-		// bottom border
-		for (let j = 9; j >= 6; --j) {
-			for (let i = -j + 13; i < 2 + j; ++i) {
-				touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+			// bottom border
+			for (let j = 9; j >= 6; --j) {
+				for (let i = -j + 13; i < 2 + j; ++i) {
+					touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+				}
 			}
 		}
 
@@ -141,6 +137,7 @@ class MainApp {
 	#solveConf() {
 		console.log("solve");
 		this.pieceContainer.solve();
+		this.pieceContainer.showHashTable();
 	}
 
 	#nextConf(dir) {
@@ -165,22 +162,22 @@ class MainApp {
 	}
 
 	#userBuildUI() {
-		makeEle(this.vp, "button", null, null, "Reset Pieces", this.#resetPieces.bind(this));
 		makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 		makeEle(this.vp, "hr");
+		makeEle(this.vp, "button", null, null, "Reset board", this.#resetPieces.bind(this));
 		makeEle(this.vp, "button", null, null, "Next board", this.#nextBoard.bind(this, 1));
 		makeEle(this.vp, "button", null, null, "Prev board", this.#nextBoard.bind(this, -1));
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		makeEle(this.vp, "hr");
         makeEle(this.vp, "pre", null, null, "Show Goal");
 		this.eles.showGoal = makeEle(this.vp, "input", "showGoal", null, "ho", (val) => {
 			this.showGoal = val;
 		}, "checkbox");
 		makeEle(this.vp, "hr");
 		makeEle(this.vp, "button", null, null, "Solve conf", this.#solveConf.bind(this));
+		makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
 		makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
 		makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
-		makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
+		makeEle(this.vp, "hr");
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 	}		
 	
 	#userProc() {
@@ -293,7 +290,8 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
-		infoStr += "\nboard = " + this.curPieceData.name + "\nboardidx = " + this.curBoard;
+		infoStr += "\nboard = " + this.curPieceData.name 
+		+ "\nboardidx = \n" + this.curBoard + " / " + pieceData.pieceDataArrArr.length;
 		
 		infoStr += "\nmaxDepth = " + this.maxDepth;
 		infoStr += "\nmaxConf = " + this.maxConf;
@@ -304,9 +302,9 @@ class MainApp {
 		infoStr += "\npIdx = " + this.pieceContainer.idx;
 		infoStr += "\nhash = " + this.pieceContainer.hashes[this.pieceContainer.curConf];
 		infoStr += "\ndepth = " + this.pieceContainer.depths[this.pieceContainer.curConf];
-		infoStr += "\nconf = " + this.pieceContainer.curConf + "\n / " + this.pieceContainer.posContainers.length;
-		infoStr += "\n\nAvg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\n\n";
+		infoStr += "\nconf = \n" + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
+		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
+		//infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 

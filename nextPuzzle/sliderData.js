@@ -197,6 +197,23 @@ class pieceData {
     // boards
     static pieceDataArrArr = [
         // test puzzle engw
+        // CAN solve for now
+        { 
+            name: "levelm",
+            boardSize: [8, 5],
+            piecePos: [
+                {pos: [1, 2], id: 0, color: "green", shapeData: pieceData.shapes.el90},
+                {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
+                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+                {pos: [7, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
+                {pos: [3, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [0, 0], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
+            ],
+        },
+        
         {
             name: "smallheart",
             boardSize: [6, 4],
@@ -242,6 +259,93 @@ class pieceData {
                 {pos: [4, 2], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
             ],
         },
+
+        { 
+            name: "level01",
+            boardSize: [4, 2],
+            piecePos: [
+                {pos: [3, 0], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+        },
+
+        { 
+            name: "aband",
+            boardSize: [3, 3],
+            piecePos: [
+                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+        },
+
+        // smaller test
+        {
+            name: "smaller",
+            boardSize: [5, 4],
+            piecePos: [
+                {pos: [1, 2], id: 0, color: "yellow", shapeData: pieceData.shapes.tee},
+                {pos: [0, 0], id: 1, color: "pink", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+            ],
+        },
+        // very small test
+        {
+            name: "verysmall",
+            boardSize: [9, 1],
+            piecePos: [
+                {pos: [4, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
+                //{pos: [5, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+                {pos: [8, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
+            ],
+        },
+        // null test
+        {
+            name: "nullTest",
+            boardSize: [5, 3],
+            piecePos: [
+            ],
+            goalPos: [
+            ],
+        },
+
+
+
+/*
+
+        // can't solve for now
 
         {
             name: "level08",
@@ -407,29 +511,6 @@ class pieceData {
         },
 
         { 
-            name: "level01",
-            boardSize: [4, 2],
-            piecePos: [
-                {pos: [3, 0], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-        },
-
-        { 
             name: "eight",
             boardSize: [3, 3],
             piecePos: [
@@ -454,46 +535,6 @@ class pieceData {
             ],
         },
 
-        { 
-            name: "aband",
-            boardSize: [3, 3],
-            piecePos: [
-                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 2], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-        },
-
-        { 
-            name: "levelm",
-            boardSize: [8, 5],
-            piecePos: [
-                {pos: [1, 2], id: 0, color: "green", shapeData: pieceData.shapes.el90},
-                {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
-                {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
-                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-                {pos: [7, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
-                {pos: [3, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
-                {pos: [0, 0], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
-            ],
-        },
         // test
         { 
             name: "test",
@@ -509,37 +550,6 @@ class pieceData {
             goalPos: [
             ],
         },
-        // smaller test
-        {
-            name: "smaller",
-            boardSize: [5, 4],
-            piecePos: [
-                {pos: [1, 2], id: 0, color: "yellow", shapeData: pieceData.shapes.tee},
-                {pos: [0, 0], id: 1, color: "pink", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-            ],
-        },
-        // very small test
-        {
-            name: "verysmall",
-            boardSize: [9, 1],
-            piecePos: [
-                {pos: [4, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
-                //{pos: [5, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-                {pos: [8, 0], id: 3, color: "pink", shapeData: pieceData.shapes.sq1},
-            ],
-        },
-        // null test
-        {
-            name: "nullTest",
-            boardSize: [5, 3],
-            piecePos: [
-            ],
-            goalPos: [
-            ],
-        }
+        */
     ];
 };
