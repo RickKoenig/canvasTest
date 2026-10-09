@@ -39,15 +39,16 @@ class MainApp {
 
 		// USER before UI built
 
-		//const startLevel = "levelm";
-		//this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
-		//this.curBoard = Math.max(0, this.curBoard);
-		this.curBoard = 0;
-		//console.log("start on level = " + startLevel);
+		//this.curBoard = 0;
+		
+		const startLevel = "levele";
+		//const startLevel = "verysmall";
+		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		this.curBoard = Math.max(0, this.curBoard);
+		console.log("start on level = " + startLevel);
+		
 
 		// build pieces
-
-
 		// modify some pieceData
 		const touchUpLevel07 = pieceData.pieceDataArrArr.find(user => user.name === "level07");
 		// add complicated border to level07, towers of hanoi puzzle
@@ -136,13 +137,30 @@ class MainApp {
 
 	#solveConf() {
 		console.log("solve");
-		this.pieceContainer.solve();
+		if (this.pieceContainer.solve()) {
+			this.pieceContainer.backTrace();
+		}
 		this.pieceContainer.showHashTable();
 	}
 
 	#nextConf(dir) {
 		console.log("next configuration with " + dir);
 		this.pieceContainer.changeConf(dir);
+	}
+
+	#moveBack() {
+		console.log("move back");
+		this.pieceContainer.moveBack();
+	}
+
+	#moveForward() {
+		console.log("move forward");
+		this.pieceContainer.moveForward();
+	}
+
+	#hint() {
+		console.log("hint");
+		this.pieceContainer.hint();
 	}
 
 	// USER: add more members or classes to MainApp
@@ -176,6 +194,9 @@ class MainApp {
 		makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
 		makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
 		makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
+		makeEle(this.vp, "button", null, null, "Move back", this.#moveBack.bind(this));
+		makeEle(this.vp, "button", null, null, "Move forward", this.#moveForward.bind(this));
+		makeEle(this.vp, "button", null, null, "Hint", this.#hint.bind(this));
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 	}		
@@ -205,7 +226,7 @@ class MainApp {
 					dir
 					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
 					,this.boardX, this.boardY);
-				this.pieceContainer.hashes[0] = PieceContainer.makeHash(this.pieceContainer.posContainer);
+				this.pieceContainer.extras[0][0] = PieceContainer.makeHash(this.pieceContainer.posContainer);
 				if (newIdx != null) this.pieceContainer.idx = newIdx;
 			}
 		}
@@ -295,16 +316,17 @@ class MainApp {
 		
 		infoStr += "\nmaxDepth = " + this.maxDepth;
 		infoStr += "\nmaxConf = " + this.maxConf;
-		
 		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
 		infoStr += "\n" + (this.pieceContainer.curConf ? "VIEW CONF" : "MOVE MAIN");
 		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
 		infoStr += "\npIdx = " + this.pieceContainer.idx;
-		infoStr += "\nhash = " + this.pieceContainer.hashes[this.pieceContainer.curConf];
-		infoStr += "\ndepth = " + this.pieceContainer.depths[this.pieceContainer.curConf];
+		const extra = this.pieceContainer.extras[this.pieceContainer.curConf];
+		infoStr += "\nhash = " + extra[0];
+		infoStr += "\ndepth = " + extra[1];
+		infoStr += "\nback =\n" + extra[2];
+		infoStr += "\nforwards =\n" + extra[3];
 		infoStr += "\nconf = \n" + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
 		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
-		//infoStr += "\n\n";
 		this.eles.textInfoLog.innerText = infoStr;
 	}
 

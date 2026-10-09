@@ -196,8 +196,6 @@ class pieceData {
 
     // boards
     static pieceDataArrArr = [
-        // test puzzle engw
-        // CAN solve for now
         { 
             name: "levelm",
             boardSize: [8, 5],
@@ -241,7 +239,7 @@ class pieceData {
                 {pos: [0, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 0], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 3], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 2], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [4, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
                 /*{pos: [1, 0], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [1, 1], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [1, 2], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
