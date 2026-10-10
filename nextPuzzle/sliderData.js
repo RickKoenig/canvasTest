@@ -338,15 +338,8 @@ class pieceData {
             goalPos: [
             ],
         },
-
-
-
-/*
-
-        // can't solve for now
-
         {
-            name: "level08",
+            name: "level08", // tight 'L' shapes, about 7 seconds
             boardSize: [10, 6],
             piecePos: [
                 {pos: [0, 3], id: 0, color: "green", shapeData: pieceData.shapes.bigel90},
@@ -364,9 +357,8 @@ class pieceData {
                 {pos: [0, 3], id: 2, color: "darkred", shapeData: pieceData.shapes.bigel90},
             ],
         },
-
         {
-            name: "level07",
+            name: "level07", // hanoi, take 93 seconds to calc
             boardSize: [15, 10],
             piecePos: [
                 {pos: [0, 9], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
@@ -383,9 +375,8 @@ class pieceData {
                 {pos: [7, 4], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
             ],
         },
-
         {
-            name: "level06",
+            name: "level06", // demon, takes about 4.5 minutes
             boardSize: [9, 11],
             piecePos: [
                 {pos: [3, 8], id: 0, color: "darkred", shapeData: pieceData.shapes.r3x2},
@@ -413,9 +404,8 @@ class pieceData {
                 {pos: [0, 7], id: 4, color: "green", shapeData: pieceData.shapes.bigDemon},
             ],
         },
-
         {
-            name: "level05",
+            name: "level05", // 3 seconds
             boardSize: [10, 6],
             piecePos: [
                 {pos: [1, 2], id: 0, color: "blue", shapeData: pieceData.shapes.sq2},
@@ -436,9 +426,8 @@ class pieceData {
                 {pos: [3, 3], id: 1, color: "green", shapeData: pieceData.shapes.bigel270},
             ],
         },
-
         { 
-            name: "level04",
+            name: "level04", // 1 second
             boardSize: [4, 5],
             piecePos: [
                 {pos: [1, 3], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
@@ -456,9 +445,8 @@ class pieceData {
                 {pos: [1, 0], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
             ],
         },
-
         { 
-            name: "level03",
+            name: "level03", // 1 second
             boardSize: [4, 5],
             piecePos: [
                 {pos: [1, 0], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
@@ -476,9 +464,32 @@ class pieceData {
                 {pos: [1, 3], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
             ],
         },
-
         { 
-            name: "level02",
+            name: "eight", // 6 seconds, no goals, exhausted
+            boardSize: [3, 3],
+            piecePos: [
+                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+            goalPos: [
+                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+            ],
+        },
+        { 
+            name: "level02", // 5.5 seconds
             boardSize: [4, 3],
             piecePos: [
                 {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
@@ -507,47 +518,26 @@ class pieceData {
                 {pos: [2, 0], id: 11, color: "green", shapeData: pieceData.shapes.sq1},
             ],
         },
-
-        { 
-            name: "eight",
-            boardSize: [3, 3],
-            piecePos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-            goalPos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-            ],
-        },
-
         // test
         { 
-            name: "test",
+            name: "test", // varies, .1 seconds, scratch
             boardSize: [8, 6],
             piecePos: [
-                {pos: [2, 1], id: 0, color: "darkred", shapeData: pieceData.shapes.sq1},
+                //{pos: [2, 1], id: 0, color: "darkred", shapeData: pieceData.shapes.sq1},
                 {pos: [5, 0], id: 1, color: "green", shapeData: pieceData.shapes.sq3},
                 {pos: [3, 2], id: 2, color: "blue", shapeData: pieceData.shapes.el2},
                 {pos: [1, 2], id: 3, color: "yellow", shapeData: pieceData.shapes.tee},
-                {pos: [0, 0], id: 4, color: "pink", shapeData: pieceData.shapes.sq1},
+                //{pos: [0, 0], id: 4, color: "pink", shapeData: pieceData.shapes.sq1},
                 {pos: [2, 5], id: -1, color: "black", shapeData: pieceData.shapes.sq1}, // can't move this piece
             ],
             goalPos: [
             ],
         },
-        */
+
+        // can't solve for now
+
+        // no boards that can't be solved !!!
+
+        
     ];
 };

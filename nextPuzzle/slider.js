@@ -41,8 +41,9 @@ class MainApp {
 
 		//this.curBoard = 0;
 		
-		const startLevel = "levele";
+		//const startLevel = "levele";
 		//const startLevel = "verysmall";
+		const startLevel = "level08";
 		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
 		this.curBoard = Math.max(0, this.curBoard);
 		console.log("start on level = " + startLevel);
@@ -111,8 +112,8 @@ class MainApp {
 		console.log("initpieces, curboard = " + this.curBoard);
 		// slide objects and container
 		this.pieceSize = .875;
-		this.maxDepth = 100;
-		this.maxConf = 20000;
+		this.maxDepth = 1600;
+		this.maxConf = 600000;
 		
 		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];
@@ -135,12 +136,24 @@ class MainApp {
 		this.pieceContainer.resetPieces();
 	}
 
-	#solveConf() {
-		console.log("solve");
-		if (this.pieceContainer.solve()) {
+	#runSolve() {
+		if (this.pieceContainer.solve()) { // maybe put this in a working thread later
 			this.pieceContainer.backTrace();
 		}
 		this.pieceContainer.showHashTable();
+		this.solving = false;
+	}
+
+	#solveConf() {
+		if (this.solving) return; // don't run more than 1 solve
+		console.log("solve");
+		this.solving = true;
+		this.#userUpdateInfo();
+
+		//this.#runSolve();
+		setTimeout(this.#runSolve.bind(this), 10); // let #userUpdateInfo update before solving
+
+		this.#userUpdateInfo();
 	}
 
 	#nextConf(dir) {
@@ -311,6 +324,11 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "Info";
+		if (this.solving) {
+			infoStr += "\nSOLVING\nplease stand by";
+			this.eles.textInfoLog.innerText = infoStr;
+			return;
+		}
 		infoStr += "\nboard = " + this.curPieceData.name 
 		+ "\nboardidx = \n" + this.curBoard + " / " + pieceData.pieceDataArrArr.length;
 		

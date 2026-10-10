@@ -127,7 +127,7 @@ class PieceContainer {
 		this.idx = -1; // which object in container is being dragged
 	}
 
-	static hashTableSize = 1 << 8; // power of 2
+	static hashTableSize = 1 << 16; // power of 2
 	static makeHash(posCont) {
 		let hash = 0;
 		if (posCont.length == 0) return 0;
@@ -135,6 +135,11 @@ class PieceContainer {
 		hash += pc[0] + pc[1] * 5;
 		if (posCont.length > 1) {
 			pc = posCont[1];
+			hash *= 25;
+			hash += pc[0] + pc[1] * 5;
+		}
+		if (posCont.length > 2) {
+			pc = posCont[2];
 			hash *= 25;
 			hash += pc[0] + pc[1] * 5;
 		}
