@@ -400,23 +400,20 @@ class PieceContainer {
 		if (this.curConf == 0 && this.extras.length > 1) {
 			this.curConf = 1; // switch to browse configurations mode
 			this.posContainer = this.posContainers[this.curConf];
-			return;
+			return false;
 		}
-		if (this.curConf < 1) return; // can't move forward in edit mode
+		if (this.curConf < 1) return false; // can't move forward in edit mode
 		const newConf = this.extras[this.curConf][3]; // forward
-		if (newConf < 1) return; // can't move forward from end
+		if (newConf < 1) return false; // can't move forward from end
 		this.curConf = newConf;
 		this.posContainer = this.posContainers[this.curConf];
 		console.log("move forward to " + newConf);
+		return true;
 	}
 
-	// TODO: maybe optimize with hash
-	findConf(piecePos) {
-
-	}
-
+	// return if solve should be called
 	hint() {
-		if (this.curConf >= 1) return; // only do hints in edit mode
+		if (this.curConf >= 1) return false; // only do hints in edit mode
 		console.log("in hint");
 		let i;
 		for (i = 1; i < this.posContainers.length; ++i) {
@@ -428,14 +425,17 @@ class PieceContainer {
 				const j = 
 				this.posContainers[0] = this.posContainer;*/
 				this.curConf = i; 
-				this.moveForward();
+				const canMoveForward = this.moveForward();
 				this.posContainer = PieceContainer.clonePosPieces(this.posContainers[this.curConf]);
 				this.extras[0][0] = PieceContainer.makeHash(this.posContainer);
 				this.posContainers[0] = this.posContainer;
 				this.curConf = 0;
-				break;
+				const goals = this.getGoalsMet(this.posContainer);
+				if (goals[1] != 0 && goals[0] == goals[1]) return false;
+				return !canMoveForward;
 			}
 		}
+		return true;
 	}
 
 	isDragging() {

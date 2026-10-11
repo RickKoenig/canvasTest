@@ -3,6 +3,7 @@
 // handle the html elements, do the UI on verticalPanel, and init and proc the other classes
 // TODO: for now assume 60hz refresh rate
 class MainApp {
+	static debug = false; // lots of buttons and info
 	static numInstances = 0; // test static members
 	static getNumInstances() { // test static methods
 		return MainApp.numInstances;
@@ -51,20 +52,20 @@ class MainApp {
 
 		// build pieces
 		// modify some pieceData
-		const touchUpLevel07 = pieceData.pieceDataArrArr.find(user => user.name === "level07");
-		// add complicated border to level07, towers of hanoi puzzle
-		// top border
-		if (touchUpLevel07) {
-			for (let j = 0; j < 5; ++j) {
-				for (let i = 0; i < 11 - j; ++i) {
-					touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+		const touchUpHanoi = pieceData.pieceDataArrArr.find(user => user.name === "hanoi");
+		// add complicated border to hanoi, towers of hanoi puzzle
+		// bottom border
+		if (touchUpHanoi) {
+			for (let j = 0; j < 4; ++j) {
+				for (let i = 0; i < 10 - j; ++i) {
+					touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
 
 				}
 			}
-			// bottom border
-			for (let j = 9; j >= 6; --j) {
-				for (let i = -j + 13; i < 2 + j; ++i) {
-					touchUpLevel07.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+			// top border
+			for (let j = 7; j >= 4; --j) {
+				for (let i = -j + 12; i < 3 + j; ++i) {
+					touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
 				}
 			}
 		}
@@ -136,22 +137,25 @@ class MainApp {
 		this.pieceContainer.resetPieces();
 	}
 
-	#runSolve() {
+	#runSolve(numHints) {
 		if (this.pieceContainer.solve()) { // maybe put this in a working thread later
 			this.pieceContainer.backTrace();
 		}
 		this.pieceContainer.showHashTable();
 		this.solving = false;
+		for (let i = 0; i < numHints; ++i) {
+			this.#hint();
+		}
 	}
 
-	#solveConf() {
+	#solveConf(numHints) {
 		if (this.solving) return; // don't run more than 1 solve
 		console.log("solve");
 		this.solving = true;
 		this.#userUpdateInfo();
 
 		//this.#runSolve();
-		setTimeout(this.#runSolve.bind(this), 10); // let #userUpdateInfo update before solving
+		setTimeout(this.#runSolve.bind(this, numHints), 100); // let #userUpdateInfo update before solving
 
 		this.#userUpdateInfo();
 	}
@@ -171,9 +175,19 @@ class MainApp {
 		this.pieceContainer.moveForward();
 	}
 
-	#hint() {
-		console.log("hint");
-		this.pieceContainer.hint();
+	#hint(numHints) {
+		if (this.solving) return;
+		const doSolve = this.pieceContainer.hint();
+		if (!doSolve) {
+			for (let i = 1; i < numHints; ++i) {
+				this.pieceContainer.hint();
+			}
+		}
+		if (MainApp.debug) return; // let solve do it
+		console.log("hint, dosolve = " + doSolve);
+		if (doSolve) {
+			this.#solveConf(numHints);
+		}
 	}
 
 	// USER: add more members or classes to MainApp
@@ -203,13 +217,16 @@ class MainApp {
 			this.showGoal = val;
 		}, "checkbox");
 		makeEle(this.vp, "hr");
-		makeEle(this.vp, "button", null, null, "Solve conf", this.#solveConf.bind(this));
-		makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
-		makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
-		makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
-		makeEle(this.vp, "button", null, null, "Move back", this.#moveBack.bind(this));
-		makeEle(this.vp, "button", null, null, "Move forward", this.#moveForward.bind(this));
-		makeEle(this.vp, "button", null, null, "Hint", this.#hint.bind(this));
+		if (MainApp.debug) {
+			makeEle(this.vp, "button", null, null, "Solve conf", this.#solveConf.bind(this, false));
+			makeEle(this.vp, "button", null, null, "Reset conf", this.#nextConf.bind(this, 0));
+			makeEle(this.vp, "button", null, null, "Next conf", this.#nextConf.bind(this, 1));
+			makeEle(this.vp, "button", null, null, "Prev conf", this.#nextConf.bind(this, -1));
+			makeEle(this.vp, "button", null, null, "Move back", this.#moveBack.bind(this));
+			makeEle(this.vp, "button", null, null, "Move forward", this.#moveForward.bind(this));
+		}
+		makeEle(this.vp, "button", null, null, "Hint", this.#hint.bind(this, 1));
+		makeEle(this.vp, "button", null, null, "Hint 4", this.#hint.bind(this, 4));
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
 	}		

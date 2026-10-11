@@ -358,21 +358,21 @@ class pieceData {
             ],
         },
         {
-            name: "level07", // hanoi, take 93 seconds to calc
-            boardSize: [15, 10],
+            name: "hanoi", // hanoi, take 93 seconds to calc
+            boardSize: [15, 8],
             piecePos: [
-                {pos: [0, 9], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
-                {pos: [0, 8], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
-                {pos: [0, 7], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
-                {pos: [0, 6], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
-                {pos: [0, 5], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
+                //{pos: [0, 9], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
+                {pos: [0, 7], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
+                {pos: [0, 6], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
+                {pos: [0, 5], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
+                {pos: [0, 4], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
             ],
             goalPos: [
-                {pos: [11, 0], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
-                {pos: [10, 1], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
-                {pos: [9, 2], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
-                {pos: [8, 3], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
-                {pos: [7, 4], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
+                //{pos: [11, 0], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
+                {pos: [10, 0], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
+                {pos: [9, 1], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
+                {pos: [8, 2], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
+                {pos: [7, 3], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
             ],
         },
         {
