@@ -40,14 +40,15 @@ class MainApp {
 
 		// USER before UI built
 
-		//this.curBoard = 0;
+		this.curBoard = 0;
 		
 		//const startLevel = "levele";
 		//const startLevel = "verysmall";
-		const startLevel = "level08";
-		this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
-		this.curBoard = Math.max(0, this.curBoard);
-		console.log("start on level = " + startLevel);
+		//const startLevel = "tight";
+		//const startLevel = "unsolvable";
+		//this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		//this.curBoard = Math.max(0, this.curBoard);
+		//console.log("start on level = " + startLevel);
 		
 
 		// build pieces
@@ -175,9 +176,10 @@ class MainApp {
 		this.pieceContainer.moveForward();
 	}
 
+	// TODO: this need some cleanup
 	#hint(numHints) {
 		if (this.solving) return;
-		const doSolve = this.pieceContainer.hint();
+		const doSolve = this.pieceContainer.hint(0);
 		if (!doSolve) {
 			for (let i = 1; i < numHints; ++i) {
 				this.pieceContainer.hint();
@@ -207,11 +209,11 @@ class MainApp {
 	}
 
 	#userBuildUI() {
-		makeEle(this.vp, "button", null, null, "Random color", this.#randomColor.bind(this));
 		makeEle(this.vp, "hr");
-		makeEle(this.vp, "button", null, null, "Reset board", this.#resetPieces.bind(this));
-		makeEle(this.vp, "button", null, null, "Next board", this.#nextBoard.bind(this, 1));
-		makeEle(this.vp, "button", null, null, "Prev board", this.#nextBoard.bind(this, -1));
+		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
+		makeEle(this.vp, "button", null, null, "-1", this.#nextBoard.bind(this, -1));
+		makeEle(this.vp, "button", null, null, "0", this.#resetPieces.bind(this));
+		makeEle(this.vp, "button", null, null, "+1", this.#nextBoard.bind(this, 1));
         makeEle(this.vp, "pre", null, null, "Show Goal");
 		this.eles.showGoal = makeEle(this.vp, "input", "showGoal", null, "ho", (val) => {
 			this.showGoal = val;
@@ -225,10 +227,8 @@ class MainApp {
 			makeEle(this.vp, "button", null, null, "Move back", this.#moveBack.bind(this));
 			makeEle(this.vp, "button", null, null, "Move forward", this.#moveForward.bind(this));
 		}
-		makeEle(this.vp, "button", null, null, "Hint", this.#hint.bind(this, 1));
-		makeEle(this.vp, "button", null, null, "Hint 4", this.#hint.bind(this, 4));
-		makeEle(this.vp, "hr");
-		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
+		makeEle(this.vp, "button", null, null, "Hint1", this.#hint.bind(this, 1));
+		makeEle(this.vp, "button", null, null, "Hint4", this.#hint.bind(this, 4));
 	}		
 	
 	#userProc() {
@@ -340,36 +340,31 @@ class MainApp {
 
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
-		let infoStr = "Info";
+		let infoStr = "";
+		infoStr += "Avg fps = " + this.AvgFps.toFixed(2);
+		infoStr += "\nBoard = " + this.curPieceData.name ;
 		if (this.solving) {
-			infoStr += "\nSOLVING\nplease stand by";
+			infoStr += "\n\nSOLVING\nplease stand by\n\n";
 			this.eles.textInfoLog.innerText = infoStr;
 			return;
 		}
-		infoStr += "\nboard = " + this.curPieceData.name 
-		+ "\nboardidx = \n" + this.curBoard + " / " + pieceData.pieceDataArrArr.length;
-		
-		infoStr += "\nmaxDepth = " + this.maxDepth;
-		infoStr += "\nmaxConf = " + this.maxConf;
-		infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
-		infoStr += "\n" + (this.pieceContainer.curConf ? "VIEW CONF" : "MOVE MAIN");
-		infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
-		infoStr += "\npIdx = " + this.pieceContainer.idx;
-		const extra = this.pieceContainer.extras[this.pieceContainer.curConf];
-		infoStr += "\nhash = " + extra[0];
-		infoStr += "\ndepth = " + extra[1];
-		infoStr += "\nback =\n" + extra[2];
-		infoStr += "\nforwards =\n" + extra[3];
-		infoStr += "\nconf = \n" + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
-		infoStr += "\nAvg fps = " + this.AvgFps.toFixed(2);
+		if (MainApp.debug) {
+			infoStr += "\nboardidx = \n" + this.curBoard + " / " + pieceData.pieceDataArrArr.length;
+			
+			infoStr += "\nmaxDepth = " + this.maxDepth;
+			infoStr += "\nmaxConf = " + this.maxConf;
+			infoStr += "\nstate = " + this.pieceContainer.statesEnumStrs[this.pieceContainer.state];
+			infoStr += "\n" + (this.pieceContainer.curConf ? "VIEW CONF" : "MOVE MAIN");
+			infoStr += "\ngoals = " + this.goals[0] + " / " + this.goals[1];
+			infoStr += "\npIdx = " + this.pieceContainer.idx;
+			const extra = this.pieceContainer.extras[this.pieceContainer.curConf];
+			infoStr += "\nhash = " + extra[0];
+			infoStr += "\ndepth = " + extra[1];
+			infoStr += "\nback =\n" + extra[2];
+			infoStr += "\nforwards =\n" + extra[3];
+			infoStr += "\nconf = \n" + this.pieceContainer.curConf + " / " + this.pieceContainer.posContainers.length;
+		}
 		this.eles.textInfoLog.innerText = infoStr;
-	}
-
-	#randomColor() {
-		const r = getRandomInt(256);
-		const g = getRandomInt(256);
-		const b = getRandomInt(256);
-		this.vp.style.background = `rgb(${r}, ${g}, ${b}`;
 	}
 
 	// proc

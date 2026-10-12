@@ -21,7 +21,7 @@
             "type": "chrome",
             "request": "launch",
             "name": "Launch Chrome against localhost, SLIDER",
-            "url": "http://localhost:88/plotter2d/nextPuzzle/slider.html",
+            "url": "http://localhost:88/plotter2d/nextPuzzle/slider.html?panelWidthRatio=.2",
             "webRoot": "${workspaceFolder}"
         },
         {
