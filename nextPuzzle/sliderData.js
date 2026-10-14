@@ -1,6 +1,8 @@
 'use strict';
 
 class pieceData {
+    // each element has x, y, and a fill code 0 none, 1 right, 2 up, 3 both
+    // 4 left, 8 left, for non movable pieces near a border
     static shapes = {
         sq1 : [
             [0, 0]
@@ -192,10 +194,10 @@ class pieceData {
             [0, 3],
             [2, 3],
         ]
-    }; 
+    };
 
     // boards
-    static pieceDataArrArr = [
+    static boards = [
         { 
             name: "practice",
             boardSize: [8, 5],
@@ -203,7 +205,7 @@ class pieceData {
                 {pos: [1, 2], id: 0, color: "green", shapeData: pieceData.shapes.el90},
                 {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
                 {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
-                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1, fill: 15},
             ],
             goalPos: [
                 {pos: [7, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
@@ -416,9 +418,11 @@ class pieceData {
                 {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
             ],
         },
+
+        // unused boards, take too long to solve or test boards
 /*
         {
-            name: "level06", // demon, takes about 4.5 minutes
+            name: "demon", // demon, takes about 4.5 minutes
             boardSize: [9, 11],
             piecePos: [
                 {pos: [3, 8], id: 0, color: "darkred", shapeData: pieceData.shapes.r3x2},
@@ -448,27 +452,7 @@ class pieceData {
         },
 
         { 
-            name: "level04", // 1 second
-            boardSize: [4, 5],
-            piecePos: [
-                {pos: [1, 3], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
-                {pos: [1, 0], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 3], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
-                {pos: [1, 1], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 3], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
-                {pos: [1, 2], id: 2, color: "darkred", shapeData: pieceData.shapes.r2x1},
-                {pos: [0, 1], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
-                {pos: [3, 1], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
-            ],
-            goalPos: [
-                {pos: [1, 0], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
-            ],
-        },
-        // test
-        { 
-            name: "test", // varies, .1 seconds, scratch
+            name: "smalltest", // varies, .1 seconds, scratch
             boardSize: [8, 6],
             piecePos: [
                 //{pos: [2, 1], id: 0, color: "darkred", shapeData: pieceData.shapes.sq1},
@@ -483,7 +467,7 @@ class pieceData {
         },
 
         {
-            name: "levele",
+            name: "sameids",
             boardSize: [7, 5],
             piecePos: [
                 {pos: [0, 1], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
@@ -539,7 +523,56 @@ class pieceData {
         },
 */
         // can't solve for now
-
+        // NONE
         // no boards that can't be solved !!!
     ];
 };
+
+{
+    // modify some pieceData
+    const touchUpHanoi = pieceData.boards.find(user => user.name === "hanoi");
+    // add complicated border to hanoi, towers of hanoi puzzle
+    if (touchUpHanoi) {
+        // top border
+        for (let j = 7; j >= 4; --j) {
+            for (let i = -j + 12; i < 3 + j; ++i) {
+                touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+            }
+        }
+        // bottom border
+        for (let j = 0; j < 4; ++j) {
+            for (let i = 0; i < 10 - j; ++i) {
+                touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
+
+            }
+        }
+    }
+}
+
+// add filler between squares of shapes
+{
+    let numShapes = 0;
+    for (const shapeName in pieceData.shapes) {
+        console.log("shape name = " + shapeName);
+        const shape = pieceData.shapes[shapeName];
+        const posD = vec2.create();
+        for (let j = 0; j < shape.length; ++j) {
+            const posJ = shape[j];
+            posJ[2] = 0;
+            for (let i = 0; i < shape.length; ++i) {
+                const posI = shape[i];
+                vec2.sub(posD, posI, posJ);
+                if (posD[0] == 1 && posD[1] == 0) {
+                    posJ[2] |= 1;
+                }
+                if (posD[0] == 0 && posD[1] == 1) {
+                    posJ[2] |= 2;
+                }
+
+            }
+        }
+        ++numShapes;
+    }
+    console.log("num shapes = " + numShapes);
+}
+

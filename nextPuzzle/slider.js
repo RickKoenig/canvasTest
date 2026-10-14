@@ -46,31 +46,10 @@ class MainApp {
 		//const startLevel = "verysmall";
 		//const startLevel = "tight";
 		//const startLevel = "unsolvable";
-		//this.curBoard = pieceData.pieceDataArrArr.findIndex(user => user.name === startLevel);
+		//this.curBoard = pieceData.boards.findIndex(user => user.name === startLevel);
 		//this.curBoard = Math.max(0, this.curBoard);
 		//console.log("start on level = " + startLevel);
 		
-
-		// build pieces
-		// modify some pieceData
-		const touchUpHanoi = pieceData.pieceDataArrArr.find(user => user.name === "hanoi");
-		// add complicated border to hanoi, towers of hanoi puzzle
-		// bottom border
-		if (touchUpHanoi) {
-			for (let j = 0; j < 4; ++j) {
-				for (let i = 0; i < 10 - j; ++i) {
-					touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
-
-				}
-			}
-			// top border
-			for (let j = 7; j >= 4; --j) {
-				for (let i = -j + 12; i < 3 + j; ++i) {
-					touchUpHanoi.piecePos.push({pos: [i, j], id: -1, color: "black", shapeData: pieceData.shapes.sq1});
-				}
-			}
-		}
-
 		// sort piecedata by id's and position
 		PieceContainer.sortPieceData();
 
@@ -113,11 +92,11 @@ class MainApp {
 		this.winCount = 0;
 		console.log("initpieces, curboard = " + this.curBoard);
 		// slide objects and container
-		this.pieceSize = .875;
+		this.pieceSize = .875
 		this.maxDepth = 1600;
 		this.maxConf = 600000;
 		
-		this.curPieceData = pieceData.pieceDataArrArr[this.curBoard];
+		this.curPieceData = pieceData.boards[this.curBoard];
 		this.boardX = this.curPieceData.boardSize[0];
 		this.boardY = this.curPieceData.boardSize[1];
 	
@@ -128,13 +107,15 @@ class MainApp {
 	}
 
 	#nextBoard(dir) {
+		if (this.showGoal) return;
 		console.log("next board with " + dir);
-		this.curBoard = moveWrap(this.curBoard, pieceData.pieceDataArrArr.length, dir);
+		this.curBoard = moveWrap(this.curBoard, pieceData.boards.length, dir);
 		this.#userInit();
 		this.#resetGraphics();
 	}
 
 	#resetPieces() {
+		if (this.showGoal) return;
 		this.pieceContainer.resetPieces();
 	}
 
@@ -178,6 +159,7 @@ class MainApp {
 
 	// TODO: this need some cleanup
 	#hint(numHints) {
+		if (this.showGoal) return;
 		if (this.solving) return;
 		const doSolve = this.pieceContainer.hint(0);
 		if (!doSolve) {
@@ -198,8 +180,8 @@ class MainApp {
 		this.#initPieces();
 		this.#initBoard();
 		this.winCount = 0; // frame counter
-		this.solveSpeed = 10;
-		this.slow = 20;
+		this.solveSpeed = 100;
+		this.slow = 200;
 
 		// measure frame rate
 		this.fps;
@@ -235,7 +217,9 @@ class MainApp {
 		// proc
 		const mbut = this.input.mouse.mbut[Mouse.LEFT];
 		const lastmbut = this.input.mouse.lmbut[Mouse.LEFT];
-		if (!this.pieceContainer.isDragging() && this.pieceContainer.idx != null && this.pieceContainer.idx >= 0) {
+		if (!this.pieceContainer.isDragging() 
+			&& this.pieceContainer.idx != null && this.pieceContainer.idx >= 0
+			&& !this.showGoal) {
 			let dir = null;
 			switch(this.input.keyboard.key) {
 				case  keyTable.keyCodes.LEFT:
@@ -255,7 +239,7 @@ class MainApp {
 				const newIdx = PieceContainer.snapMovePiece(
 					dir
 					, this.pieceContainer.container, this.pieceContainer.posContainer, this.pieceContainer.idx
-					,this.boardX, this.boardY);
+					, this.pieceSize, this.boardX, this.boardY);
 				this.pieceContainer.extras[0][0] = PieceContainer.makeHash(this.pieceContainer.posContainer);
 				if (newIdx != null) this.pieceContainer.idx = newIdx;
 			}
@@ -300,7 +284,7 @@ class MainApp {
 
 	#userDraw() {
 		const bigCursor = true; // true for mobile
-		this.board.draw();
+		this.board.draw(this.pieceSize);
 		this.pieceContainer.draw();
 		// draw cursor, when pressed / touched
 		if (this.input.mouse.mbut[Mouse.LEFT]) {
@@ -349,7 +333,7 @@ class MainApp {
 			return;
 		}
 		if (MainApp.debug) {
-			infoStr += "\nboardidx = \n" + this.curBoard + " / " + pieceData.pieceDataArrArr.length;
+			infoStr += "\nboardidx = \n" + this.curBoard + " / " + pieceData.boards.length;
 			
 			infoStr += "\nmaxDepth = " + this.maxDepth;
 			infoStr += "\nmaxConf = " + this.maxConf;

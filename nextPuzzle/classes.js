@@ -3,11 +3,9 @@
 // doesn't need pos
 // pos stored somewhere else for speed in solving
 class Piece {
-	constructor(o, pieceSize) {
+	constructor(o) {
 		this.color = o.color;
-		//this.id = o.id;
 		this.shapeData = o.shapeData;
-		this.pieceSize = pieceSize;
 		this.minPoint = vec2.clone(this.shapeData[0]);
 		this.maxPoint = vec2.clone(this.shapeData[0]);
 		// calc bounding box for shape
@@ -19,67 +17,60 @@ class Piece {
 	}
 
 	// keep piece in range of board
-	boardRange(boardX, boardY, pos) {
-		pos[0] = range(-this.minPoint[0], pos[0], boardX - 1 - this.maxPoint[0]);
-		pos[1] = range(-this.minPoint[1], pos[1], boardY - 1 - this.maxPoint[1]);
+	boardRange(boardX, boardY, pos, pieceSize) {
+		const more = (1 - pieceSize) / 2;
+		pos[0] = range(-this.minPoint[0] - more, pos[0], boardX - 1 - this.maxPoint[0] + more);
+		pos[1] = range(-this.minPoint[1] - more, pos[1], boardY - 1 - this.maxPoint[1] + more);
 		return pos;
 	}
 
-	draw(user, hilit, idx, pos) {
-		const smallerRad = [.995, .995];
-		const bigWidth = .06;
+	draw(user, pieceSize, hilit, idx, pos) {
+		//const smallerRad = [.992, .992];
+		const smallerRad = [pieceSize, pieceSize];
+		const fillRad = [pieceSize / 4, pieceSize / 4];
+		//const smallerRad = [1, 1];
+		const outlineWidth = .06;
 		const sqPos = vec2.create();
-		for (const offsetPos of this.shapeData) {
-			vec2.add(sqPos, offsetPos, pos);
-			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "peru");
-		}
+		const fillPos = vec2.create();
+		// draw rectangle
+		const id = pos[2];
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, pos);
 			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
+			if (id >= 0) {
+				if (offsetPos[2] & 1) { // fill right
+					vec2.add(fillPos, sqPos, [.5, 0]);
+					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+				}
+				if (offsetPos[2] & 2) { // fill up
+					vec2.add(fillPos, sqPos, [0, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+				}
+				if (offsetPos[2] & 4) { // fill left
+					vec2.add(fillPos, sqPos, [-.5, 0]);
+					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+				}
+				if (offsetPos[2] & 8) { // fill down
+					vec2.add(fillPos, sqPos, [0, -.5]);
+					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+				}
+			}
 		}
-		const id = pos[2];
+		const outlineRad = vec2.create();
+		vec2.sub(outlineRad, smallerRad, [3 * outlineWidth / 4, 3 * outlineWidth / 4])
+		
+		for (const offsetPos of this.shapeData) {
+			vec2.add(sqPos, offsetPos, pos);
+			user.drawPrim.drawRectangleCenterO(sqPos, outlineRad, outlineWidth
+				, hilit ? "black" : "peru");
+		}
+		// draw text
 		const posOff = vec2.create();
 		vec2.add(posOff, pos, [.25, -.25]);
 		user.drawPrim.drawText(pos, [.4, .4]
-		, id, "white", "black");
+			, id, "white", "black");
 		user.drawPrim.drawText(posOff, [.15, .15]
-		, idx, "white", "black");
-	}
-}
-
-// needs pos, doen't need to check borders
-class GoalPiece {
-	constructor(o, pieceSize) {
-		this.pos = vec2.clone(o.pos);
-		this.color = o.color;
-		this.id = o.id;
-		this.shapeData = o.shapeData;
-		this.pieceSize = pieceSize;
-		this.minPoint = vec2.clone(this.shapeData[0]);
-		this.maxPoint = vec2.clone(this.shapeData[0]);
-		// calc bounding box for shape
-		for (let i = 1; i < this.shapeData.length; ++i) {
-			const sd = this.shapeData[i];
-			vec2.min(this.minPoint, this.minPoint, sd);
-			vec2.max(this.maxPoint, this.maxPoint, sd);
-		}
-	}
-
-	draw(user, hilit) {
-		const smallerRad = [.995, .995];
-		const bigWidth = .06;
-		const sqPos = vec2.create();
-		for (const offsetPos of this.shapeData) {
-			vec2.add(sqPos, offsetPos, this.pos);
-			user.drawPrim.drawRectangleCenterO(sqPos, smallerRad, bigWidth, hilit ? "black" : "peru");
-		}
-		for (const offsetPos of this.shapeData) {
-			vec2.add(sqPos, offsetPos, this.pos);
-			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
-		}
-		const txt = this.id; // print id
-		user.drawPrim.drawText(this.pos, [.35, .35]
-		, txt, "white", "black");
+			, idx, "white", "black");
 	}
 }
 
@@ -101,7 +92,7 @@ class PieceContainer {
 		this.posContainer = []; // holds the elements of pos of a piece and ID
 		this.posMasterContainer = []; // holds the original elements of pos of a piece and ID
 		for (const pd of pieceData.piecePos) {
-			const p = new Piece(pd, pieceSize);
+			const p = new Piece(pd);
 			this.container.push(p);
 			this.posContainer.push([pd.pos[0], pd.pos[1], pd.id]); // x, y, ID
 		}
@@ -118,7 +109,10 @@ class PieceContainer {
 		// build goal container
 		this.goalContainer = [];
 		for (const go of pieceData.goalPos) {
-			const p = new GoalPiece(go, pieceSize);
+			const p = new Piece(go);
+			p.pos = go.pos;
+			p.id = go.id;
+			//const p = new GoalPiece(go);
 			this.goalContainer.push(p);
 		}
 
@@ -199,7 +193,7 @@ class PieceContainer {
 					for (const dir of dirVecs) {
 						const moveCont = PieceContainer.clonePosPieces(this.posContainers[np]);
 						const result = PieceContainer.snapMovePiece(dir, this.container, moveCont, idx
-							, this.boardX, this.boardY);
+							, this.pieceSize, this.boardX, this.boardY);
 						if (result != null) {
 							const hash = PieceContainer.makeHash(moveCont);
 							let i;
@@ -331,11 +325,12 @@ class PieceContainer {
 	static sortPieceData() {
 		//return;
 		console.log("---------- do sortPieceData -------------");
-		for(const level of pieceData.pieceDataArrArr) {
+		for(const level of pieceData.boards) {
 			const piecePos = level.piecePos;
 			console.log("level " + level.name + " has " + piecePos.length + " pieces");
 			piecePos.sort(PieceContainer.comparePieceData);
 		}
+	    console.log("num boards = " + pieceData.boards.length);
 		console.log("---------- END do sortPieceData -------------");
 
 	}
@@ -488,7 +483,7 @@ class PieceContainer {
 
 	// move pieces with whole number increments
 	// return newIdx if move the piece, null if not
-	static snapMovePiece(dir, container, posContainer, idx, boardX, boardY) {
+	static snapMovePiece(dir, container, posContainer, idx, pieceSize, boardX, boardY) {
 		if (idx < 0) {
 			console.log("snapMovePiece idx < 0");
 			return null;
@@ -513,7 +508,7 @@ class PieceContainer {
 		}
 		// check other pieces
 		const avoidLocs = PieceContainer.makeAvoidPieces(container, posContainer, idx); // take container of pieces and remove self and just make arr of pos
-		const pen = avoidPieces(pos, avoidLocs, pce.pieceSize);
+		const pen = avoidPieces(pos, avoidLocs, pieceSize);
 		if (pen > 0) {
 			vec2.sub(pos, pos, dir); // put it back
 			//console.log("blocked by other piece");
@@ -528,7 +523,7 @@ class PieceContainer {
 		// change states
 		switch(this.state) {
 			case this.statesEnum.IDLE:
-				if (mbut && !lmbut && this.curConf == 0) {
+				if (mbut && !lmbut && this.curConf == 0 && !this.user.showGoal) {
 					// PICK up piece if within range
 					const roundMouse = [Math.round(fmxy[0]), Math.round(fmxy[1])];
 					const sum = vec2.create();
@@ -582,9 +577,9 @@ class PieceContainer {
 				vec2.add(endPos, endPos, this.dragOffset);
 				// keep within bounds of the board
 				this.startPos = vec2.clone(curPos);
-				endPos = pce.boardRange(this.boardX, this.boardY, endPos); // keep the piece on the board
+				endPos = pce.boardRange(this.boardX, this.boardY, endPos, this.pieceSize); // keep the piece on the board
 				this.avoidLocs = PieceContainer.makeAvoidPieces(this.container, this.posContainer, this.idx); // take container of pieces and remove self and just make arr of pos
-				const newPos = solvePath(
+				let newPos = solvePath(
 					this.startPos, endPos, this.avoidLocs, this.pieceSize, this.user.slow, this.user.solveSpeed);
 				vec2.copy(curPos, newPos); // update container with curPiece REFERENCE
 				break;
@@ -597,8 +592,16 @@ class PieceContainer {
 		// reverse order, for UI
 		for (let i = container.length - 1; i >= 0; --i) {
 			const so = container[i];
-			const pos = this.posContainer[i];
-			so.draw(this.user, this.state == this.statesEnum.DRAGGING && i == this.idx, i, pos);
+			let pos;
+			if (this.user.showGoal) {
+				 pos = container[i].pos;
+				 pos[2] = so.id;
+			} else {
+				 pos = this.posContainer[i];
+			}
+			// can draw pieces and goalPieces
+			so.draw(this.user, this.pieceSize, this.state == this.statesEnum.DRAGGING && i == this.idx
+				, i, pos);
 		}
 	}
 }
@@ -610,14 +613,14 @@ class Board {
 		this.boardY = boardY;
 	}
 
-	draw() {
+	draw(pieceSize) {
 		// draw puzzle outline
 		this.user.drawPrim.drawRectangleO([-.5, -.5], [this.boardX, this.boardY], .04);
 		for (let j = 0; j < this.boardY; ++j) {
 			const cornerY = j + .5;
 			for (let i = 0; i < this.boardX; ++i) {
 				const cornerX = i + .5;
-				this.user.drawPrim.drawRectangleCenter([cornerX - .5, cornerY - .5], [.8, .8], "#0003");
+				this.user.drawPrim.drawRectangleCenter([cornerX - .5, cornerY - .5], [pieceSize, pieceSize], "#0003");
 			}
 		}
 	}
