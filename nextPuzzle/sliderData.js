@@ -201,11 +201,12 @@ class pieceData {
         { 
             name: "practice",
             boardSize: [8, 5],
+            showIds: true,
             piecePos: [
                 {pos: [1, 2], id: 0, color: "green", shapeData: pieceData.shapes.el90},
-                {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [3, 3], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
                 {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
-                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1, fill: 15},
+                {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
                 {pos: [7, 0], id: 0, color: "green", shapeData: pieceData.shapes.el90},
@@ -316,7 +317,7 @@ class pieceData {
             name: "klotski", // 1 second
             boardSize: [4, 5],
             piecePos: [
-                {pos: [1, 0], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
+                {pos: [1, 0], id: 3, color: "gray", shapeData: pieceData.shapes.sq2},
                 {pos: [0, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [3, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
@@ -328,7 +329,7 @@ class pieceData {
                 {pos: [3, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
             ],
             goalPos: [
-                {pos: [1, 3], id: 3, color: "peru", shapeData: pieceData.shapes.sq2},
+                {pos: [1, 3], id: 3, color: "gray", shapeData: pieceData.shapes.sq2},
             ],
         },
 
@@ -550,29 +551,115 @@ class pieceData {
 }
 
 // add filler between squares of shapes
+/* 
+    filler directions
+    1: left
+    2: right
+    4: down
+    8: up
+
+    16: left AND down
+    32: left AND up
+    64: right AND down
+    128: right AND up
+*/
+
 {
     let numShapes = 0;
+    const posD = vec2.create();
     for (const shapeName in pieceData.shapes) {
-        console.log("shape name = " + shapeName);
+        //console.log("shape name = " + shapeName);
         const shape = pieceData.shapes[shapeName];
-        const posD = vec2.create();
         for (let j = 0; j < shape.length; ++j) {
             const posJ = shape[j];
             posJ[2] = 0;
             for (let i = 0; i < shape.length; ++i) {
                 const posI = shape[i];
                 vec2.sub(posD, posI, posJ);
-                if (posD[0] == 1 && posD[1] == 0) {
-                    posJ[2] |= 1;
-                }
-                if (posD[0] == 0 && posD[1] == 1) {
+                if (posD[0] == 1 && posD[1] == 0) { // right
                     posJ[2] |= 2;
                 }
-
+                if (posD[0] == 0 && posD[1] == 1) { // up
+                    posJ[2] |= 8;
+                }
+            }
+        }
+        // diagonal
+        for (let j = 0; j < shape.length; ++j) {
+            const posJ = shape[j];
+            if (posJ[2] == 10) {
+                for (let i = 0; i < shape.length; ++i) {
+                    const posI = shape[i];
+                    vec2.sub(posD, posI, posJ);
+                    if (posD[0] == 1 && posD[1] == 1) { // diagonal up right
+                        posJ[2] |= 128;
+                    }
+                }
             }
         }
         ++numShapes;
+        //console.log("num shapes = " + numShapes);
     }
-    console.log("num shapes = " + numShapes);
+
+    // add filler for noMove pieces
+    for (const board of pieceData.boards) {
+        //console.log("board = " + board.name);
+        // check noMove against borders
+        
+        for (const piecePos of board.piecePos) {
+            
+            piecePos.fill = 0;
+            if (piecePos.id < 0) {
+                
+                const pos = piecePos.pos;
+                if (pos[0] == 0) piecePos.fill |= 1; // left
+                
+                if (pos[0] == board.boardSize[0] - 1) piecePos.fill |= 2; // right
+                if (pos[1] == 0) piecePos.fill |= 4; // down
+                if (pos[1] == board.boardSize[1] - 1) piecePos.fill |= 8; // up
+                if ((piecePos.fill & 5) == 5) piecePos.fill |= 16; // left AND down
+                if ((piecePos.fill & 6) == 6) piecePos.fill |= 32; // right AND down
+                if ((piecePos.fill & 9) == 9) piecePos.fill |= 64; // left AND up
+                if ((piecePos.fill & 10) == 10) piecePos.fill |= 128; // right AND up
+            }
+        }
+        // check noMove against neighbors, fill
+        for (let j = 0; j < board.piecePos.length; ++j) {
+            const pj = board.piecePos[j];
+            if (pj.id >= 0) continue;
+            const pjPos = pj.pos;
+            for (let i = 0; i < board.piecePos.length; ++i) {
+                const pi = board.piecePos[i];
+                if (pi.id >= 0) continue;
+                const piPos = pi.pos;
+                //console.log("pipos = " + piPos + ", pjpos = " + pjPos);
+                vec2.sub(posD, piPos, pjPos);
+                if (posD[0] == 1 && posD[1] == 0) { // right
+                    pj.fill |= 2;
+                }
+                if (posD[0] == 0 && posD[1] == 1) { // up
+                    pj.fill |= 8;
+                }
+            }
+        }
+        for (let j = 0; j < board.piecePos.length; ++j) {
+            const pj = board.piecePos[j];
+            if (pj.id >= 0) continue;
+            if ((pj.fill & 10) == 10) {
+                const pjPos = pj.pos;
+                for (let i = 0; i < board.piecePos.length; ++i) {
+
+                    const pi = board.piecePos[i];
+                    if (pi.id >= 0) continue;
+                    const piPos = pi.pos;
+                    //console.log("pipos = " + piPos + ", pjpos = " + pjPos);
+                    vec2.sub(posD, piPos, pjPos);
+                    if (posD[0] == 1 && posD[1] == 1) { // diagonal up right
+                        pj.fill |= 128;
+                    }
+                }
+            }
+        }
+    }
 }
 

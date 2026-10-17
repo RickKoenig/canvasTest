@@ -8,6 +8,7 @@ class Piece {
 		this.shapeData = o.shapeData;
 		this.minPoint = vec2.clone(this.shapeData[0]);
 		this.maxPoint = vec2.clone(this.shapeData[0]);
+		this.noMoveFill = o.fill;
 		// calc bounding box for shape
 		for (let i = 1; i < this.shapeData.length; ++i) {
 			const sd = this.shapeData[i];
@@ -24,53 +25,134 @@ class Piece {
 		return pos;
 	}
 
-	draw(user, pieceSize, hilit, idx, pos) {
-		//const smallerRad = [.992, .992];
-		const smallerRad = [pieceSize, pieceSize];
-		const fillRad = [pieceSize / 4, pieceSize / 4];
-		//const smallerRad = [1, 1];
-		const outlineWidth = .06;
-		const sqPos = vec2.create();
-		const fillPos = vec2.create();
-		// draw rectangle
+	draw(user, pieceSize, hilit, idx, pos, onlyNoMove, showIds) {
 		const id = pos[2];
+		if (id >= 0 && onlyNoMove) return;
+		const smallerRad = [pieceSize, pieceSize];
+		const pieceRad = [pieceSize, pieceSize];
+		const pieceRadVert = [pieceSize, pieceSize / 2];
+		const pieceRadHorz = [pieceSize / 2, pieceSize];
+		const pieceRadSmall = [pieceSize / 2, pieceSize / 2];
+		const lineWidth = .125;
+		const outlineRad = vec2.create();
+		vec2.sub(outlineRad, smallerRad, [lineWidth, lineWidth]);
+		vec2.sub(smallerRad, smallerRad, [2 * lineWidth, 2 * lineWidth]);
+		const sqPos = vec2.create();
+
+		// draw each piece and fill for id >= 0
+		const col = hilit ? "black" : "peru";
+		// draw OUTLINE of main and fill
+		const fillPos = vec2.create();
+		// movable
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, pos);
-			user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
+			//vec2.add(sqPos, sqPos, [1, 0]);
 			if (id >= 0) {
-				if (offsetPos[2] & 1) { // fill right
+				user.drawPrim.drawRectangleCenterO(sqPos, outlineRad, lineWidth, col);
+				if (offsetPos[2] & 2) { // fill right
 					vec2.add(fillPos, sqPos, [.5, 0]);
-					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+					user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, col);
 				}
-				if (offsetPos[2] & 2) { // fill up
+				if (offsetPos[2] & 8) { // fill up
 					vec2.add(fillPos, sqPos, [0, .5]);
-					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
-				}
-				if (offsetPos[2] & 4) { // fill left
-					vec2.add(fillPos, sqPos, [-.5, 0]);
-					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
-				}
-				if (offsetPos[2] & 8) { // fill down
-					vec2.add(fillPos, sqPos, [0, -.5]);
-					user.drawPrim.drawRectangleCenter(fillPos, fillRad, "black");
+					user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, col);
 				}
 			}
 		}
-		const outlineRad = vec2.create();
-		vec2.sub(outlineRad, smallerRad, [3 * outlineWidth / 4, 3 * outlineWidth / 4])
+		// borders, nomove
 		
+		/*
+		if (id < 0) {
+			if (this.noMoveFill & 1) { // fill left
+				vec2.add(fillPos, pos, [-.5, 0]);
+				user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, "#e60ebb");
+			}
+			if (this.noMoveFill & 2) { // fill right
+				vec2.add(fillPos, pos, [.5, 0]);
+				user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, "#e60ebb");
+			}
+			if (this.noMoveFill & 4) { // fill down
+				vec2.add(fillPos, pos, [0, -.5]);
+				user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, "#e60ebb");
+			}
+			if (this.noMoveFill & 8) { // fill up
+				vec2.add(fillPos, pos, [0, .5]);
+				user.drawPrim.drawRectangleCenterO(fillPos, outlineRad, lineWidth, "#e60ebb");
+			}
+		}*/
+
+		// draw SOLID rect of main and fill
+
 		for (const offsetPos of this.shapeData) {
 			vec2.add(sqPos, offsetPos, pos);
-			user.drawPrim.drawRectangleCenterO(sqPos, outlineRad, outlineWidth
-				, hilit ? "black" : "peru");
+			// movable
+			if (id >= 0) {
+				user.drawPrim.drawRectangleCenter(sqPos, smallerRad, this.color);
+				if (offsetPos[2] & 2) { // fill right
+					vec2.add(fillPos, sqPos, [.5, 0]);
+					user.drawPrim.drawRectangleCenter(fillPos, smallerRad, this.color);
+				}
+				if (offsetPos[2] & 8) { // fill up
+					vec2.add(fillPos, sqPos, [0, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, smallerRad, this.color);
+				}
+				if (offsetPos[2] & 128) { // fill diagonal, right AND up
+					vec2.add(fillPos, sqPos, [.5, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, smallerRad, this.color);
+				}
+			// non movable
+			} else {
+				
+				user.drawPrim.drawRectangleCenter(sqPos, pieceRad, this.color);
+				if (this.noMoveFill & 1) { // fill left
+					vec2.add(fillPos, pos, [-.5, 0]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadHorz, "#e60ebb");
+				}
+				if (this.noMoveFill & 2) { // fill right
+					vec2.add(fillPos, pos, [.5, 0]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadHorz, "#e60ebb");
+				}
+				if (this.noMoveFill & 4) { // fill down
+					vec2.add(fillPos, pos, [0, -.5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadVert, "#e60ebb");
+				}
+				if (this.noMoveFill & 8) { // fill up
+					vec2.add(fillPos, pos, [0, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadVert, "#e60ebb");
+				}
+				if (this.noMoveFill & 16) { // fill left AND down
+					vec2.add(fillPos, pos, [-.5, -.5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadSmall, "#e60ebb");
+				}
+				if (this.noMoveFill & 32) { // fill right AND down
+					vec2.add(fillPos, pos, [.5, -.5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadSmall, "#e60ebb");
+				}
+				if (this.noMoveFill & 64) { // fill left AND up
+					vec2.add(fillPos, pos, [-.5, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadSmall, "#e60ebb");
+				}
+				if (this.noMoveFill & 128) { // fill right AND up
+					vec2.add(fillPos, pos, [.5, .5]);
+					user.drawPrim.drawRectangleCenter(fillPos, pieceRadSmall, "#e60ebb");
+				}
+			}
 		}
+		/*
+		// borders, nomove
+		if (id < 0) {
+		}*/
+
 		// draw text
-		const posOff = vec2.create();
-		vec2.add(posOff, pos, [.25, -.25]);
-		user.drawPrim.drawText(pos, [.4, .4]
-			, id, "white", "black");
-		user.drawPrim.drawText(posOff, [.15, .15]
-			, idx, "white", "black");
+		if (showIds) {
+			user.drawPrim.drawText(pos, [.4, .4]
+				, id, "white"/*, "black"*/);
+			const posOff = vec2.create();
+			vec2.add(posOff, pos, [.25, -.25]);
+			/*
+			user.drawPrim.drawText(posOff, [.15, .15]
+				, idx, "white", "black");*/
+		}
 	}
 }
 
@@ -86,6 +168,7 @@ class PieceContainer {
 		this.user = user;
 		this.maxDepth = maxDepth;
 		this.maxConf = maxConf;
+		this.showIds = pieceData.showIds;
 
 		this.dragOffset = [0, 0]; // handle for dragging
 		this.container = []; // doesn't have the pos of the piece, has color, shape and bounding box
@@ -111,6 +194,7 @@ class PieceContainer {
 		for (const go of pieceData.goalPos) {
 			const p = new Piece(go);
 			p.pos = go.pos;
+			p.pos[2] = go.id;
 			p.id = go.id;
 			//const p = new GoalPiece(go);
 			this.goalContainer.push(p);
@@ -162,7 +246,7 @@ class PieceContainer {
 	}
 
 	solve() {
-		// make copies
+		// make copies breadth first search
 		let scanEnd = 1;
 		this.resetSolve();
 
@@ -212,7 +296,6 @@ class PieceContainer {
 									return false;
 								}
 								this.posContainers.push(moveCont); // new position
-								//this.extras[np][3].push(this.posContainers.length - 1); // update forwards from back
 								this.extras.push([hash, j, np, -1]); // hash, depth, back, init forwards
 								this.hashTable[hash].push(moveCont);
 								// see if goal
@@ -415,10 +498,6 @@ class PieceContainer {
 			const same = PieceContainer.isSameConf(this.posContainers[0]
 				, this.posContainers[i]);
 			if (same) {
-				/*
-				this.posContainer = PieceContainer.clonePosPieces(this.posContainers[i]);
-				const j = 
-				this.posContainers[0] = this.posContainer;*/
 				this.curConf = i; 
 				const canMoveForward = this.moveForward();
 				this.posContainer = PieceContainer.clonePosPieces(this.posContainers[this.curConf]);
@@ -588,20 +667,41 @@ class PieceContainer {
 	
 	draw() {
 		// draw the pieces
-		const container = this.user.showGoal ? this.goalContainer : this.container;
-		// reverse order, for UI
-		for (let i = container.length - 1; i >= 0; --i) {
-			const so = container[i];
-			let pos;
-			if (this.user.showGoal) {
-				 pos = container[i].pos;
-				 pos[2] = so.id;
-			} else {
-				 pos = this.posContainer[i];
+
+/*
+		const fillSize = [this.pieceSize, this.pieceSize];
+		const outlineSize = vec2.create();
+		const lineWidth = .125;
+		vec2.sub(outlineSize, fillSize, [lineWidth, lineWidth]);
+		vec2.sub(fillSize, fillSize, [2 * lineWidth, 2 * lineWidth]);
+		this.user.drawPrim.drawRectangleCenterO([3, 1], outlineSize, lineWidth, "red");
+		this.user.drawPrim.drawRectangleCenter([4, 1], fillSize, "red");
+		this.user.drawPrim.drawRectangleCenter([6, 1], [this.pieceSize, this.pieceSize], .125, "red");
+*/
+
+		if (this.user.showGoal) {
+			for (let i = this.container.length - 1; i >= 0; --i) {
+				 const pos = this.posContainer[i]; // always same size
+				 const so = this.container[i];
+				// draw regular pieces that can't move
+				so.draw(this.user, this.pieceSize, false
+					, i, pos, true, this.showIds);
 			}
-			// can draw pieces and goalPieces
-			so.draw(this.user, this.pieceSize, this.state == this.statesEnum.DRAGGING && i == this.idx
-				, i, pos);
+			for (let i = this.goalContainer.length - 1; i >= 0; --i) {
+				 const pos = this.goalContainer[i].pos; // always same size
+				 const so = this.goalContainer[i];
+				// draw goal pieces
+				so.draw(this.user, this.pieceSize, false
+					, i, pos, false, this.showIds);
+			}
+		} else {
+			for (let i = this.container.length - 1; i >= 0; --i) {
+				 const pos = this.posContainer[i]; // always same size
+				 const so = this.container[i];
+				// draw all regular pieces
+				so.draw(this.user, this.pieceSize, this.state == this.statesEnum.DRAGGING && i == this.idx
+					, i, pos, false, this.showIds);
+			}
 		}
 	}
 }

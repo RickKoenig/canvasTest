@@ -42,13 +42,14 @@ class MainApp {
 
 		this.curBoard = 0;
 		
-		//const startLevel = "levele";
 		//const startLevel = "verysmall";
 		//const startLevel = "tight";
 		//const startLevel = "unsolvable";
-		//this.curBoard = pieceData.boards.findIndex(user => user.name === startLevel);
-		//this.curBoard = Math.max(0, this.curBoard);
-		//console.log("start on level = " + startLevel);
+		const startLevel = "practice";
+		//const startLevel = "hanoi";
+		this.curBoard = pieceData.boards.findIndex(user => user.name === startLevel);
+		this.curBoard = Math.max(0, this.curBoard);
+		console.log("start on level = " + startLevel);
 		
 		// sort piecedata by id's and position
 		PieceContainer.sortPieceData();
@@ -328,7 +329,7 @@ class MainApp {
 		infoStr += "Avg fps = " + this.AvgFps.toFixed(2);
 		infoStr += "\nBoard = " + this.curPieceData.name ;
 		if (this.solving) {
-			infoStr += "\n\nSOLVING\nplease stand by\n\n";
+			infoStr += "\n\nSOLVING ...\nplease stand by\n\n";
 			this.eles.textInfoLog.innerText = infoStr;
 			return;
 		}
