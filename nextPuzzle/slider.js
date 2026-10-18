@@ -108,7 +108,6 @@ class MainApp {
 	}
 
 	#nextBoard(dir) {
-		if (this.showGoal) return;
 		console.log("next board with " + dir);
 		this.curBoard = moveWrap(this.curBoard, pieceData.boards.length, dir);
 		this.#userInit();
@@ -116,7 +115,6 @@ class MainApp {
 	}
 
 	#resetPieces() {
-		if (this.showGoal) return;
 		this.pieceContainer.resetPieces();
 	}
 
@@ -132,10 +130,8 @@ class MainApp {
 	}
 
 	#solveConf(numHints) {
-		if (this.solving) return; // don't run more than 1 solve
 		console.log("solve");
 		this.solving = true;
-		this.#userUpdateInfo();
 		setTimeout(this.#runSolve.bind(this, numHints), 100); // let #userUpdateInfo update before solving
 		this.#userUpdateInfo();
 	}
@@ -157,7 +153,6 @@ class MainApp {
 
 	// TODO: this need some cleanup
 	#hint(numHints) {
-		if (this.showGoal) return;
 		if (this.solving) return;
 		const doSolve = this.pieceContainer.hint(0);
 		if (!doSolve) {
@@ -191,9 +186,9 @@ class MainApp {
 	#userBuildUI() {
 		makeEle(this.vp, "hr");
 		this.eles.textInfoLog = makeEle(this.vp, "pre", null, null, "textInfoLog");
-		makeEle(this.vp, "button", null, null, "-1", this.#nextBoard.bind(this, -1));
-		makeEle(this.vp, "button", null, null, "0", this.#resetPieces.bind(this));
-		makeEle(this.vp, "button", null, null, "+1", this.#nextBoard.bind(this, 1));
+		this.eles.prev = makeEle(this.vp, "button", null, null, "-1", this.#nextBoard.bind(this, -1));
+		this.eles.zero = makeEle(this.vp, "button", null, null, "0", this.#resetPieces.bind(this));
+		this.eles.next = makeEle(this.vp, "button", null, null, "+1", this.#nextBoard.bind(this, 1));
         makeEle(this.vp, "pre", null, null, "Show Goal");
 		this.eles.showGoal = makeEle(this.vp, "input", "showGoal", null, "ho", (val) => {
 			this.showGoal = val;
@@ -207,8 +202,8 @@ class MainApp {
 			makeEle(this.vp, "button", null, null, "Move back", this.#moveBack.bind(this));
 			makeEle(this.vp, "button", null, null, "Move forward", this.#moveForward.bind(this));
 		}
-		makeEle(this.vp, "button", null, null, "Hint1", this.#hint.bind(this, 1));
-		makeEle(this.vp, "button", null, null, "Hint4", this.#hint.bind(this, 4));
+		this.eles.hint1 = makeEle(this.vp, "button", null, null, "Hint1", this.#hint.bind(this, 1));
+		this.eles.hint4 = makeEle(this.vp, "button", null, null, "Hint4", this.#hint.bind(this, 4));
 	}		
 	
 	#userProc() {
@@ -323,12 +318,25 @@ class MainApp {
 	// USER: update some of the UI in vertical panel if there is some in the HTML
 	#userUpdateInfo() {
 		let infoStr = "";
-		infoStr += "Avg fps = " + this.AvgFps.toFixed(2);
-		infoStr += "\nBoard = " + this.curPieceData.name ;
 		if (this.solving) {
-			infoStr += "\n\nSOLVING ...\nplease stand by\n\n";
+			infoStr += "SOLVING ...\nplease stand by\n";
 			this.eles.textInfoLog.innerText = infoStr;
+			this.eles.hint1.disabled = true;
+			this.eles.hint4.disabled = true;
+			this.eles.prev.disabled = true;
+			this.eles.zero.disabled = true;
+			this.eles.next.disabled = true;
+			this.eles.showGoal.disabled = true;
 			return;
+		} else {
+			infoStr += "Avg fps = " + this.AvgFps.toFixed(2);
+			infoStr += "\nBoard = " + this.curPieceData.name;
+			this.eles.hint1.disabled = this.showGoal;
+			this.eles.hint4.disabled = this.showGoal;
+			this.eles.prev.disabled = this.showGoal;
+			this.eles.zero.disabled = this.showGoal;
+			this.eles.next.disabled = this.showGoal;
+			this.eles.showGoal.disabled = false;
 		}
 		if (MainApp.debug) {
 			infoStr += "\nboardidx = \n" + this.curBoard + " / " + pieceData.boards.length;

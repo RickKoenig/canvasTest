@@ -322,7 +322,7 @@ class pieceData {
             name: "klotski", // 1 second
             boardSize: [4, 5],
             piecePos: [
-                {pos: [1, 0], id: 3, color: "gray", shapeData: pieceData.shapes.sq2},
+                {pos: [1, 0], id: 3, color: "yellow", shapeData: pieceData.shapes.sq2},
                 {pos: [0, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [3, 4], id: 0, color: "green", shapeData: pieceData.shapes.sq1},
                 {pos: [0, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
@@ -334,7 +334,7 @@ class pieceData {
                 {pos: [3, 0], id: 1, color: "blue", shapeData: pieceData.shapes.r1x2},
             ],
             goalPos: [
-                {pos: [1, 3], id: 3, color: "gray", shapeData: pieceData.shapes.sq2},
+                {pos: [1, 3], id: 3, color: "yellow", shapeData: pieceData.shapes.sq2},
             ],
         },
 
