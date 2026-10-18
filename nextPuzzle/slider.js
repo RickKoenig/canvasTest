@@ -45,11 +45,11 @@ class MainApp {
 		//const startLevel = "verysmall";
 		//const startLevel = "tight";
 		//const startLevel = "unsolvable";
-		const startLevel = "practice";
+		//const startLevel = "practice";
 		//const startLevel = "hanoi";
-		this.curBoard = pieceData.boards.findIndex(user => user.name === startLevel);
-		this.curBoard = Math.max(0, this.curBoard);
-		console.log("start on level = " + startLevel);
+		//this.curBoard = pieceData.boards.findIndex(user => user.name === startLevel);
+		//this.curBoard = Math.max(0, this.curBoard);
+		//console.log("start on level = " + startLevel);
 		
 		// sort piecedata by id's and position
 		PieceContainer.sortPieceData();
@@ -82,7 +82,7 @@ class MainApp {
 			,this.startCenter, this.startZoom, null, extraX + safe, extraY + safe + safeBottom / 2);
 		this.input = new Input(this.plotter2dDiv, this.plotter2dCanvas);
 		this.drawPrim = new DrawPrimitives(this.plotter2d);
-		this.graphPaper = new GraphPaper(this.drawPrim);
+		//this.graphPaper = new GraphPaper(this.drawPrim);
 	}
 
 	#initBoard() {
@@ -136,10 +136,7 @@ class MainApp {
 		console.log("solve");
 		this.solving = true;
 		this.#userUpdateInfo();
-
-		//this.#runSolve();
 		setTimeout(this.#runSolve.bind(this, numHints), 100); // let #userUpdateInfo update before solving
-
 		this.#userUpdateInfo();
 	}
 
@@ -370,7 +367,7 @@ class MainApp {
 			// goto user/cam space
 			this.plotter2d.setSpace(Plotter2d.spaces.USER);
 			// now in user/cam space
-			this.graphPaper.draw("X", "Y");
+			//this.graphPaper.draw("X", "Y");
 			// USER: do USER stuff
 			this.#userDraw(); //draw
 		}

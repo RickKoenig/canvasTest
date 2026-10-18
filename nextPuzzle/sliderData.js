@@ -1,5 +1,7 @@
 'use strict';
 
+const even = "#f00";
+const odd = "#eee";
 class pieceData {
     // each element has x, y, and a fill code 0 none, 1 right, 2 up, 3 both
     // 4 left, 8 left, for non movable pieces near a border
@@ -201,10 +203,9 @@ class pieceData {
         { 
             name: "practice",
             boardSize: [8, 5],
-            showIds: true,
             piecePos: [
                 {pos: [1, 2], id: 0, color: "green", shapeData: pieceData.shapes.el90},
-                {pos: [3, 3], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
+                {pos: [3, 2], id: 1, color: "blue", shapeData: pieceData.shapes.r3x1},
                 {pos: [3, 4], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
                 {pos: [0, 4], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
@@ -214,83 +215,87 @@ class pieceData {
                 {pos: [0, 0], id: 2, color: "red", shapeData: pieceData.shapes.r3x1},
             ],
         },
+          // /*
         
         { 
             name: "loyd42",
             boardSize: [4, 2],
+            showIds: true,
             piecePos: [
-                {pos: [3, 0], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [3, 0], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 5, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 7, color: odd, shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 5, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 6, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 7, color: odd, shapeData: pieceData.shapes.sq1},
             ],
         },
 
         { 
             name: "loyd33",
             boardSize: [3, 3],
+            showIds: true,
             piecePos: [
-                {pos: [0, 1], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 2], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 5, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 6, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 7, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 8, color: odd, shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 7, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 8, color: odd, shapeData: pieceData.shapes.sq1},
             ],
         },
 
         { 
             name: "loyd43", // 5.5 seconds
             boardSize: [4, 3],
+            showIds: true,
             piecePos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 2], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 9, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 10, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 11, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 2], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 5, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 6, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 7, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 8, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 9, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 10, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 11, color: even, shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 2], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [3, 1], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 9, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 10, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 0], id: 11, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 2], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 5, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 6, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 7, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [3, 1], id: 8, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 9, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 10, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 0], id: 11, color: even, shapeData: pieceData.shapes.sq1},
             ],
         },
 
@@ -337,38 +342,39 @@ class pieceData {
             name: "tight", // tight 'L' shapes, about 7 seconds
             boardSize: [10, 6],
             piecePos: [
-                {pos: [0, 3], id: 0, color: "green", shapeData: pieceData.shapes.bigel90},
-                {pos: [3, 3], id: 1, color: "blue", shapeData: pieceData.shapes.bigel90},
-                {pos: [6, 3], id: 2, color: "darkred", shapeData: pieceData.shapes.bigel90},
-                {pos: [0, 0], id: 3, color: "blue", shapeData: pieceData.shapes.sq2},
-                {pos: [8, 0], id: 3, color: "blue", shapeData: pieceData.shapes.sq2},
+                {pos: [0, 3], id: 0, color: "darkred", shapeData: pieceData.shapes.bigel90},
+                {pos: [3, 3], id: 1, color: "green", shapeData: pieceData.shapes.bigel90},
+                {pos: [6, 3], id: 2, color: "blue", shapeData: pieceData.shapes.bigel90},
+                {pos: [0, 0], id: 3, color: "#969", shapeData: pieceData.shapes.sq2},
+                {pos: [8, 0], id: 3, color: "#969", shapeData: pieceData.shapes.sq2},
                 {pos: [0, 5], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [3, 5], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [6, 5], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
                 {pos: [9, 5], id: -1, color: "black", shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [6, 3], id: 0, color: "green", shapeData: pieceData.shapes.bigel90},
-                {pos: [0, 3], id: 2, color: "darkred", shapeData: pieceData.shapes.bigel90},
+                {pos: [6, 3], id: 0, color: "darkred", shapeData: pieceData.shapes.bigel90},
+                {pos: [0, 3], id: 2, color: "blue", shapeData: pieceData.shapes.bigel90},
             ],
         },
 
         {
             name: "hanoi", // hanoi, take 93 seconds to calc
             boardSize: [15, 8],
+            showIds: true,
             piecePos: [
                 //{pos: [0, 9], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
-                {pos: [0, 7], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
-                {pos: [0, 6], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
-                {pos: [0, 5], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
-                {pos: [0, 4], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
+                {pos: [0, 7], id: 1, color: "#0ff", shapeData: pieceData.shapes.r5x1},
+                {pos: [0, 6], id: 2, color: "#0cc", shapeData: pieceData.shapes.r6x1},
+                {pos: [0, 5], id: 3, color: "#099", shapeData: pieceData.shapes.r7x1},
+                {pos: [0, 4], id: 4, color: "#066", shapeData: pieceData.shapes.r8x1},
             ],
             goalPos: [
                 //{pos: [11, 0], id: 0, color: "green", shapeData: pieceData.shapes.r4x1},
-                {pos: [10, 0], id: 1, color: "green", shapeData: pieceData.shapes.r5x1},
-                {pos: [9, 1], id: 2, color: "green", shapeData: pieceData.shapes.r6x1},
-                {pos: [8, 2], id: 3, color: "green", shapeData: pieceData.shapes.r7x1},
-                {pos: [7, 3], id: 4, color: "green", shapeData: pieceData.shapes.r8x1},
+                {pos: [10, 0], id: 1, color: "#0ff", shapeData: pieceData.shapes.r5x1},
+                {pos: [9, 1], id: 2, color: "#0cc", shapeData: pieceData.shapes.r6x1},
+                {pos: [8, 2], id: 3, color: "#099", shapeData: pieceData.shapes.r7x1},
+                {pos: [7, 3], id: 4, color: "#066", shapeData: pieceData.shapes.r8x1},
             ],
         },
 
@@ -398,27 +404,29 @@ class pieceData {
         { 
             name: "unsolvable", // 6 seconds, no goals, exhausted
             boardSize: [3, 3],
+            showIds: true,
             piecePos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 7, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 8, color: odd, shapeData: pieceData.shapes.sq1},
             ],
             goalPos: [
-                {pos: [0, 2], id: 1, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 2], id: 2, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 2], id: 3, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 1], id: 4, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 1], id: 5, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [2, 1], id: 6, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [0, 0], id: 7, color: "green", shapeData: pieceData.shapes.sq1},
-                {pos: [1, 0], id: 8, color: "green", shapeData: pieceData.shapes.sq1},
+                {pos: [0, 2], id: 1, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 2], id: 2, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 2], id: 3, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 1], id: 4, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 1], id: 5, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [2, 1], id: 6, color: odd, shapeData: pieceData.shapes.sq1},
+                {pos: [0, 0], id: 7, color: even, shapeData: pieceData.shapes.sq1},
+                {pos: [1, 0], id: 8, color: odd, shapeData: pieceData.shapes.sq1},
             ],
         },
+          // */
 
         // unused boards, take too long to solve or test boards
 /*
@@ -603,27 +611,21 @@ class pieceData {
 
     // add filler for noMove pieces
     for (const board of pieceData.boards) {
-        //console.log("board = " + board.name);
         // check noMove against borders
-        
         for (const piecePos of board.piecePos) {
-            
-            piecePos.fill = 0;
-            if (piecePos.id < 0) {
-                
-                const pos = piecePos.pos;
-                if (pos[0] == 0) piecePos.fill |= 1; // left
-                
-                if (pos[0] == board.boardSize[0] - 1) piecePos.fill |= 2; // right
-                if (pos[1] == 0) piecePos.fill |= 4; // down
-                if (pos[1] == board.boardSize[1] - 1) piecePos.fill |= 8; // up
-                if ((piecePos.fill & 5) == 5) piecePos.fill |= 16; // left AND down
-                if ((piecePos.fill & 6) == 6) piecePos.fill |= 32; // right AND down
-                if ((piecePos.fill & 9) == 9) piecePos.fill |= 64; // left AND up
-                if ((piecePos.fill & 10) == 10) piecePos.fill |= 128; // right AND up
-            }
+            if (piecePos.id >= 0) continue;
+            const pos = piecePos.pos;
+            if (pos[0] == 0) piecePos.fill |= 1; // left
+            if (pos[0] == board.boardSize[0] - 1) piecePos.fill |= 2; // right
+            if (pos[1] == 0) piecePos.fill |= 4; // down
+            if (pos[1] == board.boardSize[1] - 1) piecePos.fill |= 8; // up
+            if ((piecePos.fill & 5) == 5) piecePos.fill |= 16; // left AND down
+            if ((piecePos.fill & 6) == 6) piecePos.fill |= 32; // right AND down
+            if ((piecePos.fill & 9) == 9) piecePos.fill |= 64; // left AND up
+            if ((piecePos.fill & 10) == 10) piecePos.fill |= 128; // right AND up
         }
-        // check noMove against neighbors, fill
+
+        // check noMove against neighbors, fill right and up
         for (let j = 0; j < board.piecePos.length; ++j) {
             const pj = board.piecePos[j];
             if (pj.id >= 0) continue;
@@ -632,7 +634,6 @@ class pieceData {
                 const pi = board.piecePos[i];
                 if (pi.id >= 0) continue;
                 const piPos = pi.pos;
-                //console.log("pipos = " + piPos + ", pjpos = " + pjPos);
                 vec2.sub(posD, piPos, pjPos);
                 if (posD[0] == 1 && posD[1] == 0) { // right
                     pj.fill |= 2;
@@ -642,17 +643,17 @@ class pieceData {
                 }
             }
         }
+       
+        // check noMove against neighbors, fill right and up diagonal
         for (let j = 0; j < board.piecePos.length; ++j) {
             const pj = board.piecePos[j];
             if (pj.id >= 0) continue;
             if ((pj.fill & 10) == 10) {
                 const pjPos = pj.pos;
                 for (let i = 0; i < board.piecePos.length; ++i) {
-
                     const pi = board.piecePos[i];
                     if (pi.id >= 0) continue;
                     const piPos = pi.pos;
-                    //console.log("pipos = " + piPos + ", pjpos = " + pjPos);
                     vec2.sub(posD, piPos, pjPos);
                     if (posD[0] == 1 && posD[1] == 1) { // diagonal up right
                         pj.fill |= 128;
@@ -660,6 +661,15 @@ class pieceData {
                 }
             }
         }
+        
+        // check noMove against borders with neighbors, add diagonals
+        for (const piecePos of board.piecePos) {
+            if (piecePos.id >= 0) continue;
+            const pos = piecePos.pos;
+            if (pos[0] == 0 && (piecePos.fill & 8) == 8) piecePos.fill |= 64; // left AND up
+            if (pos[1] == 0 && (piecePos.fill & 2) == 2) piecePos.fill |= 32; // down AND right
+            if ((pos[0] == board.boardSize[0] - 1) && ((piecePos.fill & 8) == 8)) piecePos.fill |= 128; // right AND up
+            if ((pos[1] == board.boardSize[1] - 1) && ((piecePos.fill & 2) == 2)) piecePos.fill |= 128; // up AND right
+        }
     }
 }
-
